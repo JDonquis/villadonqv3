@@ -1,0 +1,335 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+/* @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap'); */
+
+* {
+    font-family: "Figtree", sans-serif;
+    /* color: #e4e4e4; */
+}
+
+:root {
+    --black: #000000;
+    --dark: #161616;
+    --color1: #081f3d;
+    --color2: #1f4287;
+    --color3: #278ea5;
+    --color4: #74b9ff;
+    --purple: #b8a9fa;
+    --white: #ffffff;
+    --red: #ff6b6b;
+    --green: #88d498;
+    --grayBlue: #b2bdc4;
+    --gray: colors.gray;
+    --ligthGreen: #54ffaf;
+    --background: #fffdf5;
+    --orange: #ffa552;
+}
+
+/* // dashboard  */
+.dashboard_container {
+    height: 100vh;
+    width: 100%;
+    overflow: hidden;
+    height: 100dvh;
+    display: grid;
+    grid-template-rows: 40px 1fr 49px;
+    transition: all 0.3s ease;
+    background: var(--background);
+    color: #1d1d1d;
+}
+
+.main_and_footer_container {
+    display: grid;
+    grid-template-rows: 1fr auto;
+    /* overflow: auto; */
+    /* overflow-x: hidden; */
+    scrollbar-gutter: stable;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.main_dashboard {
+}
+
+@media (min-width: 768px) {
+    .dashboard_container {
+        grid-template-columns: 240px 1fr;
+        grid-template-rows: auto 1fr;
+        /* color: #ff6464; */
+    }
+    .left_nav {
+        grid-column-start: 1;
+        grid-row-start: 1;
+        grid-row-end: 3;
+    }
+
+    header {
+        grid-column-start: 2;
+        /* grid-column: span 2; */
+    }
+
+    .menuStatus-false {
+        grid-template-columns: 60px 1fr;
+    }
+
+    .menuStatus-false .label_link {
+        display: none !important;
+    }
+
+    .menuStatus-false .burger_icon {
+        transform: scalex(-1);
+    }
+
+    .menuStatus-false .logo {
+        /* position: relative;
+        left: -1px; */
+        display: none;
+    }
+    .menuStatus-false a {
+        justify-content: center;
+    }
+
+    .burger_icon {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 48px;
+    }
+
+    .main_and_footer_container {
+        grid-template-rows: 1fr auto;
+        /* padding-top: 30px; */
+    }
+}
+
+body {
+    margin: 0;
+    box-sizing: border-box;
+}
+
+h1 {
+    font-size: 30px;
+    color: var(--color2);
+    font-weight: bold;
+    /* letter-spacing: 1.1px; */
+}
+.table {
+    /* border: 3px solid black; */
+    border: 1px solid transparent;
+}
+.table thead {
+    background-color: rgb(255, 255, 255);
+    color: rgb(44, 44, 44);
+}
+
+.table tbody {
+    border-color: black;
+}
+
+.table th {
+    font-size: 0.875rem;
+    /* .text-sm */
+    font-weight: 400;
+    /* .font-normal */
+    text-align: left;
+    /* .text-left */
+    /* color: rgb(184, 188, 197); */
+    /* dark\:text-gray-400 */
+    padding-left: 1rem;
+    padding-right: 1rem;
+    /* px-4 */
+    padding-top: 14px;
+    padding-bottom: 14px;
+    /* py-3.5 */
+}
+
+.table td {
+    padding: 14px;
+    padding-inline: 1rem;
+    font-size: 0.975rem /* 14px */;
+    line-height: 1.25rem /* 20px */;
+    white-space: nowrap;
+    color: rgb(39, 39, 39);
+}
+
+.btn {
+    border: 3px solid #000;
+    border-radius: 0;
+    background: var(--purple);
+    color: #000;
+    box-shadow: 5px 5px 0 0 #000;
+    font-weight: 700;
+    padding: 12px 24px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+}
+.btn-green {
+    background: var(--green);
+    color: #000;
+}
+.btn:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 7px 7px 0 0 #000;
+}
+
+.btn:active {
+    transform: translate(3px, 3px);
+    box-shadow: none;
+}
+
+/* Never forget focus */
+.btn:focus-visible {
+    outline: 3px solid #74b9ff;
+    outline-offset: 3px;
+}
+
+.btn-ghost {
+    background: transparent;
+    color: #000;
+    border: 3px solid #000;
+    border-radius: 0;
+    box-shadow: none;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.1s ease;
+}
+.btn-ghost:hover {
+    background: #74b9ff;
+    color: #fff;
+    box-shadow: 5px 5px 0 0 #000;
+}
+
+.nb-input {
+    padding: 0.5rem 1rem;
+
+    border: 3px solid #000;
+    border-radius: 0;
+    background: #ffffff;
+    box-shadow: 3px 3px 0 0 #000;
+    transition:
+        box-shadow 0.15s,
+        transform 0.15s;
+}
+
+.nb-input:focus {
+    outline: 3px solid #74b9ff;
+    outline-offset: 2px;
+    box-shadow: 5px 5px 0 0 #000;
+    transform: translate(-1px, -1px);
+}
+
+option {
+    padding: 10px;
+}
+
+progress {
+    width: 100%;
+    height: 7px;
+    border-radius: 10px;
+    transform: rotate(180deg);
+}
+
+/* Style the progress bar track */
+progress::-webkit-progress-bar {
+    background: linear-gradient(80deg, rgb(100, 238, 220) 9%, #2758da 93%);
+
+    border-radius: 10px;
+}
+
+/* Style the progress bar value */
+progress::-webkit-progress-value {
+    border-radius: 10px 0 0 10px;
+    background-color: rgb(88, 88, 88);
+}
+.border-3 {
+    border: 3px solid black !important;
+}
+
+.small-shadow {
+    box-shadow: 3px 3px 0 0 #000;
+}
+.hover\:small-shadow:hover {
+    box-shadow: 3px 3px 0 0 #000;
+}
+.medium-shadow {
+    box-shadow: 5px 5px 0 0 #000;
+}
+.hover\:medium-shadow:hover {
+    box-shadow: 5px 5px 0 0 #000;
+}
+.large-shadow {
+    box-shadow: 8px 8px 0 0 #000;
+}
+.small-shadow-green {
+    box-shadow: 3px 3px 0 0 var(--green);
+}
+.medium-shadow-green {
+    box-shadow: 5px 5px 0 0 var(--green);
+}
+.fadeIn {
+    animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+.slide-up {
+    animation: slideUp 0.3s ease;
+}
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.bg-paper {
+    background-color: #fffdf5;
+    background-image: url("https://www.transparenttextures.com/patterns/rice-paper-2.png");
+    /* This is mostly intended for prototyping; please download the pattern and re-host for production environments. Thank you! */
+}
+
+.text-yellow {
+    color: #ffa552;
+}
+.text-purple {
+    color: var(--purple);
+}
+.text-orange {
+    color: var(--orange);
+}
+.text-zelle {
+    color: #1f4287;
+}
+.bg-yellow {
+    background-color: #FFD23F;
+}
+.bg-purple {
+    background-color: var(--purple);
+}
+
+
+.bg-efectivo {
+    background-color: var(--green);
+}
+.bg-transferencia {
+    background-color: var(--color1);
+}
+.bg-zelle {
+    background-color: #6a1ccd;
+}
+.bg-green {
+    background-color: var(--green);
+}
+.text-green {
+    color: var(--green);
+}

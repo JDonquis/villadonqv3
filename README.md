@@ -1,4 +1,4 @@
-Villadonq version 2 with Inertia + Svelte
+Villadonq version 3 with Inertia + Svelte
 
 - cp .env.example .env
 - composer install
