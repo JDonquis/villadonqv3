@@ -156,7 +156,38 @@
         }
     }
 
-    $: console.log("selectedRow", selectedRow);
+    function handleResendEmail() {
+        if (!$page.props.auth.is_admin) {
+            displayAlert({
+                type: "error",
+                message: "No tienes permisos para reenviar el correo",
+            });
+            return;
+        }
+        if (!selectedRow?.data?.id) {
+            displayAlert({
+                type: "error",
+                message: "Selecciona un usuario para reenviar el correo",
+            });
+            return;
+        }
+        router.post(`/dashboard/personal/${selectedRow.data.id}/reenviar-correo`, {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                displayAlert({
+                    type: "success",
+                    message: "Correo reenviado correctamente",
+                });
+                selectedRow = { status: false, data: {} };
+            },
+            onError: (errors) => {
+                displayAlert({
+                    type: "error",
+                    message: errors.message || "Error al reenviar el correo",
+                });
+            },
+        });
+    }
 </script>
 
 <svelte:head>
@@ -224,6 +255,14 @@
                 handleEdit();
             }}
             on:clickDeleteIcon={handleDelete}
+            otherSelectOptions={[
+                {
+                    onClick: () => handleResendEmail(),
+                    classes: "bg-blue text-white",
+                    label: "Reenviar correo",
+                    icon: "material-symbols:mail-outline",
+                },
+            ]}
         >
             <thead slot="thead" class="sticky top-0 z-50">
                 <tr>

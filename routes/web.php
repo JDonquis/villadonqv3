@@ -40,6 +40,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/dashboard/personal', [UserController::class, 'store'])->name('personal.store');
     Route::put('/dashboard/personal/{id}', [UserController::class, 'update'])->name('personal.update');
     Route::delete('/dashboard/personal/{id}', [UserController::class, 'destroy'])->name('personal.destroy');
+    Route::post('/dashboard/personal/{id}/reenviar-correo', [UserController::class, 'resendSetupEmail'])->name('personal.resend-email');
 
     Route::get('/dashboard/matricula', [StudentController::class, 'index']);
     Route::post('/dashboard/matricula', [StudentController::class, 'store']);

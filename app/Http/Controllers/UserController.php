@@ -9,6 +9,7 @@ use App\Services\UserService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class UserController extends Controller
 {
@@ -37,6 +38,20 @@ class UserController extends Controller
 
     public function store(StoreUserRequest $request)
     {
+
+        try {
+            $transport = Mail::mailer()->getSymfonyTransport();
+            if (method_exists($transport, 'start')) {
+                $transport->start();
+            }
+        } catch (Exception $e) {
+            Log::error('Error de configuración/credenciales de correo: '.$e->getMessage());
+
+            return back()->withInput()->withErrors([
+                'message' => 'No se pudo conectar con el servidor de correo. Verifique las credenciales SMTP.',
+            ]);
+        }
+
         try {
             $data = $request->validated();
 
@@ -118,5 +133,50 @@ class UserController extends Controller
             'status' => true,
             'message' => 'Usuario eliminado exitosamente',
         ]);
+    }
+
+    public function resendSetupEmail(int $id)
+    {
+        $user = $this->userService->getUserById($id);
+
+        if (! $user) {
+            return back()->withErrors([
+                'message' => 'El usuario solicitado no existe.',
+            ]);
+        }
+
+        if (empty($user->email)) {
+            return back()->withErrors([
+                'message' => 'El usuario no tiene un correo electrónico registrado.',
+            ]);
+        }
+
+        try {
+            $transport = Mail::mailer()->getSymfonyTransport();
+            if (method_exists($transport, 'start')) {
+                $transport->start();
+            }
+        } catch (Exception $e) {
+            Log::error('Error de configuración/credenciales de correo: '.$e->getMessage());
+
+            return back()->withErrors([
+                'message' => 'No se pudo conectar con el servidor de correo. Verifique las credenciales SMTP.',
+            ]);
+        }
+
+        try {
+            $this->userService->sendPasswordSetupEmail($user);
+
+            return back()->with([
+                'status' => true,
+                'message' => "Correo de configuración de contraseña reenviado a {$user->email}.",
+            ]);
+        } catch (Exception $e) {
+            Log::error('Error al reenviar el correo de configuración: '.$e->getMessage());
+
+            return back()->withErrors([
+                'message' => 'No se pudo enviar el correo. Por favor, intente nuevamente.',
+            ]);
+        }
     }
 }
