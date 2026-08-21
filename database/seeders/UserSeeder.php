@@ -13,10 +13,10 @@ class UserSeeder extends Seeder
     {
         User::create([
             'type_user_id' => UserTypeEnum::Administrator->value,
-            'ci' => '12345678',
-            'name' => 'YAKNERY ',
-            'last_name' => 'HANSEN',
-            'email' => 'test@example.com',
+            'ci' => '30847627',
+            'name' => 'Juan ',
+            'last_name' => 'Donquis',
+            'email' => 'juandonquis07@gmail.com',
             'password' => Hash::make('12345678'),
             'phone_number' => '',
             'address' => '',
@@ -26,12 +26,12 @@ class UserSeeder extends Seeder
 
         User::create([
             'type_user_id' => UserTypeEnum::Administrator->value,
-            'ci' => '87654321',
-            'name' => 'LISMARY',
-            'last_name' => 'MIRANDA',
-            'email' => 'test2@example.com',
+            'ci' => '27253194',
+            'name' => 'Juan',
+            'last_name' => 'Villasmil',
+            'email' => 'juanvillans16@gmail.com',
             'password' => Hash::make('12345678'),
-            'phone_number' => '04125551234',
+            'phone_number' => '',
             'address' => '',
             'photo' => '',
             'is_admin' => false,

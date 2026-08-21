@@ -38,25 +38,25 @@ class DatabaseSeeder extends Seeder
         //     'quotas',
         // ]);
 
-        // $this->call([
+        $this->call([
 
-        //     PaymentMethodSeeder::class,
-        //     AccountPaymentSeeder::class,
-        //     CourseSeeder::class,
-        //     SectionSeeder::class,
-        //     CourseSectionSeeder::class,
-        //     RequestStatusSeeder::class,
-        //     TypeUserSeeder::class,
-        //     UserSeeder::class,
-        //     TypeDocumentSeeder::class,
-        //     MainConfigSeeder::class,
-        //     SchoolLapseSeeder::class,
-        //     QuotaSeeder::class,
-        //     // StudentSeeder::class,
+            PaymentMethodSeeder::class,
+            AccountPaymentSeeder::class,
+            CourseSeeder::class,
+            SectionSeeder::class,
+            CourseSectionSeeder::class,
+            RequestStatusSeeder::class,
+            TypeUserSeeder::class,
+            UserSeeder::class,
+            TypeDocumentSeeder::class,
+            MainConfigSeeder::class,
+            SchoolLapseSeeder::class,
+            QuotaSeeder::class,
+            // StudentSeeder::class,
 
-        // ]);
+        ]);
 
-        $this->recalculateStudentsDebt();
+        // $this->recalculateStudentsDebt();
 
         // SchoolLapse::where('status', 1)->update(['status' => 0]);
 
