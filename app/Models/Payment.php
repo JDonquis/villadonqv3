@@ -65,4 +65,11 @@ class Payment extends Model
             get: fn($value) => ucfirst(Carbon::parse($value)->translatedFormat('D j F, Y')),
         );
     }
+
+    protected function rawDate(): Attribute
+    {
+        return Attribute::make(
+            get: fn($value, $attributes) => $attributes['date'] ?? null,
+        );
+    }
 }
