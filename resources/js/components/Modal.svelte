@@ -10,7 +10,7 @@
 >
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div
-		class="bg-white border-4 border-black p-4 max-w-[98vw] max-h-[98vh] overflow-auto relative transition-transform duration-200 {showModal ? 'scale-100' : 'scale-95'} {classes}"
+		class="bg-white rounded-xl p-4 max-w-[98vw] max-h-[98vh] overflow-auto relative transition-transform duration-200 {showModal ? 'scale-100' : 'scale-95'} {classes}"
 		on:click|stopPropagation
 	>
 		<slot name="header" />

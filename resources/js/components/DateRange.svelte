@@ -96,7 +96,7 @@
         showPresets
     >
         <div
-            class="date-field border-2 border-black small-shadow p-1.5"
+            class="date-field border-2 rounded-md p-1.5"
             on:click={toggleDatePicker}
             class:open={isOpen}
         >

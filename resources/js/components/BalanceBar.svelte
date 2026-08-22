@@ -271,6 +271,17 @@
 
 <div {id} class={`bg-white p-4 rounded-lg ${classes}`}>
     {#each balances as balance, indexYear}
+    {@const totalDebt = Math.abs(
+        Object.entries(months).reduce((total, [_, month]) => {
+            if (
+                (balance[month] < 0 && balance[month + "_status"] == "debt") ||
+                balance[month + "_status"] == "partially_paid"
+            ) {
+                total += balance[month];
+            }
+            return total;
+        }, 0)
+    ) + Math.abs(balance.inscription)}
         <div class="flex gap-4 items-center mt-2 mb-2">
             <!-- <button>
                 <iconify-icon
@@ -281,7 +292,8 @@
                 ></iconify-icon>
             </button> -->
             <p class="text-xs font-bold">
-                {balance.school_lapse?.start.slice(0, 4)} - {balance.school_lapse?.end.slice(
+                                    
+                {balance.school_lapse?.start.slice(0, 4)} <span class="text-gray-400">•</span> {balance.school_lapse?.end.slice(
                     0,
                     4,
                 )}
@@ -289,20 +301,11 @@
 
             <div class="flex items-center gap-1 text-xs">
                 <p>Deuda:</p>
-                <b>
-                    ${Math.abs(
-                        Object.entries(months).reduce((total, [_, month]) => {
-                            if (
-                                (balance[month] < 0 &&
-                                    balance[month + "_status"] == "debt") ||
-                                balance[month + "_status"] == "partially_paid"
-                            ) {
-                                total += balance[month];
-                            }
-                            return total;
-                        }, 0),
-                    ) + Math.abs(balance.inscription)}
-                </b>
+                {#if totalDebt > 0}
+                    <p class="font-bold text-red">${totalDebt}</p>
+                {:else}
+                    <p class="">0</p>
+                {/if}
                 {#if is_exempt}
                     <div
                         class="flex ml-2 items-center gap-2 text-xs mb-2 font-bold bg-purple w-fit px-2 py-1"
@@ -323,12 +326,13 @@
         </div>
 
         {#if is_exempt < 100}
-            <div class="grid p-0 grid-cols-12 border-2 border-black">
+            <div class="grid p-0 grid-cols-12 rounded-2xl overflow-hidden border-2 border-gray-200">
+                <!-- svelte-ignore a11y-no-static-element-interactions -->
                 <div
-                    class={` hover:brightness-125  relative col-span-1 z-10  text-xs text-black  p-1 capitalize  text-center font-bold
-                 ${balance.inscription_status === "pending" || balance.inscription_status === "debt" ? "bg-red" : ""}
-            ${balance.inscription_status === "paid" ? "bg-green" : ""}
-            ${balance.inscription_status === "partially_paid" ? "bg-yellow" : ""}`}
+                    class={` hover:brightness-125   relative col-span-1 z-10  text-xs text-gray-700  p-1 capitalize  text-center font-bold
+                 ${balance.inscription_status === "pending" || balance.inscription_status === "debt" ? "bg-red/70" : ""}
+            ${balance.inscription_status === "paid" ? "bg-green/50" : ""}
+            ${balance.inscription_status === "partially_paid" ? "bg-yellow/70" : ""}`}
                     on:mouseenter={(e) =>
                         balance.balance_payments.inscription
                             ? showBalancePaymentsTooltip(
@@ -340,7 +344,7 @@
                 >
                     <span> Inscr. </span>
 
-                    <p>
+                    <p class="text-black">
                         {Math.abs(balance.inscription) > 0
                             ? "$" + Math.abs(balance.inscription)
                             : ""}
@@ -355,12 +359,13 @@
                 </div>
                 <div class="col-span-11 grid grid-cols-12">
                     {#each Object.entries(months) as [spanishLabel, month], indexMonth}
+                        <!-- svelte-ignore a11y-no-static-element-interactions -->
                         <div
-                            class={`group/month hover:brightness-110 border-l-2 border-l-gray-200 relative col-span-1 text-xs capitalize text-center font-bold p-1 text-black
-            ${balance[month + "_status"] === "debt" ? "bg-red" : ""}
-            ${balance[month + "_status"] === "paid" ? "bg-green" : ""}
-            ${balance[month + "_status"] === "partially_paid" ? (checkIfMonthIsExpired(month) ? "bg-yellow" : "bg-blue") : ""}
-            ${!balance[month + "_status"] ? "bg-gray-50" : ""}
+                            class={`group/month hover:brightness-110  hover:border-x border-black/30 relative col-span-1 text-xs capitalize text-center font-bold p-1 text-gray-700
+            ${balance[month + "_status"] === "debt" ? "bg-red/70" : ""}
+            ${balance[month + "_status"] === "paid" ? "bg-green/50" : ""}
+            ${balance[month + "_status"] === "partially_paid" ? (checkIfMonthIsExpired(month) ? "bg-yellow/70" : "bg-blue") : ""}
+            ${!balance[month + "_status"] ? "bg-gray-50 " : ""}
         `}
                             title={balance[month + "_status"] == "pending"
                                 ? "Pendiente de pago: $" +
@@ -378,7 +383,7 @@
                             <div class="z-40">
                                 {spanishLabel}
                             </div>
-                            <p>
+                            <p class="text-black">
                                 {#if balance[month + "_status"] == "debt" || balance[month + "_status"] == "partially_paid"}
                                     ${Math.abs(balance[month])}
                                 {/if}
@@ -406,8 +411,9 @@
     {/each}
 
     {#if tooltipVisible}
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
         <div
-            class="min-h-[100px] w-fit bg-white text-dark p-2 shadow-lg border border-black z-20"
+            class="min-h-[100px] w-fit bg-white text-dark border border-gray-200 p-2 shadow-lg rounded-md z-20"
             style={tooltipStyle}
             on:mouseenter={() => clearTimeout(tooltipHideTimeout)}
             on:mouseleave={scheduleTooltipHide}

@@ -49,33 +49,80 @@
     let selectedRow = { status: false, data: null };
     let submitStatus = "Registrar";
 
+    function formatFechaCorta(dateString) {
+        if (!dateString) return "";
+
+        // Agregamos 'T00:00:00' para evitar desfases por zona horaria UTC
+        const date = new Date(`${dateString}T00:00:00`);
+
+        return new Intl.DateTimeFormat("es-VE", {
+            weekday: "short", // 'vie.'
+            day: "numeric", // '21'
+            month: "short", // 'ago.'
+        }).format(date);
+    }
     // ==========================================
     // 🌐 NUEVA FUNCIÓN PARA BUSCAR TASA POR FECHA
     // ==========================================
+
+    let dateOfDolarPrice = "";
     async function updateDolarPriceByDate(targetDate) {
         if (!targetDate) return;
 
-        try {
-            const apiDateFormat = targetDate.replace(/-/g, "/");
-            const url = `https://ve.dolarapi.com/v1/historicos/dolares/oficial/${apiDateFormat}`;
+        let currentDateStr = targetDate;
+        let success = false;
+        let attempts = 0;
+        const MAX_ATTEMPTS = 15; // Límite de días hacia atrás para buscar
 
-            // Petición limpia con Axios
-            const response = await axios.get(url);
+        while (!success && attempts < MAX_ATTEMPTS) {
+            try {
+                const apiDateFormat = currentDateStr.replace(/-/g, "/");
+                const url = `https://ve.dolarapi.com/v1/historicos/dolares/oficial/${apiDateFormat}`;
 
-            // DolarApi devuelve la estructura directo en data
-            dolarPrice = response.data.promedio;
+                const response = await axios.get(url);
 
-            // Forzar actualización si hay montos ya escritos
-            recalculateTotals();
-        } catch (error) {
-            console.error("Error buscando tasa histórica con Axios:", error);
+                dolarPrice = response.data.promedio;
+                dateOfDolarPrice = currentDateStr;
+                success = true;
+
+                // Recalcular montos con la nueva tasa
+                recalculateTotals();
+
+                // Si la fecha donde se encontró el dólar es distinta a la seleccionada
+                if (dateOfDolarPrice !== $form.date) {
+                    displayAlert({
+                        type: "info",
+                        message: `No se encontró tasa para la fecha seleccionada. Se tomó la tasa del día ${formatFechaCorta(dateOfDolarPrice)}`,
+                    });
+                }
+            } catch (error) {
+                // Si es 404 (día no hábil / sin tasa), resta 1 día a la fecha y reintenta
+                if (error.response && error.response.status === 404) {
+                    attempts++;
+
+                    // Restar un día a la fecha usando Date nativo de JS
+                    const dateObj = new Date(`${currentDateStr}T00:00:00`);
+                    dateObj.setDate(dateObj.getDate() - 1);
+                    currentDateStr = dateObj.toISOString().split("T")[0];
+                } else {
+                    // Si es un error de conexión u otro código HTTP, detiene la búsqueda
+                    console.error("Error buscando tasa histórica:", error);
+                    displayAlert({
+                        type: "error",
+                        message:
+                            "No se pudo obtener la tasa para la fecha seleccionada. Verifica la conexión.",
+                    });
+                    break;
+                }
+            }
+        }
+
+        if (!success && attempts >= MAX_ATTEMPTS) {
             displayAlert({
                 type: "error",
                 message:
-                    "No se pudo obtener la tasa para la fecha seleccionada. Intenta de nuevo o verifica la conexión.",
+                    "No se encontró registro de tasa BCV en los días previos a la fecha seleccionada.",
             });
-            // Si es fin de semana y da 404, puedes dejar el dolarPrice anterior
-            // o reportar que no hay tasa oficial para ese día.
         }
     }
 
@@ -252,7 +299,8 @@
             amount_in_dolars: s.pivot?.amount_in_dolars,
             amount_in_bs: s.pivot?.amount_in_bs,
         }));
-        $form.date = new Date(selectedData.date).toISOString().split("T")[0];
+        console.log(selectedData.date);
+        $form.date = selectedData.raw_date;
         // $form.reported_date = new Date(selectedData?.reported_date)?.toISOString().split("T")[0] || null;
         $form.account_payment_id = selectedData.account_payment_id;
         $form.total_in_dolars = selectedData.total_in_dolars;
@@ -302,24 +350,43 @@
                 bind:value={$form.name}
                 error={$form.errors?.name}
             /> -->
-            <input
-                type="search"
-                placeholder="Buscar Estudiante"
-                class={"z-50 mx-auto p-2 mt-6 md:w-60 nb-input ml-5  border rounded-md"}
-                bind:this={searchInputRef}
-                on:input={(e) => {
-                    search_student(e.target.value);
-                }}
-                on:click={(e) => {
-                    e.stopPropagation();
-                    isSearchTableOpen = true;
-                }}
-            />
-
+            <div
+                class="w-fit z-50 lg right-20 md:right-64 flex items-center rounded-xl bg-gray-50 border border-gray-400"
+            >
+                <span class="absolute">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="currentColor"
+                        class="w-5 h-5 mx-3 text-gray-400"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+                        />
+                    </svg>
+                </span>
+                <input
+                    type="search"
+                    placeholder="Buscar Estudiante"
+                    class={`block w-full rounded-xl py-1.5 pr-5 text-gray-700 -full   md:w-56  placeholder-gray-400/70 pl-11 rtl:pr-11 rtl:pl-5 focus:border-blue-400 focus:ring-blue-300 focus:outline-none focus:ring focus:ring-opacity-40`}
+                    bind:this={searchInputRef}
+                    on:input={(e) => {
+                        search_student(e.target.value);
+                    }}
+                    on:click={(e) => {
+                        e.stopPropagation();
+                        isSearchTableOpen = true;
+                    }}
+                />
+            </div>
             <table
                 id="students-search-table"
                 bind:this={searchTableRef}
-                class={`${isSearchTableOpen ? "block" : "hidden"} w-full absolute font-semibold bg-paper top-12 max-h-[370px] min-h-[300px] overflow-y-scroll z-50 border-4 [&_*]:px-4 [&_*]:py-2 [&_*]:text-left bg-background border-black text-sm  mt-5`}
+                class={`${isSearchTableOpen ? "block bg-gray-200 z-50" : "hidden"} p-6 w-full absolute font-semibold rounded-md top-12 max-h-[370px] min-h-[300px] overflow-y-scroll z-50 shadow-xl [&_*]:px-4 [&_*]:py-2 [&_*]:text-left  text-sm  mt-5`}
             >
                 <thead class="">
                     <tr>
@@ -332,7 +399,7 @@
                 <tbody>
                     {#each searched_students as student}
                         <tr
-                            class={`text-xs hover:bg-black/10  [&_*]:px-4 [&_*]:py-2 cursor-pointer bg-white bg-opacity-10 border-gray-500`}
+                            class={`text-xs rounded-xl overflow-hidden py-1 hover:bg-black/10  [&_*]:px-4 [&_*]:py-2 cursor-pointer bg-white bg-opacity-10 border-gray-500`}
                             on:click={() => {
                                 // Verificar si el estudiante ya está en el arreglo
                                 if (
@@ -366,17 +433,22 @@
                                 isSearchTableOpen = false;
                             }}
                         >
-                            <td>{student.name} {student.last_name}</td>
-                            <td>{student.ci}</td>
-                            <td
-                                >C.I:
+                            <td class="rounded-l-lg"
+                                >{student.name} {student.last_name}</td
+                            >
+                            <td>
                                 {#if student.document_type}
                                     <span style=" padding: 0 "
                                         >{student.document_type}-</span
                                     >
                                 {/if}{student.ci}</td
                             >
-                            <td
+                            <td>
+                                {student.course.name}
+                                {student.section.name}
+                            </td>
+
+                            <td class="rounded-r-lg"
                                 >{student.representative.user.name}
                                 {student.representative.user.last_name}</td
                             >
@@ -387,12 +459,10 @@
 
             <table
                 id="selected_student"
-                class={`${$form.students.length > 0 ? "block" : "hidden"}  w-full font-semibold relative    text-sm overflow-hidden mt-5`}
+                class={`${$form.students.length > 0 ? "block" : "hidden"}   w-full font-semibold relative    text-sm overflow-hidden mt-5`}
             >
                 <thead class="[&_*]:px-4 [&_*]:py-2 [&_*]:text-left">
                     <tr>
-                        <th></th>
-                        <th></th>
                         <th></th>
                         <th></th>
                         <th></th>
@@ -406,14 +476,14 @@
                             class={` w-full [&_td]:px-2 [&_td*]:py-2 text-sm cursor-pointer  border-gray-500`}
                         >
                             <td>
-                                <div class="flex items-center">
-                                    <b class="pr-1">$</b>
+                                <div class="flex flex-col items-start">
+                                    <b class="pr-1 text-xs">$. USD</b>
                                     <input
                                         type="number"
                                         min="0"
                                         placeholder="Dólares"
                                         step="0.01"
-                                        class="w-20 border-3 py-2 px-2 border- small-shadow focus:outline-0"
+                                        class="w-20 py-2 px-2 border-gray-400 rounded-md border focus:outline-0"
                                         value={student.amount_in_dolars || ""}
                                         readonly={submitStatus ===
                                             "Solo lectura"}
@@ -446,13 +516,13 @@
                                 </div>
                             </td>
                             <td>
-                                <div class="flex items-center">
-                                    <b class="pr-1 text-xs">VES</b>
+                                <div class="flex flex-col items-start">
+                                    <b class="pr-1 text-xs">Bs. VES</b>
                                     <input
                                         type="number"
                                         min="0"
                                         step="0.01"
-                                        class=" w-24 border-3 py-2 px-2 border-3 border-black small-shadow focus:outline-0"
+                                        class="w-24 border py-2 px-2 border-gray-400 rounded-md focus:outline-"
                                         value={student.amount_in_bs || ""}
                                         placeholder="Bolívares"
                                         readonly={submitStatus ===
@@ -482,48 +552,40 @@
                                     />
                                 </div>
                             </td>
-                            <td class="font-bold">
-                                <div class="flex items-center">
-                                    <iconify-icon
-                                        icon="bx:child"
-                                        width="14"
-                                        height="14"
-                                    ></iconify-icon>
+
+                            <td class="min-w-[300px]">
+                                <div class="flex items-center mb-1">
                                     <span>
                                         {student.name}
                                         {student.last_name}
                                     </span>
                                 </div>
-                            </td>
-                            <td
-                                >C.I:
-                                {#if student.document_type}
-                                    <span class="text-xs"
-                                        >{student.document_type}-</span
-                                    >
-                                {/if}
-                                {student.ci}</td
-                            >
-                            <td>
-                                {student.course_name}-{student.section_name}
-                            </td>
-                            <td
-                                ><div class="flex items-center">
-                                    <span
-                                        ><iconify-icon
-                                            icon="bi:person-standing"
-                                            width="16"
-                                            height="16"
-                                        ></iconify-icon>
+                                <span
+                                    class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
+                                >
+                                    {#if student.document_type}
+                                        <span class="uppercase"
+                                            >{student.document_type}-</span
+                                        >
+                                    {/if}
+                                    {student.ci}
+                                </span>
 
-                                        <span>{student.legal_rep_name}</span>
-                                    </span>
-                                </div>
+                                <!-- Separador opcional o punto -->
+                                <span class="text-gray-300">•</span>
+
+                                <!-- Curso y Sección -->
+                                <span
+                                    class="text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200/40 text-xs"
+                                >
+                                    {student.course_name}-{student.section_name}
+                                </span>
                             </td>
-                            <td class="max-w-[60px]">
+
+                            <td class="max-w-[70px]">
                                 <button
                                     type="button"
-                                    class="h-full hover:bg-paper"
+                                    class="h-full hover:bg-paper ml-1"
                                     on:click={() => {
                                         // Eliminar el estudiante del arreglo
                                         $form.students = $form.students.filter(
@@ -632,50 +694,26 @@
             <div class="flex justify-end col-span-12">
                 <button
                     type="submit"
-                    class="w-[420px] btn btn-green mt-7 flex items-center justify-center gap-3"
+                    class="animated-button max-w-[430px] mt-7 flex items-center justify-center gap-3"
                     disabled={$form.processing}
                 >
+                    <iconify-icon
+                        class="text"
+                        icon="material-symbols:save-sharp"
+                        width="24"
+                        height="24"
+                    />
                     {#if $form.processing}
-                        Cargando...
+                        <span class="text"> Cargando...</span>
                     {:else}
-                        <iconify-icon
-                            icon="material-symbols:save-sharp"
-                            width="24"
-                            height="24"
-                        />
-                        <span>
-                            {submitStatus}
-                        </span>
+                        <span class="text">{submitStatus}</span>
                     {/if}
+                    <span class="circle"></span>
                 </button>
             </div>
         {/if}
     </form>
 </Modal>
-
-<div class="flex flex-col justify-end items-end gap-3 mt-1">
-    <button
-        class="btn inline-block"
-        on:click={(e) => {
-            e.preventDefault();
-            showModal = true;
-            searchInputRef.focus();
-            if (submitStatus === "Solo lectura") {
-                $form.reset();
-                submitStatus = "Registrar";
-            }
-        }}
-    >
-        Registrar pago
-    </button>
-    <p>
-        1$ = {#if dolarPrice}{dolarPrice}{:else}<iconify-icon
-                icon="line-md:loading-loop"
-                width="24"
-                height="24"
-            ></iconify-icon>{/if} Bs
-    </p>
-</div>
 
 <Search
     filtersOptions={{
@@ -703,32 +741,81 @@
     }}
 />
 
-{#if data.total_income}
-    <div class="w-max mb-5 flex flex-wrap items-center gap-2">
-        <span class="font-semibold">Total ingresos:</span>
-        <b
-            class={`text-sm ${showTotalIncome ? "opacity-100" : "opacity-0 blur-sm"} text-green transition-all duration-200`}
-        >
-            {showTotalIncome ? `$${data.total_income}` : "•••"}
-        </b>
+<div class="flex justify-between items-center gap-10 mt-1">
+    {#if data.total_income}
+        <div class="w-max mb-1 flex flex-wrap items-center gap-2">
+            <span class="font-semibold">Total ingresos:</span>
+            <b
+                class={`text-sm bg-white shadow-sm px-2 ${showTotalIncome ? "opacity-100" : "opacity-0 blur-sm"} text-green transition-all duration-200`}
+            >
+                {showTotalIncome ? `$${data.total_income}` : "•••"}
+            </b>
+            <button
+                type="button"
+                class="inline-flex items-center justify-center bg-white/10 p-2 text-gray-700 transition hover:bg-green/10 focus:outline-none"
+                on:click={() => {
+                    showTotalIncome = !showTotalIncome;
+                }}
+                aria-label={showTotalIncome ? "Ocultar total" : "Mostrar total"}
+            >
+                <iconify-icon
+                    icon={showTotalIncome
+                        ? "formkit:eyeclosed"
+                        : "mdi:eye-outline"}
+                    width="24"
+                    height="24"
+                ></iconify-icon>
+            </button>
+        </div>
+    {/if}
+
+    <div class="flex items-center gap-5">
+        <p class="text-sm text-gray-500 mt-4">
+            1$ el {formatFechaCorta(dateOfDolarPrice)} = {#if dolarPrice}{dolarPrice}{:else}<iconify-icon
+                    icon="line-md:loading-loop"
+                    width="24"
+                    height="24"
+                ></iconify-icon>{/if} Bs
+        </p>
         <button
-            type="button"
-            class="inline-flex items-center justify-center bg-white/10 p-2 text-gray-700 transition hover:bg-green/10 focus:outline-none"
-            on:click={() => {
-                showTotalIncome = !showTotalIncome;
+            class="animated-button w-fitcontent"
+            on:click={(e) => {
+                e.preventDefault();
+                showModal = true;
+                searchInputRef.focus();
+                if (submitStatus === "Solo lectura") {
+                    $form.reset();
+                    submitStatus = "Registrar";
+                }
             }}
-            aria-label={showTotalIncome ? "Ocultar total" : "Mostrar total"}
         >
-            <iconify-icon
-                icon={showTotalIncome ? "formkit:eyeclosed" : "mdi:eye-outline"}
-                width="24"
-                height="24"
-            ></iconify-icon>
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="arr-2"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                ></path>
+            </svg>
+            <span class="text">Registrar pago</span>
+            <span class="circle"></span>
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="arr-1"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                ></path>
+            </svg>
         </button>
     </div>
-{/if}
+</div>
+
 <Table
     {selectedRow}
+    allowFilters={false}
     serverSideData={data?.payments}
     on:clickDeleteIcon={() => {
         if (!$page.props.auth.is_admin) {
@@ -753,7 +840,7 @@
 >
     <thead slot="thead" class="sticky top-0 z-50">
         <tr>
-            <th>id</th>
+            <th>ID</th>
             <th>Fecha de la transacción</th>
             <th>Estudiante/s</th>
             <th>Total USD$</th>
@@ -779,32 +866,63 @@
                 }}
                 classes={`${row.status === 0 ? "bg-red text-gray-400 bg-opacity-10 opacity-70" : ""} `}
             >
-                <td>{row.id}</td>
+                <td>
+                    <span class="text-xs">
+                        {row.id}
+                    </span>
+                </td>
                 <td>{row.date}</td>
-                <td class=" space-y-2">
-                    {#each row?.students as student, j}
-                        <div class="flex items-center gap-2">
-                            <span>
-                                <b class=""
-                                    ><span class="text-gray-600">$</span
-                                    >{student.pivot.amount_in_dolars}
-                                </b>
-                                {student.name}
-                                {student.last_name}
-                                <span class="text-gray-500">
-                                    | C.I:
-                                    {#if student.document_type}
-                                        <span class="text-xs"
-                                            >{student.document_type}-</span
+                <td class="px-4 py-3 align-top">
+                    <div class="space-y-2">
+                        {#each row?.students as student, j}
+                            <div class="flex flex-col gap-1 text-sm">
+                                <!-- Línea Superior: Nombre completo del estudiante -->
+                                <div
+                                    class="font-semibold text-gray-800 capitalize leading-snug"
+                                >
+                                    {student.name}
+                                    {student.last_name}
+                                </div>
+
+                                <!-- Línea Inferior: Metadatos organizados en chips/badges -->
+                                <div
+                                    class="flex items-center gap-1.5 flex-wrap text-xs text-gray-500"
+                                >
+                                    <!-- Monto individual (si aplica) -->
+                                    {#if student.pivot?.amount_in_dolars}
+                                        <span
+                                            class="font-medium bg-green/20 px-1.5 py-0.5 rounded border border-emerald-200/60"
                                         >
+                                            ${student.pivot.amount_in_dolars}
+                                        </span>
                                     {/if}
-                                    {student.ci}
-                                    | {student.course.name}-{student.section
-                                        .name}
-                                </span>
-                            </span>
-                        </div>
-                    {/each}
+
+                                    <!-- Cédula -->
+                                    <span
+                                        class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
+                                    >
+                                        {#if student.document_type}
+                                            <span class="uppercase"
+                                                >{student.document_type}-</span
+                                            >
+                                        {/if}
+                                        {student.ci}
+                                    </span>
+
+                                    <!-- Separador opcional o punto -->
+                                    <span class="text-gray-300">•</span>
+
+                                    <!-- Curso y Sección -->
+                                    <span
+                                        class="text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200/40 text-[11px]"
+                                    >
+                                        {student.course?.name} - {student
+                                            .section?.name}
+                                    </span>
+                                </div>
+                            </div>
+                        {/each}
+                    </div>
                 </td>
                 <!-- <td
                     >{row.representative.user.name}

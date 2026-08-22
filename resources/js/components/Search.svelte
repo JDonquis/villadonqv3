@@ -78,7 +78,7 @@
 </script>
 
 <div
-    class="fixed top-3 z-50 lg right-20 md:right-64 flex items-center bg-gray-50 border border-gray-200"
+    class="fixed top-3 z-50 lg right-20 md:right-64 flex items-center rounded-xl bg-gray-50 border border-gray-200"
 >
     <span class="absolute">
         <svg
@@ -104,7 +104,7 @@
         on:input={() => {
             handleSearch();
         }}
-        class={`block w-full py-1.5 pr-5 text-gray-700 -full ${filtersOptions ? "-r-none" : ""}  md:w-56  placeholder-gray-400/70 pl-11 rtl:pr-11 rtl:pl-5 focus:border-blue-400 focus:ring-blue-300 focus:outline-none focus:ring focus:ring-opacity-40`}
+        class={`block w-full rounded-xl py-1.5 pr-5 text-gray-700 -full ${filtersOptions ? "-r-none" : ""}  md:w-56  placeholder-gray-400/70 pl-11 rtl:pr-11 rtl:pl-5 focus:border-blue-400 focus:ring-blue-300 focus:outline-none focus:ring focus:ring-opacity-40`}
         style={$$props.style}
     />
     {#if filtersOptions}
@@ -223,7 +223,7 @@
                         }}
                         name={filterOption.label}
                         id=""
-                        class="border-2 small-shadow border-black p-1 py-2"
+                        class="rounded  p-1 py-2"
                     >
                         <option value="todos">Todos</option>
                         {#each filterOption.options as filter, i (filter.id)}

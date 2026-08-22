@@ -354,7 +354,7 @@
         form="r-form"
         slot="btn_footer"
         type="submit"
-        class="btn btn-green w-full flex items-center justify-center gap-3"
+        class="center justify-center gap-3"
         disabled={$formReinscribe.processing}
     >
         {#if $formReinscribe.processing}
@@ -379,9 +379,10 @@
     >
         <div>
             <fieldset
-                class="  border-3 medium-shadow border-black pb-9 px-5 bg-gray-50 grid grid-cols-2 gap-x-10 h-fit md:px-9 md:pt-2"
+                class="pb-6 bg-color1/5 rounded-lg grid grid-cols-2 gap-x-10 h-fit md:px-9 md:pt-2"
             >
-                <legend class="text-center px-5 font-bold rounded-sm bg"
+                <legend
+                    class="text-color1 text-center px-5 font-bold rounded-sm bg"
                     >DATOS DEL ESTUDIANTE</legend
                 >
                 <Input
@@ -485,9 +486,10 @@
                 />
             </fieldset>
             <fieldset
-                class=" border-3 medium-shadow border-black pb-9 px-5 mt-9 bg-gray-50 grid grid-cols-2 gap-x-10 h-fit md:px-9 md:pt-2"
+                class="pb-6 bg-color1/5 rounded-lg mt-7 grid grid-cols-2 gap-x-10 h-fit md:px-9 md:pt-2"
             >
-                <legend class="text-center px-5 font-bold rounded-sm bg"
+                <legend
+                    class="text-color1 text-center px-5 font-bold rounded-sm bg"
                     >EXONERACIÓN</legend
                 >
 
@@ -547,9 +549,10 @@
 
         <div>
             <fieldset
-                class=" border-3 medium-shadow border-black pb-9 px-5 bg-gray-50 grid grid-cols-2 gap-x-10 h-fit md:px-9 md:pt-2"
+                class="pb-6 bg-color1/5 rounded-lg grid grid-cols-2 gap-x-10 h-fit md:px-9 md:pt-2"
             >
-                <legend class="text-center px-5 font-bold rounded-sm bg"
+                <legend
+                    class="text-color1 text-center px-5 font-bold rounded-sm bg"
                     >REPRESENTANTE LEGAL</legend
                 >
                 <div class=" flex items-center gap-2">
@@ -640,9 +643,10 @@
             </fieldset>
 
             <fieldset
-                class=" border-3 medium-shadow border-black pb-9 px-5 mt-9 bg-gray-50 grid grid-cols-2 gap-x-10 h-fit md:px-9 md:pt-2"
+                class="pb-6 bg-color1/5 rounded-lg pb-9 px-5 mt-9 bg-gray-50 grid grid-cols-2 gap-x-10 h-fit md:px-9 md:pt-2"
             >
-                <legend class="text-center px-5 font-bold rounded-sm bg"
+                <legend
+                    class="text-color1 text-center px-5 font-bold rounded-sm bg"
                     >SEGUNDO REPRESENTANTE</legend
                 >
 
@@ -731,24 +735,29 @@
         form="a-form"
         slot="btn_footer"
         type="submit"
-        class="btn btn-green w-1/2 mr-7 flex items-center justify-center gap-3"
+        class="animated-button min-w-[300px] max-w-fit flex gap-2"
         disabled={$form.processing}
     >
         {#if $form.processing}
             Cargando...
         {:else}
-            <iconify-icon
+             <iconify-icon
                 icon="material-symbols:save-sharp"
+                class=" mr-2 pr-10 inline-block arr-1 "
                 width="24"
                 height="24"
             />
-            <span> {submitStatus === "Crear" ? "Crear" : "Editar"} </span>
+            <span class="text ">
+                {submitStatus === "Crear" ? "Crear" : "Editar"}
+            </span>
+            <span class="circle"></span>
+           
         {/if}
     </button>
 </Modal>
 
 <div class="flex justify-between items-center">
-    <div class="w-44">
+    <div class="w-44 mb-3">
         <Input
             id="filterYear"
             type="select"
@@ -766,7 +775,7 @@
         </Input>
     </div>
     <button
-        class="btn inline-block"
+        class="animated-button w-fitcontent"
         on:click={(e) => {
             e.preventDefault();
             if (submitStatus === "Editar") {
@@ -780,8 +789,29 @@
             }
 
             showModal = true;
-        }}>Inscribir</button
+        }}
     >
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="arr-2"
+            viewBox="0 0 24 24"
+        >
+            <path
+                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+            ></path>
+        </svg>
+        <span class="text">Inscribir</span>
+        <span class="circle"></span>
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="arr-1"
+            viewBox="0 0 24 24"
+        >
+            <path
+                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+            ></path>
+        </svg>
+    </button>
 </div>
 
 <Search />
@@ -808,8 +838,12 @@
         {#if lastSectionId < 6}
             <button
                 on:click={() => createSection()}
-                class="btn-ghost px-4 py-2"
+                class="text-xs px-4 text-gray-400 hover:text-gray-700 py-2"
             >
+            <iconify-icon
+                    class="text-lg relative top-1"
+                    icon="ic:baseline-plus"
+                ></iconify-icon>
                 Crear sección
             </button>
         {/if}
@@ -890,9 +924,4 @@
 </Table>
 
 <style>
-    fieldset {
-        background-color: #fffdf5;
-        background-image: url("https://www.transparenttextures.com/patterns/rice-paper-2.png");
-        /* This is mostly intended for prototyping; please download the pattern and re-host for production environments. Thank you! */
-    }
 </style>

@@ -162,11 +162,11 @@
 <svelte:head>
     <title>Personal</title>
 </svelte:head>
-<section class="bg-background min-h-screen">
+<section class=" min-h-screen">
     <Alert />
-    <div class="container mx-auto">
+    <div class=" mx-auto">
         <button
-            class="btn inline-block"
+            class="animated-button w-fitcontent"
             on:click={(e) => {
                 if (!$page.props.auth.is_admin) {
                     displayAlert({
@@ -182,7 +182,28 @@
                 }
                 submitStatus = "Crear";
                 showModal = true;
-            }}>Crear nuevo personal</button
+            }}
+        >
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="arr-2"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                ></path>
+            </svg>
+            <span class="text">Nuevo personal</span>
+            <span class="circle"></span>
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="arr-1"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                ></path>
+            </svg></button
         >
         <!-- List -->
 
@@ -314,19 +335,21 @@
         </div>
         <button
             type="submit"
-            class="btn btn-green col-span-2 mt-7 flex items-center justify-center gap-3"
+            class="animated-button col-span-2 mt-7 flex items-center justify-center gap-3"
             disabled={$form.processing}
         >
+            <iconify-icon
+                class="text"
+                icon="material-symbols:save-sharp"
+                width="24"
+                height="24"
+            />
             {#if $form.processing}
-                Cargando...
+                <span class="text"> Cargando...</span>
             {:else}
-                <iconify-icon
-                    icon="material-symbols:save-sharp"
-                    width="24"
-                    height="24"
-                />
-                <span> Guardar </span>
+                <span class="text">Guardar</span>
             {/if}
+            <span class="circle"></span>
         </button>
     </form>
 </Modal>

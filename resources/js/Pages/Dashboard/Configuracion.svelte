@@ -429,10 +429,10 @@
                         /> -->
                     {#if $prices.isDirty}
                         <button
-                            class="btn btn-green flex items-center gap-3 mb-2 mt-7 w-full"
-                            type="submit"
-                            form={"pricesForm"}
-                        >
+                                class="animated-button flex items-center gap-3 mb-2 mt-7 w-full"
+                                type="submit"
+                                form={"pricesForm"}
+                            >
                             <iconify-icon
                                 icon="material-symbols:save"
                                 class="text-3xl"
@@ -455,32 +455,43 @@
                             required={true}
                             bind:value={$prices.regular_inscription_price}
                         /> -->
-                    <button
-                        class="btn btn-green flex items-center gap-3 mb-2 mt-4 w-full"
-                        type="button"
-                        on:click={initiateNextCourse}
-                    >
-                        <span> Iniciar próximo periodo </span>
-                        <iconify-icon icon="picon:next" class="text-3xl"
-                        ></iconify-icon>
-                    </button>
+                        <div class="bg-white overflow-hidden rounded-md mb-2 hover:shadow-lg mt-4">
+                            
+                            <button
+                                class="bg-green/50 flex items-center justify-between hover:bg-green hover:text-black  gap-3 py-3 px-4 shadow-sm font-semibold w-full"
+                                type="button"
+                                on:click={initiateNextCourse}
+                            >
+                                <span> Iniciar próximo periodo </span>
+                                <iconify-icon icon="carbon:next-outline" class="text-xl"
+                                ></iconify-icon>
+                            </button>
+                        </div>
                 </div>
             </form>
         </div>
 
         <section class="my-10">
-            <header class="flex justify-between mb-6">
-                <h2 class="font-bold text-xl mb-4">Métodos de pago</h2>
+            <header class="flex justify-between items-center mb-6">
+                <h2 class="font-bold text-xl ">Métodos de pago</h2>
                 <div class="relative z-30">
                     <button
                         on:click={() =>
                             (showPaymentOptions = !showPaymentOptions)}
-                        class="btn gap-3 flex items-center"
+                        class="animated-button"
                         use:clickOutside={() => {
                             showPaymentOptions = false;
                         }}
                     >
-                        <span> Nuevo Método </span>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="arr-2"
+                            viewBox="0 0 24 24"
+                        >
+                        </svg>
+                        <span class="text">Nuevo Método</span>
+                        <span class="circle"></span>
+
                         <iconify-icon icon="line-md:plus"></iconify-icon>
                         <iconify-icon icon="mingcute:down-line"></iconify-icon>
                     </button>
@@ -518,13 +529,13 @@
                 {#each data.accounts.data as payMethod}
                     <article
                         id={`account-${payMethod.id}`}
-                        class={`border-3 group duration-200 relative medium-shadow bg-white w-fit pb-5 pt-3 md:px-8 pl-9`}
+                        class={`border-3 rounded-md group duration-200 relative medium-shadow bg-white w-fit pb-5 pt-3 md:px-8 pl-9`}
                     >
                         <div
                             class={`h-full bg-${ColorsPayMethods()[payMethod.payment_method_name]} w-5 absolute left-0 top-0`}
                         ></div>
                         <header class="flex justify-between gap-2">
-                            <h3 class={` font-semibold `}>
+                            <h3 class={` font-semibold text-xl`}>
                                 {payMethod.payment_method_name}
                             </h3>
                             <div

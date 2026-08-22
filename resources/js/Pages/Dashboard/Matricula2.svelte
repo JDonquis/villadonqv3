@@ -12,7 +12,7 @@
     import SelectableRow from "../../components/SelectableRow.svelte";
     import Search from "../../components/Search.svelte";
 
-    export let data = [];
+    export let data = []; 
 
     $: selectedCourseId = (data.filters?.course_id || "1").toString();
 
@@ -354,7 +354,7 @@
         form="r-form"
         slot="btn_footer"
         type="submit"
-        class="btn btn-green w-full flex items-center justify-center gap-3"
+        class="animated-button w-full flex items-center justify-center gap-3"
         disabled={$formReinscribe.processing}
     >
         {#if $formReinscribe.processing}
@@ -731,7 +731,7 @@
         form="a-form"
         slot="btn_footer"
         type="submit"
-        class="btn btn-green w-1/2 mr-7 flex items-center justify-center gap-3"
+        class="animated-button w-1/2 mr-7 flex items-center justify-center gap-3"
         disabled={$form.processing}
     >
         {#if $form.processing}

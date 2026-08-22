@@ -1,7 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 const colors = require("tailwindcss/colors");
 const colorClasses = {
-    color1: "#081f3d",
+    color1: "#17223B",
     color2: "#1f4287",
     color3: "#278ea5",
     color4: "#74B9FF",
@@ -14,7 +14,7 @@ const colorClasses = {
     gray: colors.gray,
     ligthGreen: "#54ffaf",
     redLight: "#ff6464",
-    background: "#fffdf5",
+    background: "#edf0f0",
     transparent: "transparent",
     zelle: "#6a1ccd",
     binance: "#F3BA2F",
@@ -36,7 +36,7 @@ module.exports = {
     ],
     theme: {
         colors: {
-            color1: "#081f3d",
+            color1: "#17223B",
             color2: "#1f4287",
             color3: "#278ea5",
             color4: "#74B9FF",
@@ -49,7 +49,7 @@ module.exports = {
             gray: colors.gray,
             ligthGreen: "#54ffaf",
             redLight: "#ff6464",
-            background: "#fffdf5",
+            background: "#edf0f0",
             transparent: "transparent",
             zelle: "#6a1ccd",
             binance: "#F3BA2F",

@@ -137,18 +137,21 @@
         <button
             form="a-form"
             type="submit"
-            class="btn btn-green w-full mt-6 mr-7 flex items-center justify-center gap-3"
+            class="animated-button w-full mt-6 mr-7 flex items-center justify-center gap-3"
             disabled={$formCreate.processing}
         >
             {#if $formCreate.processing}
                 Cargando...
             {:else}
                 <iconify-icon
+                class="text"
                     icon="material-symbols:save-sharp"
                     width="24"
                     height="24"
                 />
-                <span> Guardar </span>
+                <span class="text"> Guardar </span>
+                <span class="circle"></span>
+
             {/if}
         </button>
     </div>

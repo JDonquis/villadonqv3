@@ -11,7 +11,7 @@
 :root {
     --black: #000000;
     --dark: #161616;
-    --color1: #081f3d;
+    --color1: #17223B;
     --color2: #1f4287;
     --color3: #278ea5;
     --color4: #74b9ff;
@@ -22,7 +22,7 @@
     --grayBlue: #b2bdc4;
     --gray: colors.gray;
     --ligthGreen: #54ffaf;
-    --background: #fffdf5;
+    --background: #f0f3f3;
     --orange: #ffa552;
 }
 
@@ -109,15 +109,17 @@ body {
     box-sizing: border-box;
 }
 
-h1 {
+h1,h2,h3 {
     font-size: 30px;
-    color: var(--color2);
+    color: var(--color1);
     font-weight: bold;
+    font-family: "Oxanium", sans-serif;
     /* letter-spacing: 1.1px; */
 }
 .table {
     /* border: 3px solid black; */
     border: 1px solid transparent;
+    border-radius: 10px !important;
 }
 .table thead {
     background-color: rgb(255, 255, 255);
@@ -333,3 +335,103 @@ progress::-webkit-progress-value {
 .text-green {
     color: var(--green);
 }
+
+
+.animated-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 36px;
+  border: 4px solid;
+  margin-top: 17px;
+  width: 100%;
+  border-color: transparent;
+  font-size: 16px;
+  background-color: #17223B;
+  border-radius: 100px;
+  font-weight: 600;
+  color: white;
+  box-shadow: 0 0 0 2px #ffffff;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.animated-button svg {
+  position: absolute;
+  width: 24px;
+  fill: white;
+  z-index: 9;
+  transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.animated-button svg.arr-2 {
+  fill: #212121 !important;
+  left: -25%;
+}
+.animated-button .arr-1 {
+  right: 16px;
+}
+
+.animated-button .arr-2 {
+  left: -25%;
+}
+
+.animated-button .circle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  background-color: #c5e5e4;
+  border-radius: 50%;
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.animated-button .text {
+  position: relative;
+  z-index: 1;
+  transform: translateX(-12px);
+  transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.animated-button:hover {
+  box-shadow: 0 0 0 12px transparent;
+  color: #212121;
+  border-radius: 12px;
+}
+
+.animated-button:hover .arr-1 {
+  right: -25%;
+}
+
+.animated-button:hover .arr-2 {
+  left: 16px;
+}
+
+.animated-button:hover .text {
+  transform: translateX(12px);
+}
+
+.animated-button:hover svg {
+  fill: white;
+}
+
+.animated-button:active {
+  scale: 0.95;
+  box-shadow: 0 0 0 4px greenyellow;
+}
+
+.animated-button:hover .circle {
+  width: 110%;
+  height: 220px;
+  opacity: 1;
+}
+
+.animated-button.w-fitcontent {
+  width: fit-content !important;
+  max-width: 200px;
+}
+

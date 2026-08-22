@@ -140,10 +140,13 @@
 </script>
 
 <section class={`w-full ${classes}`}>
-    <div class="mt-6 md:flex md:items-center md:justify-between">
-        <div class="flex gap-2 md:gap-7">
+    <div class=" md:flex md:items-center md:justify-between">
+
+        {#if allowFilters}
+        
+        <div class="flex gap-2 rounded-lg overflow-hidden   md:gap-7">
             <div
-                class={`inline-flex overflow-hidden  ${allowFilters ? "border border-black  divide-x divide-black" : ""}  rtl:flex-row-reverse" : ""}`}
+                class={`inline-flex overflow-hidden  ${allowFilters ? "  divide-x divide-gray-100" : ""}  rtl:flex-row-reverse" : ""}`}
             >
                 <!-- <button
                     on:click={(e) => {
@@ -163,7 +166,7 @@
                                 filterClientData[filterKey] = filter.id;
                                 handleFilters();
                             }}
-                            class="px-5 font-semibold py-2 text-xs bg-background text-gray-600 transition-colors duration-200 sm:text-sm hover:bg-gray-100"
+                            class="px-5 font-semibold py-2 text-xs bg-white text-gray-600 transition-colors duration-200 sm:text-sm hover:bg-gray-100"
                             class:bg-yellow={serverSideData.filters[filterKey] ==
                                 filter.id ||
                                 (i == 0 && !filterClientData[filterKey])}
@@ -175,37 +178,9 @@
             </div>
             <slot name="filterBox"></slot>
         </div>
-
+        {/if}
         <div class="flex  gap-10">
-        <!-- <div class="relative flex items-center mt-4 md:mt-0 duration-100">
-            <span class="absolute">
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="1.5"
-                    stroke="currentColor"
-                    class="w-5 h-5 mx-3 text-gray-400"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-                    />
-                </svg>
-            </span>
-
-            <input
-                type="search"
-                placeholder="Buscar"
-                bind:value={filterClientData.search}
-                on:input={() => {
-                    handleSearch();
-                }}
-                style="padding-left: 2.5em"
-                class="block nb-input md:w-80 placeholder-gray-400/70 pl-11 rtl:pr-11 rtl:pl-5 focus:border-blue-400 focus:ring-blue-300 focus:outline-none focus:ring focus:ring-opacity-40"
-            />
-        </div> -->
+       
         {#if selectedRow?.status}
             <div 
                 class="fixed  z-[100] flex fadeIn gap-2"
@@ -250,11 +225,11 @@
 
     <div class="flex flex-col mt-4">
         <div
-            class="-mx-4 -my-2 overflow-x-auto overflow-y-visible sm:-mx-6 lg:-mx-8"
+            class="-mx-4 -my-2  sm:-mx-6 lg:-mx-8"
         >
             <div class="inline-block w-full py-2 align-middle md:px-6 lg:px-8">
                 <div
-                    class="overflow-x-auto   scroll-table border bg-white border-gray-200"
+                    class=" overflow-x-auto  scroll-table border rounded-lg shadow-2xl bg-white border-gray-200"
                 >
                     <table
                         class="table   w-full divide-y divide-gray-200"
@@ -273,7 +248,7 @@
 
     {#if pagination}
         <!-- Pagination ---------------------------------------------------------------------------------------------- -->
-        <div class="mt-2 sm:flex sm:items-center sm:justify-between flex-wrap gap-2">
+        <div class="mt-2 px-3 py-1 rounded-xl bg-white sm:flex sm:items-center sm:justify-between flex-wrap gap-2">
             <div class="text-sm text-gray-500 flex items-center gap-2">
                 <span>Mostrando</span>
                 <span class="font-medium text-gray-700">{serverSideData.from || 0}</span>
@@ -283,7 +258,7 @@
                 <span class="font-medium text-gray-700">{serverSideData.total || 0}</span>
                 <span>entradas</span>
                 <select 
-                    class="ml-2 px-2 py-1 border rounded text-sm"
+                    class="ml-2 px-2 py-1  rounded text-sm"
                     bind:value={rowsPerPage}
                     on:change={(e) => changePerPage(parseInt(e.target.value))}
                 >
@@ -300,7 +275,7 @@
                     {#if link.url === null}
                         <span class="px-3 py-1 text-gray-400 cursor-not-allowed">{link.label.replace(/&laquo;/g, '<').replace(/&raquo;/g, '>')}</span>
                     {:else if link.active}
-                        <span class="px-3 py-1 bg-yellow font-bold border border-black">{link.label}</span>
+                        <span class="px-3 py-1 bg-yellow/70 font-bold border rounded-xl">{link.label}</span>
                     {:else}
                         <a
                             use:inertia
@@ -323,22 +298,17 @@
         height: 13px;
     }
 
-    .scroll-table::-webkit-scrollbar-track {
-        background: rgb(14, 14, 14); /* color of the tracking area */
-        /* padding: 2px; */
-    }
+ 
 
     .scroll-table::-webkit-scrollbar-thumb {
-        background-color: #35475c; /* color of the scroll thumb */
-        border-radius: 4px; /* roundness of the scroll thumb */
-        border: 3px solid rgb(14, 14, 14);
-        border-bottom: 0.2px solid rgb(14, 14, 14);
+        background-color: #d1deec; /* color of the scroll thumb */
+        border-radius: 6px; /* roundness of the scroll thumb */
     }
     .scroll-table::-webkit-scrollbar-thumb:hover {
         background-color: rgb(184, 206, 231);
     }
     .scroll-table::-webkit-scrollbar-corner {
-        background: rgba(0, 0, 0, 0.5);
+        /* background: rgba(0, 0, 0, 0.5); */
     }
     tr {
         border-bottom: 1px solid black;

@@ -167,18 +167,44 @@ Si ya realizó el pago, por favor ignore este mensaje o envíenos el comprobante
             <tr>
                 <td class=" space-y-2">
                     <div class="flex items-center gap-2">
-                        <span>
-                            {student.name}
-                            {student.last_name}
-                            <span class="text-gray-500">
-                                | {#if student.document_type}
-                                    <span style=" padding: 0 "
-                                        >{student.document_type}-</span
+
+                        <div class="flex flex-col gap-1 text-sm">
+                                <!-- Línea Superior: Nombre completo del estudiante -->
+                                <div
+                                    class="font-semibold text-gray-800 capitalize leading-snug"
+                                >
+                                    {student.name}
+                                    {student.last_name}
+                                </div>
+
+                                <!-- Línea Inferior: Metadatos organizados en chips/badges -->
+                                <div
+                                    class="flex items-center gap-1.5 flex-wrap text-xs text-gray-500"
+                                >
+                                   
+                                    <span
+                                        class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
                                     >
-                                {/if}{student.ci}
-                                | {student.course.name}-{student.section.name}
-                            </span>
-                        </span>
+                                        {#if student.document_type}
+                                            <span class="uppercase"
+                                                >{student.document_type}-</span
+                                            >
+                                        {/if}
+                                        {student.ci}
+                                    </span>
+
+                                    <span class="text-gray-300">•</span>
+
+                                    <span
+                                        class="text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200/40 text-[11px]"
+                                    >
+                                        {student.course?.name} - {student
+                                            .section?.name}
+                                    </span>
+                                </div>
+                            </div>
+
+                 
                     </div>
                 </td>
                 <td>

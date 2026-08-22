@@ -15,13 +15,13 @@
     export let name = "";
     export let style = "";
     export let error = false;
-    export let disabled = false
+    export let disabled = false;
 </script>
 
-<div class={`text-left w-full mt-5 ${classes} `} style={style}>
+<div class={`text-left w-full mt-5 ${classes} `} {style}>
     <label
         for={"nombre"}
-        class={`form__label w-full text-sm font-semibold ${labelClass}`}
+        class={`form__label w-full text-sm font-semibold text-gray-700 ${labelClass}`}
         {placeholder}>{label} {required ? "*" : ""}</label
     >
     <div class="relative w-full parent_div">
@@ -30,7 +30,7 @@
                 bind:value
                 id={label}
                 rows="1"
-                class="form__field nb-input"
+                class="form__field "
                 on:change
                 {readonly}
                 on:input
@@ -40,11 +40,10 @@
                 id={label}
                 bind:value
                 {required}
-                class="form__field nb-input"
+                class="form__field "
                 on:change
                 on:input
                 disabled={readonly || disabled}
-
             >
                 <slot></slot>
             </select>
@@ -54,7 +53,7 @@
                 {...{ type }}
                 id={label}
                 {name}
-                class="form__field nb-input"
+                class="form__field "
                 {required}
                 {max}
                 {min}
@@ -79,11 +78,10 @@
     textarea,
     select {
         width: 100%;
-        padding: 10px;
-        padding-block: 8px;
-        border: 1px solid rgba(0, 0, 0, 0.103);
-        border-radius: 5px;
-        background: hwb(217 91% 0% / 0.144);
+        padding: 10px 14px;
+        border-radius: 6px;
+        font-family: inherit;
+        border: 1px solid #ccc;
     }
     select {
         padding: 11px;

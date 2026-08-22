@@ -223,7 +223,7 @@
 </svelte:head>
 
 <div
-    class="w-full bg-white p-6 border-4 large-shadow border-black max-w-[1200px] flex flex-col gap-4"
+    class="w-full bg-white shadow-lg p-6 rounded-md max-w-[1200px] flex flex-col gap-4"
 >
     <div>
         <div class="flex gap-10 items-start">
