@@ -300,6 +300,7 @@ class StudentService
     {
         if (isset($id)) {
             $students = Student::where('id', $id)
+            ->where('status', '!=', 0)
                 ->with([
                     'representative.user',
                     'course',
