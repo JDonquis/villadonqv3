@@ -323,30 +323,21 @@ class StudentService
             return $students;
         }
 
-        $students = Student::where(function ($query) use ($search) {
-            $query->where('ci', 'LIKE', '%' . $search . '%')
-                ->orWhere('name', 'LIKE', '%' . $search . '%')
-                ->orWhere('last_name', 'LIKE', '%' . $search . '%')
-                ->orWhereRaw("CONCAT(name, ' ', last_name) LIKE ?", ['%' . $search . '%']);
-        })
-            ->orWhereHas('representative.user', function ($query) use ($search) {
+        $students = Student::where('status', '!=', 0)
+            ->where(function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
-                    $q->where('name', 'LIKE', '%' . $search . '%')
+                    $q->where('ci', 'LIKE', '%' . $search . '%')
+                        ->orWhere('name', 'LIKE', '%' . $search . '%')
                         ->orWhere('last_name', 'LIKE', '%' . $search . '%')
-                        ->orWhere('ci', 'LIKE', '%' . $search . '%')
                         ->orWhereRaw("CONCAT(name, ' ', last_name) LIKE ?", ['%' . $search . '%']);
-                });
+                })
+                    ->orWhereHas('representative.user', function ($q) use ($search) {
+                        $q->where('name', 'LIKE', '%' . $search . '%')
+                            ->orWhere('last_name', 'LIKE', '%' . $search . '%')
+                            ->orWhere('ci', 'LIKE', '%' . $search . '%')
+                            ->orWhereRaw("CONCAT(name, ' ', last_name) LIKE ?", ['%' . $search . '%']);
+                    });
             })
-            ->with([
-                'representative.user',
-                'course',
-                'section',
-                'balances' => function ($query) {
-                    // Traemos los que tengan status específicos O el más reciente
-                    $query->with('schoolLapse')
-                        ->oldest(); // Ordenar por fecha de creación (el más antiguo primero)
-                },
-            ])
             ->get()
             ->map(function ($student) {
                 if ($student->balances->isEmpty()) {
