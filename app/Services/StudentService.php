@@ -62,6 +62,9 @@ class StudentService
 
         $user = User::where('ci', $data['rep_ci'])->first();
 
+        Log::info('Creating student with data: ', $data);
+        Log::info('Found user: ', ['user' => $user]);
+
         if (! isset($user->id)) {
             $user = $this->createUser($data);
         }
