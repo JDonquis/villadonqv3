@@ -74,4 +74,6 @@ class Payment extends Model
             get: fn($value, $attributes) => $attributes['date'] ?? null,
         );
     }
+
+    //E
 }
