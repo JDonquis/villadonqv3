@@ -11,6 +11,8 @@ class Payment extends Model
 {
     use HasFactory;
 
+    protected $appends = ['raw_date'];
+
     protected $fillable = [
         'user_id',
         'account_payment_id',
