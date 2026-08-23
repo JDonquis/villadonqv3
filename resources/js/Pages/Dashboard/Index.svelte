@@ -4,6 +4,16 @@
     import Input from "../../components/Input.svelte";
     import axios from "axios";
     export let schoolLapses;
+    export let schoolCharges = [];
+    export let totalSchoolCharges = 0;
+    export let schoolChargesByLapse = [];
+
+    function formatCurrency(value) {
+        return "$" + Number(value || 0).toLocaleString("en-US", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
+    }
 
     let annual_vs_monthly_flow_year_id;
     let chartContainer;
@@ -256,4 +266,66 @@
     </div>
 
     <div bind:this={chartContainer} class="w-full h-[400px]"></div>
+
+    <div class="mt-6 border-t border-gray-200 pt-6 flex flex-col gap-4">
+        <div class="flex items-center justify-between">
+            <h3 class="text-lg font-bold text-gray-800 tracking-tight">
+                Deuda acumulada a favor (cobro de $1 por estudiante inscrito)
+            </h3>
+            <div class="bg-blue-50 text-blue-800 font-bold px-4 py-2 rounded-md text-xl">
+                {formatCurrency(totalSchoolCharges)}
+            </div>
+        </div>
+
+        {#if schoolChargesByLapse && schoolChargesByLapse.length > 0}
+            <div class="flex flex-wrap gap-3">
+                {#each schoolChargesByLapse as lapse}
+                    <div class="bg-gray-50 border border-gray-200 rounded-md px-4 py-2 flex items-center gap-3">
+                        <span class="text-sm font-medium text-gray-700">
+                            {lapse.school_lapse}
+                        </span>
+                        <span class="text-xs text-gray-500">
+                            {lapse.students} estudiantes
+                        </span>
+                        <span class="text-sm font-bold text-gray-800">
+                            {formatCurrency(lapse.total)}
+                        </span>
+                    </div>
+                {/each}
+            </div>
+        {/if}
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead>
+                    <tr class="border-b border-gray-200 text-left text-gray-500">
+                        <th class="py-2 pr-4 font-medium">Estudiante</th>
+                        <th class="py-2 pr-4 font-medium">Cédula</th>
+                        <th class="py-2 pr-4 font-medium">Periodo Escolar</th>
+                        <th class="py-2 font-medium text-right">Monto adeudado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {#if schoolCharges && schoolCharges.length > 0}
+                        {#each schoolCharges as charge}
+                            <tr class="border-b border-gray-100">
+                                <td class="py-2 pr-4 text-gray-800">{charge.student}</td>
+                                <td class="py-2 pr-4 text-gray-600">{charge.ci}</td>
+                                <td class="py-2 pr-4 text-gray-600">{charge.school_lapse}</td>
+                                <td class="py-2 font-medium text-right text-gray-800">
+                                    {formatCurrency(charge.amount)}
+                                </td>
+                            </tr>
+                        {/each}
+                    {:else}
+                        <tr>
+                            <td colspan="4" class="py-4 text-center text-gray-400">
+                                Aún no hay cobros registrados. Se generan automáticamente al inscribir o reinscribir un estudiante.
+                            </td>
+                        </tr>
+                    {/if}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>

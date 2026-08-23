@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\UserTypeEnum;
 use App\Http\Requests\ForgotPasswordRequest;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\SetupPasswordRequest;
@@ -33,14 +34,18 @@ class AuthController extends Controller
             return redirect('/')->withErrors(['data' => 'Datos incorrectos, intente nuevamente']);
         }
 
-        $dataUser = User::where('email', $request->email)->first()->toArray();
+        $user = auth()->user();
+        $dataUser = $user->toArray();
 
         $token = $this->loginService->generateToken($dataUser);
-        $user = auth()->user();
         $permissionsArray = $this->userService->getPermissions($user->id);
         $permissionsWithFormat = $this->userService->formatToPermissions($permissionsArray);
 
-        return Inertia::location('/dashboard');
+        $redirectTo = $user->type_user_id === UserTypeEnum::Representative->value
+            ? '/dashboard/representante'
+            : '/dashboard';
+
+        return Inertia::location($redirectTo);
     }
 
     public function logout(Request $request)

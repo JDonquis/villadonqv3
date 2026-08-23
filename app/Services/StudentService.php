@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
-use App\Enums\BalanceStudentStatusEnum;
 use App\Enums\UserTypeEnum;
 use App\Events\ReEnrollEvent;
 use App\Events\StudentCreated;
 use App\Events\StudentUpdated;
 use App\Http\Resources\StudentCollection;
+use App\Mail\RepresentativeWelcomeMail;
 use App\Models\Inscription;
 use App\Models\Representative;
 use App\Models\SchoolLapse;
@@ -15,6 +15,8 @@ use App\Models\Student;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class StudentService
@@ -36,15 +38,15 @@ class StudentService
             ->where('course_id', $courseId)
             ->where('section_id', $sectionId)
             ->when($request->input('search'), function ($query, $search) {
-                $query->where('search', 'like', '%' . $search . '%');
-                $query->orWhere('ci', 'like', '%' . $search . '%')
-                    ->orWhere('name', 'like', '%' . $search . '%')
-                    ->orWhere('last_name', 'like', '%' . $search . '%')
-                    ->orWhereRaw("CONCAT(name, ' ', last_name) LIKE ?", ['%' . $search . '%']);
+                $query->where('search', 'like', '%'.$search.'%');
+                $query->orWhere('ci', 'like', '%'.$search.'%')
+                    ->orWhere('name', 'like', '%'.$search.'%')
+                    ->orWhere('last_name', 'like', '%'.$search.'%')
+                    ->orWhereRaw("CONCAT(name, ' ', last_name) LIKE ?", ['%'.$search.'%']);
                 $query->orWhereHas('representative.user', function ($q) use ($search) {
-                    $q->where('name', 'like', '%' . $search . '%')
-                        ->orWhere('last_name', 'like', '%' . $search . '%')
-                        ->orWhere('ci', 'like', '%' . $search . '%');
+                    $q->where('name', 'like', '%'.$search.'%')
+                        ->orWhere('last_name', 'like', '%'.$search.'%')
+                        ->orWhere('ci', 'like', '%'.$search.'%');
                 });
             })
 
@@ -60,7 +62,18 @@ class StudentService
     {
         $data = $request->all();
 
+        $existingDeleted = $this->searchDeletedStudentByCI($data['student_ci'] ?? null, $data['student_document_type'] ?? null);
+
+        if ($existingDeleted) {
+            $this->reactivateAndUpdate($data, $existingDeleted);
+
+            return 0;
+        }
+
         $user = User::where('ci', $data['rep_ci'])->first();
+
+        Log::info('Creating student with data: ', $data);
+        Log::info('Found user: ', ['user' => $user]);
 
         if (! isset($user->id)) {
             $user = $this->createUser($data);
@@ -77,6 +90,70 @@ class StudentService
         $student->load('representative.user', 'course', 'section');
 
         // $this->createDocuments($request,$student->id);
+
+        event(new StudentCreated($student));
+
+        return 0;
+    }
+
+    public function searchDeletedStudentByCI($ci, $documentType = null)
+    {
+        if (! $ci) {
+            return null;
+        }
+
+        return Student::where('status', 0)
+            ->where('ci', $ci)
+            ->when($documentType, function ($query) use ($documentType) {
+                $query->where('document_type', $documentType);
+            })
+            ->with('representative.user', 'course', 'section')
+            ->first();
+    }
+
+    private function reactivateAndUpdate($data, $student)
+    {
+        if ($student->graduate) {
+            throw new \Exception('El estudiante está marcado como graduado y no puede reinscribirse.');
+        }
+
+        $user = User::where('ci', $data['rep_ci'])->first();
+
+        if (! isset($user->id)) {
+            $user = $this->createUser($data);
+        }
+
+        $representative = Representative::where('user_id', $user->id)->first();
+
+        if (! isset($representative->id)) {
+            $representative = $this->createRepresentative($data, $user->id);
+        }
+
+        $student->update([
+            'representative_id' => $representative->id,
+            'course_id' => $data['course_id'],
+            'section_id' => $data['section_id'],
+            'name' => $data['student_name'],
+            'last_name' => $data['student_last_name'],
+            'date_birth' => $data['student_date_birth'],
+            'email' => $data['student_email'] ?? null,
+            'ci' => $data['student_ci'] ?? null,
+            'phone_number' => $data['student_phone_number'] ?? null,
+            'sex' => $data['student_sex'] ?? null,
+            'previous_school' => $data['student_previous_school'] ?? null,
+            'is_exempt' => $data['is_exempt'] ?? false,
+            'exemption_percentage' => $data['exemption_percentage'] ?? null,
+            'exemption_observations' => $data['exemption_observations'] ?? null,
+            'document_type' => $data['student_document_type'] ?? null,
+            'apply_to_past_debts' => $data['apply_to_past_debts'] ?? false,
+            'status' => 1,
+            'graduate' => false,
+        ]);
+
+        $student->load('representative.user', 'course', 'section');
+
+        $search = $this->generateSearch($student);
+        $student->update(['search' => $search]);
 
         event(new StudentCreated($student));
 
@@ -219,6 +296,13 @@ class StudentService
 
     private function createUser($data)
     {
+        $email = $data['rep_email'] ?? null;
+        $hasValidEmail = $this->hasValidEmail($email);
+
+        $plainPassword = null;
+        if ($hasValidEmail) {
+            $plainPassword = Str::random(10);
+        }
 
         $newUser = User::create([
             'type_user_id' => UserTypeEnum::Representative->value,
@@ -227,15 +311,42 @@ class StudentService
             'ci' => $data['rep_ci'],
             'phone_number' => $data['rep_phone_number'] ?? null,
             'phone_number2' => $data['rep_phone_number2'] ?? null,
-            'email' => $data['rep_email'] ?? null,
-            'password' => Hash::make($data['rep_ci']),
+            'email' => $email,
+            'password' => Hash::make($plainPassword ?? $data['rep_ci']),
             'address' => $data['address'] ?? null,
             'state' => $data['state'] ?? null,
             'city' => $data['city'] ?? null,
             'document_type' => $data['rep_document_type'] ?? null,
         ]);
 
+        if ($hasValidEmail) {
+            try {
+                Mail::to($newUser->email)->send(new RepresentativeWelcomeMail($newUser, $plainPassword));
+            } catch (\Throwable $e) {
+                Log::warning('No se pudo enviar el correo al representante: '.$e->getMessage(), [
+                    'user_id' => $newUser->id,
+                ]);
+            }
+        } else {
+            Log::warning('Representante creado sin email válido; se usó la cédula como contraseña.', [
+                'user_id' => $newUser->id,
+            ]);
+        }
+
         return $newUser;
+    }
+
+    private function hasValidEmail(?string $email): bool
+    {
+        if (empty($email)) {
+            return false;
+        }
+
+        if (Str::endsWith($email, '@test.test')) {
+            return false;
+        }
+
+        return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
     }
 
     private function createRepresentative($data, $userId)
@@ -282,6 +393,7 @@ class StudentService
             'exemption_percentage' => $data['exemption_percentage'] ?? null,
             'exemption_observations' => $data['exemption_observations'] ?? null,
             'document_type' => $data['student_document_type'] ?? null,
+            'status' => 1,
         ]);
 
         $newStudent->load('representative.user', 'course', 'section');
@@ -297,6 +409,7 @@ class StudentService
     {
         if (isset($id)) {
             $students = Student::where('id', $id)
+                ->where('status', '!=', 0)
                 ->with([
                     'representative.user',
                     'course',
@@ -319,30 +432,21 @@ class StudentService
             return $students;
         }
 
-        $students = Student::where(function ($query) use ($search) {
-            $query->where('ci', 'LIKE', '%' . $search . '%')
-                ->orWhere('name', 'LIKE', '%' . $search . '%')
-                ->orWhere('last_name', 'LIKE', '%' . $search . '%')
-                ->orWhereRaw("CONCAT(name, ' ', last_name) LIKE ?", ['%' . $search . '%']);
-        })
-            ->orWhereHas('representative.user', function ($query) use ($search) {
+        $students = Student::where('status', '!=', 0)
+            ->where(function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
-                    $q->where('name', 'LIKE', '%' . $search . '%')
-                        ->orWhere('last_name', 'LIKE', '%' . $search . '%')
-                        ->orWhere('ci', 'LIKE', '%' . $search . '%')
-                        ->orWhereRaw("CONCAT(name, ' ', last_name) LIKE ?", ['%' . $search . '%']);
-                });
+                    $q->where('ci', 'LIKE', '%'.$search.'%')
+                        ->orWhere('name', 'LIKE', '%'.$search.'%')
+                        ->orWhere('last_name', 'LIKE', '%'.$search.'%')
+                        ->orWhereRaw("CONCAT(name, ' ', last_name) LIKE ?", ['%'.$search.'%']);
+                })
+                    ->orWhereHas('representative.user', function ($q) use ($search) {
+                        $q->where('name', 'LIKE', '%'.$search.'%')
+                            ->orWhere('last_name', 'LIKE', '%'.$search.'%')
+                            ->orWhere('ci', 'LIKE', '%'.$search.'%')
+                            ->orWhereRaw("CONCAT(name, ' ', last_name) LIKE ?", ['%'.$search.'%']);
+                    });
             })
-            ->with([
-                'representative.user',
-                'course',
-                'section',
-                'balances' => function ($query) {
-                    // Traemos los que tengan status específicos O el más reciente
-                    $query->with('schoolLapse')
-                        ->oldest(); // Ordenar por fecha de creación (el más antiguo primero)
-                },
-            ])
             ->get()
             ->map(function ($student) {
                 if ($student->balances->isEmpty()) {
@@ -426,9 +530,9 @@ class StudentService
     public function searchRepresentative($search)
     {
         $user = User::where('type_user_id', 2)
-            ->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%'])
-            ->orWhereRaw('LOWER(last_name) LIKE ?', ['%' . strtolower($search) . '%'])
-            ->orWhereRaw('LOWER(ci) LIKE ?', ['%' . strtolower($search) . '%'])
+            ->whereRaw('LOWER(name) LIKE ?', ['%'.strtolower($search).'%'])
+            ->orWhereRaw('LOWER(last_name) LIKE ?', ['%'.strtolower($search).'%'])
+            ->orWhereRaw('LOWER(ci) LIKE ?', ['%'.strtolower($search).'%'])
             ->with('representative')
             ->get();
 
@@ -455,9 +559,9 @@ class StudentService
         $courseName = $student->course?->name ?? '';
         $sectionName = $student->section?->name ?? '';
 
-        return trim($repName . ' ' . $repLastName . ' ' . $courseName . ' ' . $sectionName . ' '
-            . $student->name . ' ' . $student->last_name . ' ' . $student->date_birth . ' '
-            . $student->email . ' ' . $student->ci . ' ' . $student->phone_number . ' '
-            . $student->sex . ' ' . $student->previous_school);
+        return trim($repName.' '.$repLastName.' '.$courseName.' '.$sectionName.' '
+            .$student->name.' '.$student->last_name.' '.$student->date_birth.' '
+            .$student->email.' '.$student->ci.' '.$student->phone_number.' '
+            .$student->sex.' '.$student->previous_school);
     }
 }

@@ -11,6 +11,8 @@ class Payment extends Model
 {
     use HasFactory;
 
+    protected $appends = ['raw_date'];
+
     protected $fillable = [
         'user_id',
         'account_payment_id',
@@ -65,4 +67,13 @@ class Payment extends Model
             get: fn($value) => ucfirst(Carbon::parse($value)->translatedFormat('D j F, Y')),
         );
     }
+
+    protected function rawDate(): Attribute
+    {
+        return Attribute::make(
+            get: fn($value, $attributes) => $attributes['date'] ?? null,
+        );
+    }
+
+    //E
 }

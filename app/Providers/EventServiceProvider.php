@@ -9,6 +9,7 @@ use App\Events\UpdateMonthlyPaymentEvent;
 use App\Listeners\ChangeDebtsForStudents;
 use App\Listeners\GenerateBalance;
 use App\Listeners\GenerateInscription;
+use App\Listeners\GenerateSchoolCharge;
 use App\Listeners\TakeQuota;
 use App\Listeners\UpdateStudentExemptionBalance;
 use App\Listeners\UpdateTakeQuota;
@@ -32,6 +33,7 @@ class EventServiceProvider extends ServiceProvider
             TakeQuota::class,
             GenerateInscription::class,
             GenerateBalance::class,
+            GenerateSchoolCharge::class,
         ],
         StudentUpdated::class => [
             UpdateTakeQuota::class,
@@ -41,11 +43,11 @@ class EventServiceProvider extends ServiceProvider
             TakeQuota::class,
             GenerateInscription::class,
             GenerateBalance::class,
+            GenerateSchoolCharge::class,
         ],
         UpdateMonthlyPaymentEvent::class => [
-            ChangeDebtsForStudents::class
+            ChangeDebtsForStudents::class,
         ],
-
 
     ];
 

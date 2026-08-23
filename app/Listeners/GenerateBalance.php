@@ -42,6 +42,19 @@ class GenerateBalance
         $configData = MainConfig::select('new_inscription_price', 'monthly_payment')->first();
         $schoolLapseActive = SchoolLapse::where('status', 1)->first();
 
+        if (! $schoolLapseActive) {
+            return;
+        }
+
+        $balanceExists = DB::table('balance_students')
+            ->where('student_id', $student->id)
+            ->where('school_lapse_id', $schoolLapseActive->id)
+            ->exists();
+
+        if ($balanceExists) {
+            return;
+        }
+
         $effectiveMonthlyPayment = (float) $configData->monthly_payment;
         $effectiveInscriptionPrice = (float) $configData->new_inscription_price;
 
