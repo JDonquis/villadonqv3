@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Representative;
+use App\Models\Student;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -33,14 +35,26 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = auth()->user();
+
+        $hasRepStudents = false;
+        if ($user) {
+            $representative = Representative::where('user_id', $user->id)->first();
+
+            $hasRepStudents = $representative && Student::where('representative_id', $representative->id)
+                ->where('status', '!=', 0)
+                ->exists();
+        }
+
         return array_merge(parent::share($request), [
 
             'auth' => [
-                'name' => auth()->user()->name ?? null,
-                'last_name' => auth()->user()->last_name ?? null,
-                'is_admin' => auth()->user()->is_admin ?? null,
-                'type_user_id' => auth()->user()->type_user_id ?? null,
-                'photo' => auth()->user()->photo ?? null,
+                'name' => $user->name ?? null,
+                'last_name' => $user->last_name ?? null,
+                'is_admin' => $user->is_admin ?? null,
+                'type_user_id' => $user->type_user_id ?? null,
+                'photo' => $user->photo ?? null,
+                'has_rep_students' => $hasRepStudents,
             ],
         ]);
     }
