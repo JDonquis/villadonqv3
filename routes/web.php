@@ -48,6 +48,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/dashboard/matricula/{studentId}', [StudentController::class, 'destroy']);
     Route::post('/dashboard/matricula/reinscribir', [StudentController::class, 'reEnrollment']);
 
+    Route::get('/dashboard/matricula/search-student-deleted/{ci}', [StudentController::class, 'searchDeletedStudent']);
     Route::get('/dashboard/matricula/search-representative/{ci}', [StudentController::class, 'searchRepresentativeByCI']);
     Route::get('/dashboard/matricula/search-second_representative/{ci}', [StudentController::class, 'searchSecondRepresentativeByCI']);
 

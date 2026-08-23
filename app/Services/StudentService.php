@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\BalanceStudentStatusEnum;
 use App\Enums\UserTypeEnum;
 use App\Events\ReEnrollEvent;
 use App\Events\StudentCreated;
@@ -36,15 +35,15 @@ class StudentService
             ->where('course_id', $courseId)
             ->where('section_id', $sectionId)
             ->when($request->input('search'), function ($query, $search) {
-                $query->where('search', 'like', '%' . $search . '%');
-                $query->orWhere('ci', 'like', '%' . $search . '%')
-                    ->orWhere('name', 'like', '%' . $search . '%')
-                    ->orWhere('last_name', 'like', '%' . $search . '%')
-                    ->orWhereRaw("CONCAT(name, ' ', last_name) LIKE ?", ['%' . $search . '%']);
+                $query->where('search', 'like', '%'.$search.'%');
+                $query->orWhere('ci', 'like', '%'.$search.'%')
+                    ->orWhere('name', 'like', '%'.$search.'%')
+                    ->orWhere('last_name', 'like', '%'.$search.'%')
+                    ->orWhereRaw("CONCAT(name, ' ', last_name) LIKE ?", ['%'.$search.'%']);
                 $query->orWhereHas('representative.user', function ($q) use ($search) {
-                    $q->where('name', 'like', '%' . $search . '%')
-                        ->orWhere('last_name', 'like', '%' . $search . '%')
-                        ->orWhere('ci', 'like', '%' . $search . '%');
+                    $q->where('name', 'like', '%'.$search.'%')
+                        ->orWhere('last_name', 'like', '%'.$search.'%')
+                        ->orWhere('ci', 'like', '%'.$search.'%');
                 });
             })
 
@@ -59,6 +58,14 @@ class StudentService
     public function create($request)
     {
         $data = $request->all();
+
+        $existingDeleted = $this->searchDeletedStudentByCI($data['student_ci'] ?? null, $data['student_document_type'] ?? null);
+
+        if ($existingDeleted) {
+            $this->reactivateAndUpdate($data, $existingDeleted);
+
+            return 0;
+        }
 
         $user = User::where('ci', $data['rep_ci'])->first();
 
@@ -80,6 +87,70 @@ class StudentService
         $student->load('representative.user', 'course', 'section');
 
         // $this->createDocuments($request,$student->id);
+
+        event(new StudentCreated($student));
+
+        return 0;
+    }
+
+    public function searchDeletedStudentByCI($ci, $documentType = null)
+    {
+        if (! $ci) {
+            return null;
+        }
+
+        return Student::where('status', 0)
+            ->where('ci', $ci)
+            ->when($documentType, function ($query) use ($documentType) {
+                $query->where('document_type', $documentType);
+            })
+            ->with('representative.user', 'course', 'section')
+            ->first();
+    }
+
+    private function reactivateAndUpdate($data, $student)
+    {
+        if ($student->graduate) {
+            throw new \Exception('El estudiante está marcado como graduado y no puede reinscribirse.');
+        }
+
+        $user = User::where('ci', $data['rep_ci'])->first();
+
+        if (! isset($user->id)) {
+            $user = $this->createUser($data);
+        }
+
+        $representative = Representative::where('user_id', $user->id)->first();
+
+        if (! isset($representative->id)) {
+            $representative = $this->createRepresentative($data, $user->id);
+        }
+
+        $student->update([
+            'representative_id' => $representative->id,
+            'course_id' => $data['course_id'],
+            'section_id' => $data['section_id'],
+            'name' => $data['student_name'],
+            'last_name' => $data['student_last_name'],
+            'date_birth' => $data['student_date_birth'],
+            'email' => $data['student_email'] ?? null,
+            'ci' => $data['student_ci'] ?? null,
+            'phone_number' => $data['student_phone_number'] ?? null,
+            'sex' => $data['student_sex'] ?? null,
+            'previous_school' => $data['student_previous_school'] ?? null,
+            'is_exempt' => $data['is_exempt'] ?? false,
+            'exemption_percentage' => $data['exemption_percentage'] ?? null,
+            'exemption_observations' => $data['exemption_observations'] ?? null,
+            'document_type' => $data['student_document_type'] ?? null,
+            'apply_to_past_debts' => $data['apply_to_past_debts'] ?? false,
+            'status' => 1,
+            'graduate' => false,
+        ]);
+
+        $student->load('representative.user', 'course', 'section');
+
+        $search = $this->generateSearch($student);
+        $student->update(['search' => $search]);
 
         event(new StudentCreated($student));
 
@@ -300,7 +371,7 @@ class StudentService
     {
         if (isset($id)) {
             $students = Student::where('id', $id)
-            ->where('status', '!=', 0)
+                ->where('status', '!=', 0)
                 ->with([
                     'representative.user',
                     'course',
@@ -326,16 +397,16 @@ class StudentService
         $students = Student::where('status', '!=', 0)
             ->where(function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
-                    $q->where('ci', 'LIKE', '%' . $search . '%')
-                        ->orWhere('name', 'LIKE', '%' . $search . '%')
-                        ->orWhere('last_name', 'LIKE', '%' . $search . '%')
-                        ->orWhereRaw("CONCAT(name, ' ', last_name) LIKE ?", ['%' . $search . '%']);
+                    $q->where('ci', 'LIKE', '%'.$search.'%')
+                        ->orWhere('name', 'LIKE', '%'.$search.'%')
+                        ->orWhere('last_name', 'LIKE', '%'.$search.'%')
+                        ->orWhereRaw("CONCAT(name, ' ', last_name) LIKE ?", ['%'.$search.'%']);
                 })
                     ->orWhereHas('representative.user', function ($q) use ($search) {
-                        $q->where('name', 'LIKE', '%' . $search . '%')
-                            ->orWhere('last_name', 'LIKE', '%' . $search . '%')
-                            ->orWhere('ci', 'LIKE', '%' . $search . '%')
-                            ->orWhereRaw("CONCAT(name, ' ', last_name) LIKE ?", ['%' . $search . '%']);
+                        $q->where('name', 'LIKE', '%'.$search.'%')
+                            ->orWhere('last_name', 'LIKE', '%'.$search.'%')
+                            ->orWhere('ci', 'LIKE', '%'.$search.'%')
+                            ->orWhereRaw("CONCAT(name, ' ', last_name) LIKE ?", ['%'.$search.'%']);
                     });
             })
             ->get()
@@ -421,9 +492,9 @@ class StudentService
     public function searchRepresentative($search)
     {
         $user = User::where('type_user_id', 2)
-            ->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%'])
-            ->orWhereRaw('LOWER(last_name) LIKE ?', ['%' . strtolower($search) . '%'])
-            ->orWhereRaw('LOWER(ci) LIKE ?', ['%' . strtolower($search) . '%'])
+            ->whereRaw('LOWER(name) LIKE ?', ['%'.strtolower($search).'%'])
+            ->orWhereRaw('LOWER(last_name) LIKE ?', ['%'.strtolower($search).'%'])
+            ->orWhereRaw('LOWER(ci) LIKE ?', ['%'.strtolower($search).'%'])
             ->with('representative')
             ->get();
 
@@ -450,9 +521,9 @@ class StudentService
         $courseName = $student->course?->name ?? '';
         $sectionName = $student->section?->name ?? '';
 
-        return trim($repName . ' ' . $repLastName . ' ' . $courseName . ' ' . $sectionName . ' '
-            . $student->name . ' ' . $student->last_name . ' ' . $student->date_birth . ' '
-            . $student->email . ' ' . $student->ci . ' ' . $student->phone_number . ' '
-            . $student->sex . ' ' . $student->previous_school);
+        return trim($repName.' '.$repLastName.' '.$courseName.' '.$sectionName.' '
+            .$student->name.' '.$student->last_name.' '.$student->date_birth.' '
+            .$student->email.' '.$student->ci.' '.$student->phone_number.' '
+            .$student->sex.' '.$student->previous_school);
     }
 }

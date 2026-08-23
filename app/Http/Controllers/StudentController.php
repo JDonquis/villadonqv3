@@ -6,6 +6,7 @@ use App\Http\Requests\CreateStudentRequest;
 use App\Http\Requests\ReEnrollStudentRequest;
 use App\Http\Requests\UpdateStudentRequest;
 use App\Http\Resources\CourseSectionCollection;
+use App\Http\Resources\StudentResource;
 use App\Models\Course;
 use App\Models\CourseSection;
 use App\Models\Section;
@@ -62,15 +63,14 @@ class StudentController extends Controller
 
             DB::commit();
 
-
-            return redirect('/dashboard/matricula?course_id=' . $request->course_id . '&section_id=' . $request->section_id);
+            return redirect('/dashboard/matricula?course_id='.$request->course_id.'&section_id='.$request->section_id);
         } catch (Exception $e) {
 
             DB::rollback();
 
-            Log::error('Error al crear estudiante: ' . $e->getMessage());
+            Log::error('Error al crear estudiante: '.$e->getMessage());
 
-            return redirect('/dashboard/matricula?course_id=' . $request->course_id . '&section_id=' . $request->section_id)->withErrors(['message' => $e->getMessage()]);
+            return redirect('/dashboard/matricula?course_id='.$request->course_id.'&section_id='.$request->section_id)->withErrors(['message' => $e->getMessage()]);
         }
     }
 
@@ -81,35 +81,35 @@ class StudentController extends Controller
 
         try {
 
-            Log::info('Iniciando actualización de estudiante ID: ' . $id);
+            Log::info('Iniciando actualización de estudiante ID: '.$id);
 
             $this->studentService->update($request, $id);
 
             DB::commit();
 
-            return redirect('/dashboard/matricula?course_id=' . $request->course_id . '&section_id=' . $request->section_id);
+            return redirect('/dashboard/matricula?course_id='.$request->course_id.'&section_id='.$request->section_id);
         } catch (Exception $e) {
 
             DB::rollback();
 
-            Log::error('Error al actualizar estudiante ID ' . $id . ': ' . $e->getMessage());
+            Log::error('Error al actualizar estudiante ID '.$id.': '.$e->getMessage());
 
-            return redirect('/dashboard/matricula?course_id=' . $request->course_id . '&section_id=' . $request->section_id)->withErrors(['message' => $e->getMessage()]);
+            return redirect('/dashboard/matricula?course_id='.$request->course_id.'&section_id='.$request->section_id)->withErrors(['message' => $e->getMessage()]);
         }
     }
 
     public function destroy(Request $request, $studentId)
     {
         try {
-            Log::info('Iniciando eliminación de estudiante ID: ' . $studentId);
+            Log::info('Iniciando eliminación de estudiante ID: '.$studentId);
 
             $this->studentService->delete($studentId);
 
-            Log::info('Estudiante ID ' . $studentId . ' eliminado correctamente');
+            Log::info('Estudiante ID '.$studentId.' eliminado correctamente');
 
             return redirect('/dashboard/matricula');
         } catch (Exception $e) {
-            Log::error('Error al eliminar estudiante ID ' . $studentId . ': ' . $e->getMessage());
+            Log::error('Error al eliminar estudiante ID '.$studentId.': '.$e->getMessage());
 
             return redirect('/dashboard/matricula')->withErrors(['message' => 'Ha ocurrido un error al eliminar el estudiante. Por favor, intente más tarde.']);
         }
@@ -128,7 +128,7 @@ class StudentController extends Controller
         } catch (Exception $e) {
             DB::rollback();
 
-            Log::error('Error al reinscribir estudiante ID ' . $request->student_id . ': ' . $e->getMessage());
+            Log::error('Error al reinscribir estudiante ID '.$request->student_id.': '.$e->getMessage());
 
             return redirect()->back()->withErrors(['status' => false,  'message' => $e->getMessage()]);
         }
@@ -141,6 +141,21 @@ class StudentController extends Controller
         $info = $this->studentService->searchStudent($search, $id);
 
         return response()->json($info);
+    }
+
+    public function searchDeletedStudent($ci)
+    {
+        $student = $this->studentService->searchDeletedStudentByCI($ci);
+
+        if (! $student) {
+            return response()->json(['found' => false, 'student' => null]);
+        }
+
+        return response()->json([
+            'found' => true,
+            'student' => new StudentResource($student),
+            'graduate' => (bool) $student->graduate,
+        ]);
     }
 
     public function searchRepresentativeByCI($ci)

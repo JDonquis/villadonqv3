@@ -89,6 +89,8 @@
     let showModal = false;
     let showModalReinscribe = false;
     let selectedRow = { status: false, data: null };
+    let deletedStudentDetected = null;
+    let deletedStudentGraduate = false;
 
     document.addEventListener("keydown", ({ key }) => {
         if (key === "Escape") {
@@ -116,6 +118,8 @@
                         message: "Estudiante creado correctamente",
                     });
                     showModal = false;
+                    deletedStudentDetected = null;
+                    deletedStudentGraduate = false;
                 },
             });
         } else if (submitStatus === "Editar") {
@@ -139,6 +143,8 @@
                     submitStatus = "Crear";
                     editingStudentId = null;
                     selectedRow = { status: false, data: null };
+                    deletedStudentDetected = null;
+                    deletedStudentGraduate = false;
                 },
             });
         }
@@ -304,6 +310,73 @@
         } catch (error) {}
     }, 300);
 
+    const search_deleted_student = debounce(async (ci) => {
+        deletedStudentDetected = null;
+        deletedStudentGraduate = false;
+
+        if (submitStatus !== "Crear" || !ci) {
+            return;
+        }
+
+        try {
+            const response = await axios.get(
+                `/dashboard/matricula/search-student-deleted/${ci}`,
+            );
+            const data = response.data;
+
+            if (data.found && data.student) {
+                if (data.graduate) {
+                    deletedStudentGraduate = true;
+                    return;
+                }
+
+                deletedStudentDetected = data.student;
+                prefillDeletedStudent(data.student);
+            }
+        } catch (error) {}
+    }, 400);
+
+    function prefillDeletedStudent(student) {
+        $form.student_name = student.student_name;
+        $form.student_last_name = student.student_last_name;
+        $form.student_date_birth = student.student_date_birth;
+        $form.student_email = student.student_email || "";
+        $form.student_ci = student.student_ci;
+        $form.student_document_type = student.student_document_type || "V";
+        $form.student_phone_number = student.student_phone_number || "";
+        $form.student_sex = student.student_sex || "";
+        $form.course_id = student.course_id;
+        $form.section_id = student.section_id;
+        $form.is_exempt = student.is_exempt ?? false;
+        $form.exemption_percentage = student.exemption_percentage ?? "";
+        $form.exemption_observations = student.exemption_observations ?? "";
+        $form.apply_to_past_debts = student.apply_to_past_debts ?? false;
+        $form.address = student.address || "";
+        $form.state = student.state || "";
+        $form.city = student.city || "";
+        $form.rep_id = student.rep_id;
+        $form.rep_name = student.rep_name || "";
+        $form.rep_last_name = student.rep_last_name || "";
+        $form.rep_ci = student.rep_ci || "";
+        $form.rep_document_type = student.rep_document_type || "V";
+        $form.rep_phone_number = student.rep_phone_number || "";
+        $form.rep_phone_number2 = student.rep_phone_number2 || "";
+        $form.rep_email = student.rep_email || generarCorreoAleatorio();
+        $form.rep_profession = student.rep_profession || "";
+        $form.rep_workplace = student.rep_workplace || "";
+        $form.rep_relationship = student.rep_relationship || "";
+        $form.second_rep_name = student.second_rep_name || "";
+        $form.second_rep_last_name = student.second_rep_last_name || "";
+        $form.second_rep_ci = student.second_rep_ci || "";
+        $form.second_rep_document_type = student.second_rep_document_type || "V";
+        $form.second_rep_phone_number = student.second_rep_phone_number || "";
+        $form.second_rep_phone_number2 = student.second_rep_phone_number2 || "";
+        $form.second_rep_email = student.second_rep_email || "";
+        $form.second_rep_profession = student.second_rep_profession || "";
+        $form.second_rep_workplace = student.second_rep_workplace || "";
+        $form.second_rep_relationship = student.second_rep_relationship || "";
+    }
+
     function search_second(ci) {
         router.get(`/dashboard/matricula/search-second_representative/`, {
             ci,
@@ -371,6 +444,21 @@
 </Modal>
 
 <Modal bind:showModal classes={"w-fit"}>
+    {#if deletedStudentGraduate}
+        <div
+            class="mx-7 mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm font-medium"
+        >
+            Este estudiante está marcado como graduado y no puede reinscribirse.
+        </div>
+    {:else if deletedStudentDetected}
+        <div
+            class="mx-7 mt-4 bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-md text-sm font-medium"
+        >
+            Se detectó un estudiante previamente eliminado con esta cédula. Sus
+            datos fueron precargados; al guardar se reactivará su inscripción en
+            el periodo escolar actual.
+        </div>
+    {/if}
     <form
         id="a-form"
         on:submit={handleSubmit}
@@ -430,6 +518,7 @@
                         bind:value={$form.student_ci}
                         error={$form.errors?.student_ci}
                         classes="w-[78%]  "
+                        on:input={(e) => search_deleted_student(e.target.value)}
                     />
                 </div>
                 <Input
@@ -736,7 +825,7 @@
         slot="btn_footer"
         type="submit"
         class="animated-button min-w-[300px] max-w-fit flex gap-2"
-        disabled={$form.processing}
+        disabled={$form.processing || deletedStudentGraduate}
     >
         {#if $form.processing}
             Cargando...
@@ -751,7 +840,7 @@
                 {submitStatus === "Crear" ? "Crear" : "Editar"}
             </span>
             <span class="circle"></span>
-           
+
         {/if}
     </button>
 </Modal>
@@ -778,6 +867,8 @@
         class="animated-button w-fitcontent"
         on:click={(e) => {
             e.preventDefault();
+            deletedStudentDetected = null;
+            deletedStudentGraduate = false;
             if (submitStatus === "Editar") {
                 $form.reset();
                 submitStatus = "Crear";

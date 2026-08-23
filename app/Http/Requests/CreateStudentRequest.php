@@ -52,7 +52,7 @@ class CreateStudentRequest extends FormRequest
             'exemption_observations',
             'document_type',
             'second_document_type',
-            'student_document_type'
+            'student_document_type',
         ];
 
         $data = $this->all();
@@ -72,7 +72,12 @@ class CreateStudentRequest extends FormRequest
             'student_last_name' => ['required'],
             'student_date_birth' => ['required'],
             'student_email' => ['nullable'],
-            'student_ci' => ['required', 'unique:students,ci'],
+            'student_ci' => [
+                'required',
+                \Illuminate\Validation\Rule::unique('students', 'ci')->where(function ($query) {
+                    $query->where('status', '!=', 0);
+                }),
+            ],
             'student_phone_number' => ['nullable'],
             'student_sex' => ['nullable'],
             'student_previous_school' => ['nullable'],
@@ -108,7 +113,7 @@ class CreateStudentRequest extends FormRequest
                 'integer',
                 'min:1',
                 'max:100',
-                \Illuminate\Validation\Rule::requiredIf(fn() => (bool) $this->input('is_exempt')),
+                \Illuminate\Validation\Rule::requiredIf(fn () => (bool) $this->input('is_exempt')),
             ],
             'exemption_observations' => ['nullable', 'string'],
             'document_type' => ['nullable', 'string'],
