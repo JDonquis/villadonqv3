@@ -7,6 +7,7 @@ use App\Http\Controllers\MainConfigController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RepresentativeController;
+use App\Http\Controllers\RepresentativePaymentController;
 use App\Http\Controllers\SchoolLapseController;
 use App\Http\Controllers\SectionController;
 use App\Http\Controllers\StudentController;
@@ -81,7 +82,8 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
 Route::middleware(['auth', 'role:administrator,representative'])->group(function () {
     Route::get('/dashboard/representante', [RepresentativeController::class, 'home']);
     Route::get('/dashboard/mis-hijos', [RepresentativeController::class, 'misHijos']);
-    Route::get('/dashboard/mis-pagos', [RepresentativeController::class, 'misPagos']);
+    Route::get('/dashboard/mis-pagos', [RepresentativePaymentController::class, 'index']);
+    Route::post('/dashboard/mis-pagos', [RepresentativePaymentController::class, 'store']);
 
     Route::get('/dashboard/perfil', [ProfileController::class, 'index']);
     Route::post('/dashboard/perfil', [ProfileController::class, 'update']);
