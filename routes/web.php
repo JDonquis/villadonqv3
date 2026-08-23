@@ -5,6 +5,7 @@ use App\Http\Controllers\AppController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MainConfigController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\RepresentativeController;
 use App\Http\Controllers\SchoolLapseController;
 use App\Http\Controllers\SectionController;
 use App\Http\Controllers\StudentController;
@@ -32,7 +33,7 @@ Route::post('/olvidar-contrasena', [AuthController::class, 'requestResetPassword
 Route::get('/establecer-contrasena', [AuthController::class, 'showSetupPassword']);
 Route::post('/establecer-contrasena', [AuthController::class, 'setupPassword']);
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::get('/dashboard', [AppController::class, 'dashboard'])->name('dashboard');
     Route::get('/dashboard/graficos/annual-vs-monthly-flow/{schoolLapse?}', [AppController::class, 'annualVsMonthlyFlow']);
 
@@ -74,4 +75,10 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/dashboard/configuracion/eliminar-cuenta/{id}', [MainConfigController::class, 'deleteAccount']);
 
     Route::put('/dashboard/configuracion/pagos', [MainConfigController::class, 'updatePaymentConfig']);
+});
+
+Route::middleware(['auth', 'role:administrator,representative'])->group(function () {
+    Route::get('/dashboard/representante', [RepresentativeController::class, 'home']);
+    Route::get('/dashboard/mis-hijos', [RepresentativeController::class, 'misHijos']);
+    Route::get('/dashboard/mis-pagos', [RepresentativeController::class, 'misPagos']);
 });

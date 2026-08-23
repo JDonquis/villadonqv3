@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Models\SchoolCharge;
 use App\Models\SchoolLapse;
+use Illuminate\Support\Facades\Log;
 
 class GenerateSchoolCharge
 {
@@ -18,6 +19,14 @@ class GenerateSchoolCharge
         if (! $schoolLapseActive) {
             return;
         }
+
+        Log::info('Status',[
+            'student_id' => $student->id,
+            'school_lapse_id' => $schoolLapseActive->id,
+            'amount' => SchoolCharge::AMOUNT,
+            'status' => 'pending',
+            'student_status' => $student->status,
+        ]);
 
         SchoolCharge::updateOrCreate(
             [

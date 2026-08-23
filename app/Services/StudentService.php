@@ -7,6 +7,7 @@ use App\Events\ReEnrollEvent;
 use App\Events\StudentCreated;
 use App\Events\StudentUpdated;
 use App\Http\Resources\StudentCollection;
+use App\Mail\RepresentativeWelcomeMail;
 use App\Models\Inscription;
 use App\Models\Representative;
 use App\Models\SchoolLapse;
@@ -14,6 +15,8 @@ use App\Models\Student;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class StudentService
@@ -293,6 +296,13 @@ class StudentService
 
     private function createUser($data)
     {
+        $email = $data['rep_email'] ?? null;
+        $hasValidEmail = $this->hasValidEmail($email);
+
+        $plainPassword = null;
+        if ($hasValidEmail) {
+            $plainPassword = Str::random(10);
+        }
 
         $newUser = User::create([
             'type_user_id' => UserTypeEnum::Representative->value,
@@ -301,15 +311,42 @@ class StudentService
             'ci' => $data['rep_ci'],
             'phone_number' => $data['rep_phone_number'] ?? null,
             'phone_number2' => $data['rep_phone_number2'] ?? null,
-            'email' => $data['rep_email'] ?? null,
-            'password' => Hash::make($data['rep_ci']),
+            'email' => $email,
+            'password' => Hash::make($plainPassword ?? $data['rep_ci']),
             'address' => $data['address'] ?? null,
             'state' => $data['state'] ?? null,
             'city' => $data['city'] ?? null,
             'document_type' => $data['rep_document_type'] ?? null,
         ]);
 
+        if ($hasValidEmail) {
+            try {
+                Mail::to($newUser->email)->send(new RepresentativeWelcomeMail($newUser, $plainPassword));
+            } catch (\Throwable $e) {
+                Log::warning('No se pudo enviar el correo al representante: '.$e->getMessage(), [
+                    'user_id' => $newUser->id,
+                ]);
+            }
+        } else {
+            Log::warning('Representante creado sin email válido; se usó la cédula como contraseña.', [
+                'user_id' => $newUser->id,
+            ]);
+        }
+
         return $newUser;
+    }
+
+    private function hasValidEmail(?string $email): bool
+    {
+        if (empty($email)) {
+            return false;
+        }
+
+        if (Str::endsWith($email, '@test.test')) {
+            return false;
+        }
+
+        return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
     }
 
     private function createRepresentative($data, $userId)
@@ -356,6 +393,7 @@ class StudentService
             'exemption_percentage' => $data['exemption_percentage'] ?? null,
             'exemption_observations' => $data['exemption_observations'] ?? null,
             'document_type' => $data['student_document_type'] ?? null,
+            'status' => 1,
         ]);
 
         $newStudent->load('representative.user', 'course', 'section');

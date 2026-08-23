@@ -34,7 +34,7 @@ class UserSeeder extends Seeder
             'phone_number' => '',
             'address' => '',
             'photo' => '',
-            'is_admin' => false,
+            'is_admin' => true,
         ]);
     }
 }

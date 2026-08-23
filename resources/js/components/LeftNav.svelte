@@ -6,7 +6,7 @@
     import { toggleMenu } from "../stores/navStatus.js";
     import { inertia, page } from "@inertiajs/svelte";
 
-    const navPages = [
+    const adminNavPages = [
         {
             icon: "uil:setting",
             href: "/dashboard/configuracion",
@@ -34,6 +34,27 @@
             name: "Personal",
         },
     ];
+
+    const repNavPages = [
+        {
+            icon: "mdi:home",
+            href: "/dashboard/representante",
+            name: "Inicio",
+        },
+        {
+            icon: "mdi:school",
+            href: "/dashboard/mis-hijos",
+            name: "Mis Hijos",
+        },
+        {
+            icon: "streamline:payment-10-solid",
+            href: "/dashboard/mis-pagos",
+            name: "Mis Pagos",
+        },
+    ];
+
+    $: navPages =
+        Number($page.props.auth?.type_user_id) === 2 ? repNavPages : adminNavPages;
 </script>
 
 <nav

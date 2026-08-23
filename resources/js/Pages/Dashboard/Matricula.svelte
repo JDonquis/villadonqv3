@@ -21,22 +21,6 @@
 
     $: lastSectionId = sectionsOfThisYear?.[sectionsOfThisYear?.length - 1].id;
 
-    const generarCorreoAleatorio = () => {
-        const caracteres = "abcdefghijklmnopqrstuvwxyz0123456789";
-        let prefijo = "";
-
-        // Generamos 8 caracteres aleatorios
-        for (let i = 0; i < 8; i++) {
-            prefijo += caracteres.charAt(
-                Math.floor(Math.random() * caracteres.length),
-            );
-        }
-
-        // Añadimos el timestamp actual para garantizar unicidad
-        const timestamp = Date.now().toString(36);
-
-        return `${prefijo}-${timestamp}@test.test`;
-    };
     let form = useForm({
         student_name: "",
         student_last_name: "",
@@ -58,7 +42,7 @@
         rep_document_type: "V",
         rep_phone_number: "",
         rep_phone_number2: "",
-        rep_email: generarCorreoAleatorio(),
+        rep_email: "",
         rep_profession: "",
         rep_workplace: "",
         second_rep_name: "",
@@ -361,7 +345,7 @@
         $form.rep_document_type = student.rep_document_type || "V";
         $form.rep_phone_number = student.rep_phone_number || "";
         $form.rep_phone_number2 = student.rep_phone_number2 || "";
-        $form.rep_email = student.rep_email || generarCorreoAleatorio();
+        $form.rep_email = student.rep_email || "";
         $form.rep_profession = student.rep_profession || "";
         $form.rep_workplace = student.rep_workplace || "";
         $form.rep_relationship = student.rep_relationship || "";
