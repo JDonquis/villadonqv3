@@ -33,6 +33,7 @@
             href: "/dashboard/personal",
             name: "Personal",
         },
+
     ];
 
     const repNavPages = [
@@ -51,6 +52,7 @@
             href: "/dashboard/mis-pagos",
             name: "Mis Pagos",
         },
+
     ];
 
     $: navPages =

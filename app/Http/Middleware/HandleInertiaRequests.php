@@ -40,6 +40,7 @@ class HandleInertiaRequests extends Middleware
                 'last_name' => auth()->user()->last_name ?? null,
                 'is_admin' => auth()->user()->is_admin ?? null,
                 'type_user_id' => auth()->user()->type_user_id ?? null,
+                'photo' => auth()->user()->photo ?? null,
             ],
         ]);
     }
