@@ -460,7 +460,7 @@ class StudentService
             ->get()
             ->map(function ($student) {
                 if ($student->balances->isEmpty()) {
-                    $student->setRelation('balances', $student->balances()->latest()->take(1)->get());
+                $student->setRelation('balances', $student->balances()->latest()->take(1)->get());
                 }
 
                 return $student;
