@@ -28,11 +28,4 @@ class RepresentativeController extends Controller
 
         return inertia('Dashboard/MisHijos', $this->representativeService->misHijos($user));
     }
-
-    public function misPagos(): Response
-    {
-        $user = Auth::user();
-
-        return inertia('Dashboard/MisPagos', $this->representativeService->misPagos($user));
-    }
 }

@@ -2,16 +2,17 @@
 
 namespace App\Models;
 
+use App\Enums\UserTypeEnum;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Payment extends Model
 {
     use HasFactory;
 
-    protected $appends = ['raw_date'];
+    protected $appends = ['raw_date', 'created_by_role'];
 
     protected $fillable = [
         'user_id',
@@ -64,16 +65,27 @@ class Payment extends Model
     protected function date(): Attribute
     {
         return Attribute::make(
-            get: fn($value) => ucfirst(Carbon::parse($value)->translatedFormat('D j F, Y')),
+            get: fn ($value) => ucfirst(Carbon::parse($value)->translatedFormat('D j F, Y')),
         );
     }
 
     protected function rawDate(): Attribute
     {
         return Attribute::make(
-            get: fn($value, $attributes) => $attributes['date'] ?? null,
+            get: fn ($value, $attributes) => $attributes['date'] ?? null,
         );
     }
 
-    //E
+    public function getCreatedByRoleAttribute(): string
+    {
+        $user = $this->user;
+
+        if ($user && (int) $user->type_user_id === UserTypeEnum::Representative->value) {
+            return 'representative';
+        }
+
+        return 'administrator';
+    }
+
+    // E
 }

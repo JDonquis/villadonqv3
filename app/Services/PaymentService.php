@@ -8,33 +8,38 @@ use Illuminate\Support\Facades\Auth;
 
 class PaymentService
 {
-    public function getAll($params = [])
+    public function getAll($params = [], ?array $allowedStudentIds = null)
     {
         $query = Payment::query()
             ->with('students', 'accountPayment.method', 'user', 'deletedBy')
+            ->when($allowedStudentIds, function ($q) use ($allowedStudentIds) {
+                $q->whereHas('students', function ($query) use ($allowedStudentIds) {
+                    $query->whereIn('students.id', $allowedStudentIds);
+                });
+            })
             ->when(isset($params['search']), function ($q) use ($params) {
                 $search = $params['search'];
                 $q->where(function ($query) use ($search) {
-                    $query->where('reference', 'like', '%' . $search . '%')
-                        ->orWhere('observations', 'like', '%' . $search . '%')
+                    $query->where('reference', 'like', '%'.$search.'%')
+                        ->orWhere('observations', 'like', '%'.$search.'%')
                         ->orWhereHas('user', function ($q) use ($search) {
-                            $q->whereRaw("CONCAT(name, ' ', last_name) LIKE ?", ['%' . $search . '%'])
-                                ->orWhere('name', 'like', '%' . $search . '%')
-                                ->orWhere('last_name', 'like', '%' . $search . '%');
+                            $q->whereRaw("CONCAT(name, ' ', last_name) LIKE ?", ['%'.$search.'%'])
+                                ->orWhere('name', 'like', '%'.$search.'%')
+                                ->orWhere('last_name', 'like', '%'.$search.'%');
                         })
                         ->orWhereHas('accountPayment.method', function ($q) use ($search) {
-                            $q->where('name', 'like', '%' . $search . '%');
+                            $q->where('name', 'like', '%'.$search.'%');
                         })
                         ->orWhereHas('students', function ($q) use ($search) {
-                            $q->whereRaw("CONCAT(name, ' ', last_name) LIKE ?", ['%' . $search . '%'])
-                                ->orWhere('name', 'like', '%' . $search . '%')
-                                ->orWhere('last_name', 'like', '%' . $search . '%')
-                                ->orWhere('ci', 'like', '%' . $search . '%')
+                            $q->whereRaw("CONCAT(name, ' ', last_name) LIKE ?", ['%'.$search.'%'])
+                                ->orWhere('name', 'like', '%'.$search.'%')
+                                ->orWhere('last_name', 'like', '%'.$search.'%')
+                                ->orWhere('ci', 'like', '%'.$search.'%')
                                 ->orWhereHas('representative.user', function ($q) use ($search) {
-                                    $q->whereRaw("CONCAT(name, ' ', last_name) LIKE ?", ['%' . $search . '%'])
-                                        ->orWhere('name', 'like', '%' . $search . '%')
-                                        ->orWhere('last_name', 'like', '%' . $search . '%')
-                                        ->orWhere('ci', 'like', '%' . $search . '%');
+                                    $q->whereRaw("CONCAT(name, ' ', last_name) LIKE ?", ['%'.$search.'%'])
+                                        ->orWhere('name', 'like', '%'.$search.'%')
+                                        ->orWhere('last_name', 'like', '%'.$search.'%')
+                                        ->orWhere('ci', 'like', '%'.$search.'%');
                                 });
                         });
                 });
@@ -70,7 +75,7 @@ class PaymentService
         ];
     }
 
-    public function create(array $data): Payment
+    public function create(array $data, ?array $allowedStudentIds = null): Payment
     {
         // Obtener usuario
         $userId = Auth::id() ?? 1;
@@ -96,6 +101,9 @@ class PaymentService
 
         foreach ($studentsData as $studentData) {
             $student = Student::where('id', $studentData['id'])
+                ->when($allowedStudentIds, function ($q) use ($allowedStudentIds) {
+                    $q->whereIn('id', $allowedStudentIds);
+                })
                 ->where(function ($q) {
                     $q->where('status', '!=', 0)
                         ->orWhere('graduate', 1);
