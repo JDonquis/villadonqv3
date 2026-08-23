@@ -602,7 +602,10 @@
                             <td colspan="7" class="px-3 pb-10">
                                 {#if submitStatus !== "Solo lectura"}
                                     <BalanceBar
-                                        balances={student.balances}
+                                        balances={student.balances.map((b) => ({
+                                            ...b,
+                                            ...b.months,
+                                        }))}
                                         amountToPay={student.amount_in_dolars}
                                         is_exempt={student.is_exempt
                                             ? student.exemption_percentage

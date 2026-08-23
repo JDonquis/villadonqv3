@@ -1,5 +1,4 @@
 <script>
-    export let students = [];
     import { page } from "@inertiajs/svelte";
     import BalanceBar from "../../components/BalanceBar.svelte";
     import Table from "../../components/Table.svelte";
@@ -59,11 +58,11 @@
 <div
     class="w-full bg-white shadow-lg p-6 rounded-md max-w-[1200px] flex flex-col gap-6"
 >
-    {#if students.length === 0}
+    {#if data.students.length === 0}
         <p class="text-gray-400 text-sm">No tienes hijos inscritos.</p>
     {/if}
 
-    {#each students as student}
+    {#each data.students as student}
         <div class="flex flex-col gap-2">
             <div>
                 <div class="flex items-center mb-1">
@@ -98,7 +97,7 @@
 
             {#each student.balances as balance}
                 <div class="flex flex-col gap-2 mt-2">
-                    <!-- <BalanceBar
+                    <BalanceBar
                                         balances={student.balances}
                                         amountToPay={student?.amount_in_dolars}
                                         is_exempt={student.is_exempt
@@ -106,7 +105,7 @@
                                             : false}
                                         dayOfPayment={config.day_of_monthly_payment}
                                         gracePeriod={config.grace_period}
-                                    /> -->
+                                    />
 
                     {#if balance.balance_payments.length > 0}
                         <div class="text-sm text-gray-600">

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Representative;
+use App\Models\SchoolLapse;
 use App\Models\Student;
 use App\Models\User;
 
@@ -38,7 +39,7 @@ class RepresentativeService
 
         return Student::where('representative_id', $representative->id)
             ->where('status', '!=', 0)
-            ->with('course', 'section')
+            ->with('course', 'section', 'balances.schoolLapse')
             ->get();
     }
 
@@ -63,19 +64,28 @@ class RepresentativeService
 
     public function misPagos(User $user): array
     {
+        $currentLapse = SchoolLapse::where('status', 1)->first();
+
         $students = $this->getStudents($user)
             ->load(['balances.schoolLapse', 'balances.balancePayments.payment.accountPayment.method']);
 
         return [
-            'students' => $students->map(function ($student) {
+            'students' => $students->map(function ($student) use ($currentLapse) {
+                $visibleBalances = $student->balances
+                    ->filter(function ($balance) use ($currentLapse) {
+                        $isCurrent = $currentLapse && (int) $balance->school_lapse_id === (int) $currentLapse->id;
+                        $hasDebt = $this->calculateDebt($balance) > 0;
+
+                        return $isCurrent || $hasDebt;
+                    })
+                    ->values();
+
                 return array_merge($this->formatStudent($student), [
-                    'balances' => $student->balances->map(function ($balance) {
+                    'balances' => $visibleBalances->map(function ($balance) {
                         return [
                             'id' => $balance->id,
                             'status' => $balance->status,
-                            'school_lapse' => $balance->schoolLapse
-                                ? $balance->schoolLapse->start.' - '.$balance->schoolLapse->end
-                                : null,
+                            'school_lapse' => $balance->schoolLapse,
                             'inscription' => $balance->inscription,
                             'inscription_status' => $balance->inscription_status,
                             'months' => collect(self::SCHOOL_MONTHS)->mapWithKeys(fn ($month) => [
