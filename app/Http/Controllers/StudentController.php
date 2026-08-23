@@ -15,6 +15,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class StudentController extends Controller
 {
@@ -56,6 +57,20 @@ class StudentController extends Controller
     public function store(CreateStudentRequest $request)
     {
         DB::beginTransaction();
+
+        try {
+            $transport = Mail::mailer()->getSymfonyTransport();
+            if (method_exists($transport, 'start')) {
+                $transport->start();
+            }
+        } catch (Exception $e) {
+            Log::error('Error de configuración/credenciales de correo: ' . $e->getMessage());
+
+            return back()->withErrors([
+                'message' => 'No se pudo conectar con el servidor de correo. Verifique las credenciales SMTP.',
+            ]);
+        }
+
 
         try {
 

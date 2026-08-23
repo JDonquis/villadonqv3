@@ -35,6 +35,7 @@ class StudentResource extends JsonResource
                 'rep_name' => $this->representative->user->name,
                 'rep_last_name' => $this->representative->user->last_name,
                 'rep_id' => $this->representative->id,
+                'rep_user_id' => $this->representative->user->id ?? null,
                 'rep_ci' => $this->representative->user->ci,
                 'rep_phone_number' => $this->representative->user->phone_number,
                 'rep_phone_number2' => $this->representative->user->phone_number2 ?? null,

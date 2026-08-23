@@ -16,6 +16,7 @@ let pageName = "";
         'Dashboard/Representante': 'Inicio',
         'Dashboard/MisHijos': 'Mis Hijos',
         'Dashboard/MisPagos': 'Mis Pagos',
+        'Dashboard/Perfil': 'Mi Perfil',
         'Dashboard/MetodosDePago/Crear': 'Nuevo Método de Pago',
         'Dashboard/MetodosDePago/Editar': 'Editar Método de Pago',
     };
@@ -107,20 +108,34 @@ let pageName = "";
                 <!-- <p>juanvillans@gmail.com</p> -->
             </div>
             <div
-                class="h-10 aspect-square rounded-full bg-green1 z-20 flex justify-center items-center text-green3"
+                class="h-10 aspect-square rounded-full bg-green1 z-20 flex justify-center items-center text-green3 overflow-hidden"
                 on:click={toggleNavUser}
                 class:blueShadow={userNav}
             >
-                <iconify-icon
-                    icon="solar:user-broken"
-                    class="text-2xl"
+                {#if $page.props.auth.photo && $page.props.auth.photo !== "guest.webp"}
+                    <img
+                        src="/img/photos/{$page.props.auth.photo}"
+                        alt="Foto de perfil"
+                        class="w-full h-full object-cover"
+                    />
+                {:else}
+                    <iconify-icon
+                        icon="solar:user-broken"
+                        class="text-2xl"
                     class:text-green4={userNav}
                 />
+                {/if}
             </div>
             {#if userNav}
                 <div
                     class="absolute rounded-md flex items-center flex-col bg-color1 w-full z-50 px-3 top-10 -left-10 rounded-tr-none text-gray-100"
                 >
+                    <a
+                        href="/dashboard/perfil"
+                        use:inertia
+                        class="p-2 cursor-pointer hover:underline hover:text-gray-50 inline-block"
+                        >Mi Perfil</a
+                    >
                     <a
                         href="/logout"
                         class="p-2 cursor-pointer hover:underline hover:text-gray-50 inline-block"

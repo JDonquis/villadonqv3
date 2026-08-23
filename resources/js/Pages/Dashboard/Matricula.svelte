@@ -153,6 +153,46 @@
         });
     }
 
+    function handleResendEmail() {
+        if (!$page.props.auth.is_admin) {
+            displayAlert({
+                type: "error",
+                message: "No tienes permisos para reenviar el correo",
+            });
+            return;
+        }
+
+        const representativeUserId = selectedRow?.data?.rep_user_id;
+        if (!representativeUserId) {
+            displayAlert({
+                type: "error",
+                message: "Este estudiante no tiene un representante con correo registrado",
+            });
+            return;
+        }
+
+        router.post(
+            `/dashboard/personal/${representativeUserId}/reenviar-correo`,
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    displayAlert({
+                        type: "success",
+                        message: "Correo reenviado correctamente al representante",
+                    });
+                    selectedRow = { status: false, data: null };
+                },
+                onError: (errors) => {
+                    displayAlert({
+                        type: "error",
+                        message: errors.message || "Error al reenviar el correo",
+                    });
+                },
+            },
+        );
+    }
+
     function fillFormToEdit() {
         showModal = true;
 
@@ -903,6 +943,12 @@
             icon: "mdi:school",
             classes: "bg-purple",
             onClick: handleInscribeClick,
+        },
+        {
+            onClick: () => handleResendEmail(),
+            classes: "bg-blue text-white",
+            label: "Reenviar correo",
+            icon: "material-symbols:mail-outline",
         },
     ]}
     serverSideData={{ filters: data.filters }}

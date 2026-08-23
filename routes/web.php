@@ -5,6 +5,7 @@ use App\Http\Controllers\AppController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MainConfigController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RepresentativeController;
 use App\Http\Controllers\SchoolLapseController;
 use App\Http\Controllers\SectionController;
@@ -81,4 +82,8 @@ Route::middleware(['auth', 'role:administrator,representative'])->group(function
     Route::get('/dashboard/representante', [RepresentativeController::class, 'home']);
     Route::get('/dashboard/mis-hijos', [RepresentativeController::class, 'misHijos']);
     Route::get('/dashboard/mis-pagos', [RepresentativeController::class, 'misPagos']);
+
+    Route::get('/dashboard/perfil', [ProfileController::class, 'index']);
+    Route::post('/dashboard/perfil', [ProfileController::class, 'update']);
+    Route::post('/dashboard/perfil/cambiar-contrasena', [ProfileController::class, 'changePassword']);
 });

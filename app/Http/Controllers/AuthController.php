@@ -14,6 +14,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -30,9 +31,13 @@ class AuthController extends Controller
     public function login(LoginRequest $request)
     {
         $dataUser = ['email' => $request->email, 'password' => $request->password];
+        Log::info('Login attempt for user: ' . $request->email);
+        Log::info("password " . $request->password);
         if (! $this->loginService->tryLoginOrFail($dataUser)) {
             return redirect('/')->withErrors(['data' => 'Datos incorrectos, intente nuevamente']);
         }
+
+        
 
         $user = auth()->user();
         $dataUser = $user->toArray();
