@@ -1,11 +1,15 @@
 <script>
     export let students = [];
+    import { page } from "@inertiajs/svelte";
     import BalanceBar from "../../components/BalanceBar.svelte";
+    import Table from "../../components/Table.svelte";
 
     export let config = {
         day_of_monthly_payment: 0,
         grace_period: 0,
     };
+
+    export let data;
 
     function formatCurrency(value) {
         return (
@@ -94,7 +98,7 @@
 
             {#each student.balances as balance}
                 <div class="flex flex-col gap-2 mt-2">
-                    <!-- <BalanceBar
+                    <BalanceBar
                                         balances={student.balances}
                                         amountToPay={student?.amount_in_dolars}
                                         is_exempt={student.is_exempt
@@ -102,80 +106,150 @@
                                             : false}
                                         dayOfPayment={config.day_of_monthly_payment}
                                         gracePeriod={config.grace_period}
-                                    /> -->
-                    <div class="flex flex-wrap items-center gap-3 text-sm">
-                        <span class="font-medium text-gray-700"
-                            >Periodo: {balance.school_lapse}</span
-                        >
-                        <span class="text-gray-600"
-                            >Deuda: <b>{formatCurrency(balance.total_debt)}</b
-                            ></span
-                        >
-                        <span class="text-gray-600"
-                            >Pagado: <b
-                                >{formatCurrency(balance.total_income)}</b
-                            ></span
-                        >
-                    </div>
-
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full text-xs">
-                            <thead>
-                                <tr
-                                    class="border-b border-gray-200 text-left text-gray-500"
-                                >
-                                    {#each Object.entries(monthLabels) as [key, label]}
-                                        <th class="py-1 pr-2 font-medium"
-                                            >{label}</th
-                                        >
-                                    {/each}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="border-b border-gray-100">
-                                    {#each Object.entries(monthLabels) as [key, label]}
-                                        <td class="py-1 pr-2">
-                                            {#if hasMonthValue(balance, key)}
-                                                <span class="text-gray-800"
-                                                    >{formatCurrency(
-                                                        balance.months[key],
-                                                    )}</span
-                                                >
-                                                <span
-                                                    class="text-gray-400 block"
-                                                    >{statusLabel(
-                                                        balance.months[
-                                                            key + "_status"
-                                                        ],
-                                                    )}</span
-                                                >
-                                            {:else}
-                                                <span class="text-gray-300"
-                                                    >-</span
-                                                >
-                                            {/if}
-                                        </td>
-                                    {/each}
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                                    />
 
                     {#if balance.balance_payments.length > 0}
                         <div class="text-sm text-gray-600">
                             <span class="font-medium text-gray-700"
                                 >Pagos realizados:</span
                             >
-                            <ul class="mt-1 list-disc pl-5">
-                                {#each balance.balance_payments as payment}
-                                    <li>
-                                        {payment.date} - {formatCurrency(
-                                            payment.amount,
-                                        )}
-                                        {#if payment.method}({payment.method}){/if}
-                                    </li>
-                                {/each}
-                            </ul>
+                            <Table
+                                allowFilters={false}
+                                serverSideData={data?.payments}
+                                otherSelectOptions={[
+                                    {
+                                        label: "Ver detalles",
+                                        icon: "mdi:eye",
+                                        classes: "bg-blue",
+                                        // onClick: fillFormToEdit,
+                                    },
+                                ]}
+                                edit={false}
+                                pagination={true}
+                            >
+                                <thead slot="thead" class="sticky top-0 z-50">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Fecha de la transacción</th>
+                                        <th>Estudiante/s</th>
+                                        <th>Total USD$</th>
+                                        <th>Total Bs</th>
+                                        <th>Método de pago</th>
+                                        <th>Referencia</th>
+                                        <!-- <th>Representante</th> -->
+                                    </tr>
+                                </thead>
+
+                                <tbody slot="tbody">
+                                    {#each data?.payments?.data as row, i}
+                                        <tr
+                                            rowData={row}
+                                            idKey="id"
+                                            activeClass="bg-color2 bg-opacity-10 brightness-110"
+                                            classes={`${row.status === 0 ? "bg-red text-gray-400 bg-opacity-10 opacity-70" : ""} `}
+                                        >
+                                            <td>
+                                                <span class="text-xs">
+                                                    {row.id}
+                                                </span>
+                                            </td>
+                                            <td>{row.date}</td>
+                                            <td class="px-4 py-3 align-top">
+                                                <div class="space-y-2">
+                                                    {#each row?.students as student, j}
+                                                        <div
+                                                            class="flex flex-col gap-1 text-sm"
+                                                        >
+                                                            <!-- Línea Superior: Nombre completo del estudiante -->
+                                                            <div
+                                                                class="font-semibold text-gray-800 capitalize leading-snug"
+                                                            >
+                                                                {student.name}
+                                                                {student.last_name}
+                                                            </div>
+
+                                                            <!-- Línea Inferior: Metadatos organizados en chips/badges -->
+                                                            <div
+                                                                class="flex items-center gap-1.5 flex-wrap text-xs text-gray-500"
+                                                            >
+                                                                <!-- Monto individual (si aplica) -->
+                                                                {#if student.pivot?.amount_in_dolars}
+                                                                    <span
+                                                                        class="font-medium bg-green/20 px-1.5 py-0.5 rounded border border-emerald-200/60"
+                                                                    >
+                                                                        ${student
+                                                                            .pivot
+                                                                            .amount_in_dolars}
+                                                                    </span>
+                                                                {/if}
+
+                                                                <!-- Cédula -->
+                                                                <span
+                                                                    class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
+                                                                >
+                                                                    {#if student.document_type}
+                                                                        <span
+                                                                            class="uppercase"
+                                                                            >{student.document_type}-</span
+                                                                        >
+                                                                    {/if}
+                                                                    {student.ci}
+                                                                </span>
+
+                                                                <!-- Separador opcional o punto -->
+                                                                <span
+                                                                    class="text-gray-300"
+                                                                    >•</span
+                                                                >
+
+                                                                <!-- Curso y Sección -->
+                                                                <span
+                                                                    class="text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200/40 text-[11px]"
+                                                                >
+                                                                    {student
+                                                                        .course
+                                                                        ?.name} -
+                                                                    {student
+                                                                        .section
+                                                                        ?.name}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    {/each}
+                                                </div>
+                                            </td>
+                                            <!-- <td
+                    >{row.representative.user.name}
+                    {row.representative.user.last_name}</td
+                > -->
+                                            <td>${row.total_in_dolars}</td>
+                                            <td>{row.total_in_bs} Bs</td>
+                                            <td class="">
+                                                <!-- <ColorsPayMethods
+                        payment_method_id={row.account_payment.method.name}
+                        accounts={data.accounts.data}
+                    /> -->
+                                                <span
+                                                    class={`h-5 text-${ColorsPayMethods()[row.account_payment.method.name]}  bg-${ColorsPayMethods()[row.account_payment.method.name]} w-5  left-0 top-0`}
+                                                    >|</span
+                                                >
+                                                {row.account_payment.method
+                                                    .name}
+                                                {#if row.account_payment.bank}- {row
+                                                        .account_payment
+                                                        .bank}{/if}
+                                                {#if row.account_payment.cash_currency}-
+                                                    {row.account_payment
+                                                        .cash_currency}{/if}
+                                                {#if row.account_payment.username}-
+                                                    {row.account_payment
+                                                        .username}{/if}
+                                            </td>
+                                            <td>{row.reference}</td>
+                                        </tr>
+                                    {/each}
+                                </tbody>
+                            </Table>
                         </div>
                     {/if}
                 </div>
