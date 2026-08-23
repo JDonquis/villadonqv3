@@ -433,6 +433,16 @@ class StudentService
         }
 
         $students = Student::where('status', '!=', 0)
+            ->with([
+                'representative.user',
+                'course',
+                'section',
+                'balances' => function ($query) {
+                    // Traemos los que tengan status específicos O el más reciente
+                    $query->with('schoolLapse')
+                        ->oldest(); // Ordenar por fecha de creación (el más antiguo primero)
+                },
+            ])
             ->where(function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('ci', 'LIKE', '%'.$search.'%')

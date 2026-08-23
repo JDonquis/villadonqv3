@@ -55,8 +55,22 @@
 
     ];
 
-    $: navPages =
-        Number($page.props.auth?.type_user_id) === 2 ? repNavPages : adminNavPages;
+    $: isRep = Number($page.props.auth?.type_user_id) === 2;
+    $: hasRepStudents = $page.props.auth?.has_rep_students === true;
+
+    $: navPages = (() => {
+        const base = isRep
+            ? repNavPages
+            : hasRepStudents
+                ? [...adminNavPages, ...repNavPages]
+                : adminNavPages;
+
+        const seen = new Set();
+
+        return base.filter((page) =>
+            seen.has(page.href) ? false : (seen.add(page.href), true),
+        );
+    })();
 </script>
 
 <nav
