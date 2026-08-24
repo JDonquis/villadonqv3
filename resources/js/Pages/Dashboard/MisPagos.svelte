@@ -8,7 +8,10 @@
     import { displayAlert } from "../../stores/alertStore";
     import { useForm } from "@inertiajs/svelte";
     import axios from "axios";
+    import { getDolarRateByDate } from "../../utils/dolarApi";
     import debounce from "lodash/debounce";
+    import { tick, onMount } from "svelte";
+    import { fade } from "svelte/transition";
     import ColorsPayMethods from "../../components/ColorsPayMethods";
     import Search from "../../components/Search.svelte";
 
@@ -19,62 +22,40 @@
 
     let dolarPrice = 0; // Inicializamos en 0
     let dateOfDolarPrice = "";
+    let showFormPay = false;
+    let paymentSelectRef;
+    const LOCAL_STORAGE_KEY = "misPagos:selectedPaymentAccount";
     async function updateDolarPriceByDate(targetDate) {
         if (!targetDate) return;
+        try {
+            const { rate, dateFound } = await getDolarRateByDate(targetDate);
+            dolarPrice = rate;
+            dateOfDolarPrice = dateFound;
 
-        let currentDateStr = targetDate;
-        let success = false;
-        let attempts = 0;
-        const MAX_ATTEMPTS = 15; // Límite de días hacia atrás para buscar
+            // Recalcular montos con la nueva tasa
+            recalculateTotals();
 
-        while (!success && attempts < MAX_ATTEMPTS) {
-            try {
-                const apiDateFormat = currentDateStr.replace(/-/g, "/");
-                const url = `https://ve.dolarapi.com/v1/historicos/dolares/oficial/${apiDateFormat}`;
-
-                const response = await axios.get(url);
-
-                dolarPrice = response.data.promedio;
-                dateOfDolarPrice = currentDateStr;
-                success = true;
-
-                // Recalcular montos con la nueva tasa
-                recalculateTotals();
-
-                // Si la fecha donde se encontró el dólar es distinta a la seleccionada
-                if (dateOfDolarPrice !== $form.date) {
-                    displayAlert({
-                        type: "info",
-                        message: `No se encontró tasa para la fecha seleccionada. Se tomó la tasa del día ${formatFechaCorta(dateOfDolarPrice)}`,
-                    });
-                }
-            } catch (error) {
-                // Si es 404 (día no hábil / sin tasa), resta 1 día a la fecha y reintenta
-                if (error.response && error.response.status === 404) {
-                    attempts++;
-
-                    // Restar un día a la fecha usando Date nativo de JS
-                    const dateObj = new Date(`${currentDateStr}T00:00:00`);
-                    dateObj.setDate(dateObj.getDate() - 1);
-                    currentDateStr = dateObj.toISOString().split("T")[0];
-                } else {
-                    // Si es un error de conexión u otro código HTTP, detiene la búsqueda
-                    console.error("Error buscando tasa histórica:", error);
-                    displayAlert({
-                        type: "error",
-                        message:
-                            "No se pudo obtener la tasa para la fecha seleccionada. Verifica la conexión.",
-                    });
-                    break;
-                }
+            if (dateOfDolarPrice !== $form.date) {
+                displayAlert({
+                    type: "info",
+                    message: `No se encontró tasa para la fecha seleccionada. Se tomó la tasa del día ${formatFechaCorta(dateOfDolarPrice)}`,
+                });
             }
-        }
+        } catch (error) {
+            if (error.name === "NoRate") {
+                displayAlert({
+                    type: "error",
+                    message:
+                        "No se encontró registro de tasa BCV en los días previos a la fecha seleccionada.",
+                });
+                return;
+            }
 
-        if (!success && attempts >= MAX_ATTEMPTS) {
+            console.error("Error buscando tasa histórica:", error);
             displayAlert({
                 type: "error",
                 message:
-                    "No se encontró registro de tasa BCV en los días previos a la fecha seleccionada.",
+                    "No se pudo obtener la tasa para la fecha seleccionada. Verifica la conexión.",
             });
         }
     }
@@ -100,6 +81,35 @@
             .toFixed(2);
 
         $form.total_in_bs = ($form.total_in_dolars * dolarPrice).toFixed(2);
+    }
+
+    onMount(() => {
+        const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (saved) {
+            $form.account_payment_id = +saved;
+        }
+    });
+
+    $: if ($form.account_payment_id) {
+        try {
+            localStorage.setItem(LOCAL_STORAGE_KEY, +$form.account_payment_id);
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    function computeRepresentativeDebt() {
+        if (!data?.students) return 0;
+       
+
+        let total = 0;
+        for (const student of data.students) {
+            for (const balance of student.balances) {
+               
+                total += balance.total_debt || 0;
+            }
+        }
+        return total;
     }
 
     // ⚡ REACTIVIDAD DE SVELTE:
@@ -211,7 +221,11 @@
         observations: "",
     };
 
+
+
     let form = useForm({ ...emptyDataForm });
+
+    $: console.log($form.account_payment_id);
     function formatCurrency(value) {
         return (
             "$" +
@@ -255,7 +269,7 @@
     $: selectedPaymentAccount =
         data?.accounts?.data?.find(
             (account) =>
-                String(account.id) === String($form.account_payment_id),
+                account.id == $form.account_payment_id,
         ) || null;
 
     function getPaymentDetails(account) {
@@ -313,9 +327,11 @@
         <div class="col-span-8">
             {#each data.students as student, i}
                 {#if data.students.length > 1}
-                    <div class="flex gap-4 md:gap-5">
+                    <div class="md:flex gap-4 md:gap-5">
                         <div>
-                            <div class="md:min-w-[200px] flex items-center mb-1">
+                            <div
+                                class="md:min-w-[200px] flex items-center mb-1"
+                            >
                                 <span class="font-semibold text-gray-800">
                                     {student.name}
                                     {student.last_name}
@@ -342,15 +358,17 @@
                                 {student.course}-{student.section}
                             </span>
                         </div>
-                        <div class="flex gap-4">
+                        {#if showFormPay}
+                        <div class="mt-3 md:mt-0 flex gap-4">
                             <div class="flex flex-col items-start">
                                 <b class="pr-1 text-xs">$. USD</b>
                                 <input
+                                    id={`amount_in_dolars_${i}`}
                                     type="number"
                                     min="0"
                                     placeholder="Dólares"
                                     step="0.01"
-                                    class="w-20 py-2 px-2 border-gray-400 rounded-md border focus:outline-0"
+                                    class="w-20 px-1 py-1 md:py-2 md:px-2 border-gray-400 rounded-md border focus:outline-0"
                                     value={$form.students[i]
                                         ?.amount_in_dolars || ""}
                                     on:input={(e) => {
@@ -399,7 +417,7 @@
                                     inputmode="numeric"
                                     min="0"
                                     step="0.01"
-                                    class="w-28 border py-2 px-2 border-gray-400 rounded-md focus:outline-"
+                                    class="w-28 border px-1 py-1 md:py-2 md:px-2 border-gray-400 rounded-md focus:outline-"
                                     value={formatBsInput(
                                         $form.students[i]?.amount_in_bs || "",
                                     )}
@@ -438,6 +456,7 @@
                                 />
                             </div>
                         </div>
+                        {/if}
                     </div>
                 {:else}
                     <div class="flex items-start justify-between gap-4">
@@ -470,7 +489,7 @@
                     </div>
                 {/if}
                 {#each student.balances as balance}
-                    <div class="flex flex-col gap-2 mt-2">
+                    <div class="flex flex-col gap-2 mt-2 mb-2">
                         <BalanceBar
                             balances={student.balances.map((b) => ({
                                 ...b,
@@ -482,47 +501,64 @@
                                 : false}
                             dayOfPayment={config.day_of_monthly_payment}
                             gracePeriod={config.grace_period}
+                            dolarRate={dolarPrice}
                         />
                     </div>
                 {/each}
             {/each}
         </div>
         <div class="col-span-4">
-            <!-- <button
-                            class="animated-button w-fitcontent"
-                            on:click={(e) => {
-                                // e.preventDefault();
-                                // showModal = true;
-                                // searchInputRef.focus();
-                                // if (submitStatus === "Solo lectura") {
-                                //     $form.reset();
-                                //     submitStatus = "Registrar";
-                                // }
-                            }}
-                        >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="arr-2"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                                ></path>
-                            </svg>
-                            <span class="text">Registrar pago</span>
-                            <span class="circle"></span>
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="arr-1"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                                ></path>
-                            </svg>
-                        </button> -->
-            <div class="col-span-4 w grid grid-cols-2  gap-3 md:gap-x-5">
+        {#if !showFormPay}
+            <button
+                class="ml-auto animated-button w-fitcontent"
+                on:click={async (e) => {
+                    // ensure hidden first to replay animation
+                    showFormPay = false;
+                    await tick();
+                    // set amounts
+                    const totalDebt = computeRepresentativeDebt();
+                    syncSingleStudentTotals("usd", totalDebt)
+
+                    // restore saved selection or focus select
+                    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+                    if (saved) {
+                        $form.account_payment_id = +saved;
+                    }
+
+                    showFormPay = true;
+
+                        // small delay to ensure element mounted
+                        await tick();
+                        document.querySelector("#amount_in_dolars_0").focus();
+                    
+                }}
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="arr-2"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                    ></path>
+                </svg>
+                <span class="text">Procesar pago</span>
+                <span class="circle"></span>
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="arr-1"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                    ></path>
+                </svg>
+            </button>
+        {/if}
+            {#if showFormPay}
+            <form class="formPay col-span-4 w grid grid-cols-2 gap-3 md:gap-x-5" in:fade={{duration:180}} out:fade={{duration:120}}>
                 <Input
+                    bind:this={paymentSelectRef}
                     type="select"
                     label={"Método de pago"}
                     bind:value={$form.account_payment_id}
@@ -549,22 +585,23 @@
                     error={$form.errors?.date}
                     max={currentDateString}
                 />
-    
+
                 {#if selectedPaymentAccount}
                     <div
                         class="col-span-2 mt-2 rounded-lg border border-gray-200 bg-gray-50 p-2 md:p-3"
                     >
-                        <div class="mb-2 flex items-center justify-between gap-3">
+                        <div
+                            class="mb-2 flex items-center justify-between gap-3"
+                        >
                             <span class="text-sm font-semibold text-gray-700">
                                 Datos para {selectedPaymentAccount.payment_method_name}
                             </span>
-                           
                         </div>
-    
+
                         <div class="space-y-2">
                             {#each getPaymentDetails(selectedPaymentAccount) as detail}
                                 <div
-                                    class="flex items-center justify-between gap-2 md:gap-3 rounded-md border border-gray-200 bg-white px-2 py-2"
+                                    class="flex items-center justify-between gap-2 md:gap-3 rounded-md  bg-white px-2 py-2"
                                 >
                                     <div class="min-w-0 flex-1">
                                         <div
@@ -594,7 +631,7 @@
                         </div>
                     </div>
                 {/if}
-    
+
                 {#if data.students.length > 1}
                     <Input
                         type="hidden"
@@ -604,7 +641,7 @@
                         bind:value={$form.total_in_dolars}
                         error={$form.errors?.total_in_dolars}
                     />
-    
+
                     <Input
                         type="hidden"
                         label={"Total en Bolívares (Bs)"}
@@ -624,7 +661,7 @@
                             Total en VES:
                         </span>
                         <span class="text-gray-500"> Bs </span>
-                        <b>{$form.total_in_bs}</b>
+                        <b>{formatBsInput($form.total_in_bs)}</b>
                     </p>
                 {:else}
                     <Input
@@ -643,7 +680,7 @@
                         on:input={(e) =>
                             syncSingleStudentTotals("usd", e.target.value)}
                     />
-    
+
                     <Input
                         type="text"
                         label={"Total en Bolívares (Bs)"}
@@ -653,47 +690,51 @@
                         error={$form.errors?.total_in_bs}
                         on:input={(e) =>
                             syncSingleStudentTotals("bs", e.target.value)}
-                             on:focus={(e) => {
+                        on:focus={(e) => {
                             if (e.target.value !== "") {
                                 e.target.select();
                             }
                         }}
                     />
                 {/if}
-            </div>
-            <button
-                class="animated-button col-span-2"
-                on:click={(e) => {
-                    // e.preventDefault();
-                    // showModal = true;
-                    // searchInputRef.focus();
-                    // if (submitStatus === "Solo lectura") {
-                    //     $form.reset();
-                    //     submitStatus = "Registrar";
-                    // }
-                }}
-            >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="arr-2"
-                    viewBox="0 0 24 24"
+                <button
+                    class="animated-button col-span-2"
+                    on:click={(e) => {
+                        // e.preventDefault();
+                        // showModal = true;
+                        // searchInputRef.focus();
+                        // if (submitStatus === "Solo lectura") {
+                        //     $form.reset();
+                        //     submitStatus = "Registrar";
+                        // }
+                    }}
                 >
-                    <path
-                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                    ></path>
-                </svg>
-                <span class="text-sm md:text-base">Confirmar que pagué este monto</span>
-                <span class="circle"></span>
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="arr-1"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                    ></path>
-                </svg>
-            </button>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="arr-2"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                        ></path>
+                    </svg>
+                    <span class="text-sm md:text-base text"
+                        >Confirmar que pagué este monto</span
+                    >
+                    <span class="circle"></span>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="arr-1"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                        ></path>
+                    </svg>
+                </button>
+                <button type="button" class="bg-gray-200 rounded-full text-gray-600 hover:bg-gray-400  mt-2 py-2 px-4" on:click={() => { showFormPay = false; }}>Descartar</button>
+            </form>
+            {/if}
         </div>
     </div>
 

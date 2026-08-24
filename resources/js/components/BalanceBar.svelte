@@ -185,6 +185,9 @@
     let payingBalances = [{}];
 
     let endPointToPay = {};
+    import { convertUsdToBs } from "../utils/dolarApi";
+    import { formatBsInput } from "../utils/formatters";
+    export let dolarRate = 0;
 
     function getLastPaymentMonth(amountToPay) {
         let lastPaymentMonth = null;
@@ -271,19 +274,7 @@
 
 <div {id} class={`bg-white md:p-4 rounded-lg  ${classes}`}>
     {#each balances as balance, indexYear}
-        {@const totalDebt =
-            Math.abs(
-                Object.entries(months).reduce((total, [_, month]) => {
-                    if (
-                        (balance[month] < 0 &&
-                            balance[month + "_status"] == "debt") ||
-                        balance[month + "_status"] == "partially_paid"
-                    ) {
-                        total += balance[month];
-                    }
-                    return total;
-                }, 0),
-            ) + Math.abs(balance.inscription)}
+       
         <div class="flex gap-4 items-center mt-2 mb-2">
             <!-- <button>
                 <iconify-icon
@@ -300,11 +291,18 @@
             </p>
 
             <div class="flex items-center gap-1 text-xs">
-                {#if totalDebt > 0}
+                {#if balance.total_debt > 0}
                     <p class="font-semibold">DEUDA:</p>
                     <p class="font-bold bg-red/20 text-black px-1 rounded-sm">
-                        ${totalDebt}
+                        <span class="font-bold text-black/80">$</span>
+                        {balance.total_debt}
                     </p>
+                    {#if dolarRate > 0}
+                        <p class="font-semibold ml-2">ó </p>
+                                <p class="font-bold bg-red/10 text-black px-1 rounded-sm">
+                                    <span class="font-bold text-gray-600">Bs</span> {formatBsInput(convertUsdToBs(balance.total_debt, dolarRate))}
+                                </p>
+                    {/if}
                 {:else}
                     <p class="">0</p>
                 {/if}

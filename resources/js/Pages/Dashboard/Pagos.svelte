@@ -6,6 +6,7 @@
     import { displayAlert } from "../../stores/alertStore";
     import { useForm } from "@inertiajs/svelte";
     import axios from "axios";
+    import { getDolarRateByDate } from "../../utils/dolarApi";
     import debounce from "lodash/debounce";
     import ColorsPayMethods from "../../components/ColorsPayMethods";
     import BalanceBar from "../../components/BalanceBar.svelte";
@@ -68,60 +69,35 @@
     let dateOfDolarPrice = "";
     async function updateDolarPriceByDate(targetDate) {
         if (!targetDate) return;
+        try {
+            const { rate, dateFound } = await getDolarRateByDate(targetDate);
+            dolarPrice = rate;
+            dateOfDolarPrice = dateFound;
 
-        let currentDateStr = targetDate;
-        let success = false;
-        let attempts = 0;
-        const MAX_ATTEMPTS = 15; // Límite de días hacia atrás para buscar
+            // Recalcular montos con la nueva tasa
+            recalculateTotals();
 
-        while (!success && attempts < MAX_ATTEMPTS) {
-            try {
-                const apiDateFormat = currentDateStr.replace(/-/g, "/");
-                const url = `https://ve.dolarapi.com/v1/historicos/dolares/oficial/${apiDateFormat}`;
-
-                const response = await axios.get(url);
-
-                dolarPrice = response.data.promedio;
-                dateOfDolarPrice = currentDateStr;
-                success = true;
-
-                // Recalcular montos con la nueva tasa
-                recalculateTotals();
-
-                // Si la fecha donde se encontró el dólar es distinta a la seleccionada
-                if (dateOfDolarPrice !== $form.date) {
-                    displayAlert({
-                        type: "info",
-                        message: `No se encontró tasa para la fecha seleccionada. Se tomó la tasa del día ${formatFechaCorta(dateOfDolarPrice)}`,
-                    });
-                }
-            } catch (error) {
-                // Si es 404 (día no hábil / sin tasa), resta 1 día a la fecha y reintenta
-                if (error.response && error.response.status === 404) {
-                    attempts++;
-
-                    // Restar un día a la fecha usando Date nativo de JS
-                    const dateObj = new Date(`${currentDateStr}T00:00:00`);
-                    dateObj.setDate(dateObj.getDate() - 1);
-                    currentDateStr = dateObj.toISOString().split("T")[0];
-                } else {
-                    // Si es un error de conexión u otro código HTTP, detiene la búsqueda
-                    console.error("Error buscando tasa histórica:", error);
-                    displayAlert({
-                        type: "error",
-                        message:
-                            "No se pudo obtener la tasa para la fecha seleccionada. Verifica la conexión.",
-                    });
-                    break;
-                }
+            if (dateOfDolarPrice !== $form.date) {
+                displayAlert({
+                    type: "info",
+                    message: `No se encontró tasa para la fecha seleccionada. Se tomó la tasa del día ${formatFechaCorta(dateOfDolarPrice)}`,
+                });
             }
-        }
+        } catch (error) {
+            if (error.name === "NoRate") {
+                displayAlert({
+                    type: "error",
+                    message:
+                        "No se encontró registro de tasa BCV en los días previos a la fecha seleccionada.",
+                });
+                return;
+            }
 
-        if (!success && attempts >= MAX_ATTEMPTS) {
+            console.error("Error buscando tasa histórica:", error);
             displayAlert({
                 type: "error",
                 message:
-                    "No se encontró registro de tasa BCV en los días previos a la fecha seleccionada.",
+                    "No se pudo obtener la tasa para la fecha seleccionada. Verifica la conexión.",
             });
         }
     }
@@ -651,6 +627,7 @@
                                             : false}
                                         dayOfPayment={config.day_of_monthly_payment}
                                         gracePeriod={config.grace_period}
+                                        dolarRate={dolarPrice}
                                     />
                                 {/if}
                             </td>

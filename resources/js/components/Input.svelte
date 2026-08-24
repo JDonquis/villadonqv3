@@ -16,13 +16,21 @@
     export let style = "";
     export let error = false;
     export let disabled = false;
+
+      let inputEl;
+
+    export function focus() {
+        if (inputEl && typeof inputEl.focus === "function") {
+            inputEl.focus();
+        }
+    }
 </script>
 
 <div class={`text-left w-full mt-3 md:mt-5 ${classes} `} {style}>
 {#if type !=="hidden"}
     <label
         for={"nombre"}
-        class={`form__label w-full  text-xs md:dext-sm font-semibold text-gray-700 ${labelClass}`}
+        class={`form__label w-full  text-xs md:text-sm font-semibold text-gray-700 ${labelClass}`}
         {placeholder}>{label} {required ? "*" : ""}</label
     >
 {/if}
@@ -36,6 +44,7 @@
                 on:change
                 {readonly}
                 on:input
+                bind:this={inputEl}
             ></textarea>
         {:else if type === "select"}
             <select
@@ -46,6 +55,7 @@
                 on:change
                 on:input
                 disabled={readonly || disabled}
+                bind:this={inputEl}
             >
                 <slot></slot>
             </select>
@@ -63,6 +73,7 @@
                 on:change
                 on:input
                 on:focus
+                bind:this={inputEl}
             />
         {/if}
         {#if error}
@@ -158,3 +169,4 @@
         transform: translate(-1px, -1px);
     }
 </style>
+
