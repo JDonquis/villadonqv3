@@ -18,11 +18,11 @@
     export let disabled = false;
 </script>
 
-<div class={`text-left w-full mt-5 ${classes} `} {style}>
+<div class={`text-left w-full mt-3 md:mt-5 ${classes} `} {style}>
 {#if type !=="hidden"}
     <label
         for={"nombre"}
-        class={`form__label w-full text-sm font-semibold text-gray-700 ${labelClass}`}
+        class={`form__label w-full  text-xs md:dext-sm font-semibold text-gray-700 ${labelClass}`}
         {placeholder}>{label} {required ? "*" : ""}</label
     >
 {/if}
@@ -81,13 +81,25 @@
     textarea,
     select {
         width: 100%;
-        padding: 10px 14px;
+        padding: 8px 12px;
         border-radius: 6px;
         font-family: inherit;
         border: 1px solid #ccc;
     }
     select {
-        padding: 11px;
+        padding: 8px 12px;
+    }
+
+    @media (min-width: 768px) {
+        input,
+        textarea,
+        select {
+            padding: 10px 14px;
+        }
+
+        select {
+            padding: 11px;
+        }
     }
 
     input:focus,

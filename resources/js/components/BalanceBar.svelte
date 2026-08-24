@@ -269,7 +269,7 @@
     $: endPointToPay = getLastPaymentMonth(amountToPay);
 </script>
 
-<div {id} class={`bg-white p-4 rounded-lg ${classes}`}>
+<div {id} class={`bg-white md:p-4 rounded-lg  ${classes}`}>
     {#each balances as balance, indexYear}
         {@const totalDebt =
             Math.abs(
@@ -333,7 +333,7 @@
             >
                 <!-- svelte-ignore a11y-no-static-element-interactions -->
                 <div
-                    class={` hover:brightness-125   relative col-span-1 z-10  text-xs text-gray-700  p-1 capitalize  text-center font-bold
+                    class={` hover:brightness-125   relative col-span-1 z-10  text-[9px] md:text-xs text-gray-700  p-1 capitalize  text-center font-bold
                  ${balance.inscription_status === "pending" || balance.inscription_status === "debt" ? "bg-red/70" : ""}
             ${balance.inscription_status === "paid" ? "bg-green/50" : ""}
             ${balance.inscription_status === "partially_paid" ? "bg-yellow/70" : ""}`}
@@ -384,10 +384,10 @@
                                     : null}
                             on:mouseleave={scheduleTooltipHide}
                         >
-                            <div class="z-40">
+                            <div class="z-40 text-[9px] md:text-xs">
                                 {spanishLabel}
                             </div>
-                            <p class="text-black">
+                            <p class="text-black text-[9px] md:text-xs">
                                 {#if balance[month + "_status"] == "debt" || balance[month + "_status"] == "partially_paid"}
                                     ${Math.abs(balance[month])}
                                 {/if}

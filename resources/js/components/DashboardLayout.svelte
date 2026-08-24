@@ -8,7 +8,7 @@
     import { element } from "svelte/internal";
     let screenWidth = window.innerWidth;
     // $: mainWidth = main.offsetWidth;
-    let mainWidth = `width:${screenWidth}%`;
+    let mainWidth = `width:${screenWidth}px`;
     $: if (screenWidth > 768) {
         mainWidth = `width:${screenWidth - $navStatus.navWidth - 20}px`;
     }
@@ -27,7 +27,7 @@
         >
             <main
                 style={mainWidth}
-                class={`mx-auto  main_dashboard   relative px-10 duration-100 pb-10 pt-3`}
+                class={`mx-auto  main_dashboard   relative px-1 md:px-10 duration-100 pb-10 pt-3`}
             >
                 <slot />
             </main>

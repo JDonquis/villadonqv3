@@ -304,12 +304,12 @@
     <title>Mis Pagos</title>
 </svelte:head>
 
-<div class="bg-white p-3 md:px-5 rounded-lg flex flex-col gap-2">
+<div class="bg-white p-2 md:py-3 md:px-5 rounded-lg flex flex-col gap-2">
     {#if data.students.length === 0}
         <p class="text-gray-400 text-sm">No tienes hijos inscritos.</p>
     {/if}
 
-    <div class="grid grid-cols-12 gap-6">
+    <div class="md:grid grid-cols-12 gap-6">
         <div class="col-span-8">
             {#each data.students as student, i}
                 {#if data.students.length > 1}
@@ -521,7 +521,7 @@
                                 ></path>
                             </svg>
                         </button> -->
-            <div class="col-span-4 w grid md:grid-cols-2 md:gap-x-5">
+            <div class="col-span-4 w grid grid-cols-2  gap-3 md:gap-x-5">
                 <Input
                     type="select"
                     label={"Método de pago"}
@@ -544,7 +544,7 @@
                 <Input
                     type="date"
                     required={true}
-                    label={"Fecha de la transacción"}
+                    label={"Fecha del pago"}
                     bind:value={$form.date}
                     error={$form.errors?.date}
                     max={currentDateString}
@@ -552,23 +552,19 @@
     
                 {#if selectedPaymentAccount}
                     <div
-                        class="col-span-2 mt-2 rounded-lg border border-gray-200 bg-gray-50 p-3"
+                        class="col-span-2 mt-2 rounded-lg border border-gray-200 bg-gray-50 p-2 md:p-3"
                     >
                         <div class="mb-2 flex items-center justify-between gap-3">
                             <span class="text-sm font-semibold text-gray-700">
                                 Datos para {selectedPaymentAccount.payment_method_name}
                             </span>
-                            <span
-                                class="rounded-full bg-gray-200 px-2 py-1 text-[10px] uppercase tracking-wide text-gray-700"
-                            >
-                                {selectedPaymentAccount.payment_method_name}
-                            </span>
+                           
                         </div>
     
                         <div class="space-y-2">
                             {#each getPaymentDetails(selectedPaymentAccount) as detail}
                                 <div
-                                    class="flex items-center justify-between gap-3 rounded-md border border-gray-200 bg-white px-2 py-2"
+                                    class="flex items-center justify-between gap-2 md:gap-3 rounded-md border border-gray-200 bg-white px-2 py-2"
                                 >
                                     <div class="min-w-0 flex-1">
                                         <div
@@ -577,7 +573,7 @@
                                             {detail.label}
                                         </div>
                                         <div
-                                            class="truncate text-sm font-medium text-gray-800"
+                                            class=" truncate text-xs md:text-sm font-medium text-gray-800"
                                         >
                                             {detail.value}
                                         </div>
@@ -686,7 +682,7 @@
                         d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
                     ></path>
                 </svg>
-                <span class="text">Confirmar que pagué este monto</span>
+                <span class="text-sm md:text-base">Confirmar que pagué este monto</span>
                 <span class="circle"></span>
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
