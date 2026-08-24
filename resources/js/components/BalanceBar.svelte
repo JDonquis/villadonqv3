@@ -271,17 +271,19 @@
 
 <div {id} class={`bg-white p-4 rounded-lg ${classes}`}>
     {#each balances as balance, indexYear}
-    {@const totalDebt = Math.abs(
-        Object.entries(months).reduce((total, [_, month]) => {
-            if (
-                (balance[month] < 0 && balance[month + "_status"] == "debt") ||
-                balance[month + "_status"] == "partially_paid"
-            ) {
-                total += balance[month];
-            }
-            return total;
-        }, 0)
-    ) + Math.abs(balance.inscription)}
+        {@const totalDebt =
+            Math.abs(
+                Object.entries(months).reduce((total, [_, month]) => {
+                    if (
+                        (balance[month] < 0 &&
+                            balance[month + "_status"] == "debt") ||
+                        balance[month + "_status"] == "partially_paid"
+                    ) {
+                        total += balance[month];
+                    }
+                    return total;
+                }, 0),
+            ) + Math.abs(balance.inscription)}
         <div class="flex gap-4 items-center mt-2 mb-2">
             <!-- <button>
                 <iconify-icon
@@ -291,18 +293,18 @@
                     height="24"
                 ></iconify-icon>
             </button> -->
-            <p class="text-xs font-bold">
-                                    
-                {balance.school_lapse?.start.slice(0, 4)} <span class="text-gray-400">•</span> {balance.school_lapse?.end.slice(
-                    0,
-                    4,
-                )}
+            <p class="text-xs font-bold text-gray-500">
+                {balance.school_lapse?.start.slice(0, 4)}
+                <span class="text-gray-400">•</span>
+                {balance.school_lapse?.end.slice(0, 4)}
             </p>
 
             <div class="flex items-center gap-1 text-xs">
-                <p>Deuda:</p>
                 {#if totalDebt > 0}
-                    <p class="font-bold text-red">${totalDebt}</p>
+                    <p class="font-semibold">DEUDA:</p>
+                    <p class="font-bold bg-red/20 text-black px-1 rounded-sm">
+                        ${totalDebt}
+                    </p>
                 {:else}
                     <p class="">0</p>
                 {/if}
@@ -326,7 +328,9 @@
         </div>
 
         {#if is_exempt < 100}
-            <div class="grid p-0 grid-cols-12 rounded-2xl overflow-hidden border-2 border-gray-200">
+            <div
+                class="grid p-0 grid-cols-12 rounded-2xl overflow-hidden border-2 border-gray-200"
+            >
                 <!-- svelte-ignore a11y-no-static-element-interactions -->
                 <div
                     class={` hover:brightness-125   relative col-span-1 z-10  text-xs text-gray-700  p-1 capitalize  text-center font-bold

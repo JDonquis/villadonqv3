@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PaymentMethodEnum;
 use App\Http\Requests\StorePaymentRequest;
 use App\Models\BalanceStudent;
 use App\Models\MainConfig;
@@ -37,7 +38,10 @@ class RepresentativePaymentController extends Controller
         $allowedStudentIds = $this->representativeService->getStudents($user)->pluck('id')->all();
 
         $prices = $this->mainConfigService->getPrices();
-        $accounts = $this->mainConfigService->getAccounts();
+        $accounts = $this->mainConfigService->getAccountsByMethods([
+            PaymentMethodEnum::PagoMovil->value,
+            PaymentMethodEnum::Transferencia->value,
+        ]);
         $result = $this->paymentService->getAll($request->all(), $allowedStudentIds);
         $config = MainConfig::select('day_of_monthly_payment', 'grace_period')->first();
 

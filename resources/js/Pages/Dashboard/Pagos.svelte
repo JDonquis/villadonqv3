@@ -169,6 +169,29 @@
         }
     }
 
+    function formatBsInput(value) {
+        const raw = String(value ?? "").replace(/[^\d]/g, "");
+
+        if (!raw) return "";
+
+        const digits = raw.replace(/^0+(?=\d)/, "");
+        const integerPart = digits.slice(0, -2) || "0";
+        const decimalPart = digits.slice(-2).padStart(2, "0");
+
+        return `${Number(integerPart).toLocaleString("de-DE")},${decimalPart}`;
+    }
+
+    function parseBsInput(value) {
+        const raw = String(value ?? "").replace(/[^\d]/g, "");
+
+        if (!raw) return 0;
+
+        const integerPart = raw.slice(0, -2) || "0";
+        const decimalPart = raw.slice(-2).padStart(2, "0");
+
+        return Number(`${integerPart}.${decimalPart}`);
+    }
+
     document.addEventListener("keydown", ({ key }) => {
         if (key === "Escape") {
             selectedRow = { status: false, data: null };
@@ -475,6 +498,34 @@
                         <tr
                             class={` w-full [&_td]:px-2 [&_td*]:py-2 text-sm cursor-pointer  border-gray-500`}
                         >
+                         <td class="min-w-[300px]">
+                                <div class="flex items-center mb-1">
+                                    <span>
+                                        {student.name}
+                                        {student.last_name}
+                                    </span>
+                                </div>
+                                <span
+                                    class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
+                                >
+                                    {#if student.document_type}
+                                        <span class="uppercase"
+                                            >{student.document_type}-</span
+                                        >
+                                    {/if}
+                                    {student.ci}
+                                </span>
+
+                                <!-- Separador opcional o punto -->
+                                <span class="text-gray-300">•</span>
+
+                                <!-- Curso y Sección -->
+                                <span
+                                    class="text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200/40 text-xs"
+                                >
+                                    {student.course_name}-{student.section_name}
+                                </span>
+                            </td>
                             <td>
                                 <div class="flex flex-col items-start">
                                     <b class="pr-1 text-xs">$. USD</b>
@@ -519,21 +570,36 @@
                                 <div class="flex flex-col items-start">
                                     <b class="pr-1 text-xs">Bs. VES</b>
                                     <input
-                                        type="number"
+                                        type="text"
+                                        inputmode="numeric"
                                         min="0"
                                         step="0.01"
                                         class="w-24 border py-2 px-2 border-gray-400 rounded-md focus:outline-"
-                                        value={student.amount_in_bs || ""}
+                                        value={formatBsInput(student.amount_in_bs || "")}
                                         placeholder="Bolívares"
                                         readonly={submitStatus ===
                                             "Solo lectura"}
+                                        on:focus={(e) => {
+                                            if (e.target.value !== "") {
+                                                e.target.select();
+                                            }
+                                        }}
                                         on:input={(e) => {
+                                            const numericBs = parseBsInput(
+                                                e.target.value,
+                                            );
+                                            const bsValue = numericBs.toFixed(2);
+                                            const usdValue =
+                                                dolarPrice > 0
+                                                    ? (
+                                                          numericBs / dolarPrice
+                                                      ).toFixed(2)
+                                                    : "0.00";
+
                                             $form.students[i] = {
                                                 ...$form.students[i],
-                                                amount_in_bs: e.target.value,
-                                                amount_in_dolars: (
-                                                    e.target.value / dolarPrice
-                                                ).toFixed(2),
+                                                amount_in_bs: bsValue,
+                                                amount_in_dolars: usdValue,
                                             };
                                             $form.total_in_bs = $form.students
                                                 .reduce(
@@ -553,34 +619,7 @@
                                 </div>
                             </td>
 
-                            <td class="min-w-[300px]">
-                                <div class="flex items-center mb-1">
-                                    <span>
-                                        {student.name}
-                                        {student.last_name}
-                                    </span>
-                                </div>
-                                <span
-                                    class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
-                                >
-                                    {#if student.document_type}
-                                        <span class="uppercase"
-                                            >{student.document_type}-</span
-                                        >
-                                    {/if}
-                                    {student.ci}
-                                </span>
-
-                                <!-- Separador opcional o punto -->
-                                <span class="text-gray-300">•</span>
-
-                                <!-- Curso y Sección -->
-                                <span
-                                    class="text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200/40 text-xs"
-                                >
-                                    {student.course_name}-{student.section_name}
-                                </span>
-                            </td>
+                           
 
                             <td class="max-w-[70px]">
                                 <button

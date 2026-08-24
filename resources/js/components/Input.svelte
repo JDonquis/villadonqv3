@@ -19,11 +19,13 @@
 </script>
 
 <div class={`text-left w-full mt-5 ${classes} `} {style}>
+{#if type !=="hidden"}
     <label
         for={"nombre"}
         class={`form__label w-full text-sm font-semibold text-gray-700 ${labelClass}`}
         {placeholder}>{label} {required ? "*" : ""}</label
     >
+{/if}
     <div class="relative w-full parent_div">
         {#if type === "textarea"}
             <textarea
@@ -60,6 +62,7 @@
                 {readonly}
                 on:change
                 on:input
+                on:focus
             />
         {/if}
         {#if error}

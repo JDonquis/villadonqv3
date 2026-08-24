@@ -39,6 +39,16 @@ class MainConfigService
         return new AccountPaymentCollection($accounts);
     }
 
+    public function getAccountsByMethods(array $paymentMethodIds)
+    {
+        $accounts = AccountPayment::where('status', 1)
+            ->whereIn('payment_method_id', $paymentMethodIds)
+            ->with('method')
+            ->get();
+
+        return new AccountPaymentCollection($accounts);
+    }
+
     public function getAccountsWhereId($id)
     {
         $accounts = AccountPayment::where('status', 1)->where('payment_method_id', $id)->with('method')->get();
