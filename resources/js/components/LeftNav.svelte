@@ -33,7 +33,40 @@
             href: "/dashboard/personal",
             name: "Personal",
         },
+        {
+            icon: "mdi:account-tie",
+            href: "/dashboard/profesores",
+            name: "Profesores",
+        },
+        {
+            icon: "mdi:book-open-variant",
+            href: "/dashboard/materias",
+            name: "Materias",
+        },
+        {
+            icon: "mdi:clipboard-check-outline",
+            href: "/dashboard/planes-evaluacion",
+            name: "Planes de Evaluación",
+        },
 
+    ];
+
+    const teacherNavPages = [
+        {
+            icon: "mdi:home",
+            href: "/dashboard/mis-planes",
+            name: "Mis Planes de Evaluación",
+        },
+        {
+            icon: "mdi:account-group",
+            href: "/dashboard/mis-estudiantes",
+            name: "Mis Estudiantes",
+        },
+        {
+            icon: "mdi:account",
+            href: "/dashboard/perfil",
+            name: "Mi Perfil",
+        },
     ];
 
     const repNavPages = [
@@ -55,10 +88,15 @@
 
     ];
 
+    $: isTeacher = Number($page.props.auth?.type_user_id) === 3;
     $: isRep = Number($page.props.auth?.type_user_id) === 2;
     $: hasRepStudents = $page.props.auth?.has_rep_students === true;
 
     $: navPages = (() => {
+        if (isTeacher) {
+            return teacherNavPages;
+        }
+
         const base = isRep
             ? repNavPages
             : hasRepStudents

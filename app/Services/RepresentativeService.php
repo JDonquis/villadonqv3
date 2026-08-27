@@ -2,13 +2,22 @@
 
 namespace App\Services;
 
+use App\Models\EvaluationPlan;
 use App\Models\Representative;
 use App\Models\SchoolLapse;
 use App\Models\Student;
 use App\Models\User;
+use Carbon\Carbon;
 
 class RepresentativeService
 {
+    private StudentGradeService $gradeService;
+
+    public function __construct()
+    {
+        $this->gradeService = new StudentGradeService;
+    }
+
     private const SCHOOL_MONTHS = [
         'september',
         'october',
@@ -55,11 +64,123 @@ class RepresentativeService
 
     public function misHijos(User $user): array
     {
-        $students = $this->getStudents($user);
+        $students = $this->getStudents($user)
+            ->load('course.matters');
+
+        $activeLapse = SchoolLapse::where('status', 1)->with('lapses')->first();
+        $currentLapse = $this->currentLapse($activeLapse);
 
         return [
-            'students' => $students->map(fn ($student) => $this->formatStudent($student))->values(),
+            'students' => $students->map(function ($student) use ($activeLapse, $currentLapse) {
+                return array_merge($this->formatStudent($student), [
+                    'subjects' => $this->formatSubjects($student, $activeLapse, $currentLapse),
+                ]);
+            })->values(),
         ];
+    }
+
+    private function currentLapse($schoolLapse)
+    {
+        if (! $schoolLapse || $schoolLapse->lapses->isEmpty()) {
+            return null;
+        }
+
+        $today = Carbon::now()->toDateString();
+
+        return $schoolLapse->lapses->first(fn ($l) => $today >= $l->start && $today <= $l->end)
+            ?? $schoolLapse->lapses->sortByDesc('number')->first();
+    }
+
+    private function formatSubjects($student, $activeLapse, $currentLapse): array
+    {
+        $matters = $student->course?->matters ?? collect();
+
+        if ($matters->isEmpty() || ! $activeLapse || ! $currentLapse) {
+            return [];
+        }
+
+        $plans = EvaluationPlan::with(['teacher', 'lapse', 'schoolLapse', 'items.grades' => function ($q) use ($student) {
+            $q->where('student_id', $student->id);
+        }])
+            ->where('course_id', $student->course_id)
+            ->where('school_lapse_id', $activeLapse->id)
+            ->where('lapse_id', $currentLapse->id)
+            ->get();
+
+        $plansByMatter = $plans->groupBy('matter_id');
+
+        return $matters->map(function ($matter) use ($plansByMatter, $currentLapse, $student) {
+            $plan = $plansByMatter->get($matter->id)?->first();
+
+            if (! $plan) {
+                return [
+                    'matter_id' => $matter->id,
+                    'matter_name' => $matter->name,
+                    'status' => 'sin_plan',
+                    'status_label' => 'Sin plan',
+                    'definitive' => null,
+                    'lapse_label' => $this->momentLabel($currentLapse),
+                    'plan' => null,
+                ];
+            }
+
+            $definitive = $this->gradeService->definitiveForStudent($plan, $student->id);
+
+            $status = $definitive === null
+                ? 'en_curso'
+                : ($definitive >= StudentGradeService::PASSING_SCORE ? 'aprobada' : 'reprobada');
+
+            return [
+                'matter_id' => $matter->id,
+                'matter_name' => $matter->name,
+                'status' => $status,
+                'status_label' => match ($status) {
+                    'aprobada' => 'Aprobada',
+                    'reprobada' => 'Reprobada',
+                    default => 'En curso',
+                },
+                'definitive' => $definitive,
+                'lapse_label' => $this->momentLabel($currentLapse),
+                'plan' => $this->formatSubjectPlan($plan),
+            ];
+        })->values()->all();
+    }
+
+    private function formatSubjectPlan(EvaluationPlan $plan): array
+    {
+        $items = $plan->items->map(function ($item) {
+            $grade = $item->grades->first();
+
+            return [
+                'id' => $item->id,
+                'name' => $item->name,
+                'percentage' => (float) $item->percentage,
+                'date' => $item->date,
+                'score' => $grade?->score !== null ? (float) $grade->score : null,
+            ];
+        })->values();
+
+        return [
+            'id' => $plan->id,
+            'name' => $plan->name,
+            'teacher_name' => $plan->teacher ? ($plan->teacher->name.' '.$plan->teacher->last_name) : null,
+            'lapse_label' => $this->momentLabel($plan->lapse),
+            'school_lapse_label' => $plan->schoolLapse
+                ? Carbon::parse($plan->schoolLapse->start)->year.' - '.Carbon::parse($plan->schoolLapse->end)->year
+                : null,
+            'items' => $items,
+        ];
+    }
+
+    private function momentLabel($lapse): ?string
+    {
+        if (! $lapse || ! $lapse->number) {
+            return null;
+        }
+
+        $ordinals = [1 => '1er', 2 => '2do', 3 => '3er'];
+
+        return ($ordinals[$lapse->number] ?? $lapse->number).' Momento';
     }
 
     public function misPagos(User $user): array

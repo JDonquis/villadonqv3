@@ -248,6 +248,10 @@
         console.log(showModalReinscribe);
     }
 
+    function handleDetails() {
+        router.get(`/dashboard/matricula/${selectedRow.data.student_id}`);
+    }
+
     function handleSubmitReinscribe(e) {
         e.preventDefault();
         $formReinscribe.clearErrors();
@@ -938,6 +942,12 @@
         handleDelete(selectedRow.data.student_id);
     }}
     otherSelectOptions={[
+        {
+            label: "Detalles",
+            icon: "mdi:eye",
+            classes: "bg-blue text-white",
+            onClick: handleDetails,
+        },
         {
             label: "Reinscribir",
             icon: "mdi:school",

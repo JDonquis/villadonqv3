@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\UserTypeEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -13,22 +14,22 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable =
-    [
-        'type_user_id',
-        'ci',
-        'name',
-        'last_name',
-        'email',
-        'password',
-        'phone_number',
-        'phone_number2',
-        'address',
-        'state',
-        'city',
-        'photo',
-        'email_verified_status',
-        'is_admin',
-    ];
+        [
+            'type_user_id',
+            'ci',
+            'name',
+            'last_name',
+            'email',
+            'password',
+            'phone_number',
+            'phone_number2',
+            'address',
+            'state',
+            'city',
+            'photo',
+            'email_verified_status',
+            'is_admin',
+        ];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -42,6 +43,21 @@ class User extends Authenticatable
     public function modules()
     {
         return $this->belongsToMany(Module::class, 'user_modules', 'user_id', 'module_id');
+    }
+
+    public function matters()
+    {
+        return $this->belongsToMany(Matter::class, 'teacher_matter', 'teacher_id', 'matter_id');
+    }
+
+    public function evaluationPlans()
+    {
+        return $this->hasMany(EvaluationPlan::class);
+    }
+
+    public function isTeacher(): bool
+    {
+        return (int) $this->type_user_id === UserTypeEnum::Teacher->value;
     }
 
     public function representative()

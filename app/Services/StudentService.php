@@ -7,15 +7,20 @@ use App\Events\ReEnrollEvent;
 use App\Events\StudentCreated;
 use App\Events\StudentUpdated;
 use App\Http\Resources\StudentCollection;
+use App\Http\Resources\StudentResource;
 use App\Mail\RepresentativeWelcomeMail;
+use App\Models\DocumentStudent;
 use App\Models\Inscription;
 use App\Models\Representative;
 use App\Models\SchoolLapse;
 use App\Models\Student;
+use App\Models\TypeDocument;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -460,7 +465,7 @@ class StudentService
             ->get()
             ->map(function ($student) {
                 if ($student->balances->isEmpty()) {
-                $student->setRelation('balances', $student->balances()->latest()->take(1)->get());
+                    $student->setRelation('balances', $student->balances()->latest()->take(1)->get());
                 }
 
                 return $student;
@@ -547,6 +552,154 @@ class StudentService
             ->get();
 
         return $user;
+    }
+
+    public function getStudentDetails($student)
+    {
+        $inscriptions = Inscription::where('student_id', $student->id)
+            ->with(['schoolLapse', 'course', 'section', 'documents.typeDocument'])
+            ->get()
+            ->sortBy(fn ($ins) => $ins->schoolLapse?->start ?? '0000-01-01')
+            ->values();
+
+        $lapses = SchoolLapse::orderBy('start')->get();
+        $lapseIndex = $lapses->pluck('id')->flip();
+
+        $periodLabel = function ($lapse) {
+            if (! $lapse) {
+                return null;
+            }
+
+            return Carbon::parse($lapse->start)->year.' - '.Carbon::parse($lapse->end)->year;
+        };
+
+        $courseCounts = $inscriptions->groupBy('course_id')->map->count();
+        $repeatedCourseIds = $courseCounts->filter(fn ($count) => $count > 1)->keys();
+
+        $repeated = $inscriptions
+            ->filter(fn ($ins) => $repeatedCourseIds->contains($ins->course_id))
+            ->groupBy('course_id')
+            ->map(function ($group, $courseId) use ($periodLabel) {
+                return [
+                    'course_id' => $courseId,
+                    'course_name' => $group->first()->course?->name,
+                    'periods' => $group->map(fn ($ins) => $periodLabel($ins->schoolLapse))->values(),
+                ];
+            })
+            ->values();
+
+        $abandonedPeriods = [];
+        $returned = false;
+        $returnedPeriod = null;
+
+        for ($i = 1; $i < $inscriptions->count(); $i++) {
+            $prev = $inscriptions[$i - 1];
+            $curr = $inscriptions[$i];
+            $prevIdx = $lapseIndex[$prev->school_lapse_id] ?? null;
+            $currIdx = $lapseIndex[$curr->school_lapse_id] ?? null;
+
+            if ($prevIdx !== null && $currIdx !== null && $currIdx - $prevIdx > 1) {
+                foreach ($lapses as $lapse) {
+                    $idx = $lapseIndex[$lapse->id];
+                    if ($idx > $prevIdx && $idx < $currIdx) {
+                        $abandonedPeriods[] = $periodLabel($lapse);
+                    }
+                }
+
+                $returned = true;
+                $returnedPeriod = $periodLabel($curr->schoolLapse);
+            }
+        }
+
+        $first = $inscriptions->first();
+        $activeLapse = SchoolLapse::where('status', 1)->first();
+        $documentTypes = TypeDocument::where('status', 1)->get();
+
+        $inscriptionsData = $inscriptions->map(function ($ins) use ($activeLapse, $periodLabel, $repeatedCourseIds) {
+            return [
+                'id' => $ins->id,
+                'school_lapse_id' => $ins->school_lapse_id,
+                'period' => $periodLabel($ins->schoolLapse),
+                'start' => $ins->schoolLapse?->start,
+                'end' => $ins->schoolLapse?->end,
+                'course_id' => $ins->course_id,
+                'course_name' => $ins->course?->name,
+                'section_name' => $ins->section?->name,
+                'is_current' => (bool) ($activeLapse && $ins->school_lapse_id === $activeLapse->id),
+                'is_repeated' => $repeatedCourseIds->contains($ins->course_id),
+                'documents' => $ins->documents->map(fn ($d) => [
+                    'id' => $d->id,
+                    'type_document_id' => $d->type_document_id,
+                    'type_document_name' => $d->typeDocument?->name,
+                    'url' => $d->document
+                        ? Storage::disk('public')->url('request/'.$d->typeDocument?->name.'/'.$d->document)
+                        : null,
+                ])->values(),
+            ];
+        })->values();
+
+        return [
+            'student' => (new StudentResource($student))->resolve(),
+            'progress' => [
+                'started_period' => $first ? $periodLabel($first->schoolLapse) : null,
+                'started_course' => $first?->course?->name,
+                'repeated' => $repeated,
+                'abandoned_periods' => $abandonedPeriods,
+                'returned' => $returned,
+                'returned_period' => $returnedPeriod,
+                'graduate' => (bool) $student->graduate,
+            ],
+            'inscriptions' => $inscriptionsData,
+            'document_types' => $documentTypes->map(fn ($t) => [
+                'id' => $t->id,
+                'name' => $t->name,
+                'required' => (bool) $t->required,
+            ])->values(),
+            'active_lapse' => $activeLapse ? ['id' => $activeLapse->id, 'period' => $periodLabel($activeLapse)] : null,
+        ];
+    }
+
+    public function storeDocument($request)
+    {
+        $studentId = $request->input('student_id');
+        $inscriptionId = $request->input('inscription_id');
+
+        $inscription = Inscription::with('student')->findOrFail($inscriptionId);
+
+        if ($inscription->student_id != $studentId) {
+            throw new \Exception('La inscripción seleccionada no pertenece al estudiante.');
+        }
+
+        $typeDocument = TypeDocument::findOrFail($request->input('type_document_id'));
+
+        $file = $request->file('document');
+        $fileName = Str::random(25).'.'.$file->extension();
+
+        $file->storeAs('request/'.$typeDocument->name, $fileName, 'public');
+
+        DocumentStudent::create([
+            'student_id' => $studentId,
+            'inscription_id' => $inscriptionId,
+            'type_document_id' => $typeDocument->id,
+            'document' => $fileName,
+        ]);
+
+        return 0;
+    }
+
+    public function destroyDocument($documentId)
+    {
+        $document = DocumentStudent::findOrFail($documentId);
+
+        $typeName = $document->typeDocument?->name;
+
+        if ($typeName && $document->document) {
+            Storage::disk('public')->delete('request/'.$typeName.'/'.$document->document);
+        }
+
+        $document->delete();
+
+        return 0;
     }
 
     public function delete($studentId)

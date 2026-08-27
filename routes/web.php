@@ -3,7 +3,9 @@
 use App\Http\Controllers\AccountStatementController;
 use App\Http\Controllers\AppController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\EvaluationPlanController;
 use App\Http\Controllers\MainConfigController;
+use App\Http\Controllers\MatterController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RepresentativeController;
@@ -11,6 +13,8 @@ use App\Http\Controllers\RepresentativePaymentController;
 use App\Http\Controllers\SchoolLapseController;
 use App\Http\Controllers\SectionController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\StudentGradeController;
+use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -55,6 +59,10 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::get('/dashboard/matricula/search-representative/{ci}', [StudentController::class, 'searchRepresentativeByCI']);
     Route::get('/dashboard/matricula/search-second_representative/{ci}', [StudentController::class, 'searchSecondRepresentativeByCI']);
 
+    Route::get('/dashboard/matricula/{id}', [StudentController::class, 'show']);
+    Route::post('/dashboard/matricula/documentos', [StudentController::class, 'storeDocument']);
+    Route::delete('/dashboard/matricula/documentos/{id}', [StudentController::class, 'destroyDocument']);
+
     Route::post('/dashboard/secciones', [SectionController::class, 'store']);
     Route::delete('/dashboard/secciones/{course_id}/{section_id}', [SectionController::class, 'destroy']);
 
@@ -77,9 +85,34 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::delete('/dashboard/configuracion/eliminar-cuenta/{id}', [MainConfigController::class, 'deleteAccount']);
 
     Route::put('/dashboard/configuracion/pagos', [MainConfigController::class, 'updatePaymentConfig']);
+
+    Route::get('/dashboard/profesores', [TeacherController::class, 'index']);
+    Route::post('/dashboard/profesores', [TeacherController::class, 'store']);
+    Route::put('/dashboard/profesores/{id}', [TeacherController::class, 'update']);
+    Route::delete('/dashboard/profesores/{id}', [TeacherController::class, 'destroy']);
+    Route::post('/dashboard/profesores/{id}/reenviar-correo', [TeacherController::class, 'resendSetupEmail']);
+
+    Route::get('/dashboard/materias', [MatterController::class, 'index']);
+    Route::post('/dashboard/materias', [MatterController::class, 'store']);
+    Route::put('/dashboard/materias/{id}', [MatterController::class, 'update']);
+    Route::delete('/dashboard/materias/{id}', [MatterController::class, 'destroy']);
+
+    Route::get('/dashboard/planes-evaluacion', [EvaluationPlanController::class, 'index']);
+    Route::post('/dashboard/planes-evaluacion/{id}/aprobar', [EvaluationPlanController::class, 'approve']);
+    Route::post('/dashboard/planes-evaluacion/{id}/rechazar', [EvaluationPlanController::class, 'reject']);
 });
 
-Route::middleware(['auth', 'role:administrator,representative'])->group(function () {
+Route::middleware(['auth', 'role:teacher'])->group(function () {
+    Route::get('/dashboard/mis-planes', [EvaluationPlanController::class, 'myPlans']);
+    Route::post('/dashboard/mis-planes', [EvaluationPlanController::class, 'store']);
+    Route::put('/dashboard/mis-planes/{id}', [EvaluationPlanController::class, 'update']);
+    Route::delete('/dashboard/mis-planes/{id}', [EvaluationPlanController::class, 'destroy']);
+
+    Route::get('/dashboard/mis-estudiantes', [StudentGradeController::class, 'index']);
+    Route::post('/dashboard/mis-estudiantes/guardar-notas', [StudentGradeController::class, 'saveGrades']);
+});
+
+Route::middleware(['auth', 'role:administrator,representative,teacher'])->group(function () {
     Route::get('/dashboard/representante', [RepresentativeController::class, 'home']);
     Route::get('/dashboard/mis-hijos', [RepresentativeController::class, 'misHijos']);
     Route::get('/dashboard/mis-pagos', [RepresentativePaymentController::class, 'index']);

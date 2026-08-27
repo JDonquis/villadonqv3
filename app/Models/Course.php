@@ -2,9 +2,8 @@
 
 namespace App\Models;
 
-use App\Models\Section;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Course extends Model
 {
@@ -18,10 +17,11 @@ class Course extends Model
     // }
     public function section()
     {
-        return $this->belongsToMany(Section::class,'course_sections');
+        return $this->belongsToMany(Section::class, 'course_sections');
     }
 
-
-           
+    public function matters()
+    {
+        return $this->belongsToMany(Matter::class, 'courses_matters', 'course_id', 'matter_id');
+    }
 }
-

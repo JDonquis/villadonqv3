@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CreateStudentRequest;
 use App\Http\Requests\ReEnrollStudentRequest;
+use App\Http\Requests\StoreDocumentRequest;
 use App\Http\Requests\UpdateStudentRequest;
 use App\Http\Resources\CourseSectionCollection;
 use App\Http\Resources\StudentResource;
 use App\Models\Course;
 use App\Models\CourseSection;
 use App\Models\Section;
+use App\Models\Student;
 use App\Services\StudentService;
 use Exception;
 use Illuminate\Http\Request;
@@ -64,13 +66,12 @@ class StudentController extends Controller
                 $transport->start();
             }
         } catch (Exception $e) {
-            Log::error('Error de configuración/credenciales de correo: ' . $e->getMessage());
+            Log::error('Error de configuración/credenciales de correo: '.$e->getMessage());
 
             return back()->withErrors([
                 'message' => 'No se pudo conectar con el servidor de correo. Verifique las credenciales SMTP.',
             ]);
         }
-
 
         try {
 
@@ -146,6 +147,41 @@ class StudentController extends Controller
             Log::error('Error al reinscribir estudiante ID '.$request->student_id.': '.$e->getMessage());
 
             return redirect()->back()->withErrors(['status' => false,  'message' => $e->getMessage()]);
+        }
+    }
+
+    public function show($id)
+    {
+        $student = Student::with('representative.user', 'course', 'section')->findOrFail($id);
+
+        return inertia('Dashboard/DetalleEstudiante', [
+            'data' => $this->studentService->getStudentDetails($student),
+        ]);
+    }
+
+    public function storeDocument(StoreDocumentRequest $request)
+    {
+        try {
+            $this->studentService->storeDocument($request);
+
+            return redirect()->back();
+        } catch (Exception $e) {
+            Log::error('Error al adjuntar documento: '.$e->getMessage());
+
+            return redirect()->back()->withErrors(['message' => $e->getMessage()]);
+        }
+    }
+
+    public function destroyDocument($id)
+    {
+        try {
+            $this->studentService->destroyDocument($id);
+
+            return redirect()->back();
+        } catch (Exception $e) {
+            Log::error('Error al eliminar documento ID '.$id.': '.$e->getMessage());
+
+            return redirect()->back()->withErrors(['message' => $e->getMessage()]);
         }
     }
 

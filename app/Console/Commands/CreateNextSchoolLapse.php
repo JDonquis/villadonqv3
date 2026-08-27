@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Course;
+use App\Models\Lapse;
 use App\Models\Quota;
 use App\Models\SchoolLapse;
 use Carbon\Carbon;
@@ -55,8 +56,6 @@ class CreateNextSchoolLapse extends Command
 
         $this->info("Nuevo periodo: {$startDate->toDateString()} al {$endDate->toDateString()}");
 
-
-
         DB::transaction(function () use ($startDate, $endDate, $currentLapse) {
             // Desactivar todos los periodos actuales
             SchoolLapse::query()->update(['status' => 0]);
@@ -70,8 +69,21 @@ class CreateNextSchoolLapse extends Command
 
             $this->info("Periodo escolar #{$newLapse->id} creado y activado.");
 
+            // Crear los 3 momentos escolares (lapsos)
+            $seedLapses = new SeedLapses;
+            foreach ($seedLapses->buildLapseRanges($newLapse) as $number => $range) {
+                Lapse::create([
+                    'start' => $range['start'],
+                    'end' => $range['end'],
+                    'number' => $number,
+                    'school_lapse_id' => $newLapse->id,
+                ]);
+            }
+
+            $this->info('Momentos escolares creados.');
+
             // Renovar cupos (Quotas)
-            $this->info("Renovando cupos para el nuevo periodo...");
+            $this->info('Renovando cupos para el nuevo periodo...');
 
             $courses = Course::all();
             foreach ($courses as $course) {
@@ -94,7 +106,7 @@ class CreateNextSchoolLapse extends Command
                 ]);
             }
 
-            $this->info("Cupos renovados para " . $courses->count() . " cursos.");
+            $this->info('Cupos renovados para '.$courses->count().' cursos.');
         });
 
         $this->info('Proceso finalizado con éxito.');

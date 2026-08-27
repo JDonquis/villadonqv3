@@ -11,11 +11,21 @@ class SchoolLapse extends Model
 
     protected $table = 'school_lapses';
 
-       protected $fillable = [
+    protected $fillable = [
         'start',
         'end',
         'status',
     ];
 
     public $timestamps = false;
+
+    public function lapses()
+    {
+        return $this->hasMany(Lapse::class);
+    }
+
+    public function inscriptions()
+    {
+        return $this->hasMany(Inscription::class);
+    }
 }

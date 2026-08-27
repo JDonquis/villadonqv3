@@ -37,6 +37,8 @@ class GenerateInscription
 
         Inscription::create([
             'school_lapse_id' => $schoolLapseActive->id,
+            'course_id' => $student->course_id,
+            'section_id' => $student->section_id,
             'student_id' => $student->id,
         ]);
     }

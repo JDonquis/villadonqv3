@@ -52,6 +52,7 @@ class DatabaseSeeder extends Seeder
             MainConfigSeeder::class,
             SchoolLapseSeeder::class,
             QuotaSeeder::class,
+            MatterSeeder::class,
             // StudentSeeder::class,
 
         ]);
@@ -72,7 +73,9 @@ class DatabaseSeeder extends Seeder
     public function recalculateStudentsDebt()
     {
         $configData = MainConfig::select('new_inscription_price', 'monthly_payment')->first();
-        if (!$configData) return;
+        if (! $configData) {
+            return;
+        }
 
         $balances = BalanceStudent::with('student')->get();
         $currentMonthLower = strtolower(Carbon::now()->englishMonth);
@@ -89,7 +92,7 @@ class DatabaseSeeder extends Seeder
             'may',
             'june',
             'july',
-            'august'
+            'august',
         ];
 
         foreach ($balances as $balance) {
@@ -111,14 +114,14 @@ class DatabaseSeeder extends Seeder
 
             $reachedCurrent = false;
             foreach ($months as $month) {
-                if (!$reachedCurrent) {
-                    $updateData[$month . '_status'] = BalanceStudentStatusEnum::Debt;
+                if (! $reachedCurrent) {
+                    $updateData[$month.'_status'] = BalanceStudentStatusEnum::Debt;
                     $updateData[$month] = -$effectiveMonthlyPayment;
                     if ($month == $currentMonthLower) {
                         $reachedCurrent = true;
                     }
                 } else {
-                    $updateData[$month . '_status'] = BalanceStudentStatusEnum::Pending;
+                    $updateData[$month.'_status'] = BalanceStudentStatusEnum::Pending;
                     $updateData[$month] = -$effectiveMonthlyPayment;
                 }
             }
