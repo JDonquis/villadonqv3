@@ -13,9 +13,15 @@ class EvaluationPlanItem extends Model
 
     protected $fillable = [
         'evaluation_plan_id',
+        'unit_name',
+        'unit_number',
         'name',
+        'assessment_type',
         'percentage',
+        'points',
         'date',
+        'scheduled_date',
+        'description',
         'order',
     ];
 

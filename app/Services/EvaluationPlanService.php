@@ -18,6 +18,27 @@ class EvaluationPlanService
     {
         $itemsTotal = $plan->items->sum(fn ($item) => (float) $item->percentage);
 
+        $units = $plan->items->groupBy(function ($item) {
+            return $item->unit_name ?? 'Unidad 1';
+        })->map(function ($group, $unitName) {
+            $unitIndex = $group->first()->unit_number ?? 1;
+
+            return [
+                'id' => 'unit_'.($group->first()->unit_number ?? 1),
+                'unit_number' => (int) $unitIndex,
+                'name' => $unitName,
+                'topics' => $group->map(fn ($item) => [
+                    'id' => 'topic_'.$item->id,
+                    'name' => $item->name,
+                    'assessment_type' => $item->assessment_type,
+                    'percentage' => (float) $item->percentage,
+                    'points' => $item->points !== null ? (float) $item->points : null,
+                    'scheduled_date' => $item->scheduled_date ?? $item->date,
+                    'description' => $item->description,
+                ])->values()->all(),
+            ];
+        })->values()->all();
+
         return [
             'id' => $plan->id,
             'name' => $plan->name,
@@ -44,6 +65,7 @@ class EvaluationPlanService
                 'percentage' => (float) $item->percentage,
                 'date' => $item->date,
             ])->values(),
+            'units' => $units,
             'items_total' => round($itemsTotal, 2),
             'created_at' => $plan->created_at?->format('Y-m-d H:i'),
         ];
@@ -115,7 +137,7 @@ class EvaluationPlanService
         ]);
 
         $this->registerCourseMatter($data['course_id'] ?? null, $data['matter_id']);
-        $this->syncItems($plan, $data['items']);
+        $this->syncItems($plan, $data['units'] ?? $data['items'] ?? []);
 
         return $plan;
     }
@@ -137,7 +159,7 @@ class EvaluationPlanService
         ]);
 
         $this->registerCourseMatter($data['course_id'] ?? null, $data['matter_id']);
-        $this->syncItems($plan, $data['items']);
+        $this->syncItems($plan, $data['units'] ?? $data['items'] ?? []);
 
         return $plan;
     }
@@ -151,17 +173,67 @@ class EvaluationPlanService
         Course::find($courseId)?->matters()->syncWithoutDetaching([$matterId]);
     }
 
-    private function syncItems(EvaluationPlan $plan, array $items): void
+    private function flattenUnitsToItems(array $units): array
+    {
+        $items = [];
+
+        foreach (array_values($units) as $unitIndex => $unit) {
+            $unitTopics = is_array($unit['topics'] ?? null) ? $unit['topics'] : [];
+
+            foreach (array_values($unitTopics) as $topicIndex => $topic) {
+                $items[] = [
+                    'unit_name' => $unit['name'] ?? null,
+                    'unit_number' => $unit['unit_number'] ?? ($unitIndex + 1),
+                    'name' => $topic['name'] ?? '',
+                    'assessment_type' => $topic['assessment_type'] ?? null,
+                    'percentage' => $topic['percentage'] ?? 0,
+                    'points' => $topic['points'] ?? null,
+                    'date' => $topic['scheduled_date'] ?? $topic['date'] ?? null,
+                    'scheduled_date' => $topic['scheduled_date'] ?? $topic['date'] ?? null,
+                    'description' => $topic['description'] ?? null,
+                    'order' => ($unitIndex * 100) + $topicIndex,
+                ];
+            }
+        }
+
+        if ($items === []) {
+            foreach (array_values($units) as $index => $item) {
+                $items[] = [
+                    'unit_name' => null,
+                    'unit_number' => null,
+                    'name' => $item['name'] ?? '',
+                    'assessment_type' => $item['assessment_type'] ?? null,
+                    'percentage' => $item['percentage'] ?? 0,
+                    'points' => $item['points'] ?? null,
+                    'date' => $item['date'] ?? null,
+                    'scheduled_date' => $item['scheduled_date'] ?? $item['date'] ?? null,
+                    'description' => $item['description'] ?? null,
+                    'order' => $index,
+                ];
+            }
+        }
+
+        return $items;
+    }
+
+    private function syncItems(EvaluationPlan $plan, array $units): void
     {
         $plan->items()->delete();
+        $items = $this->flattenUnitsToItems($units);
 
         foreach (array_values($items) as $index => $item) {
             EvaluationPlanItem::create([
                 'evaluation_plan_id' => $plan->id,
+                'unit_name' => $item['unit_name'],
+                'unit_number' => $item['unit_number'],
                 'name' => $item['name'],
+                'assessment_type' => $item['assessment_type'],
                 'percentage' => $item['percentage'],
+                'points' => $item['points'],
                 'date' => $item['date'] ?? null,
-                'order' => $index,
+                'scheduled_date' => $item['scheduled_date'] ?? $item['date'] ?? null,
+                'description' => $item['description'] ?? null,
+                'order' => $item['order'] ?? $index,
             ]);
         }
     }

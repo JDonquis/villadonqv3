@@ -25,9 +25,26 @@
         return current?.id || "";
     }
 
-    const emptyItem = { name: "", percentage: "", date: "" };
+    function createEmptyTopic() {
+        return {
+            id: `topic_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+            name: "",
+            assessment_type: "",
+            percentage: "",
+            points: "",
+            scheduled_date: "",
+            description: "",
+        };
+    }
 
-    
+    function createEmptyUnit(unitNumber = 1) {
+        return {
+            id: `unit_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+            unit_number: unitNumber,
+            name: "",
+            topics: [createEmptyTopic()],
+        };
+    }
 
     let form = useForm({
         name: "",
@@ -36,8 +53,8 @@
         school_lapse_id: defaultLapseId,
         lapse_id: initialMomentId(activeSchoolLapse),
         course_id: "",
-        section_id: "",
-        items: [{ ...emptyItem }],
+        section_id: [],
+        units: [createEmptyUnit(1)],
     });
 
     $: selectedSchoolLapse = data.school_lapses?.find(
@@ -61,6 +78,56 @@
         return `${startYear}-${endYear}`;
     }
 
+    function normalizeSectionSelection(value) {
+        if (Array.isArray(value)) return value.map(String);
+        if (value === "" || value === null || value === undefined) return [];
+        return [String(value)];
+    }
+
+    function isAllSectionsSelected() {
+        return normalizeSectionSelection($form.section_id).includes("all");
+    }
+
+    function toggleAllSections(checked) {
+        if (checked) {
+            $form.section_id = ["all"];
+            return;
+        }
+
+        $form.section_id = [];
+    }
+
+    function toggleSection(sectionId) {
+        const selected = normalizeSectionSelection($form.section_id);
+        const value = String(sectionId);
+
+        if (selected.includes("all")) {
+            $form.section_id = [value];
+            return;
+        }
+
+        const exists = selected.includes(value);
+        const next = exists
+            ? selected.filter((id) => id !== value)
+            : [...selected, value];
+
+        $form.section_id = next;
+    }
+
+    function getSelectedSectionsLabel() {
+        const selected = normalizeSectionSelection($form.section_id);
+
+        if (selected.includes("all") || selected.includes("ALL")) {
+            return "Todas las secciones";
+        }
+
+        const names = data.sections
+            ?.filter((section) => selected.includes(String(section.id)))
+            .map((section) => section.name);
+
+        return names?.length ? names.join(", ") : "";
+    }
+
     function getAutoPlanName() {
         const matter = data.matters?.find(
             (item) => String(item.id) === String($form.matter_id),
@@ -71,16 +138,14 @@
         const moment = momentOptions?.find(
             (item) => String(item.id) === String($form.lapse_id),
         );
-        const section = data.sections?.find(
-            (item) => String(item.id) === String($form.section_id),
-        );
+        const selectedSectionsLabel = getSelectedSectionsLabel();
 
         return [
             matter?.name,
             getSchoolLapseYearRange(selectedSchoolLapse),
             course?.name,
             moment?.label,
-            section?.name,
+            selectedSectionsLabel,
         ]
             .filter((value) => value && String(value).trim())
             .join(" ");
@@ -107,20 +172,45 @@
         }
     });
 
-    function addItem(idx) {
-        const nextIndex = $form.items.length;
-        $form.items = [...$form.items, { ...emptyItem }];
+    function addUnit() {
+        const nextIndex = $form.units.length;
+        const newUnit = createEmptyUnit(nextIndex + 1);
+        $form.units = [...$form.units, newUnit];
 
         setTimeout(() => {
-            const input = document.getElementById(`item-name-${nextIndex}`);
+            const input = document.getElementById(`unit-name-${nextIndex}`);
             if (input) input.focus();
         }, 0);
     }
 
-    function removeItem(index) {
-        const items = [...$form.items];
-        items.splice(index, 1);
-        $form.items = items.length ? items : [{ ...emptyItem }];
+    function removeUnit(unitIndex) {
+        const units = [...$form.units];
+        units.splice(unitIndex, 1);
+        $form.units = units.length ? units : [createEmptyUnit(1)];
+    }
+
+    function addTopic(unitIndex) {
+        const units = [...$form.units];
+        const targetUnit = units[unitIndex];
+        const nextTopicIndex = targetUnit.topics.length;
+        targetUnit.topics = [...targetUnit.topics, createEmptyTopic()];
+        $form.units = units;
+
+        setTimeout(() => {
+            const input = document.getElementById(
+                `topic-name-${unitIndex}-${nextTopicIndex}`,
+            );
+            if (input) input.focus();
+        }, 0);
+    }
+
+    function removeTopic(unitIndex, topicIndex) {
+        const units = [...$form.units];
+        const targetUnit = units[unitIndex];
+        const topics = [...targetUnit.topics];
+        topics.splice(topicIndex, 1);
+        targetUnit.topics = topics.length ? topics : [createEmptyTopic()];
+        $form.units = units;
     }
 
     function canEdit(plan) {
@@ -145,7 +235,7 @@
                 },
                 onSuccess: () => {
                     $form.reset();
-                    $form.items = [{ ...emptyItem }];
+                    $form.units = [createEmptyUnit(1)];
                     displayAlert({
                         type: "success",
                         message: "Plan de evaluación creado correctamente",
@@ -168,7 +258,7 @@
                 },
                 onSuccess: () => {
                     $form.reset();
-                    $form.items = [{ ...emptyItem }];
+                    $form.units = [createEmptyUnit(1)];
                     displayAlert({
                         type: "success",
                         message: "Plan actualizado correctamente",
@@ -199,14 +289,31 @@
         $form.school_lapse_id = plan.school_lapse_id;
         $form.lapse_id = plan.lapse_id || "";
         $form.course_id = plan.course_id || "";
-        $form.section_id = plan.section_id || "";
-        $form.items = plan.items.length
-            ? plan.items.map((item) => ({
-                  name: item.name,
-                  percentage: item.percentage,
-                  date: item.date || "",
+        $form.section_id = Array.isArray(plan.section_id)
+            ? plan.section_id
+            : plan.section_id
+              ? [plan.section_id]
+              : [];
+        $form.units = Array.isArray(plan.units) && plan.units.length
+            ? plan.units.map((unit, unitIndex) => ({
+                  id: unit.id || `unit_${Date.now()}_${unitIndex}`,
+                  unit_number: unit.unit_number ?? unitIndex + 1,
+                  name: unit.name || "",
+                  topics: Array.isArray(unit.topics) && unit.topics.length
+                      ? unit.topics.map((topic, topicIndex) => ({
+                            id:
+                                topic.id ||
+                                `topic_${Date.now()}_${unitIndex}_${topicIndex}`,
+                            name: topic.name || "",
+                            assessment_type: topic.assessment_type || "",
+                            percentage: topic.percentage ?? "",
+                            points: topic.points ?? "",
+                            scheduled_date: topic.scheduled_date || "",
+                            description: topic.description || "",
+                        }))
+                      : [createEmptyTopic()],
               }))
-            : [{ ...emptyItem }];
+            : [createEmptyUnit(1)];
         showFormModal = true;
     }
 
@@ -261,7 +368,7 @@
         on:click={(e) => {
             e.preventDefault();
             $form.reset();
-            $form.items = [{ ...emptyItem }];
+            $form.units = [createEmptyUnit(1)];
             submitStatus = "Crear";
             editingPlanId = null;
             showFormModal = true;
@@ -417,8 +524,8 @@
                 : "Editar plan de evaluación"}
         </h3>
 
-        <div class="grid grid-cols-12 gap-x-12">
-            <div class="col-span-5 grid grid-cols-2 gap-x-6">
+        <div class="  gap-x-12">
+            <div class=" grid grid-cols-12 gap-x-6 w-full">
                
                 <Input
                     type="select"
@@ -426,6 +533,7 @@
                     bind:value={$form.matter_id}
                     error={$form.errors?.matter_id}
                     required={true}
+                    classes={"col-span-3"}
                 >
                     <option value="">Seleccione...</option>
                     {#each data.matters as matter}
@@ -441,6 +549,7 @@
                     bind:value={$form.lapse_id}
                     error={$form.errors?.lapse_id}
                     required={true}
+                    classes={"col-span-2"}
                 >
                     {#if momentOptions.length}
                         {#each momentOptions as moment}
@@ -457,93 +566,176 @@
                     bind:value={$form.course_id}
                     error={$form.errors?.course_id}
                     required={true}
+                    classes={"col-span-2"}
+
                 >
                     {#each data.courses as course}
                         <option value={course.id}>{course.name}</option>
                     {/each}
                 </Input>
             
-                <Input
-                    type="select"
-                    label={"Sección"}
-                    bind:value={$form.section_id}
-                    error={$form.errors?.section_id}
-                    required={true}
-                >
-                    {#each data.sections as section}
-                        <option value={section.id}>{section.name}</option>
-                    {/each}
-                </Input>
+                <div class="col-span-2">
+                    <label class="form__label w-full text-xs md:text-sm font-semibold text-gray-700">
+                        Sección *
+                    </label>
+                    <div class="form__field w-full rounded-md border border-gray-300 px-3 py-2 text-sm min-h-[42px] bg-white">
+                        <label class="flex items-center gap-2 mb-2 text-sm">
+                            <input
+                                type="checkbox"
+                                checked={isAllSectionsSelected()}
+                                on:change={(event) =>
+                                    toggleAllSections(event.currentTarget.checked)
+                                }
+                            />
+                            <span>Todas las secciones</span>
+                        </label>
+
+                        <div class="space-y-1 max-h-[180px] overflow-y-auto">
+                            {#each data.sections as section}
+                                <label class="flex items-center gap-2 text-sm">
+                                    <input
+                                        type="checkbox"
+                                        value={String(section.id)}
+                                        checked={normalizeSectionSelection($form.section_id).includes(
+                                            String(section.id),
+                                        )}
+                                        on:change={() => toggleSection(section.id)}
+                                    />
+                                    <span>{section.name}</span>
+                                </label>
+                            {/each}
+                        </div>
+                    </div>
+                    {#if $form.errors?.section_id}
+                        <div class="text-black font-semibold bg-red pt-1 px-2">
+                            <span>{$form.errors.section_id}</span>
+                        </div>
+                    {/if}
+                </div>
               
                 <Input
                     label="Descripción (opcional)"
                     type="textarea"
                     bind:value={$form.description}
-                    classes={"col-span-2"}
+                    classes={"col-span-3"}
                     error={$form.errors.description}
                 />
             </div>
 
             <div class="mt-5 col-span-7">
-                <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center justify-between mb-3 gap-2">
                     <p class="text-xs md:text-sm font-semibold text-gray-700">
-                        Evaluaciones / porcentajes
+                        Unidades y temas
                     </p>
                     <button
                         type="button"
-                        on:click={() => addItem($form.items.length)}
+                        on:click={addUnit}
                         class="text-xs px-3 py-1.5 bg-color1 text-white rounded-md"
                     >
-                        + Agregar evaluación
+                        + Agregar unidad
                     </button>
                 </div>
-                {#if $form.errors.items}
+                {#if $form.errors.units}
                     <p class="text-red text-xs font-semibold mb-2">
-                        {$form.errors.items}
+                        {$form.errors.units}
                     </p>
                 {/if}
-                <div class="space-y-2">
-                    {#each $form.items as item, i}
-                        <div
-                            class="grid grid-cols-[5px_1fr_120px_150px_auto] gap-2 items-center"
-                        >
-                            <span class="text-xs font-semibold text-gray-500">{i+1}.</span>
-                            <input
-                                type="text"
-                                placeholder="Nombre (ej: Parcial 1)"
-                                class="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                                bind:value={$form.items[i].name}
-                                id="item-name-{i}"
-                            />
-                            <span>
-                                <b class="text-xs font-semibold text-gray-500">%</b>
-
+                <div class="space-y-4">
+                    {#each $form.units as unit, unitIndex}
+                        <div class="rounded-lg  shadow-lg bg-gray-50 p-3 md:p-5">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="text-xs font-semibold text-gray-500">
+                                    Unidad {unitIndex + 1}
+                                </span>
                                 <input
-                                    type="number"
-                                    placeholder="%"
-                                    min="0.01"
-                                    max="100"
-                                    step="0.01"
-                                    class="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                                    bind:value={$form.items[i].percentage}
+                                    type="text"
+                                    placeholder="Nombre de la unidad"
+                                    class="rounded-md border border-gray-300 px-3 py-2 text-sm flex-1"
+                                    bind:value={$form.units[unitIndex].name}
+                                    id={`unit-name-${unitIndex}`}
                                 />
-                            </span>
-                            <input
-                                type="date"
-                                class="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                                bind:value={$form.items[i].date}
-                            />
+                                {#if $form.units.length > 1}
+                                    <button
+                                        type="button"
+                                        on:click={() => removeUnit(unitIndex)}
+                                        class=" hover:text-red/70 text-xs font-semibold"
+                                    >
+                                        Quitar
+                                    </button>
+                                {/if}
+                            </div>
+
+                            <div class="space-y-3">
+                                {#each unit.topics as topic, topicIndex}
+                                    <div
+                                        class="grid grid-cols-[5px_1.2fr_1.2fr_1fr_100px_100px_140px_32px] gap-2 items-start"
+                                    >
+                                        <span class="text-xs font-semibold text-gray-500 pt-2">
+                                            {topicIndex + 1}.
+                                        </span>
+                                        <input
+                                            type="text"
+                                            placeholder="Tema. Ej: Sistemas de Ecuaciones Lineales"
+                                            class="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                                            bind:value={$form.units[unitIndex].topics[topicIndex].name}
+                                            id={`topic-name-${unitIndex}-${topicIndex}`}
+                                        />
+                                        <input
+                                            type="text"
+                                            placeholder="Tipo de prueba"
+                                            class="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                                            bind:value={$form.units[unitIndex].topics[topicIndex].assessment_type}
+                                        />
+                                        <input
+                                            type="text"
+                                            placeholder="Descripción (opcional)"
+                                            class="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                                            bind:value={$form.units[unitIndex].topics[topicIndex].description}
+                                        />
+                                        <input
+                                            type="number"
+                                            placeholder="%"
+                                            min="0.01"
+                                            max="100"
+                                            step="0.01"
+                                            class="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                                            bind:value={$form.units[unitIndex].topics[topicIndex].percentage}
+                                        />
+                                        <input
+                                            type="number"
+                                            placeholder="Puntos"
+                                            min="0"
+                                            step="0.01"
+                                            class="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                                            bind:value={$form.units[unitIndex].topics[topicIndex].points}
+                                        />
+                                        <input
+                                            type="date"
+                                            class="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                                            bind:value={$form.units[unitIndex].topics[topicIndex].scheduled_date}
+                                        />
+                                        <button
+                                            type="button"
+                                            on:click={() => removeTopic(unitIndex, topicIndex)}
+                                            class=" hover:text-red/70 pt-2"
+                                            title="Quitar tema"
+                                        >
+                                            <iconify-icon
+                                                icon="mdi:close-circle-outline"
+                                                width="22"
+                                                height="22"
+                                            ></iconify-icon>
+                                        </button>
+                                    </div>
+                                {/each}
+                            </div>
+
                             <button
                                 type="button"
-                                on:click={() => removeItem(i)}
-                                class="text-red hover:text-red/70"
-                                title="Quitar"
+                                on:click={() => addTopic(unitIndex)}
+                                class="mt-3 text-xs px-3 py-1.5 bg-gray-200 text-gray-700 rounded-md"
                             >
-                                <iconify-icon
-                                    icon="mdi:close-circle-outline"
-                                    width="24"
-                                    height="24"
-                                ></iconify-icon>
+                                + Agregar tema
                             </button>
                         </div>
                     {/each}

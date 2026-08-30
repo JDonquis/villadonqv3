@@ -48,6 +48,11 @@
             href: "/dashboard/planes-evaluacion",
             name: "Planes de Evaluación",
         },
+        {
+            icon: "mdi:calendar-clock",
+            href: "/dashboard/horarios",
+            name: "Horarios",
+        },
 
     ];
 
@@ -61,6 +66,11 @@
             icon: "mdi:account-group",
             href: "/dashboard/mis-estudiantes",
             name: "Mis Estudiantes",
+        },
+        {
+            icon: "mdi:calendar-clock",
+            href: "/dashboard/mi-horario",
+            name: "Mi Horario",
         },
         {
             icon: "mdi:account",
