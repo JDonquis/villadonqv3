@@ -55,7 +55,7 @@
         {
             icon: "mdi:home",
             href: "/dashboard/mis-planes",
-            name: "Mis Planes de Evaluación",
+            name: "Planes de Evaluación",
         },
         {
             icon: "mdi:account-group",

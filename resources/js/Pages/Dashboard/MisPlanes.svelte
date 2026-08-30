@@ -11,8 +11,7 @@
     export let data = [];
 
     const activeSchoolLapse =
-        data.school_lapses?.find((l) => l.is_active) ||
-        data.school_lapses?.[0];
+        data.school_lapses?.find((l) => l.is_active) || data.school_lapses?.[0];
 
     const defaultLapseId = activeSchoolLapse?.id || "";
 
@@ -27,6 +26,8 @@
     }
 
     const emptyItem = { name: "", percentage: "", date: "" };
+
+    
 
     let form = useForm({
         name: "",
@@ -43,6 +44,47 @@
         (l) => String(l.id) === String($form.school_lapse_id),
     );
     $: momentOptions = selectedSchoolLapse?.lapses || [];
+    $: if (submitStatus === "Crear") {
+        const autoName = getAutoPlanName();
+        if (autoName && $form.name !== autoName) {
+            $form.name = autoName;
+        }
+    }
+
+    function getSchoolLapseYearRange(schoolLapse) {
+        if (!schoolLapse?.start || !schoolLapse?.end) return "";
+
+        const startYear = String(new Date(schoolLapse.start).getFullYear()).slice(-2);
+        const endYear = String(new Date(schoolLapse.end).getFullYear()).slice(-2);
+
+        if (!startYear || !endYear) return "";
+        return `${startYear}-${endYear}`;
+    }
+
+    function getAutoPlanName() {
+        const matter = data.matters?.find(
+            (item) => String(item.id) === String($form.matter_id),
+        );
+        const course = data.courses?.find(
+            (item) => String(item.id) === String($form.course_id),
+        );
+        const moment = momentOptions?.find(
+            (item) => String(item.id) === String($form.lapse_id),
+        );
+        const section = data.sections?.find(
+            (item) => String(item.id) === String($form.section_id),
+        );
+
+        return [
+            matter?.name,
+            getSchoolLapseYearRange(selectedSchoolLapse),
+            course?.name,
+            moment?.label,
+            section?.name,
+        ]
+            .filter((value) => value && String(value).trim())
+            .join(" ");
+    }
 
     let showModal = false;
     let showFormModal = false;
@@ -65,8 +107,14 @@
         }
     });
 
-    function addItem() {
+    function addItem(idx) {
+        const nextIndex = $form.items.length;
         $form.items = [...$form.items, { ...emptyItem }];
+
+        setTimeout(() => {
+            const input = document.getElementById(`item-name-${nextIndex}`);
+            if (input) input.focus();
+        }, 0);
     }
 
     function removeItem(index) {
@@ -89,7 +137,10 @@
                     if (errors.items) {
                         displayAlert({ type: "error", message: errors.items });
                     } else if (errors.message) {
-                        displayAlert({ type: "error", message: errors.message });
+                        displayAlert({
+                            type: "error",
+                            message: errors.message,
+                        });
                     }
                 },
                 onSuccess: () => {
@@ -109,7 +160,10 @@
                     if (errors.items) {
                         displayAlert({ type: "error", message: errors.items });
                     } else if (errors.message) {
-                        displayAlert({ type: "error", message: errors.message });
+                        displayAlert({
+                            type: "error",
+                            message: errors.message,
+                        });
                     }
                 },
                 onSuccess: () => {
@@ -165,7 +219,11 @@
             });
             return;
         }
-        if (!confirm(`¿Está seguro de eliminar el plan "${selectedRow.data.name}"?`))
+        if (
+            !confirm(
+                `¿Está seguro de eliminar el plan "${selectedRow.data.name}"?`,
+            )
+        )
             return;
 
         router.delete(`/dashboard/mis-planes/${selectedRow.data.id}`, {
@@ -187,10 +245,11 @@
 
     function openReadOnly() {
         showModal = true;
-    }</script>
+    }
+</script>
 
 <svelte:head>
-    <title>Mis Planes de Evaluación</title>
+    <title>Planes de Evaluación</title>
 </svelte:head>
 
 <Alert />
@@ -273,7 +332,9 @@
                 <td>{plan.items_total}%</td>
                 <td>
                     <span
-                        class="px-2 py-0.5 rounded text-xs font-bold {statusBadges[plan.status] || ''}"
+                        class="px-2 py-0.5 rounded text-xs font-bold {statusBadges[
+                            plan.status
+                        ] || ''}"
                     >
                         {plan.status_label}
                     </span>
@@ -291,16 +352,21 @@
             <h3 class="text-xl font-bold text-color1 mb-1">{plan.name}</h3>
             <p class="text-sm text-gray-500 mb-3">
                 {plan.matter_name} · {plan.school_lapse_label}
-                {#if plan.lapse_label} · {plan.lapse_label}{/if}
+                {#if plan.lapse_label}
+                    · {plan.lapse_label}{/if}
                 {#if plan.course_name}
-                    · {plan.course_name}{plan.section_name ? " · Sección " + plan.section_name : ""}
+                    · {plan.course_name}{plan.section_name
+                        ? " · Sección " + plan.section_name
+                        : ""}
                 {/if}
             </p>
             {#if plan.description}
                 <p class="text-sm text-gray-600 mb-3">{plan.description}</p>
             {/if}
 
-            <table class="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+            <table
+                class="w-full text-sm border border-gray-200 rounded-lg overflow-hidden"
+            >
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="text-left px-3 py-2">Evaluación</th>
@@ -344,154 +410,88 @@
 </Modal>
 
 <Modal bind:showModal={showFormModal} classes={"w-fit"}>
-    <form
-        id="pl-form"
-        on:submit={handleSubmit}
-        action=""
-        class="max-w-[760px] pt-2 px-5"
-    >
-            <h3 class="text-lg font-bold text-color1 mb-2">
-                {submitStatus === "Crear" ? "Nuevo plan de evaluación" : "Editar plan de evaluación"}
-            </h3>
+    <form id="pl-form" on:submit={handleSubmit} action="" class="max-w-[1200px] pt-2 px-5">
+        <h3 class="text-lg font-bold text-color1 mb-2">
+            {submitStatus === "Crear"
+                ? "Nuevo plan de evaluación"
+                : "Editar plan de evaluación"}
+        </h3>
 
-            <div class="grid grid-cols-2 gap-x-6">
+        <div class="grid grid-cols-12 gap-x-12">
+            <div class="col-span-5 grid grid-cols-2 gap-x-6">
+               
                 <Input
-                    label="Nombre del plan"
-                    type="text"
+                    type="select"
+                    label={"Materia"}
+                    bind:value={$form.matter_id}
+                    error={$form.errors?.matter_id}
                     required={true}
-                    bind:value={$form.name}
-                    error={$form.errors.name}
+                >
+                    <option value="">Seleccione...</option>
+                    {#each data.matters as matter}
+                        <option value={matter.id}>{matter.name}</option>
+                    {/each}
+                </Input>
+
+               
+
+                <Input
+                    type="select"
+                    label={"Momento escolar"}
+                    bind:value={$form.lapse_id}
+                    error={$form.errors?.lapse_id}
+                    required={true}
+                >
+                    {#if momentOptions.length}
+                        {#each momentOptions as moment}
+                            <option value={moment.id}>{moment.label}</option>
+                        {/each}
+                    {:else}
+                        <option value="">Sin momentos</option>
+                    {/if}
+                </Input>
+
+                <Input
+                    type="select"
+                    label={"Curso"}
+                    bind:value={$form.course_id}
+                    error={$form.errors?.course_id}
+                    required={true}
+                >
+                    {#each data.courses as course}
+                        <option value={course.id}>{course.name}</option>
+                    {/each}
+                </Input>
+            
+                <Input
+                    type="select"
+                    label={"Sección"}
+                    bind:value={$form.section_id}
+                    error={$form.errors?.section_id}
+                    required={true}
+                >
+                    {#each data.sections as section}
+                        <option value={section.id}>{section.name}</option>
+                    {/each}
+                </Input>
+              
+                <Input
+                    label="Descripción (opcional)"
+                    type="textarea"
+                    bind:value={$form.description}
+                    classes={"col-span-2"}
+                    error={$form.errors.description}
                 />
-                <div class="mt-3 md:mt-5">
-                    <label
-                        class="form__label text-xs md:text-sm font-semibold text-gray-700"
-                    >
-                        Materia *
-                    </label>
-                    <select
-                        class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                        bind:value={$form.matter_id}
-                    >
-                        <option value="">Seleccione...</option>
-                        {#each data.matters as matter}
-                            <option value={matter.id}>{matter.name}</option>
-                        {/each}
-                    </select>
-                    {#if $form.errors.matter_id}
-                        <p class="text-red text-xs font-semibold mt-1">
-                            {$form.errors.matter_id}
-                        </p>
-                    {/if}
-                </div>
-                <div class="mt-3 md:mt-5">
-                    <label
-                        class="form__label text-xs md:text-sm font-semibold text-gray-700"
-                    >
-                        Período escolar *
-                    </label>
-                    <select
-                        class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                        bind:value={$form.school_lapse_id}
-                        on:change={() => {
-                            const sl = data.school_lapses?.find(
-                                (l) => String(l.id) === String($form.school_lapse_id),
-                            );
-                            $form.lapse_id = sl?.lapses?.[0]?.id || "";
-                        }}
-                    >
-                        {#each data.school_lapses as lapse}
-                            <option value={lapse.id}>{lapse.label}</option>
-                        {/each}
-                    </select>
-                    {#if $form.errors.school_lapse_id}
-                        <p class="text-red text-xs font-semibold mt-1">
-                            {$form.errors.school_lapse_id}
-                        </p>
-                    {/if}
-                </div>
-                <div class="mt-3 md:mt-5">
-                    <label
-                        class="form__label text-xs md:text-sm font-semibold text-gray-700"
-                    >
-                        Momento escolar *
-                    </label>
-                    <select
-                        class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                        bind:value={$form.lapse_id}
-                    >
-                        {#if momentOptions.length}
-                            {#each momentOptions as moment}
-                                <option value={moment.id}>{moment.label}</option>
-                            {/each}
-                        {:else}
-                            <option value="">Sin momentos</option>
-                        {/if}
-                    </select>
-                    {#if $form.errors.lapse_id}
-                        <p class="text-red text-xs font-semibold mt-1">
-                            {$form.errors.lapse_id}
-                        </p>
-                    {/if}
-                </div>
-                <div class="mt-3 md:mt-5">
-                    <label
-                        class="form__label text-xs md:text-sm font-semibold text-gray-700"
-                    >
-                        Curso *
-                    </label>
-                    <select
-                        class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                        bind:value={$form.course_id}
-                    >
-                        <option value="">Seleccione...</option>
-                        {#each data.courses as course}
-                            <option value={course.id}>{course.name}</option>
-                        {/each}
-                    </select>
-                    {#if $form.errors.course_id}
-                        <p class="text-red text-xs font-semibold mt-1">
-                            {$form.errors.course_id}
-                        </p>
-                    {/if}
-                </div>
-                <div class="mt-3 md:mt-5">
-                    <label
-                        class="form__label text-xs md:text-sm font-semibold text-gray-700"
-                    >
-                        Sección *
-                    </label>
-                    <select
-                        class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                        bind:value={$form.section_id}
-                    >
-                        <option value="">Seleccione...</option>
-                        {#each data.sections as section}
-                            <option value={section.id}>{section.name}</option>
-                        {/each}
-                    </select>
-                    {#if $form.errors.section_id}
-                        <p class="text-red text-xs font-semibold mt-1">
-                            {$form.errors.section_id}
-                        </p>
-                    {/if}
-                </div>
             </div>
 
-            <Input
-                label="Descripción (opcional)"
-                type="textarea"
-                bind:value={$form.description}
-                error={$form.errors.description}
-            />
-
-            <div class="mt-5">
+            <div class="mt-5 col-span-7">
                 <div class="flex items-center justify-between mb-2">
                     <p class="text-xs md:text-sm font-semibold text-gray-700">
                         Evaluaciones / porcentajes
                     </p>
                     <button
                         type="button"
-                        on:click={addItem}
+                        on:click={() => addItem($form.items.length)}
                         class="text-xs px-3 py-1.5 bg-color1 text-white rounded-md"
                     >
                         + Agregar evaluación
@@ -505,23 +505,29 @@
                 <div class="space-y-2">
                     {#each $form.items as item, i}
                         <div
-                            class="grid grid-cols-[1fr_120px_150px_auto] gap-2 items-center"
+                            class="grid grid-cols-[5px_1fr_120px_150px_auto] gap-2 items-center"
                         >
+                            <span class="text-xs font-semibold text-gray-500">{i+1}.</span>
                             <input
                                 type="text"
                                 placeholder="Nombre (ej: Parcial 1)"
                                 class="rounded-md border border-gray-300 px-3 py-2 text-sm"
                                 bind:value={$form.items[i].name}
+                                id="item-name-{i}"
                             />
-                            <input
-                                type="number"
-                                placeholder="%"
-                                min="0.01"
-                                max="100"
-                                step="0.01"
-                                class="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                                bind:value={$form.items[i].percentage}
-                            />
+                            <span>
+                                <b class="text-xs font-semibold text-gray-500">%</b>
+
+                                <input
+                                    type="number"
+                                    placeholder="%"
+                                    min="0.01"
+                                    max="100"
+                                    step="0.01"
+                                    class="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                                    bind:value={$form.items[i].percentage}
+                                />
+                            </span>
                             <input
                                 type="date"
                                 class="rounded-md border border-gray-300 px-3 py-2 text-sm"
@@ -543,23 +549,24 @@
                     {/each}
                 </div>
             </div>
-        </form>
-        <button
-            form="pl-form"
-            slot="btn_footer"
-            type="submit"
-            class="animated-button min-w-[200px] flex gap-2"
-            disabled={$form.processing}
-        >
-            {#if $form.processing}
-                Cargando...
-            {:else}
-                <iconify-icon
-                    icon="material-symbols:save-sharp"
-                    width="24"
-                    height="24"
-                />
-                <span>{submitStatus === "Crear" ? "Crear" : "Guardar"}</span>
-            {/if}
-        </button>
+        </div>
+    </form>
+    <button
+        form="pl-form"
+        slot="btn_footer"
+        type="submit"
+        class="animated-button min-w-[200px] flex gap-2 hover:bg-[#c5e5e4]"
+        disabled={$form.processing}
+    >
+        {#if $form.processing}
+            Cargando...
+        {:else}
+            <iconify-icon
+                icon="material-symbols:save-sharp"
+                width="24"
+                height="24"
+            />
+            <span class="">{submitStatus === "Crear" ? "Crear" : "Guardar"}</span>
+        {/if}
+    </button>
 </Modal>

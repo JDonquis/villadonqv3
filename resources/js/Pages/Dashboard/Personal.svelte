@@ -197,7 +197,7 @@
     <Alert />
     <div class=" mx-auto">
         <button
-            class="animated-button w-fitcontent"
+            class="animated-button ml-auto w-fitcontent"
             on:click={(e) => {
                 if (!$page.props.auth.is_admin) {
                     displayAlert({
