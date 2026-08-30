@@ -96,7 +96,7 @@
 
 {#if !data.plans?.length}
     <div class="bg-white border border-gray-200 rounded-lg p-8 text-center text-gray-400">
-        Aún no tienes planes de evaluación. Crea un plan en "Mis Planes de
+        Aún no tienes planes de evaluación. Crea un plan en "Planes de
         Evaluación" para poder calificar estudiantes.
     </div>
 {:else}

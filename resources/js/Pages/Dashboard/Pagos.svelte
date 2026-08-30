@@ -734,101 +734,106 @@
     </form>
 </Modal>
 
-<Search
-    filtersOptions={{
-        date: {
-            type: "date",
-            label: "Fecha de la transacción",
-        },
-        account_payment_id: {
-            type: "select",
-            multiple: true,
-            label: "Método de pago",
-            options: data.accounts.data.map((account) => ({
-                id: account.id,
-                name: [
-                    account.payment_method_name,
-                    account?.bank || "",
-                    account?.cash_currency || "",
-                    account?.username || "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
-                color: ColorsPayMethods()[account.payment_method_name],
-            })),
-        },
-    }}
-/>
+<div class="flex items-start justify-between gap-5 mt-1">
+    <div class="flex-1 min-w-0">
+        <Search
+            inlineFilters
+            filtersOptions={{
+                date: {
+                    type: "date",
+                    label: "Fecha de la transacción",
+                },
+                account_payment_id: {
+                    type: "select",
+                    multiple: true,
+                    label: "Método de pago",
+                    options: data.accounts.data.map((account) => ({
+                        id: account.id,
+                        name: [
+                            account.payment_method_name,
+                            account?.bank || "",
+                            account?.cash_currency || "",
+                            account?.username || "",
+                        ]
+                            .filter(Boolean)
+                            .join(" "),
+                        color: ColorsPayMethods()[account.payment_method_name],
+                    })),
+                },
+            }}
+        />
+    </div>
 
-<div class="flex justify-between items-center gap-10 mt-1">
-    {#if data.total_income}
-        <div class="w-max mb-1 flex flex-wrap items-center gap-2">
-            <span class="font-semibold">Total ingresos:</span>
-            <b
-                class={`text-sm bg-white shadow-sm px-2 ${showTotalIncome ? "opacity-100" : "opacity-0 blur-sm"} text-green transition-all duration-200`}
-            >
-                {showTotalIncome ? `$${data.total_income}` : "•••"}
-            </b>
+    <div class="flex flex-col items-end gap-3 shrink-0">
+        <div class="inline-block items-center gap-5">
+            <p class="text-sm text-gray-500">
+                1$ el {formatFechaCorta(dateOfDolarPrice)} = {#if dolarPrice}{dolarPrice}{:else}<iconify-icon
+                        icon="line-md:loading-loop"
+                        width="24"
+                        height="24"
+                    ></iconify-icon>{/if} Bs
+            </p>
             <button
-                type="button"
-                class="inline-flex items-center justify-center bg-white/10 p-2 text-gray-700 transition hover:bg-green/10 focus:outline-none"
-                on:click={() => {
-                    showTotalIncome = !showTotalIncome;
+                class="animated-button w-fitcontent"
+                on:click={(e) => {
+                    e.preventDefault();
+                    showModal = true;
+                    searchInputRef.focus();
+                    if (submitStatus === "Solo lectura") {
+                        $form.reset();
+                        submitStatus = "Registrar";
+                    }
                 }}
-                aria-label={showTotalIncome ? "Ocultar total" : "Mostrar total"}
             >
-                <iconify-icon
-                    icon={showTotalIncome
-                        ? "formkit:eyeclosed"
-                        : "mdi:eye-outline"}
-                    width="24"
-                    height="24"
-                ></iconify-icon>
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="arr-2"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                    ></path>
+                </svg>
+                <span class="text">Registrar pago</span>
+                <span class="circle"></span>
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="arr-1"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                    ></path>
+                </svg>
             </button>
         </div>
-    {/if}
 
-    <div class="flex items-center gap-5">
-        <p class="text-sm text-gray-500 mt-4">
-            1$ el {formatFechaCorta(dateOfDolarPrice)} = {#if dolarPrice}{dolarPrice}{:else}<iconify-icon
-                    icon="line-md:loading-loop"
-                    width="24"
-                    height="24"
-                ></iconify-icon>{/if} Bs
-        </p>
-        <button
-            class="animated-button w-fitcontent"
-            on:click={(e) => {
-                e.preventDefault();
-                showModal = true;
-                searchInputRef.focus();
-                if (submitStatus === "Solo lectura") {
-                    $form.reset();
-                    submitStatus = "Registrar";
-                }
-            }}
-        >
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="arr-2"
-                viewBox="0 0 24 24"
-            >
-                <path
-                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                ></path>
-            </svg>
-            <span class="text">Registrar pago</span>
-            <span class="circle"></span>
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="arr-1"
-                viewBox="0 0 24 24"
-            >
-                <path
-                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                ></path>
-            </svg>
-        </button>
+        {#if data.total_income}
+            <div class="w-max flex flex-wrap items-center gap-2">
+                <span class="font-semibold">Total ingresos:</span>
+                <b
+                    class={`text-sm bg-white shadow-sm px-2 ${showTotalIncome ? "opacity-100" : "opacity-0 blur-sm"} text-green transition-all duration-200`}
+                >
+                    {showTotalIncome ? `$${data.total_income}` : "•••"}
+                </b>
+                <button
+                    type="button"
+                    class="inline-flex items-center justify-center bg-white/10 p-2 text-gray-700 transition hover:bg-green/10 focus:outline-none"
+                    on:click={() => {
+                        showTotalIncome = !showTotalIncome;
+                    }}
+                    aria-label={showTotalIncome ? "Ocultar total" : "Mostrar total"}
+                >
+                    <iconify-icon
+                        icon={showTotalIncome
+                            ? "formkit:eyeclosed"
+                            : "mdi:eye-outline"}
+                        width="24"
+                        height="24"
+                    ></iconify-icon>
+                </button>
+            </div>
+        {/if}
     </div>
 </div>
 
@@ -857,7 +862,7 @@
     edit={false}
     pagination={true}
 >
-    <thead slot="thead" class="sticky top-0 z-50">
+    <thead slot="thead" class="sticky top-0 z-40">
         <tr>
             <th>ID</th>
             <th>Fecha de la transacción</th>

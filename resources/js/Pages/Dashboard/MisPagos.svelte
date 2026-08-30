@@ -1,5 +1,5 @@
 <script>
-    import { page } from "@inertiajs/svelte";
+    import { inertia, page } from "@inertiajs/svelte";
     import BalanceBar from "../../components/BalanceBar.svelte";
     import Table from "../../components/Table.svelte";
     import Modal from "../../components/Modal.svelte";
@@ -15,6 +15,7 @@
     import ColorsPayMethods from "../../components/ColorsPayMethods";
     import Search from "../../components/Search.svelte";
 
+    let activeTab = "pagar"; // 'pagar' | 'historial'
     export let config = {
         day_of_monthly_payment: 0,
         grace_period: 0,
@@ -100,12 +101,10 @@
 
     function computeRepresentativeDebt() {
         if (!data?.students) return 0;
-       
 
         let total = 0;
         for (const student of data.students) {
             for (const balance of student.balances) {
-               
                 total += balance.total_debt || 0;
             }
         }
@@ -221,8 +220,6 @@
         observations: "",
     };
 
-
-
     let form = useForm({ ...emptyDataForm });
 
     $: console.log($form.account_payment_id);
@@ -268,8 +265,7 @@
 
     $: selectedPaymentAccount =
         data?.accounts?.data?.find(
-            (account) =>
-                account.id == $form.account_payment_id,
+            (account) => account.id == $form.account_payment_id,
         ) || null;
 
     function getPaymentDetails(account) {
@@ -318,549 +314,640 @@
     <title>Mis Pagos</title>
 </svelte:head>
 
-<div class="bg-white p-2 md:py-3 md:px-5 rounded-lg flex flex-col gap-2">
+<div class="   ">
     {#if data.students.length === 0}
         <p class="text-gray-400 text-sm">No tienes hijos inscritos.</p>
     {/if}
 
-    <div class="md:grid grid-cols-12 gap-6">
-        <div class="col-span-8">
-            {#each data.students as student, i}
-                {#if data.students.length > 1}
-                    <div class="md:flex gap-4 md:gap-5">
-                        <div>
-                            <div
-                                class="md:min-w-[200px] flex items-center mb-1"
-                            >
-                                <span class="font-semibold text-gray-800">
-                                    {student.name}
-                                    {student.last_name}
-                                </span>
-                            </div>
-                            <span
-                                class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
-                            >
-                                {#if student.document_type}
-                                    <span class="uppercase"
-                                        >{student.document_type}-</span
-                                    >
-                                {/if}
-                                {student.ci}
-                            </span>
-
-                            <!-- Separador opcional o punto -->
-                            <span class="text-gray-300">•</span>
-
-                            <!-- Curso y Sección -->
-                            <span
-                                class="text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200/40 text-xs"
-                            >
-                                {student.course}-{student.section}
-                            </span>
-                        </div>
-                        {#if showFormPay}
-                        <div class="mt-3 md:mt-0 flex gap-4">
-                            <div class="flex flex-col items-start">
-                                <b class="pr-1 text-xs">$. USD</b>
-                                <input
-                                    id={`amount_in_dolars_${i}`}
-                                    type="number"
-                                    min="0"
-                                    placeholder="Dólares"
-                                    step="0.01"
-                                    class="w-20 px-1 py-1 md:py-2 md:px-2 border-gray-400 rounded-md border focus:outline-0"
-                                    value={$form.students[i]
-                                        ?.amount_in_dolars || ""}
-                                    on:input={(e) => {
-                                        const rawDollarValue =
-                                            e.target.value ?? "";
-                                        const numericDollarValue =
-                                            parseFloat(rawDollarValue) || 0;
-
-                                        $form.students[i] = {
-                                            ...$form.students[i],
-                                            amount_in_dolars: rawDollarValue,
-                                            amount_in_bs:
-                                                dolarPrice > 0
-                                                    ? (
-                                                          numericDollarValue *
-                                                          dolarPrice
-                                                      ).toFixed(2)
-                                                    : "0.00",
-                                        };
-                                        $form.total_in_dolars = $form.students
-                                            .reduce(
-                                                (total, s) =>
-                                                    total +
-                                                    (parseFloat(
-                                                        s.amount_in_dolars,
-                                                    ) || 0),
-                                                0,
-                                            )
-                                            .toString();
-                                        $form.total_in_bs =
-                                            dolarPrice > 0
-                                                ? (
-                                                      parseFloat(
-                                                          $form.total_in_dolars,
-                                                      ) * dolarPrice
-                                                  ).toFixed(2)
-                                                : "0.00";
-                                    }}
-                                />
-                            </div>
-
-                            <div class="flex flex-col items-start">
-                                <b class="pr-1 text-xs">Bs. VES</b>
-                                <input
-                                    type="text"
-                                    inputmode="numeric"
-                                    min="0"
-                                    step="0.01"
-                                    class="w-28 border px-1 py-1 md:py-2 md:px-2 border-gray-400 rounded-md focus:outline-"
-                                    value={formatBsInput(
-                                        $form.students[i]?.amount_in_bs || "",
-                                    )}
-                                    placeholder="Bolívares"
-                                    on:input={(e) => {
-                                        const numericBs = parseBsInput(
-                                            e.target.value,
-                                        );
-                                        const bsValue = numericBs.toFixed(2);
-                                        const usdValue =
-                                            dolarPrice > 0
-                                                ? (
-                                                      numericBs / dolarPrice
-                                                  ).toFixed(2)
-                                                : "0.00";
-
-                                        $form.students[i] = {
-                                            ...$form.students[i],
-                                            amount_in_bs: bsValue,
-                                            amount_in_dolars: usdValue,
-                                        };
-                                        $form.total_in_bs = $form.students
-                                            .reduce(
-                                                (total, s) =>
-                                                    total +
-                                                    (parseFloat(
-                                                        s.amount_in_bs,
-                                                    ) || 0),
-                                                0,
-                                            )
-                                            .toFixed(2);
-                                        $form.total_in_dolars = (
-                                            $form.total_in_bs / dolarPrice
-                                        ).toFixed(2);
-                                    }}
-                                />
-                            </div>
-                        </div>
-                        {/if}
-                    </div>
-                {:else}
-                    <div class="flex items-start justify-between gap-4">
-                        <div>
-                            <div class="flex items-center mb-1">
-                                <span class="font-semibold text-gray-800">
-                                    {student.name}
-                                    {student.last_name}
-                                </span>
-                            </div>
-                            <span
-                                class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
-                            >
-                                {#if student.document_type}
-                                    <span class="uppercase"
-                                        >{student.document_type}-</span
-                                    >
-                                {/if}
-                                {student.ci}
-                            </span>
-
-                            <span class="text-gray-300">•</span>
-
-                            <span
-                                class="text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200/40 text-xs"
-                            >
-                                {student.course}-{student.section}
-                            </span>
-                        </div>
-                    </div>
-                {/if}
-                {#each student.balances as balance}
-                    <div class="flex flex-col gap-2 mt-2 mb-2">
-                        <BalanceBar
-                            balances={student.balances.map((b) => ({
-                                ...b,
-                                ...b.months,
-                            }))}
-                            amountToPay={$form.students[i]?.amount_in_dolars}
-                            is_exempt={student.is_exempt
-                                ? student.exemption_percentage
-                                : false}
-                            dayOfPayment={config.day_of_monthly_payment}
-                            gracePeriod={config.grace_period}
-                            dolarRate={dolarPrice}
-                        />
-                    </div>
-                {/each}
-            {/each}
-        </div>
-        <div class="col-span-4">
-        {#if !showFormPay}
-            <button
-                class="ml-auto animated-button w-fitcontent"
-                on:click={async (e) => {
-                    // ensure hidden first to replay animation
-                    showFormPay = false;
-                    await tick();
-                    // set amounts
-                    const totalDebt = computeRepresentativeDebt();
-                    syncSingleStudentTotals("usd", totalDebt)
-
-                    // restore saved selection or focus select
-                    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-                    if (saved) {
-                        $form.account_payment_id = +saved;
-                    }
-
-                    showFormPay = true;
-
-                        // small delay to ensure element mounted
-                        await tick();
-                        document.querySelector("#amount_in_dolars_0").focus();
-                    
-                }}
-            >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="arr-2"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                    ></path>
-                </svg>
-                <span class="text">Procesar pago</span>
-                <span class="circle"></span>
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="arr-1"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                    ></path>
-                </svg>
-            </button>
-        {/if}
-            {#if showFormPay}
-            <form class="formPay col-span-4 w grid grid-cols-2 gap-3 md:gap-x-5" in:fade={{duration:180}} out:fade={{duration:120}}>
-                <Input
-                    bind:this={paymentSelectRef}
-                    type="select"
-                    label={"Método de pago"}
-                    bind:value={$form.account_payment_id}
-                    error={$form.errors?.account_payment_id}
-                    required={true}
-                >
-                    {#each data.accounts.data as account}
-                        <option
-                            value={account.id}
-                            class={`border-l-4 mix-blend-difference  }`}
-                        >
-                            {account.payment_method_name}
-                            {#if account.bank}- {account.bank}{/if}
-                            {#if account.cash_currency}- {account.cash_currency}{/if}
-                            {#if account.username}- {account.username}{/if}
-                        </option>
-                    {/each}
-                </Input>
-                <Input
-                    type="date"
-                    required={true}
-                    label={"Fecha del pago"}
-                    bind:value={$form.date}
-                    error={$form.errors?.date}
-                    max={currentDateString}
-                />
-
-                {#if selectedPaymentAccount}
-                    <div
-                        class="col-span-2 mt-2 rounded-lg border border-gray-200 bg-gray-50 p-2 md:p-3"
-                    >
-                        <div
-                            class="mb-2 flex items-center justify-between gap-3"
-                        >
-                            <span class="text-sm font-semibold text-gray-700">
-                                Datos para {selectedPaymentAccount.payment_method_name}
-                            </span>
-                        </div>
-
-                        <div class="space-y-2">
-                            {#each getPaymentDetails(selectedPaymentAccount) as detail}
-                                <div
-                                    class="flex items-center justify-between gap-2 md:gap-3 rounded-md  bg-white px-2 py-2"
-                                >
-                                    <div class="min-w-0 flex-1">
-                                        <div
-                                            class="text-[10px] font-medium uppercase tracking-wide text-gray-500"
-                                        >
-                                            {detail.label}
-                                        </div>
-                                        <div
-                                            class=" truncate text-xs md:text-sm font-medium text-gray-800"
-                                        >
-                                            {detail.value}
-                                        </div>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        class="rounded-md border border-blue-200 bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 transition hover:bg-blue-100"
-                                        on:click={() =>
-                                            copyToClipboard(
-                                                detail.value,
-                                                detail.label,
-                                            )}
-                                    >
-                                        Copiar
-                                    </button>
-                                </div>
-                            {/each}
-                        </div>
-                    </div>
-                {/if}
-
-                {#if data.students.length > 1}
-                    <Input
-                        type="hidden"
-                        label={"Total en Dólares ($)"}
-                        required={true}
-                        readonly={true}
-                        bind:value={$form.total_in_dolars}
-                        error={$form.errors?.total_in_dolars}
-                    />
-
-                    <Input
-                        type="hidden"
-                        label={"Total en Bolívares (Bs)"}
-                        readonly={true}
-                        bind:value={$form.total_in_bs}
-                        error={$form.errors?.total_in_bs}
-                    />
-                    <p>
-                        <span class="block font-medium text-sm">
-                            Total en USD:
-                        </span>
-                        <span class="text-gray-500"> $ </span>
-                        <b>{$form.total_in_dolars}</b>
-                    </p>
-                    <p>
-                        <span class="block font-medium text-sm">
-                            Total en VES:
-                        </span>
-                        <span class="text-gray-500"> Bs </span>
-                        <b>{formatBsInput($form.total_in_bs)}</b>
-                    </p>
-                {:else}
-                    <Input
-                        type="number"
-                        label={"Total en Dólares ($)"}
-                        required={true}
-                        min="0"
-                        step="0.01"
-                        value={$form.total_in_dolars || ""}
-                        error={$form.errors?.total_in_dolars}
-                        on:focus={(e) => {
-                            if (e.target.value !== "") {
-                                e.target.select();
-                            }
-                        }}
-                        on:input={(e) =>
-                            syncSingleStudentTotals("usd", e.target.value)}
-                    />
-
-                    <Input
-                        type="text"
-                        label={"Total en Bolívares (Bs)"}
-                        min="0"
-                        step="0.01"
-                        value={formatBsInput($form.total_in_bs)}
-                        error={$form.errors?.total_in_bs}
-                        on:input={(e) =>
-                            syncSingleStudentTotals("bs", e.target.value)}
-                        on:focus={(e) => {
-                            if (e.target.value !== "") {
-                                e.target.select();
-                            }
-                        }}
-                    />
-                {/if}
-                <button
-                    class="animated-button col-span-2"
-                    on:click={(e) => {
-                        // e.preventDefault();
-                        // showModal = true;
-                        // searchInputRef.focus();
-                        // if (submitStatus === "Solo lectura") {
-                        //     $form.reset();
-                        //     submitStatus = "Registrar";
-                        // }
-                    }}
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="arr-2"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                        ></path>
-                    </svg>
-                    <span class="text-sm md:text-base text"
-                        >Confirmar que pagué este monto</span
-                    >
-                    <span class="circle"></span>
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="arr-1"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                        ></path>
-                    </svg>
-                </button>
-                <button type="button" class="bg-gray-200 rounded-full text-gray-600 hover:bg-gray-400  mt-2 py-2 px-4" on:click={() => { showFormPay = false; }}>Descartar</button>
-            </form>
-            {/if}
-        </div>
-    </div>
-
-    <div class="bg-white pt-5 mt-5 rounded-lg text-gray-600">
-        <span class="font-medium text-gray-700 px-4">Pagos realizados:</span>
-        <Table
-            allowFilters={false}
-            serverSideData={data?.payments}
-            otherSelectOptions={[
-                {
-                    label: "Ver detalles",
-                    icon: "mdi:eye",
-                    classes: "bg-blue",
-                    // onClick: fillFormToEdit,
-                },
-            ]}
-            edit={false}
-            pagination={true}
+    <nav class="flex items-center ">
+        <button
+            class=" z-0 font-semibold  rounded-t-xl py-2 px-3 md:px-4 {activeTab ===
+            'pagar'
+                ? 'bg-white text-gray-800'
+                : 'bg-white/60 text-gray-600'}"
+            on:click={() => (activeTab = "pagar")}
+            aria-pressed={activeTab === "pagar"}
         >
-            <thead slot="thead" class="sticky top-0 z-50">
-                <tr>
-                    <th>ID</th>
-                    <th>Fecha de la transacción</th>
-                    <th>Estudiante/s</th>
-                    <th>Total USD$</th>
-                    <th>Total Bs</th>
-                    <th>Método de pago</th>
-                    <th>Referencia</th>
-                    <!-- <th>Representante</th> -->
-                </tr>
-            </thead>
+            Pagar
+        </button>
+        <button
+            class="z-0 font-semibold  rounded-t-xl py-2 px-3 md:px-4 {activeTab ===
+            'historial'
+                ? 'bg-white text-gray-800 '
+                : 'bg-white/60 text-gray-600'}"
+            on:click={() => (activeTab = "historial")}
+            aria-pressed={activeTab === "historial"}
+        >
+            Ver historial de pagos
+        </button>
+    </nav>
 
-            <tbody slot="tbody">
-                {#each data?.payments?.data as row, i}
-                    <tr
-                        rowData={row}
-                        idKey="id"
-                        activeClass="bg-color2 bg-opacity-10 brightness-110"
-                        classes={`${row.status === 0 ? "bg-red text-gray-400 bg-opacity-10 opacity-70" : ""} `}
-                    >
-                        <td>
-                            <span class="text-xs">
-                                {row.id}
-                            </span>
-                        </td>
-                        <td>{row.date}</td>
-                        <td class="px-4 py-3 align-top">
-                            <div class="space-y-2">
-                                {#each row?.students as student, j}
-                                    <div class="flex flex-col gap-1 text-sm">
-                                        <!-- Línea Superior: Nombre completo del estudiante -->
-                                        <div
-                                            class="font-semibold text-gray-800 capitalize leading-snug"
+    {#if activeTab === "pagar"}
+        <div
+            class="z-20 md:grid grid-cols-12 gap-6 bg-white md:p-3 md:px-4 rounded-lg rounded-tl-none"
+        >
+            <div class="col-span-8">
+                {#each data.students as student, i}
+                    {#if data.students.length > 1}
+                        <div class="md:flex gap-4 md:gap-5">
+                            <div>
+                                <div
+                                    class="md:min-w-[200px] flex items-center mb-1"
+                                >
+                                    <span class="font-semibold text-gray-800">
+                                        {student.name}
+                                        {student.last_name}
+                                    </span>
+                                </div>
+                                <span
+                                    class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
+                                >
+                                    {#if student.document_type}
+                                        <span class="uppercase"
+                                            >{student.document_type}-</span
                                         >
-                                            {student.name}
-                                            {student.last_name}
-                                        </div>
+                                    {/if}
+                                    {student.ci}
+                                </span>
 
-                                        <!-- Línea Inferior: Metadatos organizados en chips/badges -->
-                                        <div
-                                            class="flex items-center gap-1.5 flex-wrap text-xs text-gray-500"
-                                        >
-                                            <!-- Monto individual (si aplica) -->
-                                            {#if student.pivot?.amount_in_dolars}
-                                                <span
-                                                    class="font-medium bg-green/20 px-1.5 py-0.5 rounded border border-emerald-200/60"
-                                                >
-                                                    ${student.pivot
-                                                        .amount_in_dolars}
-                                                </span>
-                                            {/if}
+                                <!-- Separador opcional o punto -->
+                                <span class="text-gray-300">•</span>
 
-                                            <!-- Cédula -->
-                                            <span
-                                                class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
-                                            >
-                                                {#if student.document_type}
-                                                    <span class="uppercase"
-                                                        >{student.document_type}-</span
-                                                    >
-                                                {/if}
-                                                {student.ci}
-                                            </span>
-
-                                            <!-- Separador opcional o punto -->
-                                            <span class="text-gray-300">•</span>
-
-                                            <!-- Curso y Sección -->
-                                            <span
-                                                class="text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200/40 text-[11px]"
-                                            >
-                                                {student.course?.name} -
-                                                {student.section?.name}
-                                            </span>
-                                        </div>
-                                    </div>
-                                {/each}
+                                <!-- Curso y Sección -->
+                                <span
+                                    class="text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200/40 text-xs"
+                                >
+                                    {student.course}-{student.section}
+                                </span>
                             </div>
-                        </td>
-                        <!-- <td
+                            {#if showFormPay}
+                                <div class="mt-3 md:mt-0 flex gap-4">
+                                    <div class="flex flex-col items-start">
+                                        <b class="pr-1 text-xs">$. USD</b>
+                                        <input
+                                            id={`amount_in_dolars_${i}`}
+                                            type="number"
+                                            min="0"
+                                            placeholder="Dólares"
+                                            step="0.01"
+                                            class="w-20 px-1 py-1 md:py-2 md:px-2 border-gray-400 rounded-md border focus:outline-0"
+                                            value={$form.students[i]
+                                                ?.amount_in_dolars || ""}
+                                            on:input={(e) => {
+                                                const rawDollarValue =
+                                                    e.target.value ?? "";
+                                                const numericDollarValue =
+                                                    parseFloat(
+                                                        rawDollarValue,
+                                                    ) || 0;
+
+                                                $form.students[i] = {
+                                                    ...$form.students[i],
+                                                    amount_in_dolars:
+                                                        rawDollarValue,
+                                                    amount_in_bs:
+                                                        dolarPrice > 0
+                                                            ? (
+                                                                  numericDollarValue *
+                                                                  dolarPrice
+                                                              ).toFixed(2)
+                                                            : "0.00",
+                                                };
+                                                $form.total_in_dolars =
+                                                    $form.students
+                                                        .reduce(
+                                                            (total, s) =>
+                                                                total +
+                                                                (parseFloat(
+                                                                    s.amount_in_dolars,
+                                                                ) || 0),
+                                                            0,
+                                                        )
+                                                        .toString();
+                                                $form.total_in_bs =
+                                                    dolarPrice > 0
+                                                        ? (
+                                                              parseFloat(
+                                                                  $form.total_in_dolars,
+                                                              ) * dolarPrice
+                                                          ).toFixed(2)
+                                                        : "0.00";
+                                            }}
+                                        />
+                                    </div>
+
+                                    <div class="flex flex-col items-start">
+                                        <b class="pr-1 text-xs">Bs. VES</b>
+                                        <input
+                                            type="text"
+                                            inputmode="numeric"
+                                            min="0"
+                                            step="0.01"
+                                            class="w-28 border px-1 py-1 md:py-2 md:px-2 border-gray-400 rounded-md focus:outline-"
+                                            value={formatBsInput(
+                                                $form.students[i]
+                                                    ?.amount_in_bs || "",
+                                            )}
+                                            placeholder="Bolívares"
+                                            on:input={(e) => {
+                                                const numericBs = parseBsInput(
+                                                    e.target.value,
+                                                );
+                                                const bsValue =
+                                                    numericBs.toFixed(2);
+                                                const usdValue =
+                                                    dolarPrice > 0
+                                                        ? (
+                                                              numericBs /
+                                                              dolarPrice
+                                                          ).toFixed(2)
+                                                        : "0.00";
+
+                                                $form.students[i] = {
+                                                    ...$form.students[i],
+                                                    amount_in_bs: bsValue,
+                                                    amount_in_dolars: usdValue,
+                                                };
+                                                $form.total_in_bs =
+                                                    $form.students
+                                                        .reduce(
+                                                            (total, s) =>
+                                                                total +
+                                                                (parseFloat(
+                                                                    s.amount_in_bs,
+                                                                ) || 0),
+                                                            0,
+                                                        )
+                                                        .toFixed(2);
+                                                $form.total_in_dolars = (
+                                                    $form.total_in_bs /
+                                                    dolarPrice
+                                                ).toFixed(2);
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            {/if}
+                        </div>
+                    {:else}
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <div class="flex items-center mb-1">
+                                    <span class="font-semibold text-gray-800">
+                                        {student.name}
+                                        {student.last_name}
+                                    </span>
+                                </div>
+                                <span
+                                    class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
+                                >
+                                    {#if student.document_type}
+                                        <span class="uppercase"
+                                            >{student.document_type}-</span
+                                        >
+                                    {/if}
+                                    {student.ci}
+                                </span>
+
+                                <span class="text-gray-300">•</span>
+
+                                <span
+                                    class="text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200/40 text-xs"
+                                >
+                                    {student.course}-{student.section}
+                                </span>
+                            </div>
+                        </div>
+                    {/if}
+                    {#each student.balances as balance}
+                        <div class="flex flex-col gap-2 mt-2 mb-2">
+                            <BalanceBar
+                                balances={student.balances.map((b) => ({
+                                    ...b,
+                                    ...b.months,
+                                }))}
+                                amountToPay={$form.students[i]
+                                    ?.amount_in_dolars}
+                                is_exempt={student.is_exempt
+                                    ? student.exemption_percentage
+                                    : false}
+                                dayOfPayment={config.day_of_monthly_payment}
+                                gracePeriod={config.grace_period}
+                                dolarRate={dolarPrice}
+                            />
+                        </div>
+                    {/each}
+                {/each}
+            </div>
+            <div class="col-span-4">
+                {#if !showFormPay}
+                    <button
+                        class="ml-auto animated-button w-fitcontent"
+                        on:click={async (e) => {
+                            // ensure hidden first to replay animation
+                            showFormPay = false;
+                            await tick();
+                            // set amounts
+                            const totalDebt = computeRepresentativeDebt();
+                            syncSingleStudentTotals("usd", totalDebt);
+
+                            // restore saved selection or focus select
+                            const saved =
+                                localStorage.getItem(LOCAL_STORAGE_KEY);
+                            if (saved) {
+                                $form.account_payment_id = +saved;
+                            }
+
+                            showFormPay = true;
+
+                            // small delay to ensure element mounted
+                            await tick();
+                            document
+                                .querySelector("#amount_in_dolars_0")
+                                .focus();
+                        }}
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="arr-2"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                            ></path>
+                        </svg>
+                        <span class="text">Procesar pago</span>
+                        <span class="circle"></span>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="arr-1"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                            ></path>
+                        </svg>
+                    </button>
+                {/if}
+                {#if showFormPay}
+                    <form
+                        class="formPay col-span-4 w grid grid-cols-2 gap-3 md:gap-x-5"
+                        in:fade={{ duration: 180 }}
+                        out:fade={{ duration: 120 }}
+                    >
+                        <Input
+                            bind:this={paymentSelectRef}
+                            type="select"
+                            label={"Método de pago"}
+                            bind:value={$form.account_payment_id}
+                            error={$form.errors?.account_payment_id}
+                            required={true}
+                        >
+                            {#each data.accounts.data as account}
+                                <option
+                                    value={account.id}
+                                    class={`border-l-4 mix-blend-difference  }`}
+                                >
+                                    {account.payment_method_name}
+                                    {#if account.bank}- {account.bank}{/if}
+                                    {#if account.cash_currency}- {account.cash_currency}{/if}
+                                    {#if account.username}- {account.username}{/if}
+                                </option>
+                            {/each}
+                        </Input>
+                        <Input
+                            type="date"
+                            required={true}
+                            label={"Fecha del pago"}
+                            bind:value={$form.date}
+                            error={$form.errors?.date}
+                            max={currentDateString}
+                        />
+
+                        {#if selectedPaymentAccount}
+                            <div
+                                class="col-span-2 mt-2 rounded-lg border border-gray-200 bg-gray-50 p-2 md:p-3"
+                            >
+                                <div
+                                    class="mb-2 flex items-center justify-between gap-3"
+                                >
+                                    <span
+                                        class="text-sm font-semibold text-gray-700"
+                                    >
+                                        Datos para {selectedPaymentAccount.payment_method_name}
+                                    </span>
+                                </div>
+
+                                <div class="space-y-2">
+                                    {#each getPaymentDetails(selectedPaymentAccount) as detail}
+                                        <div
+                                            class="flex items-center justify-between gap-2 md:gap-3 rounded-md bg-white px-2 py-2"
+                                        >
+                                            <div class="min-w-0 flex-1">
+                                                <div
+                                                    class="text-[10px] font-medium uppercase tracking-wide text-gray-500"
+                                                >
+                                                    {detail.label}
+                                                </div>
+                                                <div
+                                                    class=" truncate text-xs md:text-sm font-medium text-gray-800"
+                                                >
+                                                    {detail.value}
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                class="rounded-md border border-blue-200 bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 transition hover:bg-blue-100"
+                                                on:click={() =>
+                                                    copyToClipboard(
+                                                        detail.value,
+                                                        detail.label,
+                                                    )}
+                                            >
+                                                Copiar
+                                            </button>
+                                        </div>
+                                    {/each}
+                                </div>
+                            </div>
+                        {/if}
+
+                        {#if data.students.length > 1}
+                            <Input
+                                type="hidden"
+                                label={"Total en Dólares ($)"}
+                                required={true}
+                                readonly={true}
+                                bind:value={$form.total_in_dolars}
+                                error={$form.errors?.total_in_dolars}
+                            />
+
+                            <Input
+                                type="hidden"
+                                label={"Total en Bolívares (Bs)"}
+                                readonly={true}
+                                bind:value={$form.total_in_bs}
+                                error={$form.errors?.total_in_bs}
+                            />
+                            <p>
+                                <span class="block font-medium text-sm">
+                                    Total en USD:
+                                </span>
+                                <span class="text-gray-500"> $ </span>
+                                <b>{$form.total_in_dolars}</b>
+                            </p>
+                            <p>
+                                <span class="block font-medium text-sm">
+                                    Total en VES:
+                                </span>
+                                <span class="text-gray-500"> Bs </span>
+                                <b>{formatBsInput($form.total_in_bs)}</b>
+                            </p>
+                        {:else}
+                            <Input
+                                type="number"
+                                label={"Total en Dólares ($)"}
+                                required={true}
+                                min="0"
+                                step="0.01"
+                                value={$form.total_in_dolars || ""}
+                                error={$form.errors?.total_in_dolars}
+                                on:focus={(e) => {
+                                    if (e.target.value !== "") {
+                                        e.target.select();
+                                    }
+                                }}
+                                on:input={(e) =>
+                                    syncSingleStudentTotals(
+                                        "usd",
+                                        e.target.value,
+                                    )}
+                            />
+
+                            <Input
+                                type="text"
+                                label={"Total en Bolívares (Bs)"}
+                                min="0"
+                                step="0.01"
+                                value={formatBsInput($form.total_in_bs)}
+                                error={$form.errors?.total_in_bs}
+                                on:input={(e) =>
+                                    syncSingleStudentTotals(
+                                        "bs",
+                                        e.target.value,
+                                    )}
+                                on:focus={(e) => {
+                                    if (e.target.value !== "") {
+                                        e.target.select();
+                                    }
+                                }}
+                            />
+                        {/if}
+                        <button
+                            class="animated-button col-span-2"
+                            on:click={(e) => {
+                                // e.preventDefault();
+                                // showModal = true;
+                                // searchInputRef.focus();
+                                // if (submitStatus === "Solo lectura") {
+                                //     $form.reset();
+                                //     submitStatus = "Registrar";
+                                // }
+                            }}
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="arr-2"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                                ></path>
+                            </svg>
+                            <span class="text-sm md:text-base text"
+                                >Confirmar que pagué este monto</span
+                            >
+                            <span class="circle"></span>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="arr-1"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                                ></path>
+                            </svg>
+                        </button>
+                        <button
+                            type="button"
+                            class="bg-gray-200 rounded-full text-gray-600 hover:bg-gray-400 mt-2 py-2 px-4"
+                            on:click={() => {
+                                showFormPay = false;
+                            }}>Descartar</button
+                        >
+                    </form>
+                {/if}
+            </div>
+        </div>
+    {/if}
+
+    {#if activeTab === "historial"}
+        <div class="bg-white pt-5  rounded-lg rounded-tl-none text-gray-600">
+        
+            <Search
+                filtersOptions={{
+                    date: {
+                        type: "date",
+                        label: "Fecha de la transacción",
+                    },
+                    account_payment_id: {
+                        type: "select",
+                        multiple: true,
+                        label: "Método de pago",
+                        options: data.accounts.data.map((account) => ({
+                            id: account.id,
+                            name: [
+                                account.payment_method_name,
+                                account?.bank || "",
+                                account?.cash_currency || "",
+                                account?.username || "",
+                            ]
+                                .filter(Boolean)
+                                .join(" "),
+                            color: ColorsPayMethods()[
+                                account.payment_method_name
+                            ],
+                        })),
+                    },
+                }}
+            />
+
+            <Table
+                allowFilters={false}
+                serverSideData={data?.payments}
+                otherSelectOptions={[
+                    {
+                        label: "Ver detalles",
+                        icon: "mdi:eye",
+                        classes: "bg-blue",
+                        // onClick: fillFormToEdit,
+                    },
+                ]}
+                edit={false}
+                pagination={true}
+            >
+                <thead slot="thead" class="sticky top-0 z-50">
+                    <tr>
+                        <th>ID</th>
+                        <th>Fecha de la transacción</th>
+                        <th>Estudiante/s</th>
+                        <th>Total USD$</th>
+                        <th>Total Bs</th>
+                        <th>Método de pago</th>
+                        <th>Referencia</th>
+                        <!-- <th>Representante</th> -->
+                    </tr>
+                </thead>
+
+                <tbody slot="tbody">
+                    {#each data?.payments?.data as row, i}
+                        <tr
+                            rowData={row}
+                            idKey="id"
+                            activeClass="bg-color2 bg-opacity-10 brightness-110"
+                            classes={`${row.status === 0 ? "bg-red text-gray-400 bg-opacity-10 opacity-70" : ""} `}
+                        >
+                            <td>
+                                <span class="text-xs">
+                                    {row.id}
+                                </span>
+                            </td>
+                            <td>{row.date}</td>
+                            <td class="px-4 py-3 align-top">
+                                <div class="space-y-2">
+                                    {#each row?.students as student, j}
+                                        <div
+                                            class="flex flex-col gap-1 text-sm"
+                                        >
+                                            <!-- Línea Superior: Nombre completo del estudiante -->
+                                            <div
+                                                class="font-semibold text-gray-800 capitalize leading-snug"
+                                            >
+                                                {student.name}
+                                                {student.last_name}
+                                            </div>
+
+                                            <!-- Línea Inferior: Metadatos organizados en chips/badges -->
+                                            <div
+                                                class="flex items-center gap-1.5 flex-wrap text-xs text-gray-500"
+                                            >
+                                                <!-- Monto individual (si aplica) -->
+                                                {#if student.pivot?.amount_in_dolars}
+                                                    <span
+                                                        class="font-medium bg-green/20 px-1.5 py-0.5 rounded border border-emerald-200/60"
+                                                    >
+                                                        ${student.pivot
+                                                            .amount_in_dolars}
+                                                    </span>
+                                                {/if}
+
+                                                <!-- Cédula -->
+                                                <span
+                                                    class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
+                                                >
+                                                    {#if student.document_type}
+                                                        <span class="uppercase"
+                                                            >{student.document_type}-</span
+                                                        >
+                                                    {/if}
+                                                    {student.ci}
+                                                </span>
+
+                                                <!-- Separador opcional o punto -->
+                                                <span class="text-gray-300"
+                                                    >•</span
+                                                >
+
+                                                <!-- Curso y Sección -->
+                                                <span
+                                                    class="text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200/40 text-[11px]"
+                                                >
+                                                    {student.course?.name} -
+                                                    {student.section?.name}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    {/each}
+                                </div>
+                            </td>
+                            <!-- <td
                     >{row.representative.user.name}
                     {row.representative.user.last_name}</td
                 > -->
-                        <td>${row.total_in_dolars}</td>
-                        <td>{row.total_in_bs} Bs</td>
-                        <td class="">
-                            <!-- <ColorsPayMethods
+                            <td>${row.total_in_dolars}</td>
+                            <td>{row.total_in_bs} Bs</td>
+                            <td class="">
+                                <!-- <ColorsPayMethods
                         payment_method_id={row.account_payment.method.name}
                         accounts={data.accounts.data}
                     /> -->
-                            <span
-                                class={`h-5 text-${ColorsPayMethods()[row.account_payment.method.name]}  bg-${ColorsPayMethods()[row.account_payment.method.name]} w-5  left-0 top-0`}
-                                >|</span
-                            >
-                            {row.account_payment.method.name}
-                            {#if row.account_payment.bank}- {row.account_payment
-                                    .bank}{/if}
-                            {#if row.account_payment.cash_currency}-
-                                {row.account_payment.cash_currency}{/if}
-                            {#if row.account_payment.username}-
-                                {row.account_payment.username}{/if}
-                        </td>
-                        <td>{row.reference}</td>
-                    </tr>
-                {/each}
-            </tbody>
-        </Table>
-    </div>
+                                <span
+                                    class={`h-5 text-${ColorsPayMethods()[row.account_payment.method.name]} bg-${ColorsPayMethods()[row.account_payment.method.name]} w-5 left-0 top-0`}
+                                    >|</span
+                                >
+                                {row.account_payment.method.name}
+                                {#if row.account_payment.bank}- {row
+                                        .account_payment.bank}{/if}
+                                {#if row.account_payment.cash_currency}-
+                                    {row.account_payment.cash_currency}{/if}
+                                {#if row.account_payment.username}-
+                                    {row.account_payment.username}{/if}
+                            </td>
+                            <td>{row.reference}</td>
+                        </tr>
+                    {/each}
+                </tbody>
+            </Table>
+        </div>
+    {/if}
 </div>

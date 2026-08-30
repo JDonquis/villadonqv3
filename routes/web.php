@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EvaluationPlanController;
 use App\Http\Controllers\MainConfigController;
 use App\Http\Controllers\MatterController;
+use App\Http\Controllers\MyScheduleController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\RepresentativeController;
 use App\Http\Controllers\RepresentativePaymentController;
 use App\Http\Controllers\SchoolLapseController;
 use App\Http\Controllers\SectionController;
+use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentGradeController;
 use App\Http\Controllers\TeacherController;
@@ -104,6 +106,8 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
 
     Route::get('/dashboard/reportes/boleta/{studentId}', [ReportController::class, 'boleta']);
     Route::get('/dashboard/reportes/certificado/{studentId}', [ReportController::class, 'certificado']);
+    Route::get('/dashboard/horarios', [ScheduleController::class, 'index']);
+    Route::post('/dashboard/horarios', [ScheduleController::class, 'store']);
 });
 
 Route::middleware(['auth', 'role:teacher'])->group(function () {
@@ -114,6 +118,8 @@ Route::middleware(['auth', 'role:teacher'])->group(function () {
 
     Route::get('/dashboard/mis-estudiantes', [StudentGradeController::class, 'index']);
     Route::post('/dashboard/mis-estudiantes/guardar-notas', [StudentGradeController::class, 'saveGrades']);
+
+    Route::get('/dashboard/mi-horario', [MyScheduleController::class, 'index']);
 });
 
 Route::middleware(['auth', 'role:administrator,representative,teacher'])->group(function () {

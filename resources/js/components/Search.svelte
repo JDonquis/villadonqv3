@@ -2,7 +2,7 @@
     import { page, router } from "@inertiajs/svelte";
     import debounce from "lodash/debounce";
     import Modal from "./Modal.svelte";
-    import DateRange from "../components/DateRange.svelte";
+    import FilterControls from "./FilterControls.svelte";
     import { filter } from "lodash";
 
     const parseUrlFilters = () => {
@@ -38,6 +38,7 @@
     let showModal = false;
     export let filtersOptions = false;
     export let allowSearch = true;
+    export let inlineFilters = false;
     let isFilterAply = false;
     let firstTime = true;
     let filterClientData = { ...initialUrlFilters, ...$page.props.filters };
@@ -74,8 +75,7 @@
         });
     };
 
-    console.log(filterClientData);
-</script>
+    console.log(filterClientData);</script>
 
 <div
     class="fixed top-3 z-50 lg right-20 md:right-64 flex items-center rounded-xl bg-gray-50 border border-gray-200"
@@ -107,7 +107,7 @@
         class={`block w-full rounded-xl py-1.5 pr-5 text-gray-700 -full ${filtersOptions ? "-r-none" : ""}  md:w-56  placeholder-gray-400/70 pl-11 rtl:pr-11 rtl:pl-5 focus:border-blue-400 focus:ring-blue-300 focus:outline-none focus:ring focus:ring-opacity-40`}
         style={$$props.style}
     />
-    {#if filtersOptions}
+    {#if filtersOptions && !inlineFilters}
         <div class="md:right-64 top-3 z-50">
             <button
                 class=" relative flex gap-2 hover:bg-gray-300 -full -l-none p-2 px-3"
@@ -132,142 +132,27 @@
     {/if}
 </div>
 
+{#if inlineFilters && filtersOptions}
+    <div
+        class="border border-gray-200 bg-gray-50 rounded-xl p-4"
+    >
+        <FilterControls
+            {filtersOptions}
+            {filterClientData}
+            {handleFilters}
+            {changeDateFilter}
+        />
+    </div>
+{/if}
+
+{#if !inlineFilters}
 <Modal bind:showModal classes={"max-w-[960px] h-full"} showCancelButton={false}>
     <p slot="header" class="opacity-60">Filtros de busqueda</p>
-    <div class="grid grid-cols-1 h-full md:grid-cols-3 gap-5 md:gap-10">
-        {#each Object.entries(filtersOptions) as [filterKey, filterOption] (filterKey)}
-            <article class="md:flex md:flex-col mt-3">
-                <h4
-                    class="capitalize w-fit md:w-full text-xs md:text-sm font-medium px-2 flex items-center pb-2 lg:mb-1.5"
-                >
-                    {filterOption.label}
-                </h4>
-                {#if filterOption.type === "search"}
-                    <input
-                        value={filterClientData?.[filterKey] || ""}
-                        class="h-auto border-gray-400 border p-2 py-1"
-                        placeholder={"🔍 " + filterOption.label}
-                        type="search"
-                        name=""
-                        id=""
-                        on:input={(e) => {
-                            const inputValue = e.target.value;
-                            if (/^\d*$/.test(inputValue)) {
-                                filterClientData[filterKey] = inputValue;
-                                handleFilters();
-                            } else {
-                                e.target.value =
-                                    filterClientData[filterKey] || "";
-                            }
-                        }}
-                    />
-                {:else if filterOption.type === "select" && filterOption.multiple}
-                    <div class="space-y-1 max-h-56 overflow-y-auto">
-                        {#each filterOption.options as filter, i (filter.id)}
-                            <label
-                                class="flex items-center gap-2 px-2 py-1 text-xs cursor-pointer hover:bg-gray-100 rounded"
-                            >
-                                <input
-                                    type="checkbox"
-                                    checked={filterClientData?.[
-                                        filterKey
-                                    ]?.includes(String(filter.id))}
-                                    on:change={(e) => {
-                                        if (!filterClientData[filterKey]) {
-                                            filterClientData[filterKey] = [];
-                                        }
-                                        if (e.target.checked) {
-                                            filterClientData[filterKey] = [
-                                                ...filterClientData[filterKey],
-                                                String(filter.id),
-                                            ];
-                                        } else {
-                                            filterClientData[filterKey] =
-                                                filterClientData[
-                                                    filterKey
-                                                ].filter(
-                                                    (v) =>
-                                                        v !== String(filter.id),
-                                                );
-                                        }
-                                        if (
-                                            filterClientData[filterKey]
-                                                .length === 0
-                                        ) {
-                                            delete filterClientData[filterKey];
-                                        }
-                                        handleFilters();
-                                    }}
-                                />
-                                <span>
-                                    {#if filter.color}
-                                        <span
-                                            class={`h-5 text-${filter.color}  bg-${filter.color} w-5  left-0 top-0`}
-                                            >|</span
-                                        >
-                                    {/if}
-                                    {filter.name}
-                                </span>
-                            </label>
-                        {/each}
-                    </div>
-                {:else if filterOption.type === "select"}
-                    <select
-                        bind:value={filterClientData[filterKey]}
-                        on:change={(e) => {
-                            const selectedValue = e.target.value;
-                            if (selectedValue == "todos") {
-                                delete filterClientData[filterKey];
-                            }
-                            handleFilters();
-                        }}
-                        name={filterOption.label}
-                        id=""
-                        class="rounded  p-1 py-2"
-                    >
-                        <option value="todos">Todos</option>
-                        {#each filterOption.options as filter, i (filter.id)}
-                            <option
-                                selected={String(
-                                    filterClientData?.[filterKey],
-                                ) === String(filter.id)}
-                                value={String(filter.id)}>{filter.name}</option
-                            >
-                        {/each}
-                    </select>
-                {:else if filterOption.type === "date"}
-                    <DateRange
-                        startDate={Number(filterClientData?.start_date)}
-                        endDate={Number(filterClientData?.end_date)}
-                        on:changeDateFilter={changeDateFilter}
-                    />
-                {:else}
-                    {#each filterOption.options as filter, i (filter.id)}
-                        <button
-                            class="text-left filter_button px-2 py-1 my-1 text-xs font-medium hover:text-dark -full text-gray-700 block transition-colors duration-75 sm:text-sm hover:bg-gray-200"
-                            class:bg-gray-200={filterClientData?.[filterKey] ==
-                                filter.id}
-                            on:click={(e) => {
-                                if (filterClientData[filterKey] == filter.id) {
-                                    delete filterClientData[filterKey];
-                                } else {
-                                    filterClientData[filterKey] = filter.id;
-                                }
-
-                                handleFilters();
-                            }}
-                        >
-                            {filter.name}
-                            {#if filterClientData?.[filterKey] == filter.id}
-                                <iconify-icon
-                                    icon="line-md:close"
-                                    class="relative top-1"
-                                ></iconify-icon>
-                            {/if}
-                        </button>
-                    {/each}
-                {/if}
-            </article>
-        {/each}
-    </div>
+    <FilterControls
+        {filtersOptions}
+        {filterClientData}
+        {handleFilters}
+        {changeDateFilter}
+    />
 </Modal>
+{/if}

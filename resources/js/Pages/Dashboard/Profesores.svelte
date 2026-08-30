@@ -163,9 +163,8 @@
 <Alert />
 
 <div class="flex justify-between items-center mb-3">
-    <h2 class="text-2xl font-bold text-color1">Profesores</h2>
     <button
-        class="animated-button w-fitcontent"
+        class="animated-button w-fitcontent ml-auto"
         on:click={(e) => {
             e.preventDefault();
             $form.reset();
@@ -299,7 +298,7 @@
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-56 overflow-auto">
                     {#each data.matters as matter}
                         <label
-                            class="flex items-center gap-2 text-sm cursor-pointer p-2 rounded-md border {$form.matters.includes(matter.id) ? 'border-color1 bg-color1/5' : 'border-gray-200'}"
+                            class="flex items-center gap-2 text-sm cursor-pointer p-2 rounded-md border {$form.matters.includes(matter.id) ? 'border-color2/50 bg-color1/5' : 'border-gray-200'}"
                         >
                             <input
                                 type="checkbox"
