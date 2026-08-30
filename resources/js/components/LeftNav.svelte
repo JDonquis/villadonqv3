@@ -81,11 +81,6 @@
 
     const repNavPages = [
         {
-            icon: "mdi:home",
-            href: "/dashboard/representante",
-            name: "Inicio",
-        },
-        {
             icon: "mdi:school",
             href: "/dashboard/mis-hijos",
             name: "Mis Hijos",

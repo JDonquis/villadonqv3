@@ -120,8 +120,8 @@ Route::middleware(['auth', 'role:teacher'])->group(function () {
 });
 
 Route::middleware(['auth', 'role:administrator,representative,teacher'])->group(function () {
-    Route::get('/dashboard/representante', [RepresentativeController::class, 'home']);
     Route::get('/dashboard/mis-hijos', [RepresentativeController::class, 'misHijos']);
+    Route::get('/dashboard/mis-hijos/{student}/horario', [RepresentativeController::class, 'horarioHijo']);
     Route::get('/dashboard/mis-pagos', [RepresentativePaymentController::class, 'index']);
     Route::post('/dashboard/mis-pagos', [RepresentativePaymentController::class, 'store']);
 

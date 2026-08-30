@@ -232,7 +232,7 @@ class RepresentativeService
         ];
     }
 
-    private function formatStudent($student): array
+    public function formatStudent($student): array
     {
         return [
             'id' => $student->id,

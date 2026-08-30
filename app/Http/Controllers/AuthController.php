@@ -45,7 +45,7 @@ class AuthController extends Controller
         $permissionsWithFormat = $this->userService->formatToPermissions($permissionsArray);
 
         $redirectTo = match ($user->type_user_id) {
-            UserTypeEnum::Representative->value => '/dashboard/representante',
+            UserTypeEnum::Representative->value => '/dashboard/mis-hijos',
             UserTypeEnum::Teacher->value => '/dashboard/mis-planes',
             default => '/dashboard',
         };

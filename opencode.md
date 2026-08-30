@@ -151,4 +151,50 @@ Versión de SOLO LECTURA del calendario semanal para profesores. No es un formul
 - El encabezado de la vista de profesor es un layout propio (botón "Volver" + "MI HORARIO"
   + nombre del profesor), ajeno al DashboardLayout de admin.
 
+---
 
+# Sesión 2026-08-30 (parte 3) — Rejilla semanal en Horarios (admin) + fix actualización
+
+## Vista de rejilla (grid) por defecto en `Dashboard/Horarios.svelte`
+- `viewMode`: `"grid"` (default) o `"form"`. `showForm()`/`showGrid()` alternan.
+- La rejilla se muestra por sección seleccionada: 5 columnas (Lun–Vie, cabecera colorida), cada
+  una con las clases posicionadas con **`position: absolute`** según su hora de inicio/fin.
+- **Escala de posicionamiento (patrón de plantilla previa):** `PX_PER_HOUR = 48`, `BASE_HOUR = 4`
+  (`top = (hour + min/60 - 4) * 48`, `height = top(end) - top(start)`). Sin columna de horas;
+  cada caja de clase muestra materia (negrita), profesor y su rango 12h pequeño
+  (`formatTimeRange`). Colores pastel por materia (`MATTER_PASTELS`, hash `id % 10`).
+- El receso se pinta como banda `position: absolute` (fondo ámbar, texto "Receso") en cada
+  columna en su horario; las clases quedan encima (z-10 sobre z-0).
+- Altura de columna calculada desde el fin más tardío de la semana (`dayHeight()`), mínimo 240px.
+- Empty state: si no hay clases ni receso con duración (`hasGridContent()`).
+- Helpers: `topOf`, `heightOf`, `recessEnd`, `classesFor`, `dayHeight`, `hasGridContent`,
+  `matterColor`, `formatTimeRange`, `timeLabel`.
+- Filtros (periodo/curso/sección) duplicados; cambiar sección recarga vía `reload()`.
+
+## CRÍTICO — Fix: cambiar sección no actualizaba la rejilla
+**Síntoma:** desde la rejilla, al hacer clic en otra sección la URL y el botón cambiaban pero la
+rejilla seguía mostrando la sección anterior.
+**Causa raíz:** `reload()` usaba `preserveState: true`; en este setup (@inertiajs/svelte) el prop
+`data` de la página NO se reenvía al componente en visitas con `preserveState`, por lo que la
+rejilla (y el form) quedaban con datos stale de la carga inicial.
+**Solución:** quitar `preserveState: true` de `reload()` (se mantiene `preserveScroll: true`).
+Cada cambio de periodo/curso/sección re-monta el componente con props frescas.
+- **Comportamiento asociado:** al cambiar sección/periodo/curso (desde rejilla o form) se vuelve
+  a la vista default (grid) y se descartan ediciones sin guardar del form. Documentado a propósito.
+- **Verificado en navegador (admin Juandonquis):** grid default → Editar → form con datos reales
+  de la DB → Ver vista → grid; A↔B actualiza correctamente (sección B = solo RECREO 8:43).
+
+## Candidato crónico de testing
+- Los datos de prueba de `schedules/schedule_classes` se modificaron con guardados de pruebas
+  anteriores: sección A hoy tiene clases 7:00-8:00 (Arte, Lun) y 8:00-10:00 (Biología, Lun) y
+  Biología 7:00-7:45 (Mar), receso 10:00; sección B sin clases (receso 8:43).
+
+---
+
+
+
+## 2026-08-30 - Rejilla horarios en componente reutilizable + lista de horas por materia
+- Nuevo componente esources/js/Components/ScheduleWeekGrid.svelte: grid semanal de posicionamiento absoluto (5 columnas Lun-Vie, cajas absolute a 70px/hora con base 7am, banda de receso, pastel unico por materia via id, linea meta adaptable con teacher/section/course). Usado en: Horarios (admin), HorarioHijo (representante), MiHorario (profesor). Horarios/MiHorario/HorarioHijo ya no duplican el grid (eliminados helpers duplicados de Horarios.svelte).
+- Colores de materia: MATTER_PASTELS ahora se indexa por id-1 (no modulo 10) para que cada materia tenga color unico; ampliado a 14 pasteles. Biologia(id11) y Matematica(id1) ya no colisionan.
+- Bonus (Horarios admin, vista grid): bloque reactivo subjectHours calcula las horas semanales por materia (suma de duraciones de schedule.days via 	oMinutes), ordena descendente y muestra tabla Materias y horas semanales bajo el ScheduleWeekGrid (oculta si no hay clases). Formato Xh Ym.
+- Verificado en navegador: listado correcto seccion A (Bio 2h45m, Mat 1h15m, Info 1h15m, Ing/Arte/Cast 1h) y oculto en seccion B (sin clases).

@@ -1,6 +1,7 @@
 <script>
     import { router, page } from "@inertiajs/svelte";
     import { displayAlert } from "../../stores/alertStore";
+    import ScheduleWeekGrid from "../../Components/ScheduleWeekGrid.svelte";
 
     export let data = [];
 
@@ -118,7 +119,6 @@
                 ...params,
             },
             {
-                preserveState: true,
                 preserveScroll: true,
             },
         );
@@ -229,6 +229,42 @@
         return label ? `el ${label}` : "";
     }
 
+    // ---------- View mode: grid (default) vs form ----------
+    let viewMode = "grid";
+
+    function showForm() {
+        viewMode = "form";
+    }
+
+    function showGrid() {
+        viewMode = "grid";
+    }
+
+    // ---------- Grid (weekly matrix) ----------
+    $: schedule = data.schedule || null;
+
+    // ---------- Materias y horas semanales ----------
+    $: subjectHours = (() => {
+        const map = {};
+        const days = schedule?.days || {};
+        for (const rows of Object.values(days)) {
+            for (const c of rows || []) {
+                if (!c.matter_id || !c.start_time || !c.end_time) continue;
+                const mins = toMinutes(c.end_time) - toMinutes(c.start_time);
+                if (mins <= 0) continue;
+                map[c.matter_id] = map[c.matter_id] || {
+                    matter_id: c.matter_id,
+                    matter_name: c.matter_name || "—",
+                    minutes: 0,
+                };
+                map[c.matter_id].minutes += mins;
+            }
+        }
+        return Object.values(map)
+            .map((m) => ({ ...m, hours: m.minutes / 60 }))
+            .sort((a, b) => b.hours - a.hours);
+    })();
+
     // ---------- Save ----------
     const saving = false;
     function save() {
@@ -276,6 +312,101 @@
 </script>
 
 <div class="w-full">
+    {#if viewMode === "grid"}
+        <div
+            class="flex flex-wrap items-center gap-4 border border-gray-200 bg-gray-50 rounded-xl p-4"
+        >
+            <div class="flex flex-col">
+                <label class="text-xs font-semibold text-gray-700 mb-1"
+                    >Periodo escolar</label
+                >
+                <select
+                    bind:value={selectedPeriod}
+                    on:change={changePeriod}
+                    class="border border-gray-300 rounded-md px-3 py-2 text-sm"
+                >
+                    {#each data.periods as period}
+                        <option value={period.id}>{period.name}</option>
+                    {/each}
+                </select>
+            </div>
+
+            <div class="flex flex-col">
+                <label class="text-xs font-semibold text-gray-700 mb-1"
+                    >Curso</label
+                >
+                <select
+                    bind:value={selectedCourse}
+                    on:change={changeCourse}
+                    class="border border-gray-300 rounded-md px-3 py-2 text-sm"
+                >
+                    {#each data.courses as course}
+                        <option value={course.id}>{course.name}</option>
+                    {/each}
+                </select>
+            </div>
+
+            <div class="flex flex-col">
+                <span class="text-xs font-semibold text-gray-700 mb-1"
+                    >Sección</span
+                >
+                <div class="flex items-center gap-2">
+                    {#each sectionsOfCourse as section, i}
+                        <button
+                            type="button"
+                            on:click={() => changeSection(section.id)}
+                            class="px-4 py-2 text-sm font-semibold rounded-md transition-colors"
+                            class:bg-yellow={String(section.id) === selectedSection}
+                            class:bg-gray-200={String(section.id) !==
+                                selectedSection}
+                        >
+                            {section.name}
+                        </button>
+                    {/each}
+                </div>
+            </div>
+
+            <button
+                type="button"
+                on:click={showForm}
+                class="ml-auto inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md bg-color1 text-white hover:opacity-90 transition"
+            >
+                <iconify-icon icon="mdi:pencil"></iconify-icon>
+                Editar horario
+            </button>
+        </div>
+
+        <div class="mt-4">
+            <ScheduleWeekGrid {schedule} />
+        </div>
+
+        {#if subjectHours.length > 0}
+            <div class="mt-4 rounded-xl w-fit overflow-hidden">
+                <div
+                    class=" text-gray-600 px-4 py-2 font-semibold text-sm"
+                >
+                    Materias y horas semanales
+                </div>
+                <table class="w-fit text-sm">
+                    <tbody>
+                        {#each subjectHours as s}
+                            <tr class="border-t border-gray-100 ">
+                                <td class="px-4 py-1.5 font-medium">
+                                    {s.matter_name}
+                                </td>
+                                <td class="px-4 py-1.5 text-right">
+                                    {Math.floor(s.minutes / 60)}h
+                                    {#if s.minutes % 60}
+                                        {s.minutes % 60}m
+                                    {/if}
+                                </td>
+                            </tr>
+                        {/each}
+                    </tbody>
+                </table>
+            </div>
+        {/if}
+    {:else}
     <div
         class="flex flex-wrap items-center gap-4 border border-gray-200 bg-gray-50 rounded-xl p-4"
     >
@@ -378,25 +509,25 @@
         minutos (aplica a todos los días)
     </p>
 
-    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mt-4">
+    <div class="grid grid-cols-1 md:grid-cols-5 border-gray-300 border-2 rounded-xl overflow-hidden  mt-4">
         {#each DAYS as day}
             <div
-                class="border border-gray-200 rounded-xl bg-gray-50 p-3 flex flex-col"
+                class="border border-gray-200  bg-gray-50  flex flex-col"
             >
-                <h4 class="font-semibold text-gray-800 text-sm mb-3">
+                <h4 class="font-semibold text-gray-100 text-center bg-color1 text-sm py-2">
                     {day.label}
                 </h4>
 
                 {#each classes[day.key] || [] as row, index}
-                    <div class="group flex flex-col">
+                    <div class=" flex flex-col px-3">
                         <button
                             type="button"
                             on:click={() => insertClass(day.key, index)}
-                            class="flex hover:text-black text-gray-500 items-center justify-center gap-2 pb-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                            class="flex group hover:text-black text-gray-500 items-center justify-center gap-2 py-2 "
                             title="Insertar clase antes de esta"
                         >
                             <span
-                                class="hidden group-hover:block py-1 border border-dashed border-gray-300 w-full rounded bg-gray-100"
+                                class="hidden group-hover:block opacity-0 group-hover:opacity-100 transition-opacity duration-150 py-1 border border-dashed border-gray-400 w-full rounded bg-gray-100"
                             >
                              <iconify-icon
                                 icon="ic:baseline-plus"
@@ -407,7 +538,7 @@
                            
                         </button>
                         <div
-                            class="mb-3 p-2 border border-gray-200 rounded-lg bg-white"
+                            class=" p-2 border border-gray-200 rounded-lg bg-white"
                         >
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs font-medium text-gray-500"
@@ -536,7 +667,7 @@
                 <button
                     type="button"
                     on:click={() => addClass(day.key)}
-                    class="mt-auto flex items-center justify-center gap-1 text-sm font-medium text-gray-600 hover:text-gray-900 border border-dashed border-gray-300 rounded-lg py-2"
+                    class=" flex items-center justify-center m-3 gap-1 text-sm font-medium text-gray-600 hover:text-gray-900 border border-dashed border-gray-300 rounded-lg py-2"
                 >
                     <iconify-icon icon="ic:baseline-plus"></iconify-icon>
                     Agregar clase
@@ -545,7 +676,14 @@
         {/each}
     </div>
 
-    <div class="flex justify-end mt-6">
+    <div class="flex justify-end items-center gap-3 mt-6">
+        <button
+            type="button"
+            on:click={showGrid}
+            class="px-4 py-2 text-sm font-semibold rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
+        >
+            Ver vista de horario
+        </button>
         <button
             type="button"
             on:click={save}
@@ -573,4 +711,5 @@
             </svg>
         </button>
     </div>
+    {/if}
 </div>

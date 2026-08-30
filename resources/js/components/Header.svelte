@@ -13,10 +13,11 @@ let pageName = "";
         'Dashboard/Pagos': 'Pagos',
         'Dashboard/EstadosDeCuenta': 'Estados de Cuenta',
         'Dashboard/Configuracion': 'Configuración',
-        'Dashboard/Representante': 'Inicio',
         'Dashboard/MisHijos': 'Mis Hijos',
         'Dashboard/MisPagos': 'Mis Pagos',
         'Dashboard/Perfil': 'Mi Perfil',
+        'Dashboard/MiHorario': 'Mi Horario',
+        'Dashboard/HorarioHijo': 'Horario del Estudiante',
         'Dashboard/MetodosDePago/Crear': 'Nuevo Método de Pago',
         'Dashboard/MetodosDePago/Editar': 'Editar Método de Pago',
     };

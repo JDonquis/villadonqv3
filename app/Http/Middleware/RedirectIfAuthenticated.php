@@ -23,7 +23,7 @@ class RedirectIfAuthenticated
             if (Auth::guard($guard)->check()) {
                 $user = Auth::guard($guard)->user();
                 $redirectTo = $user->type_user_id === UserTypeEnum::Representative->value
-                    ? '/dashboard/representante'
+                    ? '/dashboard/mis-hijos'
                     : '/dashboard';
 
                 return redirect($redirectTo);

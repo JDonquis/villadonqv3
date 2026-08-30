@@ -1,5 +1,6 @@
 <script>
     import Modal from "../../components/Modal.svelte";
+    import { inertia } from "@inertiajs/svelte";
 
     export let students = [];
 
@@ -50,11 +51,21 @@
                             {student.section}
                         </p>
                     </div>
-                    <span
-                        class="ml-auto text-xs px-2 py-1 bg-color1/10 text-color1 rounded-full"
-                    >
-                        {student.subjects?.length ?? 0} materias
-                    </span>
+                    <div class="ml-auto flex items-center gap-3">
+                        <a
+                            href={`/dashboard/mis-hijos/${student.id}/horario`}
+                            use:inertia
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-md bg-color1 text-white hover:opacity-90 transition"
+                        >
+                            <iconify-icon icon="mdi:calendar-clock"></iconify-icon>
+                            Su horario
+                        </a>
+                        <span
+                            class="text-xs px-2 py-1 bg-color1/10 text-color1 rounded-full"
+                        >
+                            {student.subjects?.length ?? 0} materias
+                        </span>
+                    </div>
                 </div>
 
                 <div class="mt-4">
