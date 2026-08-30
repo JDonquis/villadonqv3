@@ -252,6 +252,20 @@
         router.get(`/dashboard/matricula/${selectedRow.data.student_id}`);
     }
 
+    function handleBoleta() {
+        window.open(
+            `/dashboard/reportes/boleta/${selectedRow.data.student_id}`,
+            "_blank",
+        );
+    }
+
+    function handleCertificado() {
+        window.open(
+            `/dashboard/reportes/certificado/${selectedRow.data.student_id}`,
+            "_blank",
+        );
+    }
+
     function handleSubmitReinscribe(e) {
         e.preventDefault();
         $formReinscribe.clearErrors();
@@ -947,6 +961,18 @@
             icon: "mdi:eye",
             classes: "bg-blue text-white",
             onClick: handleDetails,
+        },
+        {
+            label: "Boleta",
+            icon: "mdi:file-document",
+            classes: "bg-green-600 text-white",
+            onClick: handleBoleta,
+        },
+        {
+            label: "Certificado",
+            icon: "mdi:certificate-outline",
+            classes: "bg-purple text-white",
+            onClick: handleCertificado,
         },
         {
             label: "Reinscribir",

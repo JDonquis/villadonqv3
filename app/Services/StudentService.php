@@ -612,7 +612,7 @@ class StudentService
         }
 
         $first = $inscriptions->first();
-        $activeLapse = SchoolLapse::where('status', 1)->first();
+        $activeLapse = SchoolLapse::where('status', 1)->with('lapses')->first();
         $documentTypes = TypeDocument::where('status', 1)->get();
 
         $inscriptionsData = $inscriptions->map(function ($ins) use ($activeLapse, $periodLabel, $repeatedCourseIds) {
@@ -656,6 +656,20 @@ class StudentService
                 'required' => (bool) $t->required,
             ])->values(),
             'active_lapse' => $activeLapse ? ['id' => $activeLapse->id, 'period' => $periodLabel($activeLapse)] : null,
+            'report' => [
+                'period_label' => $activeLapse ? $periodLabel($activeLapse) : null,
+                'lapses' => $activeLapse
+                    ? $activeLapse->lapses->sortBy('number')->values()->map(function ($lapse) {
+                        $ordinals = [1 => '1er', 2 => '2do', 3 => '3er'];
+
+                        return [
+                            'id' => $lapse->id,
+                            'number' => $lapse->number,
+                            'label' => ($ordinals[$lapse->number] ?? $lapse->number).' Momento',
+                        ];
+                    })->values()
+                    : [],
+            ],
         ];
     }
 

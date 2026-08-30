@@ -8,6 +8,7 @@ use App\Http\Controllers\MainConfigController;
 use App\Http\Controllers\MatterController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RepresentativeController;
 use App\Http\Controllers\RepresentativePaymentController;
 use App\Http\Controllers\SchoolLapseController;
@@ -100,6 +101,9 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::get('/dashboard/planes-evaluacion', [EvaluationPlanController::class, 'index']);
     Route::post('/dashboard/planes-evaluacion/{id}/aprobar', [EvaluationPlanController::class, 'approve']);
     Route::post('/dashboard/planes-evaluacion/{id}/rechazar', [EvaluationPlanController::class, 'reject']);
+
+    Route::get('/dashboard/reportes/boleta/{studentId}', [ReportController::class, 'boleta']);
+    Route::get('/dashboard/reportes/certificado/{studentId}', [ReportController::class, 'certificado']);
 });
 
 Route::middleware(['auth', 'role:teacher'])->group(function () {

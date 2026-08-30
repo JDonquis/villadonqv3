@@ -9,6 +9,23 @@
     const progress = data.progress || {};
     const inscriptions = data.inscriptions || [];
     const documentTypes = data.document_types || [];
+    const report = data.report || {};
+
+    const reportScopes = [
+        { value: "anual", label: "Anual (todos los momentos)" },
+        ...(report.lapses || []).map((l) => ({
+            value: String(l.id),
+            label: l.label,
+        })),
+    ];
+
+    let reportScope = "anual";
+
+    function downloadReport(type) {
+        const base = `/dashboard/reportes/${type}/${student.student_id}`;
+        const url = reportScope === "anual" ? base : `${base}?lapse_id=${reportScope}`;
+        window.open(url, "_blank");
+    }
 
     const defaultInscriptionId =
         inscriptions.find((i) => i.is_current)?.id ||
@@ -96,6 +113,48 @@
             Graduado
         </span>
     {/if}
+</div>
+
+<div class="mb-6 bg-white border border-gray-200 rounded-lg shadow p-5">
+    <h3
+        class="font-bold text-color1 mb-3 flex items-center gap-2"
+    >
+        <iconify-icon icon="mdi:file-download-outline"></iconify-icon>
+        Reportes ({report.period_label || "Período actual"})
+    </h3>
+    <div class="flex flex-wrap items-end gap-3">
+        <div class="flex flex-col gap-1">
+            <label
+                for="report_scope"
+                class="text-xs md:text-sm font-semibold text-gray-700"
+            >
+                Alcance
+            </label>
+            <select
+                id="report_scope"
+                bind:value={reportScope}
+                class="rounded-md border border-gray-300 px-3 py-2 text-sm"
+            >
+                {#each reportScopes as scope}
+                    <option value={scope.value}>{scope.label}</option>
+                {/each}
+            </select>
+        </div>
+        <button
+            on:click={() => downloadReport("boleta")}
+            class="px-4 py-2 bg-blue text-white rounded-md text-sm font-semibold flex items-center gap-2"
+        >
+            <iconify-icon icon="mdi:file-document" width="18" height="18"></iconify-icon>
+            Descargar Boleta
+        </button>
+        <button
+            on:click={() => downloadReport("certificado")}
+            class="px-4 py-2 bg-purple text-white rounded-md text-sm font-semibold flex items-center gap-2"
+        >
+            <iconify-icon icon="mdi:certificate-outline" width="18" height="18"></iconify-icon>
+            Descargar Certificado
+        </button>
+    </div>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
