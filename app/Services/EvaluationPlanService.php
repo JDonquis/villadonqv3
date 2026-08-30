@@ -124,32 +124,131 @@ class EvaluationPlanService
 
     public function createPlan(int $teacherId, array $data): EvaluationPlan
     {
+        $sectionIds = $data['section_id'] ?? null;
+        $unitsOrItems = $data['units'] ?? $data['items'] ?? [];
+
+        // Normalize section ids when frontend sends 'all'
+        if (is_array($sectionIds) && in_array('all', $sectionIds, true)) {
+            $courseId = $data['course_id'] ?? null;
+            if ($courseId) {
+                $course = Course::find($courseId);
+                $sectionIds = $course ? $course->section()->pluck('id')->map(fn($v) => (string) $v)->values()->all() : [];
+            } else {
+                $sectionIds = [];
+            }
+        }
+
+        // If multiple sections provided, create a plan per section (cloning behavior)
+        if (is_array($sectionIds) && count($sectionIds) > 0) {
+            $createdPlan = null;
+            foreach (array_values($sectionIds) as $index => $sectionId) {
+                $plan = EvaluationPlan::create([
+                    'user_id' => $teacherId,
+                    'matter_id' => $data['matter_id'],
+                    'school_lapse_id' => $data['school_lapse_id'],
+                    'lapse_id' => $data['lapse_id'] ?? null,
+                    'course_id' => $data['course_id'] ?? null,
+                    'section_id' => $sectionId,
+                    'name' => $data['name'],
+                    'description' => $data['description'] ?? null,
+                    'status' => EvaluationPlanStatusEnum::Pending->value,
+                ]);
+
+                $this->registerCourseMatter($data['course_id'] ?? null, $data['matter_id']);
+                $this->syncItems($plan, $unitsOrItems);
+
+                if ($createdPlan === null) {
+                    $createdPlan = $plan;
+                }
+            }
+
+            return $createdPlan;
+        }
+
+        // Fallback single plan
         $plan = EvaluationPlan::create([
             'user_id' => $teacherId,
             'matter_id' => $data['matter_id'],
             'school_lapse_id' => $data['school_lapse_id'],
             'lapse_id' => $data['lapse_id'] ?? null,
             'course_id' => $data['course_id'] ?? null,
-            'section_id' => $data['section_id'] ?? null,
+            'section_id' => is_array($sectionIds) ? ($sectionIds[0] ?? null) : $sectionIds,
             'name' => $data['name'],
             'description' => $data['description'] ?? null,
             'status' => EvaluationPlanStatusEnum::Pending->value,
         ]);
 
         $this->registerCourseMatter($data['course_id'] ?? null, $data['matter_id']);
-        $this->syncItems($plan, $data['units'] ?? $data['items'] ?? []);
+        $this->syncItems($plan, $unitsOrItems);
 
         return $plan;
     }
 
     public function updatePlan(EvaluationPlan $plan, array $data): EvaluationPlan
     {
+        $sectionIds = $data['section_id'] ?? null;
+        $unitsOrItems = $data['units'] ?? $data['items'] ?? [];
+
+        // Normalize 'all' into actual section ids for the course
+        if (is_array($sectionIds) && in_array('all', $sectionIds, true)) {
+            $courseId = $data['course_id'] ?? null;
+            if ($courseId) {
+                $course = Course::find($courseId);
+                $sectionIds = $course ? $course->section()->pluck('id')->map(fn($v) => (string) $v)->values()->all() : [];
+            } else {
+                $sectionIds = [];
+            }
+        }
+
+        if (is_array($sectionIds) && count($sectionIds) > 1) {
+            // Update original plan to the first section, and create clones for the rest
+            $first = array_shift($sectionIds);
+
+            $plan->update([
+                'matter_id' => $data['matter_id'],
+                'school_lapse_id' => $data['school_lapse_id'],
+                'lapse_id' => $data['lapse_id'] ?? null,
+                'course_id' => $data['course_id'] ?? null,
+                'section_id' => $first,
+                'name' => $data['name'],
+                'description' => $data['description'] ?? null,
+                'status' => EvaluationPlanStatusEnum::Pending->value,
+                'admin_note' => null,
+                'approved_by' => null,
+                'approved_at' => null,
+            ]);
+
+            $this->registerCourseMatter($data['course_id'] ?? null, $data['matter_id']);
+            $this->syncItems($plan, $unitsOrItems);
+
+            // Create clones for remaining sections
+            foreach ($sectionIds as $sectionId) {
+                $new = EvaluationPlan::create([
+                    'user_id' => $plan->user_id,
+                    'matter_id' => $data['matter_id'],
+                    'school_lapse_id' => $data['school_lapse_id'],
+                    'lapse_id' => $data['lapse_id'] ?? null,
+                    'course_id' => $data['course_id'] ?? null,
+                    'section_id' => $sectionId,
+                    'name' => $data['name'],
+                    'description' => $data['description'] ?? null,
+                    'status' => EvaluationPlanStatusEnum::Pending->value,
+                ]);
+
+                $this->registerCourseMatter($data['course_id'] ?? null, $data['matter_id']);
+                $this->syncItems($new, $unitsOrItems);
+            }
+
+            return $plan;
+        }
+
+        // Single section (or no array)
         $plan->update([
             'matter_id' => $data['matter_id'],
             'school_lapse_id' => $data['school_lapse_id'],
             'lapse_id' => $data['lapse_id'] ?? null,
             'course_id' => $data['course_id'] ?? null,
-            'section_id' => $data['section_id'] ?? null,
+            'section_id' => is_array($sectionIds) ? ($sectionIds[0] ?? null) : $sectionIds,
             'name' => $data['name'],
             'description' => $data['description'] ?? null,
             'status' => EvaluationPlanStatusEnum::Pending->value,
@@ -159,7 +258,7 @@ class EvaluationPlanService
         ]);
 
         $this->registerCourseMatter($data['course_id'] ?? null, $data['matter_id']);
-        $this->syncItems($plan, $data['units'] ?? $data['items'] ?? []);
+        $this->syncItems($plan, $unitsOrItems);
 
         return $plan;
     }
