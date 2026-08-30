@@ -198,3 +198,5 @@ Cada cambio de periodo/curso/sección re-monta el componente con props frescas.
 - Colores de materia: MATTER_PASTELS ahora se indexa por id-1 (no modulo 10) para que cada materia tenga color unico; ampliado a 14 pasteles. Biologia(id11) y Matematica(id1) ya no colisionan.
 - Bonus (Horarios admin, vista grid): bloque reactivo subjectHours calcula las horas semanales por materia (suma de duraciones de schedule.days via 	oMinutes), ordena descendente y muestra tabla Materias y horas semanales bajo el ScheduleWeekGrid (oculta si no hay clases). Formato Xh Ym.
 - Verificado en navegador: listado correcto seccion A (Bio 2h45m, Mat 1h15m, Info 1h15m, Ing/Arte/Cast 1h) y oculto en seccion B (sin clases).
+
+- Fix build en Linux: las importaciones del componente usaban ruta Components/ (mayuscula) pero el directorio git es lowercase esources/js/components/ (Windows case-insensitive lo toleraba; Linux no). Corregido a ../../components/ScheduleWeekGrid.svelte en Horarios/HorarioHijo/MiHorario.

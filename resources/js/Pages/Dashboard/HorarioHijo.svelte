@@ -1,6 +1,6 @@
 <script>
     import { router, page } from "@inertiajs/svelte";
-    import ScheduleWeekGrid from "../../Components/ScheduleWeekGrid.svelte";
+    import ScheduleWeekGrid from "../../components/ScheduleWeekGrid.svelte";
 
     export let data = [];
 
