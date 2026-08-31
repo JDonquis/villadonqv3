@@ -50,7 +50,7 @@ class EvaluationPlanController extends Controller
         ]);
     }
 
-    public function myPlans()
+    public function myPlans(Request $request)
     {
         $teacherMatters = auth()->user()->matters()
             ->orderBy('name')
@@ -60,13 +60,31 @@ class EvaluationPlanController extends Controller
 
         return inertia('Dashboard/MisPlanes', [
             'data' => [
-                'plans' => $this->planService->getPlansForTeacher(auth()->id()),
+                'plans' => $this->planService->getPlansForTeacher(auth()->id(), $request->all()),
                 'matters' => $teacherMatters,
                 'courses' => $this->planService->getCourses(),
                 'sections' => $this->planService->getSections(),
                 'school_lapses' => $this->planService->getSchoolLapses(),
             ],
+            'filters' => [
+                'school_lapse_id' => $request->input('school_lapse_id'),
+                'lapse_id' => $request->input('lapse_id'),
+                'matter_id' => $request->input('matter_id'),
+            ],
         ]);
+    }
+
+    public function allowedDays(Request $request)
+    {
+        return response()->json(
+            $this->planService->getAllowedWeekdays([
+                'school_lapse_id' => $request->input('school_lapse_id'),
+                'course_id' => $request->input('course_id'),
+                'matter_id' => $request->input('matter_id'),
+                'teacher_id' => auth()->id(),
+                'section_ids' => $request->input('section_ids', []),
+            ])
+        );
     }
 
     public function store(StoreEvaluationPlanRequest $request)
