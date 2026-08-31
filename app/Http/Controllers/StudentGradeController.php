@@ -25,9 +25,28 @@ class StudentGradeController extends Controller
 
     public function index(Request $request)
     {
-        $plans = $this->planService->getPlansForTeacher(auth()->id());
+        $schoolLapseId = (int) ($request->input('school_lapse_id') ?: $this->planService->currentSchoolLapseId());
 
-        $selectedPlanId = (int) $request->input('plan_id') ?: ($plans[0]['id'] ?? null);
+        $schoolLapse = \App\Models\SchoolLapse::with('lapses')->find($schoolLapseId);
+        $defaultLapseId = $request->input('lapse_id');
+
+        if (empty($defaultLapseId) && $schoolLapse) {
+            $today = \Carbon\Carbon::now()->toDateString();
+            $defaultLapseId = $schoolLapse->lapses
+                ->first(fn ($lap) => $today >= ($lap->start ?? '') && $today <= ($lap->end ?? ''))
+                ?->id
+                ?? $schoolLapse->lapses->sortByDesc('number')->first()?->id;
+        }
+
+        $lapseId = $defaultLapseId ? (int) $defaultLapseId : null;
+
+        $plans = $this->planService->getPlansForTeacher(auth()->id(), [
+            'school_lapse_id' => $schoolLapseId,
+            'lapse_id' => $lapseId,
+            'status' => 'approved',
+        ]);
+
+        $selectedPlanId = (int) ($request->input('plan_id') ?: ($plans[0]['id'] ?? null));
 
         $matrix = $selectedPlanId ? $this->gradeService->getMatrixData($selectedPlanId) : null;
 
@@ -36,6 +55,9 @@ class StudentGradeController extends Controller
                 'plans' => $plans,
                 'matrix' => $matrix,
                 'selected_plan_id' => $selectedPlanId,
+                'school_lapse_id' => $schoolLapseId,
+                'lapse_id' => $lapseId,
+                'school_lapses' => $this->planService->getSchoolLapses(),
             ],
         ]);
     }

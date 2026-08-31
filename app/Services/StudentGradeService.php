@@ -33,12 +33,45 @@ class StudentGradeService
             $gradesByItemStudent[$grade->plan_item_id][$grade->student_id] = (float) $grade->score;
         }
 
-        $items = $plan->items->map(fn ($item) => [
-            'id' => $item->id,
-            'name' => $item->name,
-            'percentage' => (float) $item->percentage,
-            'date' => $item->date,
-        ])->values()->all();
+        $units = $plan->items
+            ->groupBy(fn ($item) => $item->unit_name ?? 'Unidad 1')
+            ->map(function ($group, $unitName) {
+                $unitNumber = $group->first()->unit_number ?? 1;
+
+                return [
+                    'id' => 'unit_'.($group->first()->unit_number ?? 1),
+                    'unit_number' => (int) $unitNumber,
+                    'name' => $unitName,
+                    'topics' => $group->map(fn ($item) => [
+                        'id' => 'topic_'.$item->id,
+                        'name' => $item->name,
+                        'assessment_type' => $item->assessment_type,
+                        'percentage' => (float) $item->percentage,
+                        'points' => $item->points !== null ? (float) $item->points : null,
+                        'scheduled_date' => $item->scheduled_date ?? $item->date,
+                        'description' => $item->description,
+                    ])->values()->all(),
+                ];
+            })
+            ->values()
+            ->all();
+
+        $items = $plan->items->map(function ($item) use ($units) {
+            $unit = collect($units)->first(function ($u) use ($item) {
+                return collect($u['topics'])->contains(fn ($topic) => $topic['name'] === $item->name && $topic['percentage'] == $item->percentage);
+            });
+
+            return [
+                'id' => $item->id,
+                'name' => $item->name,
+                'percentage' => (float) $item->percentage,
+                'date' => $item->date,
+                'unit_number' => $unit['unit_number'] ?? ($item->unit_number ?? 1),
+                'unit_name' => $unit['name'] ?? ($item->unit_name ?? 'Unidad 1'),
+                'assessment_type' => $item->assessment_type ?? null,
+                'scheduled_date' => $item->scheduled_date ?? $item->date,
+            ];
+        })->values()->all();
 
         $studentsData = $students->map(function ($student) use ($gradesByItemStudent, $items) {
             $scores = [];
@@ -67,6 +100,7 @@ class StudentGradeService
                 'section_name' => $plan->section?->name,
             ],
             'items' => $items,
+            'units' => $units,
             'students' => $studentsData,
         ];
     }

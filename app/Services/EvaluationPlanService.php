@@ -147,19 +147,20 @@ class EvaluationPlanService
     public function getPlansForTeacher(int $teacherId, array $filters = []): array
     {
         $query = EvaluationPlan::with(['matter', 'schoolLapse', 'lapse', 'course', 'section', 'items'])
-            ->where('user_id', $teacherId);
+            ->where('user_id', $teacherId)
+            ->where('status', $filters['status'] ?? EvaluationPlanStatusEnum::Approved->value);
 
         $schoolLapseId = $filters['school_lapse_id'] ?? null;
         if (empty($schoolLapseId)) {
             $schoolLapseId = $this->currentSchoolLapseId();
         }
-        if (!empty($schoolLapseId)) {
+        if (! empty($schoolLapseId)) {
             $query->where('school_lapse_id', $schoolLapseId);
         }
-        if (!empty($filters['lapse_id'])) {
+        if (! empty($filters['lapse_id'])) {
             $query->where('lapse_id', $filters['lapse_id']);
         }
-        if (!empty($filters['matter_id'])) {
+        if (! empty($filters['matter_id'])) {
             $query->where('matter_id', $filters['matter_id']);
         }
 
@@ -525,7 +526,7 @@ class EvaluationPlanService
         return $last?->id;
     }
 
-    private function currentSchoolLapseId(): ?int
+    public function currentSchoolLapseId(): ?int
     {
         $today = Carbon::now()->toDateString();
         $schoolLapses = SchoolLapse::orderByDesc('start')->with('lapses')->get();
