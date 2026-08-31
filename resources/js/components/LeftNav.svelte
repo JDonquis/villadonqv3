@@ -23,7 +23,7 @@
             href: "/dashboard/pagos",
             name: "Pagos",
         },
-        {
+           {
             icon: "mdi:finance",
             href: "/dashboard/estados-de-cuenta",
             name: "Estados de Cuenta",
@@ -53,6 +53,7 @@
             href: "/dashboard/horarios",
             name: "Horarios",
         },
+
     ];
 
     const teacherNavPages = [
@@ -90,6 +91,7 @@
             href: "/dashboard/mis-pagos",
             name: "Mis Pagos",
         },
+
     ];
 
     $: isTeacher = Number($page.props.auth?.type_user_id) === 3;
@@ -104,8 +106,8 @@
         const base = isRep
             ? repNavPages
             : hasRepStudents
-              ? [...adminNavPages, ...repNavPages]
-              : adminNavPages;
+                ? [...adminNavPages, ...repNavPages]
+                : adminNavPages;
 
         const seen = new Set();
 
@@ -128,15 +130,14 @@
     <a
         use:inertia
         href="/dashboard"
-        class=" text-lg md:block p-4 text-center w-full flex"
+        class=" text-lg  md:block p-4 text-center w-full  flex"
+        >
+        <img src="/img/Isotipo-villadonq-blanco.png" alt="Villadonq" class="w-10 h-10 object-contain inline" />
+        <span class="logo hidden md:inline-block">
+            VILLADONQ
+        </span>
+        </a
     >
-        <img
-            src="/img/Isotipo-villadonq-blanco.png"
-            alt="Villadonq"
-            class="w-10 h-10 object-contain inline"
-        />
-        <span class="logo hidden md:inline-block"> VILLADONQ </span>
-    </a>
     <ul
         class="flex justify-around items-center w-full md:flex-col
     md:items-start md:justify-normal md:p-2 md:gap-1 md:[&>*]:w-full"
@@ -148,8 +149,11 @@
                     use:inertia
                     class="hover:text-yellow z-10 rounded-md flex md:gap-2 items-center p-2"
                     class:active={$page.url.startsWith(navPage.href)}
-                    ><iconify-icon class="text-xl" icon={navPage.icon} /><span
-                        class="label_link hidden md:block">{navPage.name}</span
+                    ><iconify-icon
+                        class="text-xl "
+                        icon={navPage.icon}
+                    /><span class="label_link hidden md:block"
+                        >{navPage.name}</span
                     ></a
                 >
             </li>
@@ -163,7 +167,7 @@
         position: relative;
         border-radius: 6px;
         /* box-shadow: 0 0 10px 0px #9BF2EA; */
-        color: #ffd23f !important;
+        color: #FFD23F !important;
         font-weight: bold;
     }
     a:before {

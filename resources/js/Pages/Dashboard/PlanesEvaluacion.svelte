@@ -3,8 +3,10 @@
     import Modal from "../../components/Modal.svelte";
     import Table from "../../components/Table.svelte";
     import Alert from "../../components/Alert.svelte";
+    import PlanUnitsView from "../../components/PlanUnitsView.svelte";
     import { displayAlert } from "../../stores/alertStore";
     import SelectableRow from "../../components/SelectableRow.svelte";
+    import Search from "../../components/Search.svelte";
 
     export let data = [];
     export let filters = {};
@@ -21,19 +23,74 @@
         rejected: "bg-red text-white",
     };
 
-    function applyFilter(key, value) {
+    function schoolLapseForToday() {
+        const today = new Date().toISOString().slice(0, 10);
+        const byDate = data.school_lapses?.find((l) => {
+            const ranges = (l.lapses || [])
+                .map((m) =>
+                    m.start && m.end ? { s: m.start, e: m.end } : null,
+                )
+                .filter(Boolean)
+                .sort((a, b) => (a.s < b.s ? -1 : 1));
+            if (!ranges.length) return false;
+            return today >= ranges[0].s && today <= ranges[ranges.length - 1].e;
+        });
+        return (
+            byDate ||
+            data.school_lapses?.find((l) => l.is_active) ||
+            data.school_lapses?.[0] ||
+            null
+        );
+    }
+
+    const activeSchoolLapse = schoolLapseForToday();
+
+    $: selectedSchoolLapse =
+        data.school_lapses?.find(
+            (l) => String(l.id) === String(filters.school_lapse_id),
+        ) || activeSchoolLapse;
+    $: momentOptions = selectedSchoolLapse?.lapses || [];
+
+    $: extraSearchParams = {
+        ...(filters.status ? { status: filters.status } : {}),
+        ...(filters.school_lapse_id || activeSchoolLapse?.id
+            ? { school_lapse_id: filters.school_lapse_id || activeSchoolLapse?.id }
+            : {}),
+        ...(filters.lapse_id ? { lapse_id: filters.lapse_id } : {}),
+        ...(filters.course_id ? { course_id: filters.course_id } : {}),
+        ...(filters.section_id ? { section_id: filters.section_id } : {}),
+        ...(filters.matter_id ? { matter_id: filters.matter_id } : {}),
+        ...(filters.teacher_id ? { teacher_id: filters.teacher_id } : {}),
+    };
+
+    function buildParams(overrides = {}) {
         const params = {
             status: filters.status || "",
+            search: filters.search || "",
+            school_lapse_id:
+                filters.school_lapse_id || activeSchoolLapse?.id || "",
+            lapse_id: filters.lapse_id || "",
+            course_id: filters.course_id || "",
+            section_id: filters.section_id || "",
             matter_id: filters.matter_id || "",
             teacher_id: filters.teacher_id || "",
-            [key]: value,
+            ...overrides,
         };
+        if (overrides.school_lapse_id !== undefined && overrides.school_lapse_id !== filters.school_lapse_id) {
+            // Cambiar de período resetea el momento
+            params.lapse_id = "";
+        }
         Object.keys(params).forEach((k) => {
             if (params[k] === null || params[k] === undefined || params[k] === "") {
                 delete params[k];
             }
         });
-        router.get("/dashboard/planes-evaluacion", params, {
+        return params;
+    }
+
+    function applyFilter(key, value) {
+        const overrides = { [key]: value };
+        router.get("/dashboard/planes-evaluacion", buildParams(overrides), {
             preserveState: true,
             replace: true,
         });
@@ -106,6 +163,8 @@
 <Alert />
 
 
+<Search {extraSearchParams} />
+
 <div class="flex flex-wrap gap-3 mb-4 bg-white border border-gray-200 rounded-lg p-3">
     <div class="flex items-center gap-2">
         <label class="text-sm font-semibold text-gray-600">Estado</label>
@@ -121,28 +180,53 @@
         </select>
     </div>
     <div class="flex items-center gap-2">
-        <label class="text-sm font-semibold text-gray-600">Materia</label>
+        <label class="text-sm font-semibold text-gray-600">Período escolar</label>
         <select
             class="rounded-md border border-gray-300 px-3 py-2 text-sm"
-            value={filters.matter_id || ""}
-            on:change={(e) => applyFilter("matter_id", e.target.value)}
+            value={String(filters.school_lapse_id || activeSchoolLapse?.id || "")}
+            on:change={(e) => applyFilter("school_lapse_id", e.target.value)}
         >
-            <option value="">Todas</option>
-            {#each data.matters as matter}
-                <option value={matter.id}>{matter.name}</option>
+            {#each data.school_lapses as lapse}
+                <option value={String(lapse.id)}>{lapse.label}</option>
             {/each}
         </select>
     </div>
     <div class="flex items-center gap-2">
-        <label class="text-sm font-semibold text-gray-600">Profesor</label>
+        <label class="text-sm font-semibold text-gray-600">Momento</label>
         <select
             class="rounded-md border border-gray-300 px-3 py-2 text-sm"
-            value={filters.teacher_id || ""}
-            on:change={(e) => applyFilter("teacher_id", e.target.value)}
+            value={String(filters.lapse_id || "")}
+            on:change={(e) => applyFilter("lapse_id", e.target.value)}
         >
             <option value="">Todos</option>
-            {#each data.teachers as teacher}
-                <option value={teacher.id}>{teacher.name}</option>
+            {#each momentOptions as mom}
+                <option value={String(mom.id)}>{mom.label}</option>
+            {/each}
+        </select>
+    </div>
+    <div class="flex items-center gap-2">
+        <label class="text-sm font-semibold text-gray-600">Año</label>
+        <select
+            class="rounded-md border border-gray-300 px-3 py-2 text-sm"
+            value={String(filters.course_id || "")}
+            on:change={(e) => applyFilter("course_id", e.target.value)}
+        >
+            <option value="">Todos</option>
+            {#each data.courses as course}
+                <option value={String(course.id)}>{course.name}</option>
+            {/each}
+        </select>
+    </div>
+    <div class="flex items-center gap-2">
+        <label class="text-sm font-semibold text-gray-600">Sección</label>
+        <select
+            class="rounded-md border border-gray-300 px-3 py-2 text-sm"
+            value={String(filters.section_id || "")}
+            on:change={(e) => applyFilter("section_id", e.target.value)}
+        >
+            <option value="">Todas</option>
+            {#each data.sections as section}
+                <option value={String(section.id)}>{section.name}</option>
             {/each}
         </select>
     </div>
@@ -167,13 +251,10 @@
     <thead slot="thead" class="sticky top-0 z-50">
         <tr>
             <th>N°</th>
-            <th>Plan</th>
             <th>Profesor</th>
             <th>Materia</th>
-            <th>Período</th>
             <th>Momento</th>
             <th>Curso / Sección</th>
-            <th>Items</th>
             <th>Total %</th>
             <th>Estado</th>
             <th>Fecha</th>
@@ -191,23 +272,14 @@
                 }}
             >
                 <td>{i + 1}</td>
-                <td>
-                    <p class="font-semibold">{plan.name}</p>
-                    {#if plan.description}
-                        <p class="text-xs text-gray-500 max-w-[200px] truncate">
-                            {plan.description}
-                        </p>
-                    {/if}
-                </td>
+               
                 <td>{plan.teacher_name}</td>
                 <td>{plan.matter_name}</td>
-                <td>{plan.school_lapse_label}</td>
                 <td>{plan.lapse_label || "—"}</td>
                 <td>
                     {plan.course_name || "—"}
                     {#if plan.section_name}· {plan.section_name}{/if}
                 </td>
-                <td>{plan.items.length}</td>
                 <td>{plan.items_total}%</td>
                 <td>
                     <span
@@ -225,106 +297,60 @@
 <Modal bind:showModal classes={"w-fit"}>
     {#if selectedRow.data}
         {@const plan = selectedRow.data}
-        <div class="px-5 py-2 min-w-[560px]">
-            <h3 class="text-xl font-bold text-color1 mb-1">{plan.name}</h3>
-            <p class="text-sm text-gray-500 mb-3">
-                {plan.teacher_name} · {plan.matter_name} ·
-                {plan.school_lapse_label}
-                {#if plan.lapse_label} · {plan.lapse_label}{/if}
-                {#if plan.course_name}
-                    · {plan.course_name}{plan.section_name ? " · Sección " + plan.section_name : ""}
+        <PlanUnitsView {plan} />
+
+        {#if plan.status === "pending"}
+            <div class="mt-5 flex flex-col gap-3">
+                {#if rejectMode}
+                    <textarea
+                        bind:value={rejectNote}
+                        placeholder="Motivo del rechazo (opcional)"
+                        rows="3"
+                        class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    ></textarea>
+                    <div class="flex gap-3 justify-end">
+                        <button
+                            on:click={() => (rejectMode = false)}
+                            class="px-4 py-2 text-sm border border-gray-300 rounded-md"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            on:click={() => confirmReject(plan.id)}
+                            class="px-4 py-2 text-sm bg-red text-white rounded-md"
+                        >
+                            Confirmar rechazo
+                        </button>
+                    </div>
+                {:else}
+                    <div class="flex gap-3 justify-center">
+                        <button
+                            on:click={() => {
+                                rejectMode = true;
+                                rejectingPlanId = plan.id;
+                            }}
+                            class="px-10 py-2 text-sm bg-red text-white rounded-md"
+                        >
+                            Rechazar
+                        </button>
+                        <button
+                            on:click={() => approvePlan(plan.id)}
+                            class="px-10 py-2 text-sm bg-color1 text-white rounded-md"
+                        >
+                            Aprobar
+                        </button>
+                    </div>
                 {/if}
-            </p>
-            {#if plan.description}
-                <p class="text-sm text-gray-600 mb-3">{plan.description}</p>
-            {/if}
-
-            <table class="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="text-left px-3 py-2">Evaluación</th>
-                        <th class="text-left px-3 py-2">Porcentaje</th>
-                        <th class="text-left px-3 py-2">Fecha</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {#each plan.items as item}
-                        <tr class="border-t border-gray-100">
-                            <td class="px-3 py-1.5">{item.name}</td>
-                            <td class="px-3 py-1.5">{item.percentage}%</td>
-                            <td class="px-3 py-1.5">{item.date || "—"}</td>
-                        </tr>
-                    {/each}
-                    <tr class="border-t border-gray-200 font-semibold">
-                        <td class="px-3 py-1.5">Total</td>
-                        <td class="px-3 py-1.5">{plan.items_total}%</td>
-                        <td></td>
-                    </tr>
-                </tbody>
-            </table>
-
-            {#if plan.status === "rejected" && plan.admin_note}
-                <div
-                    class="mt-4 bg-red/5 border border-red/20 text-red px-4 py-3 rounded-md text-sm"
+            </div>
+        {:else if plan.status === "approved"}
+            <div class="mt-5 flex justify-end">
+                <button
+                    on:click={() => rejectPlanStart()}
+                    class="px-4 py-2 text-sm bg-red text-white rounded-md"
                 >
-                    <span class="font-semibold">Motivo del rechazo: </span>
-                    {plan.admin_note}
-                </div>
-            {/if}
-
-            {#if plan.status === "pending"}
-                <div class="mt-5 flex flex-col gap-3">
-                    {#if rejectMode}
-                        <textarea
-                            bind:value={rejectNote}
-                            placeholder="Motivo del rechazo (opcional)"
-                            rows="3"
-                            class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                        ></textarea>
-                        <div class="flex gap-3 justify-end">
-                            <button
-                                on:click={() => (rejectMode = false)}
-                                class="px-4 py-2 text-sm border border-gray-300 rounded-md"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                on:click={() => confirmReject(plan.id)}
-                                class="px-4 py-2 text-sm bg-red text-white rounded-md"
-                            >
-                                Confirmar rechazo
-                            </button>
-                        </div>
-                    {:else}
-                        <div class="flex gap-3 justify-end">
-                            <button
-                                on:click={() => {
-                                    rejectMode = true;
-                                    rejectingPlanId = plan.id;
-                                }}
-                                class="px-4 py-2 text-sm bg-red text-white rounded-md"
-                            >
-                                Rechazar
-                            </button>
-                            <button
-                                on:click={() => approvePlan(plan.id)}
-                                class="px-4 py-2 text-sm bg-green text-white rounded-md"
-                            >
-                                Aprobar
-                            </button>
-                        </div>
-                    {/if}
-                </div>
-            {:else if plan.status === "approved"}
-                <div class="mt-5 flex justify-end">
-                    <button
-                        on:click={() => rejectPlanStart()}
-                        class="px-4 py-2 text-sm bg-red text-white rounded-md"
-                    >
-                        Rechazar
-                    </button>
-                </div>
-            {/if}
-        </div>
+                    Rechazar
+                </button>
+            </div>
+        {/if}
     {/if}
 </Modal>
