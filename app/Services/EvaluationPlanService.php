@@ -101,12 +101,44 @@ class EvaluationPlanService
             $query->where('status', $filters['status']);
         }
 
+        if (! empty($filters['school_lapse_id'])) {
+            $query->where('school_lapse_id', $filters['school_lapse_id']);
+        }
+
+        if (! empty($filters['lapse_id'])) {
+            $query->where('lapse_id', $filters['lapse_id']);
+        }
+
+        if (! empty($filters['course_id'])) {
+            $query->where('course_id', $filters['course_id']);
+        }
+
+        if (! empty($filters['section_id'])) {
+            $query->where('section_id', $filters['section_id']);
+        }
+
         if (! empty($filters['matter_id'])) {
             $query->where('matter_id', $filters['matter_id']);
         }
 
         if (! empty($filters['teacher_id'])) {
             $query->where('user_id', $filters['teacher_id']);
+        }
+
+        if (! empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('matter', fn ($m) => $m->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('course', fn ($c) => $c->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('section', fn ($s) => $s->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('schoolLapse', fn ($sl) => $sl->where('start', 'like', "%{$search}%"))
+                    ->orWhereHas('teacher', fn ($t) => $t->whereRaw(
+                        "CONCAT(name, ' ', last_name) LIKE ?",
+                        ["%{$search}%"]
+                    ));
+            });
         }
 
         return $query->get()->map(fn ($plan) => $this->formatPlan($plan))->values()->all();

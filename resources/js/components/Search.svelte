@@ -26,11 +26,12 @@
 
     let initialUrlFilters = parseUrlFilters();
     let search = $page.props.filters?.search || initialUrlFilters.search || "";
+    export let extraSearchParams = {};
 
     const handleSearch = debounce((event) => {
         router.get(
             `${$page.url.split("?")[0]}`,
-            { search, page: "1" },
+            { ...extraSearchParams, search, page: "1" },
             { preserveState: true },
         );
     }, 300);

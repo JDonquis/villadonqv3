@@ -35,8 +35,9 @@ class EvaluationPlanController extends Controller
         return inertia('Dashboard/PlanesEvaluacion', [
             'data' => [
                 'plans' => $this->planService->getPlansForAdmin($request->all()),
-                'matters' => $this->planService->getMatters(),
-                'teachers' => $teachers,
+                'school_lapses' => $this->planService->getSchoolLapses(),
+                'courses' => $this->planService->getCourses(),
+                'sections' => $this->planService->getSections(),
                 'statuses' => collect(EvaluationPlanStatusEnum::cases())->map(fn ($s) => [
                     'value' => $s->value,
                     'label' => $s->label(),
@@ -44,6 +45,11 @@ class EvaluationPlanController extends Controller
             ],
             'filters' => [
                 'status' => $request->input('status') ?? null,
+                'search' => $request->input('search') ?? null,
+                'school_lapse_id' => $request->input('school_lapse_id') ?? null,
+                'lapse_id' => $request->input('lapse_id') ?? null,
+                'course_id' => $request->input('course_id') ?? null,
+                'section_id' => $request->input('section_id') ?? null,
                 'matter_id' => $request->input('matter_id') ?? null,
                 'teacher_id' => $request->input('teacher_id') ?? null,
             ],

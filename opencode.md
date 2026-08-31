@@ -194,12 +194,14 @@ Cada cambio de periodo/curso/sección re-monta el componente con props frescas.
 
 
 ## 2026-08-30 - Rejilla horarios en componente reutilizable + lista de horas por materia
-- Nuevo componente esources/js/Components/ScheduleWeekGrid.svelte: grid semanal de posicionamiento absoluto (5 columnas Lun-Vie, cajas absolute a 70px/hora con base 7am, banda de receso, pastel unico por materia via id, linea meta adaptable con teacher/section/course). Usado en: Horarios (admin), HorarioHijo (representante), MiHorario (profesor). Horarios/MiHorario/HorarioHijo ya no duplican el grid (eliminados helpers duplicados de Horarios.svelte).
+- Nuevo componente 
+esources/js/Components/ScheduleWeekGrid.svelte: grid semanal de posicionamiento absoluto (5 columnas Lun-Vie, cajas absolute a 70px/hora con base 7am, banda de receso, pastel unico por materia via id, linea meta adaptable con teacher/section/course). Usado en: Horarios (admin), HorarioHijo (representante), MiHorario (profesor). Horarios/MiHorario/HorarioHijo ya no duplican el grid (eliminados helpers duplicados de Horarios.svelte).
 - Colores de materia: MATTER_PASTELS ahora se indexa por id-1 (no modulo 10) para que cada materia tenga color unico; ampliado a 14 pasteles. Biologia(id11) y Matematica(id1) ya no colisionan.
 - Bonus (Horarios admin, vista grid): bloque reactivo subjectHours calcula las horas semanales por materia (suma de duraciones de schedule.days via 	oMinutes), ordena descendente y muestra tabla Materias y horas semanales bajo el ScheduleWeekGrid (oculta si no hay clases). Formato Xh Ym.
 - Verificado en navegador: listado correcto seccion A (Bio 2h45m, Mat 1h15m, Info 1h15m, Ing/Arte/Cast 1h) y oculto en seccion B (sin clases).
 
-- Fix build en Linux: las importaciones del componente usaban ruta Components/ (mayuscula) pero el directorio git es lowercase esources/js/components/ (Windows case-insensitive lo toleraba; Linux no). Corregido a ../../components/ScheduleWeekGrid.svelte en Horarios/HorarioHijo/MiHorario.
+- Fix build en Linux: las importaciones del componente usaban ruta Components/ (mayuscula) pero el directorio git es lowercase 
+esources/js/components/ (Windows case-insensitive lo toleraba; Linux no). Corregido a ../../components/ScheduleWeekGrid.svelte en Horarios/HorarioHijo/MiHorario.
 
 ## 2026-08-30 - Fix guardar plan de evaluacion
 - Al crear/editar un plan de evaluacion, EvaluationPlanService::syncItems escribe en evaluation_plan_items las columnas unit_name, unit_number, assessment_type, points, scheduled_date, description. El modelo y el frontend ya usaban el esquema rico de unidades/temas, pero la tabla real en MySQL solo tenia id/evaluation_plan_id/name/percentage/date/order. Causaba SQLSTATE[42S22] Unknown column unit_name.
@@ -238,6 +240,14 @@ Cada cambio de periodo/curso/sección re-monta el componente con props frescas.
 ## 2026-08-30 - MisPlanes: calendario tambien se activa con focus (tab)
 - El on:click del input de fecha compartia el showPicker con el nuevo on:focus via helper openCalendar(el), con guard lastShowPickerAt (300ms) para que focus+click del mismo gesto no abra el calendario dos veces.
 - Verificado en navegador (page 7, spy sobre input.showPicker): solo focus => 1 llamada; focus+click juntos => 1 llamada (guard); click solo (ya enfocado) => 1 llamada. El tooltip sigue togleandose por click.
+
+## 2026-08-30 - PlanesEvaluacion (admin): buscador + filtros Periodo/Momento/Anio/Seccion, quitar Materia/Profesor
+- Frontend resources/js/Pages/Dashboard/PlanesEvaluacion.svelte: se quitaron los select de Materia y Profesor de la barra de filtros. El buscador ahora es el componente reutilizable Search.svelte (barra fixed top-right, igual que en Pagos) y los select "Periodo escolar" (de data.school_lapses, sin "Todos", default activo por fecha = mismo schoolLapseForToday() que MisPlanes), "Momento" (lapses del periodo seleccionado, con "Todos", se resetea al cambiar periodo), "Anio" (course_id) y "Seccion" (section_id), ambos "Todos".
+- Search.svelte gano un prop opcional extraSearchParams (default {}, backward-compatible) que se fusiona en su router.get de busqueda debounced, para que tipear en search NO pierda los selects aplicados. BuildParams en PlanesEvaluacion arma todos los params de los selects (status/school_lapse_id/lapse_id/course_id/section_id + search) y resetea lapse_id al cambiar school_lapse_id. applyFilter(key,value) hace router.get preserveState+replace y conserva filters.search.
+- Backend EvaluationPlanController@index: data ahora trae school_lapses (getSchoolLapses), courses (getCourses), sections (getSections); mantiene statuses; removio matters/teachers del payload (el frontend ya no los usa). filters prop incluye search/school_lapse_id/lapse_id/course_id/section_id (+ materia/teacher por retrocompat).
+- EvaluationPlanService::getPlansForAdmin ahora filtra por status/school_lapse_id/lapse_id/course_id/section_id/materia/teacher y busca por search (name/description, y orWhereHas en matter/course/section/schoolLapse y CONCAT(name, last_name) en teacher).
+- Celda "Plan" de la tabla restylizada como la de MisPlanes: nombre en <b class="text-gray-700"> + descripcion truncada gris debajo.
+- Verificado en navegador (admin de prueba creado y eliminado): Search.svelte + filtros. Tipear 'Patrimonio' en Search -> URL ?school_lapse_id=1&search=Patrimonio&page=1 (extraSearchParams conserva el periodo); cambiar Seccion a A -> URL ?search=Patrimonio&school_lapse_id=1&section_id=1 (applyFilter conserva search) y la tabla queda solo con el plan de seccion A. Backend via tinker: search 'Arte'/'patrimonio'=2, course_id=1 =>2, section_id=1 =>1, lapse_id=1 =>2; school_lapses/courses/sections no vacios. Build vite OK (solo warnings pre-existentes), php -l OK en service+controller, phpunit 2/2 OK.
 
 ## 2026-08-31 - Plantilla Excel descargable (Matricula, Profesores, Personal)
 - Nueva dependencia: phpoffice/phpspreadsheet (composer).
