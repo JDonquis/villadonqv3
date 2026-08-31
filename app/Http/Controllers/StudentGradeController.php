@@ -6,6 +6,7 @@ use App\Http\Requests\StoreGradesRequest;
 use App\Models\EvaluationPlan;
 use App\Services\EvaluationPlanService;
 use App\Services\StudentGradeService;
+use App\Support\ErrorTranslator;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -54,7 +55,7 @@ class StudentGradeController extends Controller
         } catch (Exception $e) {
             Log::error('Error al guardar notas: '.$e->getMessage());
 
-            return back()->withErrors(['message' => $e->getMessage()]);
+            return back()->withErrors(['message' => ErrorTranslator::translate($e)]);
         }
     }
 }

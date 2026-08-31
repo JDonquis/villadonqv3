@@ -8,10 +8,42 @@
     import { displayAlert } from "../../stores/alertStore";
     import SelectableRow from "../../components/SelectableRow.svelte";
     import { page } from "@inertiajs/svelte";
+    import ImportResultModal from "../../components/ImportResultModal.svelte";
+    import axios from "axios";
     console.log($page);
     export let types = [];
     export let data = [];
     let submitStatus = "Crear";
+
+    let importFileInput = null;
+    let showImportResult = false;
+    let importSummary = { created: 0, errors: [] };
+
+    async function handleImportFile(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const formData = new FormData();
+        formData.append("file", file);
+        try {
+            const { data } = await axios.post(
+                "/dashboard/personal/importar",
+                formData,
+                { headers: { Accept: "application/json" } }
+            );
+            importSummary = data;
+            showImportResult = true;
+        } catch (err) {
+            displayAlert({
+                type: "error",
+                message:
+                    err.response?.data?.error ||
+                    err.response?.data?.errors?.file?.[0] ||
+                    "No se pudo importar el archivo.",
+            });
+        } finally {
+            if (importFileInput) importFileInput.value = "";
+        }
+    }
 
     console.log(data);
     const emptyDataForm = {
@@ -196,8 +228,24 @@
 <section class=" min-h-screen">
     <Alert />
     <div class=" mx-auto">
-        <button
-            class="animated-button ml-auto w-fitcontent"
+        <div class="flex justify-end items-center gap-3 mb-3">
+            <input
+                type="file"
+                accept=".xlsx"
+                class="hidden"
+                bind:this={importFileInput}
+                on:change={handleImportFile}
+            />
+            <button type="button" class="toolbar-secondary" on:click={() => importFileInput?.click()}>
+                <iconify-icon icon="material-symbols:upload" width="20" height="20" />
+                Importar
+            </button>
+            <a href="/dashboard/personal/plantilla" class="toolbar-secondary">
+                <iconify-icon icon="material-symbols:download" width="20" height="20" />
+                Descargar plantilla
+            </a>
+            <button
+            class="animated-button w-fitcontent"
             on:click={(e) => {
                 if (!$page.props.auth.is_admin) {
                     displayAlert({
@@ -236,6 +284,7 @@
                 ></path>
             </svg></button
         >
+        </div>
         <!-- List -->
 
         <Table
@@ -392,6 +441,10 @@
         </button>
     </form>
 </Modal>
+
+{#if showImportResult}
+    <ImportResultModal bind:show={showImportResult} summary={importSummary} />
+{/if}
 
 <style>
 </style>

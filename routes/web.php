@@ -9,11 +9,12 @@ use App\Http\Controllers\MatterController;
 use App\Http\Controllers\MyScheduleController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RepresentativeController;
 use App\Http\Controllers\RepresentativePaymentController;
+use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\SchoolLapseController;
 use App\Http\Controllers\SectionController;
-use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentGradeController;
 use App\Http\Controllers\TeacherController;
@@ -46,12 +47,16 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::get('/dashboard/graficos/annual-vs-monthly-flow/{schoolLapse?}', [AppController::class, 'annualVsMonthlyFlow']);
 
     Route::get('/dashboard/personal', [UserController::class, 'index'])->name('personal.index');
+    Route::get('/dashboard/personal/plantilla', [UserController::class, 'downloadTemplate']);
+    Route::post('/dashboard/personal/importar', [UserController::class, 'import']);
     Route::post('/dashboard/personal', [UserController::class, 'store'])->name('personal.store');
     Route::put('/dashboard/personal/{id}', [UserController::class, 'update'])->name('personal.update');
     Route::delete('/dashboard/personal/{id}', [UserController::class, 'destroy'])->name('personal.destroy');
     Route::post('/dashboard/personal/{id}/reenviar-correo', [UserController::class, 'resendSetupEmail'])->name('personal.resend-email');
 
     Route::get('/dashboard/matricula', [StudentController::class, 'index']);
+    Route::get('/dashboard/matricula/plantilla', [StudentController::class, 'downloadTemplate']);
+    Route::post('/dashboard/matricula/importar', [StudentController::class, 'import']);
     Route::post('/dashboard/matricula', [StudentController::class, 'store']);
     Route::put('/dashboard/matricula/{id}', [StudentController::class, 'update']);
     Route::delete('/dashboard/matricula/{studentId}', [StudentController::class, 'destroy']);
@@ -89,6 +94,8 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::put('/dashboard/configuracion/pagos', [MainConfigController::class, 'updatePaymentConfig']);
 
     Route::get('/dashboard/profesores', [TeacherController::class, 'index']);
+    Route::get('/dashboard/profesores/plantilla', [TeacherController::class, 'downloadTemplate']);
+    Route::post('/dashboard/profesores/importar', [TeacherController::class, 'import']);
     Route::post('/dashboard/profesores', [TeacherController::class, 'store']);
     Route::put('/dashboard/profesores/{id}', [TeacherController::class, 'update']);
     Route::delete('/dashboard/profesores/{id}', [TeacherController::class, 'destroy']);
@@ -103,6 +110,8 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::post('/dashboard/planes-evaluacion/{id}/aprobar', [EvaluationPlanController::class, 'approve']);
     Route::post('/dashboard/planes-evaluacion/{id}/rechazar', [EvaluationPlanController::class, 'reject']);
 
+    Route::get('/dashboard/reportes/boleta/{studentId}', [ReportController::class, 'boleta']);
+    Route::get('/dashboard/reportes/certificado/{studentId}', [ReportController::class, 'certificado']);
     Route::get('/dashboard/horarios', [ScheduleController::class, 'index']);
     Route::post('/dashboard/horarios', [ScheduleController::class, 'store']);
 });

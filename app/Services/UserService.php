@@ -7,6 +7,7 @@ use App\Http\Resources\UserResource;
 use App\Mail\PasswordSetupMail;
 use App\Models\PasswordSetupToken;
 use App\Models\User;
+use App\Support\ErrorTranslator;
 use Illuminate\Support\Facades\Mail;
 
 class UserService
@@ -161,6 +162,94 @@ class UserService
     {
         $user->delete();
     }
+
+    public function importUsers(array $rows): array
+    {
+        $summary = ['created' => 0, 'errors' => []];
+
+        foreach ($rows as $entry) {
+            $rowNumber = $entry['row'];
+            $raw = $entry['data'];
+
+            try {
+                $this->createUserFromRow($raw);
+                $summary['created']++;
+            } catch (\Exception $e) {
+                $summary['errors'][] = [
+                    'row' => $rowNumber,
+                    'message' => ErrorTranslator::translate($e),
+                ];
+            }
+        }
+
+        return $summary;
+    }
+
+    private function createUserFromRow(array $raw): void
+    {
+        $data = [];
+        foreach (self::USER_IMPORT_MAP as $header => $field) {
+            $data[$field] = $raw[$this->normalizeHeader($header)] ?? '';
+        }
+
+        $required = [
+            'ci' => 'la cédula',
+            'name' => 'el nombre',
+            'last_name' => 'el apellido',
+            'email' => 'el correo',
+        ];
+        foreach ($required as $field => $label) {
+            if (empty($data[$field])) {
+                throw new \Exception("Falta {$label}.");
+            }
+        }
+
+        if (! filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+            throw new \Exception("El correo '{$data['email']}' no es válido.");
+        }
+
+        if (User::where('ci', $data['ci'])->exists()) {
+            throw new \Exception("La cédula {$data['ci']} ya está registrada.");
+        }
+
+        if (User::where('email', $data['email'])->exists()) {
+            throw new \Exception("El correo '{$data['email']}' ya está registrado.");
+        }
+
+        $this->createUser([
+            'type_user_id' => UserTypeEnum::Administrator->value,
+            'ci' => $data['ci'],
+            'name' => $data['name'],
+            'last_name' => $data['last_name'],
+            'email' => $data['email'],
+            'phone_number' => $data['phone_number'] !== '' ? $data['phone_number'] : null,
+            'address' => $data['address'] !== '' ? $data['address'] : null,
+            'password' => bcrypt($data['ci']),
+            'is_admin' => $this->normalizeBool($data['is_admin']),
+        ]);
+    }
+
+    private function normalizeBool($value): bool
+    {
+        $value = trim(mb_strtolower((string) $value));
+
+        return in_array($value, ['1', 'true', 'si', 'sí', 'verdadero', 'yes'], true);
+    }
+
+    private function normalizeHeader($header): string
+    {
+        return preg_replace('/\s+/', ' ', strtolower(trim((string) $header)));
+    }
+
+    private const USER_IMPORT_MAP = [
+        'Cédula' => 'ci',
+        'Nombre' => 'name',
+        'Apellido' => 'last_name',
+        'Email' => 'email',
+        'Teléfono' => 'phone_number',
+        'Dirección' => 'address',
+        'Es administrador (0/1)' => 'is_admin',
+    ];
 
     public function getUserById(int $id): ?User
     {

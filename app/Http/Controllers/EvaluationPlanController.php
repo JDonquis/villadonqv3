@@ -10,6 +10,7 @@ use App\Http\Requests\UpdateEvaluationPlanRequest;
 use App\Models\EvaluationPlan;
 use App\Models\User;
 use App\Services\EvaluationPlanService;
+use App\Support\ErrorTranslator;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -102,7 +103,7 @@ class EvaluationPlanController extends Controller
         } catch (Exception $e) {
             Log::error('Error al crear plan de evaluación: '.$e->getMessage());
 
-            return back()->withErrors(['message' => $e->getMessage()]);
+            return back()->withErrors(['message' => ErrorTranslator::translate($e)]);
         }
     }
 
@@ -121,7 +122,7 @@ class EvaluationPlanController extends Controller
         } catch (Exception $e) {
             Log::error('Error al actualizar plan de evaluación ID '.$id.': '.$e->getMessage());
 
-            return back()->withErrors(['message' => $e->getMessage()]);
+            return back()->withErrors(['message' => ErrorTranslator::translate($e)]);
         }
     }
 
@@ -140,7 +141,7 @@ class EvaluationPlanController extends Controller
         } catch (Exception $e) {
             Log::error('Error al eliminar plan de evaluación ID '.$id.': '.$e->getMessage());
 
-            return back()->withErrors(['message' => $e->getMessage()]);
+            return back()->withErrors(['message' => ErrorTranslator::translate($e)]);
         }
     }
 
@@ -155,7 +156,7 @@ class EvaluationPlanController extends Controller
         } catch (Exception $e) {
             Log::error('Error al aprobar plan ID '.$id.': '.$e->getMessage());
 
-            return back()->withErrors(['message' => $e->getMessage()]);
+            return back()->withErrors(['message' => ErrorTranslator::translate($e)]);
         }
     }
 
@@ -170,7 +171,7 @@ class EvaluationPlanController extends Controller
         } catch (Exception $e) {
             Log::error('Error al rechazar plan ID '.$id.': '.$e->getMessage());
 
-            return back()->withErrors(['message' => $e->getMessage()]);
+            return back()->withErrors(['message' => ErrorTranslator::translate($e)]);
         }
     }
 

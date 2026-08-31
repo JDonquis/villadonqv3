@@ -2,17 +2,20 @@
 
 namespace App\Exceptions;
 
-use Throwable;
-use Illuminate\Http\Request;
-use App\Exceptions\CustomException;
+use App\Support\ErrorTranslator;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Psr\Log\LogLevel;
+use Throwable;
 
 class Handler extends ExceptionHandler
 {
     /**
      * A list of exception types with their corresponding custom log levels.
      *
-     * @var array<class-string<\Throwable>, \Psr\Log\LogLevel::*>
+     * @var array<class-string<Throwable>, LogLevel::*>
      */
     protected $levels = [
         //
@@ -21,7 +24,7 @@ class Handler extends ExceptionHandler
     /**
      * A list of the exception types that are not reported.
      *
-     * @var array<int, class-string<\Throwable>>
+     * @var array<int, class-string<Throwable>>
      */
     protected $dontReport = [
         //
@@ -43,10 +46,20 @@ class Handler extends ExceptionHandler
      */
     public function register(): void
     {
-        $this->renderable(function (CustomException $e, Request $request){
+        $this->renderable(function (CustomException $e, Request $request) {
 
             return response()->json(['message' => $e->getMessage()], $e->getCode());
 
+        });
+
+        $this->renderable(function (QueryException $e, Request $request) {
+            if ($request->header('X-Inertia')) {
+                Log::error('Excepción de base de datos: '.$e->getMessage());
+
+                return redirect()->back()->withErrors(['message' => ErrorTranslator::translate($e)]);
+            }
+
+            return null;
         });
     }
 }

@@ -7,8 +7,40 @@
     import Alert from "../../components/Alert.svelte";
     import { displayAlert } from "../../stores/alertStore";
     import SelectableRow from "../../components/SelectableRow.svelte";
+    import ImportResultModal from "../../components/ImportResultModal.svelte";
+    import axios from "axios";
 
     export let data = [];
+
+    let importFileInput = null;
+    let showImportResult = false;
+    let importSummary = { created: 0, errors: [] };
+
+    async function handleImportFile(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const formData = new FormData();
+        formData.append("file", file);
+        try {
+            const { data } = await axios.post(
+                "/dashboard/profesores/importar",
+                formData,
+                { headers: { Accept: "application/json" } }
+            );
+            importSummary = data;
+            showImportResult = true;
+        } catch (err) {
+            displayAlert({
+                type: "error",
+                message:
+                    err.response?.data?.error ||
+                    err.response?.data?.errors?.file?.[0] ||
+                    "No se pudo importar el archivo.",
+            });
+        } finally {
+            if (importFileInput) importFileInput.value = "";
+        }
+    }
 
     const emptyForm = {
         type_user_id: 3,
@@ -162,9 +194,24 @@
 
 <Alert />
 
-<div class="flex justify-between items-center mb-3">
+<div class="flex justify-end items-center gap-3 mb-3">
+    <input
+        type="file"
+        accept=".xlsx"
+        class="hidden"
+        bind:this={importFileInput}
+        on:change={handleImportFile}
+    />
+    <button type="button" class="toolbar-secondary" on:click={() => importFileInput?.click()}>
+        <iconify-icon icon="material-symbols:upload" width="20" height="20" />
+        Importar
+    </button>
+    <a href="/dashboard/profesores/plantilla" class="toolbar-secondary">
+        <iconify-icon icon="material-symbols:download" width="20" height="20" />
+        Descargar plantilla
+    </a>
     <button
-        class="animated-button w-fitcontent ml-auto"
+        class="animated-button w-fitcontent"
         on:click={(e) => {
             e.preventDefault();
             $form.reset();
@@ -342,3 +389,7 @@
         {/if}
     </button>
 </Modal>
+
+{#if showImportResult}
+    <ImportResultModal bind:show={showImportResult} summary={importSummary} />
+{/if}

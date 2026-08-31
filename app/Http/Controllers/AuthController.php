@@ -10,6 +10,7 @@ use App\Models\PasswordSetupToken;
 use App\Models\User;
 use App\Services\LoginService;
 use App\Services\UserService;
+use App\Support\ErrorTranslator;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -79,7 +80,7 @@ class AuthController extends Controller
 
             return response()->json([
                 'status' => false,
-                'message' => $e->getMessage(),
+                'message' => ErrorTranslator::translate($e),
             ], 500);
         }
     }
