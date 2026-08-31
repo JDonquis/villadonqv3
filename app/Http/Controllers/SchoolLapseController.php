@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\ErrorTranslator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
@@ -18,25 +19,26 @@ class SchoolLapseController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Próximo periodo escolar iniciado correctamente.',
-                    'output' => $output
+                    'output' => $output,
                 ]);
             }
 
             Log::error('Error al iniciar el próximo periodo escolar', [
                 'exit_code' => $exitCode,
-                'output' => $output
+                'output' => $output,
             ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al iniciar el próximo periodo escolar.',
-                'output' => $output
+                'output' => $output,
             ], 500);
         } catch (\Exception $e) {
-            Log::error('Excepción al iniciar el próximo periodo escolar: ' . $e->getMessage());
+            Log::error('Excepción al iniciar el próximo periodo escolar: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error inesperado: ' . $e->getMessage()
+                'message' => ErrorTranslator::translate($e),
             ], 500);
         }
     }

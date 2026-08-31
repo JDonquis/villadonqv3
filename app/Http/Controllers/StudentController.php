@@ -13,6 +13,7 @@ use App\Models\CourseSection;
 use App\Models\Section;
 use App\Models\Student;
 use App\Services\StudentService;
+use App\Support\ErrorTranslator;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -86,7 +87,7 @@ class StudentController extends Controller
 
             Log::error('Error al crear estudiante: '.$e->getMessage());
 
-            return redirect('/dashboard/matricula?course_id='.$request->course_id.'&section_id='.$request->section_id)->withErrors(['message' => $e->getMessage()]);
+            return redirect('/dashboard/matricula?course_id='.$request->course_id.'&section_id='.$request->section_id)->withErrors(['message' => ErrorTranslator::translate($e)]);
         }
     }
 
@@ -110,7 +111,7 @@ class StudentController extends Controller
 
             Log::error('Error al actualizar estudiante ID '.$id.': '.$e->getMessage());
 
-            return redirect('/dashboard/matricula?course_id='.$request->course_id.'&section_id='.$request->section_id)->withErrors(['message' => $e->getMessage()]);
+            return redirect('/dashboard/matricula?course_id='.$request->course_id.'&section_id='.$request->section_id)->withErrors(['message' => ErrorTranslator::translate($e)]);
         }
     }
 
@@ -146,7 +147,7 @@ class StudentController extends Controller
 
             Log::error('Error al reinscribir estudiante ID '.$request->student_id.': '.$e->getMessage());
 
-            return redirect()->back()->withErrors(['status' => false,  'message' => $e->getMessage()]);
+            return redirect()->back()->withErrors(['status' => false,  'message' => ErrorTranslator::translate($e)]);
         }
     }
 
@@ -168,7 +169,7 @@ class StudentController extends Controller
         } catch (Exception $e) {
             Log::error('Error al adjuntar documento: '.$e->getMessage());
 
-            return redirect()->back()->withErrors(['message' => $e->getMessage()]);
+            return redirect()->back()->withErrors(['message' => ErrorTranslator::translate($e)]);
         }
     }
 
@@ -181,7 +182,7 @@ class StudentController extends Controller
         } catch (Exception $e) {
             Log::error('Error al eliminar documento ID '.$id.': '.$e->getMessage());
 
-            return redirect()->back()->withErrors(['message' => $e->getMessage()]);
+            return redirect()->back()->withErrors(['message' => ErrorTranslator::translate($e)]);
         }
     }
 

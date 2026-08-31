@@ -6,6 +6,7 @@ use App\Http\Requests\StoreMatterRequest;
 use App\Http\Requests\UpdateMatterRequest;
 use App\Models\Matter;
 use App\Services\MatterService;
+use App\Support\ErrorTranslator;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -40,7 +41,7 @@ class MatterController extends Controller
         } catch (Exception $e) {
             Log::error('Error al crear materia: '.$e->getMessage());
 
-            return back()->withErrors(['message' => $e->getMessage()]);
+            return back()->withErrors(['message' => ErrorTranslator::translate($e)]);
         }
     }
 
@@ -55,7 +56,7 @@ class MatterController extends Controller
         } catch (Exception $e) {
             Log::error('Error al actualizar materia ID '.$id.': '.$e->getMessage());
 
-            return back()->withErrors(['message' => $e->getMessage()]);
+            return back()->withErrors(['message' => ErrorTranslator::translate($e)]);
         }
     }
 
@@ -70,7 +71,7 @@ class MatterController extends Controller
         } catch (Exception $e) {
             Log::error('Error al eliminar materia ID '.$id.': '.$e->getMessage());
 
-            return back()->withErrors(['message' => $e->getMessage()]);
+            return back()->withErrors(['message' => ErrorTranslator::translate($e)]);
         }
     }
 }

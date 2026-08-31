@@ -8,6 +8,7 @@ use App\Models\Matter;
 use App\Models\User;
 use App\Services\TeacherService;
 use App\Services\UserService;
+use App\Support\ErrorTranslator;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -63,7 +64,7 @@ class TeacherController extends Controller
 
             return back()->withInput()->withErrors([
                 'status' => false,
-                'message' => $e->getMessage() ?: 'Ha ocurrido un error al crear el profesor.',
+                'message' => ErrorTranslator::translate($e),
             ]);
         }
     }
@@ -88,7 +89,7 @@ class TeacherController extends Controller
 
             return back()->withErrors([
                 'status' => false,
-                'message' => $e->getMessage() ?: 'Ha ocurrido un error al actualizar el profesor.',
+                'message' => ErrorTranslator::translate($e),
             ]);
         }
     }
@@ -111,7 +112,7 @@ class TeacherController extends Controller
         } catch (Exception $e) {
             Log::error('Error al eliminar profesor ID '.$id.': '.$e->getMessage());
 
-            return back()->withErrors(['message' => $e->getMessage()]);
+            return back()->withErrors(['message' => ErrorTranslator::translate($e)]);
         }
     }
 

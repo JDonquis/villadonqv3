@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Schedule;
 use App\Services\ScheduleService;
+use App\Support\ErrorTranslator;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -57,7 +58,7 @@ class ScheduleController extends Controller
 
             return back()->withErrors([
                 'status' => false,
-                'message' => $e->getMessage() ?: 'Ha ocurrido un error al guardar el horario.',
+                'message' => ErrorTranslator::translate($e),
             ]);
         }
     }

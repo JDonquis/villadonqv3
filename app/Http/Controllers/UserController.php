@@ -6,6 +6,7 @@ use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Services\LoginService;
 use App\Services\UserService;
+use App\Support\ErrorTranslator;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -66,11 +67,11 @@ class UserController extends Controller
                 'message' => 'Usuario creado exitosamente. Se ha enviado un correo para establecer la contraseña.',
             ]);
         } catch (Exception $e) {
-            Log::error("Error al crear usuario: " . $e->getMessage());
+            Log::error('Error al crear usuario: '.$e->getMessage());
 
             return back()->withInput()->withErrors([
                 'status' => false,
-                'message' => $e->getMessage() ?: 'Ha ocurrido un error al crear el usuario. Por favor, intente nuevamente.',
+                'message' => ErrorTranslator::translate($e),
             ]);
         }
     }
@@ -81,7 +82,7 @@ class UserController extends Controller
 
         if (! $user) {
             return redirect()->back()->withErrors([
-                'message' => 'El usuario solicitado no existe.'
+                'message' => 'El usuario solicitado no existe.',
             ]);
         }
 
@@ -123,7 +124,7 @@ class UserController extends Controller
 
         if (! $user) {
             return redirect()->back()->withErrors([
-                'message' => 'El usuario solicitado no existe.'
+                'message' => 'El usuario solicitado no existe.',
             ]);
         }
 

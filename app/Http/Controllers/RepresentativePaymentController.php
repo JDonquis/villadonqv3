@@ -9,6 +9,7 @@ use App\Models\MainConfig;
 use App\Services\MainConfigService;
 use App\Services\PaymentService;
 use App\Services\RepresentativeService;
+use App\Support\ErrorTranslator;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -103,7 +104,7 @@ class RepresentativePaymentController extends Controller
 
             Log::error('Error al crear pago (representante): '.$e->getMessage());
 
-            return redirect('/dashboard/mis-pagos')->withErrors(['message' => $e->getMessage()]);
+            return redirect('/dashboard/mis-pagos')->withErrors(['message' => ErrorTranslator::translate($e)]);
         }
     }
 }
