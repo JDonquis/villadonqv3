@@ -7,6 +7,7 @@
     import { displayAlert } from "../../stores/alertStore";
     import SelectableRow from "../../components/SelectableRow.svelte";
     import Search from "../../components/Search.svelte";
+    import { fade, fly } from "svelte/transition";
 
     export let data = [];
     export let filters = {};
@@ -16,6 +17,10 @@
     let rejectMode = false;
     let rejectNote = "";
     let rejectingPlanId = null;
+
+    let pendingQueue = [];
+    let currentPlanId = null;
+    let currentQueueIndex = 0;
 
     const statusBadges = {
         pending: "bg-yellow text-gray-800",
@@ -45,6 +50,11 @@
 
     const activeSchoolLapse = schoolLapseForToday();
 
+    $: defaultStatus = (data.plans ?? []).some((plan) => plan.status === "pending")
+        ? "pending"
+        : "approved";
+    $: effectiveStatus = filters.status || defaultStatus;
+
     $: selectedSchoolLapse =
         data.school_lapses?.find(
             (l) => String(l.id) === String(filters.school_lapse_id),
@@ -52,7 +62,7 @@
     $: momentOptions = selectedSchoolLapse?.lapses || [];
 
     $: extraSearchParams = {
-        ...(filters.status ? { status: filters.status } : {}),
+        ...(effectiveStatus ? { status: effectiveStatus } : {}),
         ...(filters.school_lapse_id || activeSchoolLapse?.id
             ? { school_lapse_id: filters.school_lapse_id || activeSchoolLapse?.id }
             : {}),
@@ -65,7 +75,7 @@
 
     function buildParams(overrides = {}) {
         const params = {
-            status: filters.status || "",
+            status: effectiveStatus || "",
             search: filters.search || "",
             school_lapse_id:
                 filters.school_lapse_id || activeSchoolLapse?.id || "",
@@ -96,11 +106,50 @@
         });
     }
 
+    function openPlanFor(target) {
+        pendingQueue = (data.plans || []).filter(
+            (p) => p.status === "pending",
+        );
+        currentPlanId = target?.id ?? null;
+        currentQueueIndex = pendingQueue.findIndex(
+            (p) => p.id === currentPlanId,
+        );
+        rejectMode = false;
+        rejectNote = "";
+        rejectingPlanId = null;
+        selectedRow = { status: true, data: target };
+        showModal = true;
+    }
+
     function openPlan() {
+        openPlanFor(selectedRow.data);
+    }
+
+    // Avanza al siguiente plan pendiente de la cola actual (botón "Siguiente ›").
+    function advanceToNextPlan() {
+        const nextIndex = currentQueueIndex + 1;
+        const next = pendingQueue[nextIndex];
+        if (!next) {
+            return;
+        }
+        currentPlanId = next.id;
+        currentQueueIndex = nextIndex;
+        selectedRow = { status: true, data: next };
         rejectMode = false;
         rejectNote = "";
         rejectingPlanId = null;
         showModal = true;
+    }
+
+    // Tras aprobar/rechazar en modo "swipe" (filtro en pendiente) se envía el
+    // próximo plan pendiente para que el servidor lo auto-abra tras el reload.
+    function nextPlanId(id) {
+        if (effectiveStatus !== "pending") {
+            return null;
+        }
+        const currentIdx = pendingQueue.findIndex((p) => p.id === id);
+        const next = pendingQueue[currentIdx + 1];
+        return next ? next.id : null;
     }
 
     function rejectPlanStart() {
@@ -109,17 +158,20 @@
     }
 
     function approvePlan(id) {
+        const next = nextPlanId(id);
         router.post(
             `/dashboard/planes-evaluacion/${id}/aprobar`,
-            {},
+            { ...buildParams(), next_plan: next },
             {
                 preserveScroll: true,
                 onSuccess: () => {
+                    if (!next) {
+                        showModal = false;
+                    }
                     displayAlert({
                         type: "success",
                         message: "Plan aprobado correctamente",
                     });
-                    showModal = false;
                 },
                 onError: (errors) => {
                     displayAlert({
@@ -132,18 +184,20 @@
     }
 
     function confirmReject(id) {
+        const next = nextPlanId(id);
         router.post(
             `/dashboard/planes-evaluacion/${id}/rechazar`,
-            { admin_note: rejectNote },
+            { ...buildParams(), admin_note: rejectNote, next_plan: next },
             {
                 preserveScroll: true,
                 onSuccess: () => {
+                    if (!next) {
+                        showModal = false;
+                    }
                     displayAlert({
                         type: "success",
                         message: "Plan rechazado correctamente",
                     });
-                    showModal = false;
-                    rejectMode = false;
                 },
                 onError: (errors) => {
                     displayAlert({
@@ -153,6 +207,18 @@
                 },
             },
         );
+    }
+
+    // Auto-abre el siguiente plan pendiente cuando el servidor indica uno tras
+    // aprobar/rechazar en modo "swipe" (el componente se conserva entre la
+    // redirección, por lo que esto debe reaccionar a las props, no a onMount).
+    $: if (filters.open_plan && currentPlanId !== Number(filters.open_plan)) {
+        const target = (data.plans || []).find(
+            (p) => String(p.id) === String(filters.open_plan),
+        );
+        if (target) {
+            openPlanFor(target);
+        }
     }
 </script>
 
@@ -170,10 +236,9 @@
         <label class="text-sm font-semibold text-gray-600">Estado</label>
         <select
             class="rounded-md border border-gray-300 px-3 py-2 text-sm"
-            value={filters.status || ""}
+            value={effectiveStatus}
             on:change={(e) => applyFilter("status", e.target.value)}
         >
-            <option value="">Todos</option>
             {#each data.statuses as st}
                 <option value={st.value}>{st.label}</option>
             {/each}
@@ -255,20 +320,23 @@
             <th>Materia</th>
             <th>Momento</th>
             <th>Curso / Sección</th>
-            <th>Total %</th>
             <th>Estado</th>
             <th>Fecha</th>
         </tr>
     </thead>
     <tbody slot="tbody">
-        {#each data.plans as plan, i}
+        {#each (data.plans || []) as plan, i}
             <SelectableRow
                 rowData={plan}
                 idKey="id"
                 {selectedRow}
                 activeClass="bg-yellow bg-opacity-10 brightness-110"
                 on:select={(e) => {
-                    selectedRow = e.detail;
+                    if (e.detail.status && e.detail.data) {
+                        openPlanFor(e.detail.data);
+                    } else {
+                        selectedRow = e.detail;
+                    }
                 }}
             >
                 <td>{i + 1}</td>
@@ -280,7 +348,6 @@
                     {plan.course_name || "—"}
                     {#if plan.section_name}· {plan.section_name}{/if}
                 </td>
-                <td>{plan.items_total}%</td>
                 <td>
                     <span
                         class="px-2 py-0.5 rounded text-xs font-bold {statusBadges[plan.status] || ''}"
@@ -297,60 +364,107 @@
 <Modal bind:showModal classes={"w-fit"}>
     {#if selectedRow.data}
         {@const plan = selectedRow.data}
-        <PlanUnitsView {plan} />
+        {#if effectiveStatus === "pending" && pendingQueue.length > 1}
+            <div class="flex items-center justify-between mb-3 mt-4 text-xs text-gray-500">
+                <span>
+                    Plan {currentQueueIndex + 1} de {pendingQueue.length}
+                    (pendiente)
+                </span>
+                {#if currentQueueIndex < pendingQueue.length - 1}
+                    <button
+                        on:click={() => {
+                            if (currentQueueIndex + 1 < pendingQueue.length) {
+                                currentQueueIndex += 1;
+                                currentPlanId = pendingQueue[currentQueueIndex].id;
+                                selectedRow = {
+                                    status: true,
+                                    data: pendingQueue[currentQueueIndex],
+                                };
+                                rejectMode = false;
+                                rejectNote = "";
+                                rejectingPlanId = null;
+                            }
+                        }}
+                        class="text-color1 hover:underline"
+                        title="Ir al siguiente plan pendiente"
+                    >
+                        Siguiente ›
+                    </button>
+                {/if}
+            </div>
+        {/if}
+        {#key plan.id}
+            <div
+                in:fly={{ y: 10, duration: 180 }}
+                out:fade={{ duration: 120 }}
+            >
+                <PlanUnitsView {plan} />
 
-        {#if plan.status === "pending"}
-            <div class="mt-5 flex flex-col gap-3">
-                {#if rejectMode}
-                    <textarea
-                        bind:value={rejectNote}
-                        placeholder="Motivo del rechazo (opcional)"
-                        rows="3"
-                        class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                    ></textarea>
-                    <div class="flex gap-3 justify-end">
-                        <button
-                            on:click={() => (rejectMode = false)}
-                            class="px-4 py-2 text-sm border border-gray-300 rounded-md"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            on:click={() => confirmReject(plan.id)}
-                            class="px-4 py-2 text-sm bg-red text-white rounded-md"
-                        >
-                            Confirmar rechazo
-                        </button>
+                {#if plan.status === "pending"}
+                    <div class="mt-5 flex flex-col gap-3">
+                        {#if rejectMode}
+                            <textarea
+                                bind:value={rejectNote}
+                                placeholder="Motivo del rechazo (opcional)"
+                                rows="3"
+                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                            ></textarea>
+                            <div class="flex gap-3 justify-end">
+                                <button
+                                    on:click={() => (rejectMode = false)}
+                                    class="px-4 py-2 text-sm border border-gray-300 rounded-md"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    on:click={() => confirmReject(plan.id)}
+                                    class="px-4 py-2 text-sm bg-red text-white rounded-md"
+                                >
+                                    Confirmar rechazo
+                                </button>
+                            </div>
+                        {:else}
+                            <div class="flex gap-3 justify-center">
+                                <button
+                                    on:click={() => {
+                                        rejectMode = true;
+                                        rejectingPlanId = plan.id;
+                                    }}
+                                    class="hover:shadow-xl hover:bg-red hover:text-white px-10 py-2 text-sm flex items-center bg-gray-300 text-gray-600 rounded-md"
+                                >
+                                <iconify-icon icon="mdi:close-thick" class="mr-1" width="18" height="18" />
+                                    Rechazar
+                                </button>
+                                <button
+                                    on:click={() => approvePlan(plan.id)}
+                                    class="hover:shadow-xl hover:bg-[#c5e5e4] hover:border hover:border-color1  hover:text-color1 px-10 py-2 text-sm flex items-center bg-color1 text-white rounded-md"
+                                >
+                                <iconify-icon icon="mdi:check" class="mr-1" width="18" height="18" />
+                                    Aprobar
+                                </button>
+                            </div>
+                        {/if}
                     </div>
-                {:else}
-                    <div class="flex gap-3 justify-center">
+                {:else if plan.status === "approved"}
+                    <div class="mt-5 flex justify-end">
                         <button
-                            on:click={() => {
-                                rejectMode = true;
-                                rejectingPlanId = plan.id;
-                            }}
-                            class="px-10 py-2 text-sm bg-red text-white rounded-md"
+                            on:click={() => rejectPlanStart()}
+                            class="px-4 py-2 text-sm bg-red text-white rounded-md"
                         >
                             Rechazar
                         </button>
+                    </div>
+                {:else if plan.status === "rejected"}
+                    <div class="mt-5 flex justify-end">
                         <button
                             on:click={() => approvePlan(plan.id)}
-                            class="px-10 py-2 text-sm bg-color1 text-white rounded-md"
+                            class="px-4 py-2 text-sm bg-color1 text-white rounded-md"
                         >
                             Aprobar
                         </button>
                     </div>
                 {/if}
             </div>
-        {:else if plan.status === "approved"}
-            <div class="mt-5 flex justify-end">
-                <button
-                    on:click={() => rejectPlanStart()}
-                    class="px-4 py-2 text-sm bg-red text-white rounded-md"
-                >
-                    Rechazar
-                </button>
-            </div>
-        {/if}
+        {/key}
     {/if}
 </Modal>

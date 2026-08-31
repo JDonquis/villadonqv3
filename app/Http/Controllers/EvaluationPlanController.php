@@ -51,6 +51,7 @@ class EvaluationPlanController extends Controller
                 'section_id' => $request->input('section_id') ?? null,
                 'matter_id' => $request->input('matter_id') ?? null,
                 'teacher_id' => $request->input('teacher_id') ?? null,
+                'open_plan' => session()->pull('open_plan') ?? null,
             ],
         ]);
     }
@@ -143,14 +144,14 @@ class EvaluationPlanController extends Controller
         }
     }
 
-    public function approve($id)
+    public function approve(Request $request, $id)
     {
         $plan = EvaluationPlan::findOrFail($id);
 
         try {
             $this->planService->approve($plan, auth()->id());
 
-            return back()->with(['status' => true, 'message' => 'Plan aprobado correctamente.']);
+            return $this->redirectBackToPlans($request, 'Plan aprobado correctamente.');
         } catch (Exception $e) {
             Log::error('Error al aprobar plan ID '.$id.': '.$e->getMessage());
 
@@ -165,12 +166,36 @@ class EvaluationPlanController extends Controller
         try {
             $this->planService->reject($plan, auth()->id(), $request->input('admin_note'));
 
-            return back()->with(['status' => true, 'message' => 'Plan rechazado correctamente.']);
+            return $this->redirectBackToPlans($request, 'Plan rechazado correctamente.');
         } catch (Exception $e) {
             Log::error('Error al rechazar plan ID '.$id.': '.$e->getMessage());
 
             return back()->withErrors(['message' => $e->getMessage()]);
         }
+    }
+
+    /**
+     * Redirige de vuelta a la lista de planes conservando los filtros activos
+     * y, en caso de aprobar/rechazar en modo "swipe", indica cuál es el próximo
+     * plan pendiente para auto-abrirlo.
+     */
+    private function redirectBackToPlans(Request $request, string $message)
+    {
+        $filters = $request->only([
+            'status', 'search', 'school_lapse_id', 'lapse_id',
+            'course_id', 'section_id', 'matter_id', 'teacher_id',
+        ]);
+        $filters = array_filter($filters, fn ($v) => $v !== null && $v !== '');
+
+        $url = '/dashboard/planes-evaluacion';
+        if ($filters) {
+            $url .= '?'.http_build_query($filters);
+        }
+
+        return redirect($url)
+            ->with('status', true)
+            ->with('message', $message)
+            ->with('open_plan', $request->input('next_plan'));
     }
 
     private function canEdit(EvaluationPlan $plan): bool
