@@ -60,11 +60,25 @@
     });
 
     const changeDateFilter = (args) => {
-        filterClientData = {
-            ...filterClientData,
-            start_date: +args.detail.startDate,
-            end_date: +args.detail.endDate,
-        };
+        const startDateValue = args?.detail?.startDate;
+        const endDateValue = args?.detail?.endDate;
+
+        if (
+            startDateValue === "" ||
+            endDateValue === "" ||
+            Number.isNaN(Number(startDateValue)) ||
+            Number.isNaN(Number(endDateValue))
+        ) {
+            delete filterClientData.start_date;
+            delete filterClientData.end_date;
+        } else {
+            filterClientData = {
+                ...filterClientData,
+                start_date: Number(startDateValue),
+                end_date: Number(endDateValue),
+            };
+        }
+
         handleFilters();
     };
 

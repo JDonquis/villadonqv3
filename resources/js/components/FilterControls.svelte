@@ -9,11 +9,11 @@
     let isDropdownOpen = false;
 </script>
 
-<div class="grid grid-cols-1 h-full md:grid-cols-3 gap-5 md:gap-10">
+<div class="flex gap-5 md:gap-10">
     {#each Object.entries(filtersOptions) as [filterKey, filterOption] (filterKey)}
-        <article class="md:flex md:flex-col mt-3">
+        <article class="md:flex  mt-3">
             <h4
-                class="capitalize w-fit md:w-full text-xs md:text-sm font-medium px-2 flex items-center  lg:mb-1.5"
+                class="capitalize w-fit  text-xs md:text-sm font-medium px-2 flex items-center  lg:mb-1.5"
             >
                 {filterOption.label}
             </h4>
@@ -108,7 +108,7 @@
                     <!-- Dropdown -->
                     {#if isDropdownOpen}
                         <div
-                            class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-56 overflow-y-auto"
+                            class="absolute z-50 w-full min-w-[300px] mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-56 overflow-y-auto"
                         >
                             <!-- Select All option -->
                             <label
