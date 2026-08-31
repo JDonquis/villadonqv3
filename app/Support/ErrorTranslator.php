@@ -54,10 +54,10 @@ class ErrorTranslator
         $key = self::extractKey($message);
 
         return match ($key) {
-            'users_email_unique' => 'El correo electrónico del representante ya está registrado. Verifique los datos.',
+            'users_email_unique' => 'El correo electrónico ya está registrado en el sistema. Verifique los datos.',
             'users_ci_unique' => 'La cédula del representante ya está registrada.',
             'students_ci_unique' => 'La cédula del estudiante ya está registrada.',
-            'users.email' => 'El correo electrónico del representante ya está registrado. Verifique los datos.',
+            'users.email' => 'El correo electrónico ya está registrado en el sistema. Verifique los datos.',
             'users.ci' => 'La cédula del representante ya está registrada.',
             'students.ci' => 'La cédula del estudiante ya está registrada.',
             default => 'Ya existe un registro con los datos ingresados.',

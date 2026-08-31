@@ -9,6 +9,8 @@ use App\Events\StudentUpdated;
 use App\Http\Resources\StudentCollection;
 use App\Http\Resources\StudentResource;
 use App\Mail\RepresentativeWelcomeMail;
+use App\Models\Course;
+use App\Models\CourseSection;
 use App\Models\DocumentStudent;
 use App\Models\Inscription;
 use App\Models\Representative;
@@ -16,6 +18,7 @@ use App\Models\SchoolLapse;
 use App\Models\Student;
 use App\Models\TypeDocument;
 use App\Models\User;
+use App\Support\ErrorTranslator;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -23,10 +26,51 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 class StudentService
 {
     private Student $studentModel;
+
+    private const STUDENT_IMPORT_MAP = [
+        'Nombre del estudiante' => 'student_name',
+        'Apellido del estudiante' => 'student_last_name',
+        'Cédula del estudiante' => 'student_ci',
+        'Tipo documento estudiante' => 'student_document_type',
+        'Fecha de nacimiento (aaaa-mm-dd)' => 'student_date_birth',
+        'Email del estudiante' => 'student_email',
+        'Teléfono del estudiante' => 'student_phone_number',
+        'Sexo (masculino/femenino)' => 'student_sex',
+        'Colegio anterior' => 'student_previous_school',
+        'Año escolar' => 'course_name',
+        'Sección' => 'section_name',
+        'Nombre representante' => 'rep_name',
+        'Apellido representante' => 'rep_last_name',
+        'Cédula representante' => 'rep_ci',
+        'Tipo doc representante' => 'rep_document_type',
+        'Teléfono representante' => 'rep_phone_number',
+        'Teléfono 2 representante' => 'rep_phone_number2',
+        'Email representante' => 'rep_email',
+        'Profesión representante' => 'rep_profession',
+        'Lugar de trabajo representante' => 'rep_workplace',
+        'Parentesco representante' => 'rep_relationship',
+        'Dirección' => 'address',
+        'Estado' => 'state',
+        'Ciudad' => 'city',
+        'Nombre 2do representante' => 'second_rep_name',
+        'Apellido 2do representante' => 'second_rep_last_name',
+        'Cédula 2do representante' => 'second_rep_ci',
+        'Tipo doc 2do representante' => 'second_rep_document_type',
+        'Teléfono 2do representante' => 'second_rep_phone_number',
+        'Teléfono 2 (2do representante)' => 'second_rep_phone_number2',
+        'Email 2do representante' => 'second_rep_email',
+        'Profesión 2do representante' => 'second_rep_profession',
+        'Lugar de trabajo 2do representante' => 'second_rep_workplace',
+        'Parentesco 2do representante' => 'second_rep_relationship',
+        'Exonerado (0/1)' => 'is_exempt',
+        'Porcentaje exoneración' => 'exemption_percentage',
+        'Observaciones exoneración' => 'exemption_observations',
+    ];
 
     public function __construct()
     {
@@ -99,6 +143,165 @@ class StudentService
         event(new StudentCreated($student));
 
         return 0;
+    }
+
+    public function importStudents(array $rows): array
+    {
+        $summary = ['created' => 0, 'errors' => []];
+
+        foreach ($rows as $entry) {
+            $rowNumber = $entry['row'];
+            $raw = $entry['data'];
+
+            try {
+                $this->createStudentFromRow($raw, $rowNumber);
+                $summary['created']++;
+            } catch (\Exception $e) {
+                $summary['errors'][] = [
+                    'row' => $rowNumber,
+                    'message' => ErrorTranslator::translate($e),
+                ];
+            }
+        }
+
+        return $summary;
+    }
+
+    private function createStudentFromRow(array $raw, int $rowNumber): void
+    {
+        $data = [];
+        foreach (self::STUDENT_IMPORT_MAP as $header => $field) {
+            $data[$field] = $raw[$this->normalizeHeader($header)] ?? '';
+        }
+
+        $required = [
+            'student_name' => 'el nombre del estudiante',
+            'student_last_name' => 'el apellido del estudiante',
+            'student_ci' => 'la cédula del estudiante',
+            'student_date_birth' => 'la fecha de nacimiento del estudiante',
+            'rep_name' => 'el nombre del representante',
+            'rep_last_name' => 'el apellido del representante',
+            'rep_ci' => 'la cédula del representante',
+        ];
+        foreach ($required as $field => $label) {
+            if (empty($data[$field])) {
+                throw new \Exception("Falta {$label}.");
+            }
+        }
+
+        $course = Course::whereRaw('LOWER(name) = ?', [mb_strtolower(trim($data['course_name']))])->first();
+        if (! $course) {
+            throw new \Exception("El año escolar '{$data['course_name']}' no existe.");
+        }
+
+        $courseSection = CourseSection::where('course_id', $course->id)
+            ->whereHas('section', fn ($q) => $q->whereRaw('LOWER(name) = ?', [mb_strtolower(trim($data['section_name']))]))
+            ->first();
+        if (! $courseSection) {
+            throw new \Exception("La sección '{$data['section_name']}' no existe para el año escolar '{$data['course_name']}'.");
+        }
+
+        if (Student::where('ci', $data['student_ci'])->where('status', '!=', 0)->exists()) {
+            throw new \Exception("La cédula del estudiante {$data['student_ci']} ya está registrada.");
+        }
+
+        $birthDate = $this->parseImportDate($data['student_date_birth']);
+        if (! $birthDate) {
+            throw new \Exception('La fecha de nacimiento no es válida.');
+        }
+
+        $sex = $data['student_sex'];
+        if ($sex !== '' && $sex !== 'Masculino' && $sex !== 'Femenino') {
+            throw new \Exception("El sexo '{$sex}' debe ser Masculino o Femenino.");
+        }
+
+        $isExempt = $this->normalizeBool($data['is_exempt']);
+        $exemptionPercentage = $data['exemption_percentage'] === '' ? null : (int) $data['exemption_percentage'];
+        if ($isExempt && (empty($exemptionPercentage) || $exemptionPercentage < 1 || $exemptionPercentage > 100)) {
+            throw new \Exception('El estudiante está marcado como exonerado pero el porcentaje de exoneración no es válido (1-100).');
+        }
+
+        $representative = $this->resolveRepresentative($data);
+
+        $student = $this->createStudent([
+            'course_id' => $course->id,
+            'section_id' => $courseSection->section_id,
+            'student_name' => $data['student_name'],
+            'student_last_name' => $data['student_last_name'],
+            'student_date_birth' => $birthDate,
+            'student_email' => $data['student_email'] !== '' ? $data['student_email'] : null,
+            'student_ci' => $data['student_ci'],
+            'student_phone_number' => $data['student_phone_number'] !== '' ? $data['student_phone_number'] : null,
+            'student_sex' => $sex !== '' ? $sex : null,
+            'student_previous_school' => $data['student_previous_school'] !== '' ? $data['student_previous_school'] : null,
+            'is_exempt' => $isExempt,
+            'exemption_percentage' => $isExempt ? $exemptionPercentage : null,
+            'exemption_observations' => $data['exemption_observations'] !== '' ? $data['exemption_observations'] : null,
+            'student_document_type' => $data['student_document_type'] !== '' ? $data['student_document_type'] : null,
+            'status' => 1,
+        ], $representative->id);
+
+        event(new StudentCreated($student));
+    }
+
+    private function resolveRepresentative(array $data): Representative
+    {
+        $user = User::where('ci', $data['rep_ci'])->first();
+
+        if ($user) {
+            if ((int) $user->type_user_id !== UserTypeEnum::Representative->value) {
+                throw new \Exception("La cédula del representante {$data['rep_ci']} ya existe asociada a otro tipo de usuario.");
+            }
+
+            $representative = Representative::where('user_id', $user->id)->first();
+            if (! $representative) {
+                throw new \Exception("El representante con cédula {$data['rep_ci']} no tiene un perfil válido.");
+            }
+
+            return $representative;
+        }
+
+        $email = $data['rep_email'] ?? '';
+        if ($email !== '' && User::where('email', $email)->exists()) {
+            throw new \Exception("El correo del representante '{$email}' ya está registrado en el sistema.");
+        }
+
+        $newUser = $this->createUser($data, false);
+
+        return $this->createRepresentative($data, $newUser->id);
+    }
+
+    private function parseImportDate(string $value): ?string
+    {
+        if ($value === '') {
+            return null;
+        }
+
+        if (is_numeric($value)) {
+            try {
+                return ExcelDate::excelToDateTimeObject((float) $value)->format('Y-m-d');
+            } catch (\Exception $e) {
+                return null;
+            }
+        }
+
+        try {
+            return Carbon::parse($value)->format('Y-m-d');
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    private function normalizeBool($value): bool
+    {
+        $value = trim(mb_strtolower((string) $value));
+
+        return in_array($value, ['1', 'true', 'si', 'sí', 'verdadero', 'yes'], true);
+    }
+
+    private function normalizeHeader($header): string
+    {
+        return preg_replace('/\s+/', ' ', strtolower(trim((string) $header)));
     }
 
     public function searchDeletedStudentByCI($ci, $documentType = null)
@@ -299,13 +502,13 @@ class StudentService
         return 0;
     }
 
-    private function createUser($data)
+    private function createUser($data, bool $notify = true)
     {
         $email = $data['rep_email'] ?? null;
         $hasValidEmail = $this->hasValidEmail($email);
 
         $plainPassword = null;
-        if ($hasValidEmail) {
+        if ($notify && $hasValidEmail) {
             $plainPassword = Str::random(10);
         }
 
@@ -324,7 +527,7 @@ class StudentService
             'document_type' => $data['rep_document_type'] ?? null,
         ]);
 
-        if ($hasValidEmail) {
+        if ($notify && $hasValidEmail) {
             try {
                 Mail::to($newUser->email)->send(new RepresentativeWelcomeMail($newUser, $plainPassword));
             } catch (\Throwable $e) {
@@ -332,7 +535,7 @@ class StudentService
                     'user_id' => $newUser->id,
                 ]);
             }
-        } else {
+        } elseif (! $hasValidEmail) {
             Log::warning('Representante creado sin email válido; se usó la cédula como contraseña.', [
                 'user_id' => $newUser->id,
             ]);

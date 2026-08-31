@@ -12,6 +12,7 @@ use App\Models\Course;
 use App\Models\CourseSection;
 use App\Models\Section;
 use App\Models\Student;
+use App\Services\ExcelTemplateService;
 use App\Services\StudentService;
 use App\Support\ErrorTranslator;
 use Exception;
@@ -35,6 +36,16 @@ class StudentController extends Controller
         $courses = Course::all();
         $sections = Section::all();
 
+        $studentCounts = Student::query()
+            ->where('status', '!=', 0)
+            ->select('course_id', DB::raw('count(*) as total'))
+            ->groupBy('course_id')
+            ->pluck('total', 'course_id');
+
+        $courses->each(function ($course) use ($studentCounts) {
+            $course->student_count = $studentCounts[$course->id] ?? 0;
+        });
+
         $course_sections = new CourseSectionCollection(CourseSection::with('section', 'course')->get());
         $studentsPerCourse = $this->studentService->getStudentsPerCourse($request);
 
@@ -55,6 +66,35 @@ class StudentController extends Controller
 
             ]
         );
+    }
+
+    public function downloadTemplate()
+    {
+        return app(ExcelTemplateService::class)->student();
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate(['file' => ['required', 'file', 'mimes:xlsx', 'max:20480']]);
+
+        try {
+            $rows = (new ExcelTemplateService)->readRows($request->file('file')->getRealPath());
+            $result = $this->studentService->importStudents($rows);
+
+            if ($request->wantsJson()) {
+                return response()->json($result);
+            }
+
+            return back()->with('import_summary', $result);
+        } catch (Exception $e) {
+            Log::error('Error al importar estudiantes: '.$e->getMessage());
+
+            if ($request->wantsJson()) {
+                return response()->json(['error' => 'No se pudo importar el archivo: '.ErrorTranslator::translate($e)], 422);
+            }
+
+            return back()->withErrors(['import' => 'No se pudo importar el archivo: '.ErrorTranslator::translate($e)]);
+        }
     }
 
     public function store(CreateStudentRequest $request)

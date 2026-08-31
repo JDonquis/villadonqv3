@@ -11,6 +11,7 @@
     import { claim_svg_element } from "svelte/internal";
     import SelectableRow from "../../components/SelectableRow.svelte";
     import Search from "../../components/Search.svelte";
+    import ImportResultModal from "../../components/ImportResultModal.svelte";
 
     export let data = [];
 
@@ -73,6 +74,36 @@
     let showModal = false;
     let showModalReinscribe = false;
     let selectedRow = { status: false, data: null };
+
+    let importFileInput = null;
+    let showImportResult = false;
+    let importSummary = { created: 0, errors: [] };
+
+    async function handleImportFile(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const formData = new FormData();
+        formData.append("file", file);
+        try {
+            const { data } = await axios.post(
+                "/dashboard/matricula/importar",
+                formData,
+                { headers: { Accept: "application/json" } }
+            );
+            importSummary = data;
+            showImportResult = true;
+        } catch (err) {
+            displayAlert({
+                type: "error",
+                message:
+                    err.response?.data?.error ||
+                    err.response?.data?.errors?.file?.[0] ||
+                    "No se pudo importar el archivo.",
+            });
+        } finally {
+            if (importFileInput) importFileInput.value = "";
+        }
+    }
     let deletedStudentDetected = null;
     let deletedStudentGraduate = false;
 
@@ -888,7 +919,7 @@
 </Modal>
 
 <div class="flex justify-between items-center">
-    <div class="w-44 mb-3">
+    <div class="w-56 mb-3">
         <Input
             id="filterYear"
             type="select"
@@ -900,14 +931,33 @@
         >
             {#each data.courses as course}
                 <option class="bg-gray-50" value={course.id.toString()}
-                    >{course.name}</option
+                    >{course.name} ({course.student_count})</option
                 >
             {/each}
         </Input>
     </div>
-    <button
-        class="animated-button w-fitcontent"
-        on:click={(e) => {
+    <div class="flex items-center gap-3">
+        <input
+            type="file"
+            accept=".xlsx"
+            class="hidden"
+            bind:this={importFileInput}
+            on:change={handleImportFile}
+        />
+        <button type="button" class="toolbar-secondary" on:click={() => importFileInput?.click()}>
+            <iconify-icon icon="material-symbols:upload" width="20" height="20" />
+            Importar
+        </button>
+        <a
+            href="/dashboard/matricula/plantilla"
+            class="toolbar-secondary"
+        >
+            <iconify-icon icon="material-symbols:download" width="20" height="20" />
+            Descargar plantilla
+        </a>
+        <button
+            class="animated-button w-fitcontent"
+            on:click={(e) => {
             e.preventDefault();
             deletedStudentDetected = null;
             deletedStudentGraduate = false;
@@ -944,7 +994,8 @@
                 d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
             ></path>
         </svg>
-    </button>
+        </button>
+    </div>
 </div>
 
 <Search />
@@ -1079,6 +1130,10 @@
         {/each}
     </tbody>
 </Table>
+
+{#if showImportResult}
+    <ImportResultModal bind:show={showImportResult} summary={importSummary} />
+{/if}
 
 <style>
 </style>

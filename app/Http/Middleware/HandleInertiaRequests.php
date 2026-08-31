@@ -56,6 +56,9 @@ class HandleInertiaRequests extends Middleware
                 'photo' => $user->photo ?? null,
                 'has_rep_students' => $hasRepStudents,
             ],
+            'flash' => [
+                'import' => $request->session()->pull('import_summary'),
+            ],
         ]);
     }
 }

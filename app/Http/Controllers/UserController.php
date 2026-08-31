@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Services\ExcelTemplateService;
 use App\Services\LoginService;
 use App\Services\UserService;
 use App\Support\ErrorTranslator;
@@ -37,9 +38,37 @@ class UserController extends Controller
         ]);
     }
 
+    public function downloadTemplate()
+    {
+        return app(ExcelTemplateService::class)->user();
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate(['file' => ['required', 'file', 'mimes:xlsx', 'max:20480']]);
+
+        try {
+            $rows = (new ExcelTemplateService)->readRows($request->file('file')->getRealPath());
+            $result = $this->userService->importUsers($rows);
+
+            if ($request->wantsJson()) {
+                return response()->json($result);
+            }
+
+            return back()->with('import_summary', $result);
+        } catch (Exception $e) {
+            Log::error('Error al importar personal: '.$e->getMessage());
+
+            if ($request->wantsJson()) {
+                return response()->json(['error' => 'No se pudo importar el archivo: '.ErrorTranslator::translate($e)], 422);
+            }
+
+            return back()->withErrors(['import' => 'No se pudo importar el archivo: '.ErrorTranslator::translate($e)]);
+        }
+    }
+
     public function store(StoreUserRequest $request)
     {
-
         try {
             $transport = Mail::mailer()->getSymfonyTransport();
             if (method_exists($transport, 'start')) {

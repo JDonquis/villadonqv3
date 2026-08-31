@@ -6,6 +6,7 @@ use App\Http\Requests\StoreTeacherRequest;
 use App\Http\Requests\UpdateTeacherRequest;
 use App\Models\Matter;
 use App\Models\User;
+use App\Services\ExcelTemplateService;
 use App\Services\TeacherService;
 use App\Services\UserService;
 use App\Support\ErrorTranslator;
@@ -42,6 +43,35 @@ class TeacherController extends Controller
                 'search' => $request->input('search') ?? null,
             ],
         ]);
+    }
+
+    public function downloadTemplate()
+    {
+        return app(ExcelTemplateService::class)->teacher();
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate(['file' => ['required', 'file', 'mimes:xlsx', 'max:20480']]);
+
+        try {
+            $rows = (new ExcelTemplateService)->readRows($request->file('file')->getRealPath());
+            $result = $this->teacherService->importTeachers($rows);
+
+            if ($request->wantsJson()) {
+                return response()->json($result);
+            }
+
+            return back()->with('import_summary', $result);
+        } catch (Exception $e) {
+            Log::error('Error al importar profesores: '.$e->getMessage());
+
+            if ($request->wantsJson()) {
+                return response()->json(['error' => 'No se pudo importar el archivo: '.ErrorTranslator::translate($e)], 422);
+            }
+
+            return back()->withErrors(['import' => 'No se pudo importar el archivo: '.ErrorTranslator::translate($e)]);
+        }
     }
 
     public function store(StoreTeacherRequest $request)
