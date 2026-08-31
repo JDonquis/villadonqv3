@@ -109,6 +109,7 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
 
 Route::middleware(['auth', 'role:teacher'])->group(function () {
     Route::get('/dashboard/mis-planes', [EvaluationPlanController::class, 'myPlans']);
+    Route::get('/dashboard/mis-planes/allowed-days', [EvaluationPlanController::class, 'allowedDays']);
     Route::post('/dashboard/mis-planes', [EvaluationPlanController::class, 'store']);
     Route::put('/dashboard/mis-planes/{id}', [EvaluationPlanController::class, 'update']);
     Route::delete('/dashboard/mis-planes/{id}', [EvaluationPlanController::class, 'destroy']);

@@ -8,6 +8,7 @@ use App\Models\EvaluationPlan;
 use App\Models\EvaluationPlanItem;
 use App\Models\Lapse;
 use App\Models\Matter;
+use App\Models\Schedule;
 use App\Models\SchoolLapse;
 use App\Models\Section;
 use Carbon\Carbon;
@@ -111,15 +112,83 @@ class EvaluationPlanService
         return $query->get()->map(fn ($plan) => $this->formatPlan($plan))->values()->all();
     }
 
-    public function getPlansForTeacher(int $teacherId): array
+    public function getPlansForTeacher(int $teacherId, array $filters = []): array
     {
-        return EvaluationPlan::with(['matter', 'schoolLapse', 'lapse', 'course', 'section', 'items'])
-            ->where('user_id', $teacherId)
-            ->orderByDesc('created_at')
+        $query = EvaluationPlan::with(['matter', 'schoolLapse', 'lapse', 'course', 'section', 'items'])
+            ->where('user_id', $teacherId);
+
+        $schoolLapseId = $filters['school_lapse_id'] ?? null;
+        if (empty($schoolLapseId)) {
+            $schoolLapseId = $this->currentSchoolLapseId();
+        }
+        if (!empty($schoolLapseId)) {
+            $query->where('school_lapse_id', $schoolLapseId);
+        }
+        if (!empty($filters['lapse_id'])) {
+            $query->where('lapse_id', $filters['lapse_id']);
+        }
+        if (!empty($filters['matter_id'])) {
+            $query->where('matter_id', $filters['matter_id']);
+        }
+
+        return $query->orderByDesc('created_at')
             ->get()
             ->map(fn ($plan) => $this->formatPlan($plan))
             ->values()
             ->all();
+    }
+
+    /**
+     * Días de la semana (1=lunes … 5=viernes) en que el profesor dicta la materia
+     * en alguna de las secciones del horario del periodo (school_lapse_id + course_id).
+     * Si no hay horario para esas secciones, o la materia no aparece en él, no se
+     * restringe (restrict=false) y se permite cualquier día.
+     */
+    public function getAllowedWeekdays(array $params): array
+    {
+        $schoolLapseId = $params['school_lapse_id'] ?? null;
+        $courseId = $params['course_id'] ?? null;
+        $matterId = $params['matter_id'] ?? null;
+        $teacherId = $params['teacher_id'] ?? null;
+
+        $sectionIds = $params['section_ids'] ?? [];
+        if (! is_array($sectionIds)) {
+            $sectionIds = [$sectionIds];
+        }
+        $sectionIds = array_values(array_filter(array_map('intval', $sectionIds)));
+
+        $allowedWeekdays = [];
+        $hasSchedule = false;
+
+        if (! empty($schoolLapseId) && ! empty($courseId) && ! empty($sectionIds)) {
+            $schedules = Schedule::where('school_lapse_id', $schoolLapseId)
+                ->where('course_id', $courseId)
+                ->whereIn('section_id', $sectionIds)
+                ->with(['classes' => fn ($q) => $q->select('schedule_id', 'day', 'matter_id', 'teacher_id')])
+                ->get();
+
+            $hasSchedule = $schedules->isNotEmpty();
+
+            foreach ($schedules as $schedule) {
+                foreach ($schedule->classes as $class) {
+                    if ((int) $class->matter_id !== (int) $matterId) {
+                        continue;
+                    }
+                    if ($teacherId !== null && (int) $class->teacher_id !== (int) $teacherId) {
+                        continue;
+                    }
+                    $allowedWeekdays[] = (int) $class->day;
+                }
+            }
+
+            $allowedWeekdays = array_values(array_unique($allowedWeekdays));
+            sort($allowedWeekdays);
+        }
+
+        return [
+            'restrict' => $hasSchedule && count($allowedWeekdays) > 0,
+            'allowedWeekdays' => $allowedWeekdays,
+        ];
     }
 
     public function createPlan(int $teacherId, array $data): EvaluationPlan
@@ -422,5 +491,26 @@ class EvaluationPlanService
         $last = $schoolLapse->lapses->sortByDesc('number')->first();
 
         return $last?->id;
+    }
+
+    private function currentSchoolLapseId(): ?int
+    {
+        $today = Carbon::now()->toDateString();
+        $schoolLapses = SchoolLapse::orderByDesc('start')->with('lapses')->get();
+
+        $byDate = $schoolLapses->first(function ($l) use ($today) {
+            $ranges = $l->lapses
+                ->filter(fn ($lap) => $lap->start && $lap->end)
+                ->sortBy('start')
+                ->values();
+            if ($ranges->isEmpty()) {
+                return false;
+            }
+            return $today >= $ranges->first()->start && $today <= $ranges->last()->end;
+        });
+
+        return $byDate?->id
+            ?? $schoolLapses->firstWhere('status', 1)?->id
+            ?? $schoolLapses->first()?->id;
     }
 }

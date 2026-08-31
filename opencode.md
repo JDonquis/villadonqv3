@@ -200,3 +200,41 @@ Cada cambio de periodo/curso/sección re-monta el componente con props frescas.
 - Verificado en navegador: listado correcto seccion A (Bio 2h45m, Mat 1h15m, Info 1h15m, Ing/Arte/Cast 1h) y oculto en seccion B (sin clases).
 
 - Fix build en Linux: las importaciones del componente usaban ruta Components/ (mayuscula) pero el directorio git es lowercase esources/js/components/ (Windows case-insensitive lo toleraba; Linux no). Corregido a ../../components/ScheduleWeekGrid.svelte en Horarios/HorarioHijo/MiHorario.
+
+## 2026-08-30 - Fix guardar plan de evaluacion
+- Al crear/editar un plan de evaluacion, EvaluationPlanService::syncItems escribe en evaluation_plan_items las columnas unit_name, unit_number, assessment_type, points, scheduled_date, description. El modelo y el frontend ya usaban el esquema rico de unidades/temas, pero la tabla real en MySQL solo tenia id/evaluation_plan_id/name/percentage/date/order. Causaba SQLSTATE[42S22] Unknown column unit_name.
+- Solucion: migracion 2026_08_30_224015_add_unit_topic_columns_to_evaluation_plan_items_table agrega esas 6 columnas. Ejecutada con php artisan migrate.
+- Verificado: crear plan via servicio ahora persiste items con esos campos (plan de prueba creado y borrado).
+
+## 2026-08-30 - MisPlanes: filtros de periodo/momento + quitar columnas
+- En resources/js/Pages/Dashboard/MisPlanes.svelte (plan de evaluacion del profesor) se quitaron las columnas "Periodo" y "Momento" de la tabla.
+- Se anadieron dos filtros encima de la tabla: "Periodo escolar" (de data.school_lapses, solo UNA seleccion, sin opcion "Todos", por defecto el periodo activo) y "Momento" (de las lapses del periodo seleccionado, con "Todos").
+- Backend: EvaluationPlanController@myPlans ahora acepta school_lapse_id y lapse_id via query; EvaluationPlanService@getPlansForTeacher(, ) filtra por ambos y, si no llega school_lapse_id, usa por defecto el periodo activo (status=1).
+- Frontend: export let filters = {}; reactive selectedSchoolLapse (cae al activo), momentOptions de sus lapses; applyFilter hace router.get('/dashboard/mis-planes', {school_lapse_id, lapse_id}, {preserveState:true, replace:true}); al cambiar periodo resetea lapse_id.
+- Verificado en navegador (profesor Duran, page 7): columna removida, filtro periodo sin "Todos" mostrando 2025-2026, filtro momento recarga lista (?school_lapse_id=1&lapse_id=1).
+- FIX: al seleccionar un momento el valor del select se borraba tras el reload (data.plans si se actualizaba, pero el select quedaba en blanco). Causa raiz: preserveState:true en router.get (misma clase de gotcha que Horarios en AGENTS.md) impedia que el value controlado del <select> se re-renderizara con el prop filters actualizado. Solucion: quitar preserveState (re-monta con props frescas) y normalizar a string tanto el value del select como value={String(id)} de las opciones para evitar mismatch numero/string. Verificado en navegador.
+- DEFAULT periodico por fecha: en MisPlanes el periodo por defecto ya no usa is_active, sino que resuelve el lapse cuya suma de momentos (start..end de sus lapses) contiene la fecha actual. Frontend: schoolLapseForToday() en MisPlanes.svelte (usa start/end de los momentos del school_lapse). Backend: EvaluationPlanService::currentSchoolLapseId() (private) usado como default cuando no llega school_lapse_id; fallback a status=1 y luego al mas reciente. Nota: el objeto school_lapse por si mismo no expone start/end en el payload, solo sus lapses[] (momentos) los tienen.
+
+## 2026-08-30 - MisPlanes: filtro de Materia + modal Ver plan en unidades/temas
+- Nuevo filtro "Materia" en MisPlanes.svelte (por defecto "Todas", opciones = data.matters, las materias que imparte el profesor). Backend: getPlansForTeacher filtra por matter_id; controller filtra de vuelta filters.matter_id en el prop filters. Verificado en navegador (?school_lapse_id=1&matter_id=11 filtra a Biologia).
+- Modal "Ver plan" (read-only) de MisPlanes ahora renderiza la estructura unidades -> temas (en vez de la tabla plana de items). Usa plan.units (ya agrupado por formatPlan): por unidad muestra una tabla con Tema / Tipo de prueba / Descripcion / % / Pts / Fecha por tema, y Total items_total% al final. Verificado en navegador.
+
+## 2026-08-30 - MisPlanes: recordatorio de dias de clase al elegir fecha de un tema
+- Se revirtio el TopicDatePicker (picker de @svelte-plugins/datepicker con dias restringidos) al input date nativo de antes. Se elimino resources/js/components/TopicDatePicker.svelte y su import en MisPlanes.svelte.
+- Se mantiene la misma verificacion backend (GET /dashboard/mis-planes/allowed-days -> EvaluationPlanService::getAllowedWeekdays, {restrict, allowedWeekdays}) pero ahora solo informativa: cuando el profesor elige scheduled_date de un tema y el horario tiene esa materia en la/las seccion(es) elegidas (matter_id + teacher_id), se muestra bajo el input un aviso amber: 'Recuerda: para esta materia en esta seccion das clases los dias lunes y martes.' (masa las secciones -> 'en todas las secciones'). No bloquea ninguna fecha.
+- Helpers en MisPlanes.svelte: DAY_NAMES (1=lunes..7=domingo), describeAllowedDays() arma lista 'lunes y martes'/'lunes, martes y miercoles', allowedSectionsPhrase() distingue 'en esta seccion' vs 'en todas las secciones'. Condicion: allowedWeekdays?.length && scheduled_date seteado. Fetch debounced 250ms (allowedTimer) reactivo a showFormModal/submitStatus/form subject + secciones.
+- Verificado en navegador (profesor Duran, page 7): Biologia + 5to Anio + seccion A + fecha 2026-08-31 (lun) -> mensaje 'lunes y martes'; sin fecha -> sin mensaje; seccion B (sin Bio en horario) -> sin mensaje. Build vite OK, php -l OK en EvaluationPlanService/Controller/routes.
+
+## 2026-08-30 - MisPlanes: tooltip flotante + input date sin escritura
+- El recordatorio de dias de clase dejo de ser una linea inline bajo el input date: ahora es un tooltip flotante amber (bottom-full, sobre el input) que se abre al hacer click en el input de fecha y se cierra al hacer click fuera (window click listener + on:click|stopPropagation en el wrapper; onMount/onDestroy agregan/remueven el listener). Contenido: 'Recuerda: para esta materia en esta seccion das clases los dias lunes y martes.' (solo si allowedWeekdays?.length; sin requerir scheduled_date).
+- El input date bloquea teclado: blockDateTyping previene toda key excepto Tab/Enter/Escape (y atajos Ctrl/Cmd/Alt), por lo que no se pueden tipear digitos/letras/Backspace/espacio ni pegar (on:paste preventDefault). La fecha solo se puede elegir desde el popup del calendario (Enter abre el popup). openTooltip se toglea por key unitIndex-topicIndex (toggleTooltip).
+- Verificado en navegador (profesor Duran, page 7): click en input -> tooltip visible; click fuera -> se cierra; keydown '5'/'a'/Backspace/' '/digits => defaultPrevented true; Enter => no prevenido; paste => prevenido. Build vite OK.
+
+## 2026-08-30 - MisPlanes: showPicker al hacer click + escritura normal restaurada
+- El bloqueo de teclado del input de fecha se elimino (ya no hay blockDateTyping ni on:paste preventDefault): se puede escribir normal.
+- El on:click del input ahora ademas del tooltip llama a e.currentTarget.showPicker() envuelto en try/catch: asi el clic sobre los numeros/segmentos abre de todas formas el popup nativo del calendario (en navegadores sin showPicker el comportamiento default persiste). El tooltip flotante amber sigue funcionando (click abre, click fuera cierra).
+- Verificado en navegador (profesor Duran, page 7): keydown '5'/'a' y paste ya NO se previenen (escritura normal), tooltip sigue apareciendo al click con 'lunes y martes' para Bio/5to A/A, sin errores de consola nuevos.
+
+## 2026-08-30 - MisPlanes: calendario tambien se activa con focus (tab)
+- El on:click del input de fecha compartia el showPicker con el nuevo on:focus via helper openCalendar(el), con guard lastShowPickerAt (300ms) para que focus+click del mismo gesto no abra el calendario dos veces.
+- Verificado en navegador (page 7, spy sobre input.showPicker): solo focus => 1 llamada; focus+click juntos => 1 llamada (guard); click solo (ya enfocado) => 1 llamada. El tooltip sigue togleandose por click.

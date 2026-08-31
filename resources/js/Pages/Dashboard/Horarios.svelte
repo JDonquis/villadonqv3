@@ -57,7 +57,7 @@
     $: matters = data.matters || [];
     $: teachers = data.teachers || [];
 
-    let recess = { hora: 8, minuto: "30", ampm: "AM", duracion: "15" };
+    let recess = { hora: 10, minuto: "00", ampm: "AM", duracion: "30" };
 
     // day -> array of class rows
     let classes = { 1: [], 2: [], 3: [], 4: [], 5: [] };
@@ -65,7 +65,7 @@
     function emptyRow() {
         return {
             start: { hour: 7, minute: "00", ampm: "AM" },
-            end: { hour: 7, minute: "45", ampm: "AM" },
+            end: { hour: 8, minute: "30", ampm: "AM" },
             matter_id: "",
             teacher_id: "",
         };
@@ -153,6 +153,16 @@
         const newRow = emptyRow();
         if (prev) {
             newRow.start = { ...prev.end };
+            // ad 1 and a half hours to the end time of the previous class
+            const prevEndMins =
+                toMinutes(
+                    to24String(prev.end.hour, prev.end.minute, prev.end.ampm),
+                ) + 90;
+            newRow.end = from24String(
+                `${String(Math.floor(prevEndMins / 60)).padStart(2, "0")}:${String(
+                    prevEndMins % 60,
+                ).padStart(2, "0")}`,
+            );
         }
         dayRows.splice(index, 0, newRow);
         classes[day] = dayRows;
@@ -381,7 +391,7 @@
         </div>
 
         {#if subjectHours.length > 0}
-            <div class="mt-4 rounded-xl w-fit overflow-hidden">
+            <div class="mt-7 rounded-xl w-fit overflow-hidden">
                 <div
                     class=" text-gray-600 px-4 py-2 font-semibold text-sm"
                 >
