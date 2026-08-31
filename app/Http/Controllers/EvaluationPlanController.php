@@ -26,6 +26,14 @@ class EvaluationPlanController extends Controller
 
     public function index(Request $request)
     {
+        $filters = $request->all();
+
+        if (empty($filters['status'])) {
+            $filters['status'] = EvaluationPlan::where('status', EvaluationPlanStatusEnum::Pending->value)->exists()
+                ? EvaluationPlanStatusEnum::Pending->value
+                : EvaluationPlanStatusEnum::Approved->value;
+        }
+
         $teachers = User::where('type_user_id', UserTypeEnum::Teacher->value)
             ->orderBy('name')
             ->get()
@@ -34,7 +42,7 @@ class EvaluationPlanController extends Controller
 
         return inertia('Dashboard/PlanesEvaluacion', [
             'data' => [
-                'plans' => $this->planService->getPlansForAdmin($request->all()),
+                'plans' => $this->planService->getPlansForAdmin($filters),
                 'school_lapses' => $this->planService->getSchoolLapses(),
                 'courses' => $this->planService->getCourses(),
                 'sections' => $this->planService->getSections(),
@@ -44,14 +52,14 @@ class EvaluationPlanController extends Controller
                 ])->values(),
             ],
             'filters' => [
-                'status' => $request->input('status') ?? null,
-                'search' => $request->input('search') ?? null,
-                'school_lapse_id' => $request->input('school_lapse_id') ?? null,
-                'lapse_id' => $request->input('lapse_id') ?? null,
-                'course_id' => $request->input('course_id') ?? null,
-                'section_id' => $request->input('section_id') ?? null,
-                'matter_id' => $request->input('matter_id') ?? null,
-                'teacher_id' => $request->input('teacher_id') ?? null,
+                'status' => $filters['status'] ?? null,
+                'search' => $filters['search'] ?? null,
+                'school_lapse_id' => $filters['school_lapse_id'] ?? null,
+                'lapse_id' => $filters['lapse_id'] ?? null,
+                'course_id' => $filters['course_id'] ?? null,
+                'section_id' => $filters['section_id'] ?? null,
+                'matter_id' => $filters['matter_id'] ?? null,
+                'teacher_id' => $filters['teacher_id'] ?? null,
                 'open_plan' => session()->pull('open_plan') ?? null,
             ],
         ]);
