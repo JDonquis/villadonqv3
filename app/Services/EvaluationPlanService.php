@@ -147,8 +147,16 @@ class EvaluationPlanService
     public function getPlansForTeacher(int $teacherId, array $filters = []): array
     {
         $query = EvaluationPlan::with(['matter', 'schoolLapse', 'lapse', 'course', 'section', 'items'])
-            ->where('user_id', $teacherId)
-            ->where('status', $filters['status'] ?? EvaluationPlanStatusEnum::Approved->value);
+            ->where('user_id', $teacherId);
+
+        if (! empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        } else {
+            $query->whereIn('status', [
+                EvaluationPlanStatusEnum::Approved->value,
+                EvaluationPlanStatusEnum::Pending->value,
+            ]);
+        }
 
         $schoolLapseId = $filters['school_lapse_id'] ?? null;
         if (empty($schoolLapseId)) {
