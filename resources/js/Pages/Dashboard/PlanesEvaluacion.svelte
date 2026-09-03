@@ -7,6 +7,7 @@
     import { displayAlert } from "../../stores/alertStore";
     import SelectableRow from "../../components/SelectableRow.svelte";
     import Search from "../../components/Search.svelte";
+    import EvaluationPlanCreateModal from "../../components/EvaluationPlanCreateModal.svelte";
     import { fade, fly } from "svelte/transition";
 
     export let data = [];
@@ -228,6 +229,10 @@
 
 <Alert />
 
+<div class="flex justify-between items-center mb-3 flex-wrap gap-2">
+    <h2 class="text-2xl font-bold text-color1">Planes de Evaluación</h2>
+    <EvaluationPlanCreateModal {data} />
+</div>
 
 <Search {extraSearchParams} />
 

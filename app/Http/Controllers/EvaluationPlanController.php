@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\EvaluationPlanStatusEnum;
 use App\Enums\UserTypeEnum;
 use App\Http\Requests\RejectEvaluationPlanRequest;
+use App\Http\Requests\StoreAdminEvaluationPlanRequest;
 use App\Http\Requests\StoreEvaluationPlanRequest;
 use App\Http\Requests\UpdateEvaluationPlanRequest;
 use App\Models\EvaluationPlan;
@@ -35,9 +36,14 @@ class EvaluationPlanController extends Controller
         }
 
         $teachers = User::where('type_user_id', UserTypeEnum::Teacher->value)
+            ->with('matters:id')
             ->orderBy('name')
             ->get()
-            ->map(fn ($t) => ['id' => $t->id, 'name' => $t->name.' '.$t->last_name])
+            ->map(fn ($t) => [
+                'id' => $t->id,
+                'name' => $t->name.' '.$t->last_name,
+                'matter_ids' => $t->matters->pluck('id')->values(),
+            ])
             ->values();
 
         return inertia('Dashboard/PlanesEvaluacion', [
@@ -46,6 +52,8 @@ class EvaluationPlanController extends Controller
                 'school_lapses' => $this->planService->getSchoolLapses(),
                 'courses' => $this->planService->getCourses(),
                 'sections' => $this->planService->getSections(),
+                'matters' => $this->planService->getMatters(),
+                'teachers' => $teachers,
                 'statuses' => collect(EvaluationPlanStatusEnum::cases())->map(fn ($s) => [
                     'value' => $s->value,
                     'label' => $s->label(),
@@ -63,6 +71,24 @@ class EvaluationPlanController extends Controller
                 'open_plan' => session()->pull('open_plan') ?? null,
             ],
         ]);
+    }
+
+    public function storeByAdmin(StoreAdminEvaluationPlanRequest $request)
+    {
+        try {
+            $data = $request->validated();
+            $data['status'] = EvaluationPlanStatusEnum::Approved->value;
+            $data['approved_by'] = auth()->id();
+            $data['approved_at'] = now();
+
+            $this->planService->createPlan((int) $data['teacher_id'], $data);
+
+            return back()->with(['status' => true, 'message' => 'Plan de evaluación creado y aprobado correctamente.']);
+        } catch (Exception $e) {
+            Log::error('Error al crear plan de evaluación desde administración: '.$e->getMessage());
+
+            return back()->withErrors(['message' => ErrorTranslator::translate($e)]);
+        }
     }
 
     public function myPlans(Request $request)
@@ -91,12 +117,16 @@ class EvaluationPlanController extends Controller
 
     public function allowedDays(Request $request)
     {
+        $teacherId = auth()->user()->isTeacher()
+            ? auth()->id()
+            : $request->input('teacher_id');
+
         return response()->json(
             $this->planService->getAllowedWeekdays([
                 'school_lapse_id' => $request->input('school_lapse_id'),
                 'course_id' => $request->input('course_id'),
                 'matter_id' => $request->input('matter_id'),
-                'teacher_id' => auth()->id(),
+                'teacher_id' => $teacherId,
                 'section_ids' => $request->input('section_ids', []),
             ])
         );

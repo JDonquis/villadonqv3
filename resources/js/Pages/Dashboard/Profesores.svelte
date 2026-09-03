@@ -385,7 +385,8 @@
                 width="24"
                 height="24"
             />
-            <span>{submitStatus === "Crear" ? "Crear" : "Guardar"}</span>
+            <span class="text ml-10">{submitStatus === "Crear" ? "Crear" : "Guardar"}</span>
+            <span class="circle"></span>
         {/if}
     </button>
 </Modal>

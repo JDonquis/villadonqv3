@@ -253,7 +253,9 @@ class EvaluationPlanService
                     'section_id' => $sectionId,
                     'name' => $data['name'],
                     'description' => $data['description'] ?? null,
-                    'status' => EvaluationPlanStatusEnum::Pending->value,
+                    'status' => $data['status'] ?? EvaluationPlanStatusEnum::Pending->value,
+                    'approved_by' => $data['approved_by'] ?? null,
+                    'approved_at' => $data['approved_at'] ?? null,
                 ]);
 
                 $this->registerCourseMatter($data['course_id'] ?? null, $data['matter_id']);
@@ -277,7 +279,9 @@ class EvaluationPlanService
             'section_id' => is_array($sectionIds) ? ($sectionIds[0] ?? null) : $sectionIds,
             'name' => $data['name'],
             'description' => $data['description'] ?? null,
-            'status' => EvaluationPlanStatusEnum::Pending->value,
+            'status' => $data['status'] ?? EvaluationPlanStatusEnum::Pending->value,
+            'approved_by' => $data['approved_by'] ?? null,
+            'approved_at' => $data['approved_at'] ?? null,
         ]);
 
         $this->registerCourseMatter($data['course_id'] ?? null, $data['matter_id']);

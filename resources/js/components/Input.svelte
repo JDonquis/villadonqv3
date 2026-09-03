@@ -51,7 +51,7 @@
                 id={label}
                 bind:value
                 {required}
-                class="form__field "
+                class="form__field bg-white"
                 on:change
                 on:input
                 disabled={readonly || disabled}
@@ -99,6 +99,7 @@
     }
     select {
         padding: 8px 12px;
+        background: white;
     }
 
     @media (min-width: 768px) {

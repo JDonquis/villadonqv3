@@ -107,6 +107,8 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::delete('/dashboard/materias/{id}', [MatterController::class, 'destroy']);
 
     Route::get('/dashboard/planes-evaluacion', [EvaluationPlanController::class, 'index']);
+    Route::get('/dashboard/planes-evaluacion/allowed-days', [EvaluationPlanController::class, 'allowedDays']);
+    Route::post('/dashboard/planes-evaluacion', [EvaluationPlanController::class, 'storeByAdmin']);
     Route::post('/dashboard/planes-evaluacion/{id}/aprobar', [EvaluationPlanController::class, 'approve']);
     Route::post('/dashboard/planes-evaluacion/{id}/rechazar', [EvaluationPlanController::class, 'reject']);
 
