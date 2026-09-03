@@ -5,7 +5,10 @@ namespace App\Services;
 use App\Models\EvaluationPlan;
 use App\Models\Student;
 use App\Models\StudentGrade;
+use App\Models\StudentGradePublication;
+use App\Models\StudentGradePublicationItem;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class StudentGradeService
 {
@@ -89,6 +92,20 @@ class StudentGradeService
             ];
         })->values()->all();
 
+        $latestPublication = StudentGradePublication::where('evaluation_plan_id', $plan->id)
+            ->latest('version')
+            ->with('items')
+            ->first();
+        $draftGrades = $grades->mapWithKeys(fn ($grade) => [
+            $grade->plan_item_id.'_'.$grade->student_id => $grade->score === null ? null : (float) $grade->score,
+        ])->all();
+        $publishedGrades = $latestPublication?->items->mapWithKeys(fn ($grade) => [
+            $grade->plan_item_id.'_'.$grade->student_id => $grade->score === null ? null : (float) $grade->score,
+        ])->all() ?? [];
+        $canPublish = $latestPublication === null
+            ? $grades->isNotEmpty()
+            : $draftGrades !== $publishedGrades;
+
         return [
             'plan' => [
                 'id' => $plan->id,
@@ -102,6 +119,11 @@ class StudentGradeService
             'items' => $items,
             'units' => $units,
             'students' => $studentsData,
+            'grade_state' => [
+                'published_version_id' => $latestPublication?->id,
+                'published_at' => $latestPublication?->published_at?->toISOString(),
+                'can_publish' => $canPublish,
+            ],
         ];
     }
 
@@ -140,6 +162,72 @@ class StudentGradeService
         }
 
         return $saved;
+    }
+
+    public function publishGrades(int $planId, int $teacherId): StudentGradePublication
+    {
+        return DB::transaction(function () use ($planId, $teacherId) {
+            $plan = EvaluationPlan::with('items')
+                ->where('id', $planId)
+                ->where('user_id', $teacherId)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($plan->status !== 'approved') {
+                throw new \RuntimeException('El plan debe estar aprobado antes de publicar las notas.');
+            }
+
+            $version = ((int) StudentGradePublication::where('evaluation_plan_id', $plan->id)
+                ->lockForUpdate()
+                ->max('version')) + 1;
+
+            $publication = StudentGradePublication::create([
+                'evaluation_plan_id' => $plan->id,
+                'published_by' => $teacherId,
+                'version' => $version,
+                'published_at' => now(),
+            ]);
+
+            $itemIds = $plan->items->pluck('id');
+            StudentGrade::whereIn('plan_item_id', $itemIds)
+                ->get()
+                ->each(fn ($grade) => StudentGradePublicationItem::create([
+                    'publication_id' => $publication->id,
+                    'plan_item_id' => $grade->plan_item_id,
+                    'student_id' => $grade->student_id,
+                    'score' => $grade->score,
+                ]));
+
+            return $publication;
+        });
+    }
+
+    public function publishedScoresForStudent(EvaluationPlan $plan, int $studentId): array
+    {
+        $publication = StudentGradePublication::where('evaluation_plan_id', $plan->id)
+            ->latest('version')
+            ->first();
+
+        if (! $publication) {
+            return [];
+        }
+
+        return StudentGradePublicationItem::where('publication_id', $publication->id)
+            ->where('student_id', $studentId)
+            ->pluck('score', 'plan_item_id')
+            ->map(fn ($score) => $score !== null ? (float) $score : null)
+            ->all();
+    }
+
+    public function publishedDefinitiveForStudent(EvaluationPlan $plan, int $studentId): ?float
+    {
+        $scores = $this->publishedScoresForStudent($plan, $studentId);
+        $items = $plan->items->map(fn ($item) => [
+            'id' => $item->id,
+            'percentage' => (float) $item->percentage,
+        ])->all();
+
+        return $this->computeDefinitive($items, $scores);
     }
 
     public function computeDefinitive(array $items, array $scores): ?float

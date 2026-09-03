@@ -48,7 +48,7 @@ class ReportService
 
                 $lapseData[$lapse->number] = [
                     'number' => $lapse->number,
-                    'definitive' => $plan ? $this->gradeService->definitiveForStudent($plan, $student->id) : null,
+                    'definitive' => $plan ? $this->gradeService->publishedDefinitiveForStudent($plan, $student->id) : null,
                     'has_plan' => (bool) $plan,
                 ];
             }
@@ -146,11 +146,10 @@ class ReportService
             return collect();
         }
 
-        return EvaluationPlan::with(['matter', 'lapse', 'items.grades' => function ($q) use ($student) {
-            $q->where('student_id', $student->id);
-        }])
+        return EvaluationPlan::with(['matter', 'lapse', 'items'])
             ->where('course_id', $student->course_id)
             ->where('school_lapse_id', $periodId)
+            ->where('status', 'approved')
             ->get();
     }
 

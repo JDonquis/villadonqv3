@@ -7,6 +7,39 @@
 
     let editable = {};
 
+    function getInitialGrades(matrix) {
+        const grades = [];
+        matrix?.students?.forEach((student) => {
+            matrix.items.forEach((item) => {
+                const value = student.scores[item.id];
+                grades.push({
+                    plan_item_id: item.id,
+                    student_id: student.id,
+                    score: value != null ? parseFloat(value) : null,
+                });
+            });
+        });
+        return grades;
+    }
+
+    function getGradesFromEditable() {
+        const grades = [];
+        data.matrix?.students?.forEach((student) => {
+            data.matrix.items.forEach((item) => {
+                const value = editable[`${student.id}_${item.id}`];
+                grades.push({
+                    plan_item_id: item.id,
+                    student_id: student.id,
+                    score:
+                        value === "" || value === null || value === undefined
+                            ? null
+                            : parseFloat(value),
+                });
+            });
+        });
+        return grades;
+    }
+
     function rebuildEditable(matrix) {
         editable = {};
         matrix?.students?.forEach((s) => {
@@ -57,9 +90,11 @@
                 { sensitivity: "base" },
             );
             if (lastNameCompare !== 0) return lastNameCompare * direction;
-            return (a.name || "").localeCompare(b.name || "", "es", {
-                sensitivity: "base",
-            }) * direction;
+            return (
+                (a.name || "").localeCompare(b.name || "", "es", {
+                    sensitivity: "base",
+                }) * direction
+            );
         }
 
         if (sortState.key === "definitive") {
@@ -84,8 +119,16 @@
 
     let form = useForm({
         plan_id: data.selected_plan_id || "",
-        grades: [],
+        grades: getInitialGrades(data.matrix),
     });
+
+    $: canPublish = data.matrix?.grade_state?.can_publish === true;
+
+    function updateGrade(key, value) {
+        editable[key] = value;
+        editable = { ...editable };
+        $form.grades = getGradesFromEditable();
+    }
 
     function getActiveMomentId(schoolLapse) {
         if (!schoolLapse?.lapses?.length) return "";
@@ -255,9 +298,21 @@
     }
 
     function getMedalIcon(medal) {
-        if (medal === "gold") return { icon: "fluent-emoji-flat:1st-place-medal", class: "text-2xl" };
-        if (medal === "silver") return { icon: "fluent-emoji-flat:2nd-place-medal", class: "text-xl" };
-        if (medal === "bronze") return { icon: "fluent-emoji-flat:3rd-place-medal", class: "text-xl" };
+        if (medal === "gold")
+            return {
+                icon: "fluent-emoji-flat:1st-place-medal",
+                class: "text-2xl",
+            };
+        if (medal === "silver")
+            return {
+                icon: "fluent-emoji-flat:2nd-place-medal",
+                class: "text-xl",
+            };
+        if (medal === "bronze")
+            return {
+                icon: "fluent-emoji-flat:3rd-place-medal",
+                class: "text-xl",
+            };
         return "";
     }
 
@@ -285,6 +340,8 @@
         $form.post("/dashboard/mis-estudiantes/guardar-notas", {
             preserveScroll: true,
             onSuccess: () => {
+                $form.defaults();
+                $form.reset();
                 displayAlert({
                     type: "success",
                     message: "Notas guardadas correctamente",
@@ -294,6 +351,27 @@
                 displayAlert({
                     type: "error",
                     message: errors.message || "Error al guardar las notas",
+                });
+            },
+        });
+    }
+
+    function handlePublish() {
+        if (!data.matrix?.plan?.id || !canPublish) return;
+
+        $form.plan_id = data.matrix.plan.id;
+        $form.post("/dashboard/mis-estudiantes/publicar-notas", {
+            preserveScroll: true,
+            onSuccess: () => {
+                displayAlert({
+                    type: "success",
+                    message: "Notas publicadas correctamente",
+                });
+            },
+            onError: (errors) => {
+                displayAlert({
+                    type: "error",
+                    message: errors.message || "Error al publicar las notas",
                 });
             },
         });
@@ -384,7 +462,9 @@
             <table class="w-full text-sm">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-3 py-3 text-left sticky left-0 bg-gray-50">
+                        <th
+                            class="px-3 py-3 text-left sticky left-0 bg-gray-50"
+                        >
                             <button
                                 type="button"
                                 class="flex items-center gap-1 font-semibold text-left"
@@ -405,11 +485,17 @@
                                 <button
                                     type="button"
                                     class="flex w-full items-center justify-between gap-2 text-left"
-                                    on:click={() => toggleSort(`item_${item.id}`)}
+                                    on:click={() =>
+                                        toggleSort(`item_${item.id}`)}
                                 >
                                     <span>
-                                        <span class="font-semibold block">{item.name}</span>
-                                        <span class="text-xs text-gray-400 font-normal">
+                                        <span
+                                            class="font-semibold block text-xs"
+                                            >{item.name}</span
+                                        >
+                                        <span
+                                            class="text-xs text-gray-400 font-normal"
+                                        >
                                             {item.percentage}%
                                         </span>
                                     </span>
@@ -440,7 +526,10 @@
                                 class="flex items-center gap-1 font-semibold text-left"
                                 on:click={() => toggleSort("definitive")}
                             >
-                                <span>Definitiva ({data.matrix.plan.lapse_label})</span>
+                                <span
+                                    >Definitiva ({data.matrix.plan
+                                        .lapse_label})</span
+                                >
                                 <span class="text-[10px] text-gray-500">
                                     {getSortIndicator("definitive")}
                                 </span>
@@ -472,7 +561,8 @@
                                         class="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
                                         inputmode="decimal"
                                         on:wheel|preventDefault
-                                        on:focus={(e) => e.currentTarget.select()}
+                                        on:focus={(e) =>
+                                            e.currentTarget.select()}
                                         on:keydown={(e) => {
                                             if (
                                                 [
@@ -487,9 +577,14 @@
                                                 e.stopPropagation();
                                             }
                                         }}
-                                        bind:value={
-                                            editable[`${student.id}_${item.id}`]
-                                        }
+                                        value={editable[
+                                            `${student.id}_${item.id}`
+                                        ]}
+                                        on:input={(event) =>
+                                            updateGrade(
+                                                `${student.id}_${item.id}`,
+                                                event.currentTarget.value,
+                                            )}
                                     />
                                 </td>
                             {/each}
@@ -500,17 +595,18 @@
                                         {#if medal}
                                             <span
                                                 class="text-lg leading-none"
-                                                title={
-                                                    medal === "gold"
-                                                        ? "Primero"
-                                                        : medal === "silver"
-                                                          ? "Segundo"
-                                                          : "Tercero"
-                                                }
+                                                title={medal === "gold"
+                                                    ? "Primero"
+                                                    : medal === "silver"
+                                                      ? "Segundo"
+                                                      : "Tercero"}
                                             >
                                                 <iconify-icon
-                                                    icon={getMedalIcon(medal).icon}
-                                                    class={getMedalIcon(medal).class}></iconify-icon>
+                                                    icon={getMedalIcon(medal)
+                                                        .icon}
+                                                    class={getMedalIcon(medal)
+                                                        .class}
+                                                ></iconify-icon>
                                             </span>
                                         {/if}
                                         <span
@@ -526,9 +622,7 @@
                                                 ? 'bg-green-100 text-green-700'
                                                 : 'bg-red text-white'}"
                                         >
-                                            {definitive >= 10
-                                                ? ""
-                                                : "R"}
+                                            {definitive >= 10 ? "" : "R"}
                                         </span>
                                     </div>
                                 {:else}
@@ -545,19 +639,30 @@
             </table>
         </div>
 
-        <div class="mt-4 fixed bottom-8 right-10 flex justify-end max-w-[300px] ml-auto">
-            <button
-                on:click={handleSave}
-                class="max-w-[300px] animated-button flex items-center gap-10"
-                disabled={$form.processing}
-            >
-                {#if $form.processing}
-                    Guardando...
-                {:else}
-                    <span class="text">Guardar notas</span>
-                    <span class="circle"></span>
-                {/if}
+        <div
+            class="mt-4 fixed bottom-8 right-10  gap-3 flex justify-end max-w-[600px] ml-auto items-center"
+        >
+            {#if $form.isDirty}
+                <button
+                    on:click={handleSave}
+                    class="max-w-[300px] animated-button flex items-center gap-10 "
+                    disabled={$form.processing}
+                >
+                    {#if $form.processing}
+                        Guardando...
+                    {:else}
+                        <span class="text">Guardar notas</span>
+                        <span class="circle"></span>
+                    {/if}
+                </button>
+            {/if}
+
+            {#if !$form.isDirty && canPublish}
+
+            <button type="button" on:click={handlePublish} disabled={$form.processing} class="bg-color4 rounded-full text-dark min-w-fit font-bold py-3 px-4 mt-5">
+                Publicar notas
             </button>
+            {/if}
         </div>
     {/if}
 {:else}

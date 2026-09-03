@@ -80,4 +80,19 @@ class StudentGradeController extends Controller
             return back()->withErrors(['message' => ErrorTranslator::translate($e)]);
         }
     }
+
+    public function publishGrades(Request $request)
+    {
+        $request->validate(['plan_id' => ['required', 'integer', 'exists:evaluation_plans,id']]);
+
+        try {
+            $this->gradeService->publishGrades((int) $request->input('plan_id'), (int) auth()->id());
+
+            return back()->with(['status' => true, 'message' => 'Notas publicadas correctamente.']);
+        } catch (Exception $e) {
+            Log::error('Error al publicar notas: '.$e->getMessage());
+
+            return back()->withErrors(['message' => ErrorTranslator::translate($e)]);
+        }
+    }
 }

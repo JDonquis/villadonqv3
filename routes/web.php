@@ -127,6 +127,7 @@ Route::middleware(['auth', 'role:teacher'])->group(function () {
 
     Route::get('/dashboard/mis-estudiantes', [StudentGradeController::class, 'index']);
     Route::post('/dashboard/mis-estudiantes/guardar-notas', [StudentGradeController::class, 'saveGrades']);
+    Route::post('/dashboard/mis-estudiantes/publicar-notas', [StudentGradeController::class, 'publishGrades']);
 
     Route::get('/dashboard/mi-horario', [MyScheduleController::class, 'index']);
 });

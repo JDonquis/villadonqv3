@@ -99,12 +99,11 @@ class RepresentativeService
             return [];
         }
 
-        $plans = EvaluationPlan::with(['teacher', 'lapse', 'schoolLapse', 'items.grades' => function ($q) use ($student) {
-            $q->where('student_id', $student->id);
-        }])
+        $plans = EvaluationPlan::with(['teacher', 'lapse', 'schoolLapse', 'items'])
             ->where('course_id', $student->course_id)
             ->where('school_lapse_id', $activeLapse->id)
             ->where('lapse_id', $currentLapse->id)
+            ->where('status', 'approved')
             ->get();
 
         $plansByMatter = $plans->groupBy('matter_id');
@@ -124,7 +123,7 @@ class RepresentativeService
                 ];
             }
 
-            $definitive = $this->gradeService->definitiveForStudent($plan, $student->id);
+            $definitive = $this->gradeService->publishedDefinitiveForStudent($plan, $student->id);
 
             $status = $definitive === null
                 ? 'en_curso'
@@ -141,24 +140,26 @@ class RepresentativeService
                 },
                 'definitive' => $definitive,
                 'lapse_label' => $this->momentLabel($currentLapse),
-                'plan' => $this->formatSubjectPlan($plan),
+                'plan' => $this->formatSubjectPlan($plan, $student->id),
             ];
         })->values()->all();
     }
 
-    private function formatSubjectPlan(EvaluationPlan $plan): array
+    private function formatSubjectPlan(EvaluationPlan $plan, int $studentId): array
     {
+        $scores = $this->gradeService->publishedScoresForStudent($plan, $studentId);
         $items = $plan->items->map(function ($item) {
-            $grade = $item->grades->first();
-
             return [
                 'id' => $item->id,
                 'name' => $item->name,
                 'percentage' => (float) $item->percentage,
                 'date' => $item->date,
-                'score' => $grade?->score !== null ? (float) $grade->score : null,
+                'score' => null,
             ];
-        })->values();
+        })->values()->map(function ($item) use ($scores) {
+            $item['score'] = $scores[$item['id']] ?? null;
+            return $item;
+        });
 
         return [
             'id' => $plan->id,

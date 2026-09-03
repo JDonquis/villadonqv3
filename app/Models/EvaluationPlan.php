@@ -67,4 +67,9 @@ class EvaluationPlan extends Model
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
+
+    public function gradePublications()
+    {
+        return $this->hasMany(StudentGradePublication::class, 'evaluation_plan_id');
+    }
 }
