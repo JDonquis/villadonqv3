@@ -783,14 +783,15 @@
                     {/each}
                 </Input>
 
-                <div class="col-span-2">
+                <div class="col-span-5">
+                    <!-- svelte-ignore a11y-label-has-associated-control -->
                     <label
                         class="form__label w-full text-xs md:text-sm font-semibold text-gray-700"
                     >
-                        Sección *
+                        Secciones *
                     </label>
                     <div
-                        class="form__field w-full rounded-md border border-gray-300 px-3 py-2 text-sm min-h-[42px] bg-white"
+                        class="form__field w-full  px-3 py-2 text-sm min-h-[42px] bg-white"
                     >
                         <label class="flex items-center gap-2 mb-2 text-sm">
                             <input
@@ -804,9 +805,9 @@
                             <span>Todas las secciones</span>
                         </label>
 
-                        <div class="space-y-1 max-h-[180px] overflow-y-auto">
+                        <div class="space-y-1 flex gap-3 max-h-[180px] overflow-y-auto">
                             {#each data.sections as section}
-                                <label class="flex items-center gap-2 text-sm">
+                                <label class="flex items-center gap-1 text-sm">
                                     <input
                                         type="checkbox"
                                         value={String(section.id)}

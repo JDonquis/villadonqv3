@@ -9,12 +9,22 @@ use App\Support\ErrorTranslator;
 
 class TeacherService
 {
-    public function getTeachers()
+    public function getTeachers(?string $search = null)
     {
-        return User::where('type_user_id', UserTypeEnum::Teacher->value)
+        $query = User::where('type_user_id', UserTypeEnum::Teacher->value)
             ->with('matters')
-            ->orderBy('id', 'desc')
-            ->get()
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('ci', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhereHas('matters', fn ($matterQuery) => $matterQuery->where('name', 'like', "%{$search}%"));
+                });
+            })
+            ->orderBy('id', 'desc');
+
+        return $query->get()
             ->map(function ($teacher) {
                 return [
                     'id' => $teacher->id,

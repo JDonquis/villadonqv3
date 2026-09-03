@@ -36,7 +36,7 @@ class TeacherController extends Controller
 
         return inertia('Dashboard/Profesores', [
             'data' => [
-                'teachers' => $this->teacherService->getTeachers(),
+                'teachers' => $this->teacherService->getTeachers($request->input('search')),
                 'matters' => $matters,
             ],
             'filters' => [

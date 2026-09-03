@@ -944,13 +944,13 @@
             bind:this={importFileInput}
             on:change={handleImportFile}
         />
-        <button type="button" class="toolbar-secondary" on:click={() => importFileInput?.click()}>
+        <button type="button" class="toolbar-secondary opacity-50 hover:opacity-100" on:click={() => importFileInput?.click()}>
             <iconify-icon icon="material-symbols:upload" width="20" height="20" />
             Importar
         </button>
         <a
             href="/dashboard/matricula/plantilla"
-            class="toolbar-secondary"
+            class="toolbar-secondary opacity-50 hover:opacity-100"
         >
             <iconify-icon icon="material-symbols:download" width="20" height="20" />
             Descargar plantilla

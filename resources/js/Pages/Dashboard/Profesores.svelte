@@ -8,9 +8,11 @@
     import { displayAlert } from "../../stores/alertStore";
     import SelectableRow from "../../components/SelectableRow.svelte";
     import ImportResultModal from "../../components/ImportResultModal.svelte";
+    import Search from "../../components/Search.svelte";
     import axios from "axios";
 
     export let data = [];
+    export let filters = {};
 
     let importFileInput = null;
     let showImportResult = false;
@@ -25,7 +27,7 @@
             const { data } = await axios.post(
                 "/dashboard/profesores/importar",
                 formData,
-                { headers: { Accept: "application/json" } }
+                { headers: { Accept: "application/json" } },
             );
             importSummary = data;
             showImportResult = true;
@@ -87,7 +89,10 @@
             $form.post("/dashboard/profesores", {
                 onError: (errors) => {
                     if (errors.message) {
-                        displayAlert({ type: "error", message: errors.message });
+                        displayAlert({
+                            type: "error",
+                            message: errors.message,
+                        });
                     }
                 },
                 onSuccess: () => {
@@ -104,7 +109,10 @@
             $form.put(`/dashboard/profesores/${editingTeacherId}`, {
                 onError: (errors) => {
                     if (errors.message) {
-                        displayAlert({ type: "error", message: errors.message });
+                        displayAlert({
+                            type: "error",
+                            message: errors.message,
+                        });
                     }
                 },
                 onSuccess: () => {
@@ -180,7 +188,8 @@
                 onError: (errors) => {
                     displayAlert({
                         type: "error",
-                        message: errors.message || "Error al reenviar el correo",
+                        message:
+                            errors.message || "Error al reenviar el correo",
                     });
                 },
             },
@@ -194,35 +203,50 @@
 
 <Alert />
 
-<div class="flex justify-end items-center gap-3 mb-3">
-    <input
-        type="file"
-        accept=".xlsx"
-        class="hidden"
-        bind:this={importFileInput}
-        on:change={handleImportFile}
-    />
-    <button type="button" class="toolbar-secondary" on:click={() => importFileInput?.click()}>
-        <iconify-icon icon="material-symbols:upload" width="20" height="20" />
-        Importar
-    </button>
-    <a href="/dashboard/profesores/plantilla" class="toolbar-secondary">
-        <iconify-icon icon="material-symbols:download" width="20" height="20" />
-        Descargar plantilla
-    </a>
-    <button
-        class="animated-button w-fitcontent"
-        on:click={(e) => {
-            e.preventDefault();
-            $form.reset();
-            submitStatus = "Crear";
-            editingTeacherId = null;
-            showModal = true;
-        }}
-    >
-        <span class="text">Nuevo profesor</span>
-        <span class="circle"></span>
-    </button>
+<div class="flex justify-between items-center gap-3 mb-3 flex-wrap">
+    <Search />
+    <div class="flex justify-end items-center gap-3 ml-auto">
+        <input
+            type="file"
+            accept=".xlsx"
+            class="hidden"
+            bind:this={importFileInput}
+            on:change={handleImportFile}
+        />
+        <button
+            type="button"
+            class="toolbar-secondary opacity-50 hover:opacity-100"
+            on:click={() => importFileInput?.click()}
+        >
+            <iconify-icon
+                icon="material-symbols:upload"
+                width="20"
+                height="20"
+            />
+            Importar
+        </button>
+        <a href="/dashboard/profesores/plantilla" class="toolbar-secondary opacity-50 hover:opacity-100">
+            <iconify-icon
+                icon="material-symbols:download"
+                width="20"
+                height="20"
+            />
+            Descargar plantilla
+        </a>
+        <button
+            class="animated-button w-fitcontent"
+            on:click={(e) => {
+                e.preventDefault();
+                $form.reset();
+                submitStatus = "Crear";
+                editingTeacherId = null;
+                showModal = true;
+            }}
+        >
+            <span class="text">Nuevo profesor</span>
+            <span class="circle"></span>
+        </button>
+    </div>
 </div>
 
 <Table
@@ -280,7 +304,9 @@
                                 >
                             {/each}
                         {:else}
-                            <span class="text-gray-400 text-xs">Sin materias</span>
+                            <span class="text-gray-400 text-xs"
+                                >Sin materias</span
+                            >
                         {/if}
                     </div>
                 </td>
@@ -342,10 +368,16 @@
                 Materias asignadas
             </p>
             {#if data.matters?.length}
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-56 overflow-auto">
+                <div
+                    class="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-56 overflow-auto"
+                >
                     {#each data.matters as matter}
                         <label
-                            class="flex items-center gap-2 text-sm cursor-pointer p-2 rounded-md border {$form.matters.includes(matter.id) ? 'border-color2/50 bg-color1/5' : 'border-gray-200'}"
+                            class="flex items-center gap-2 text-sm cursor-pointer p-2 rounded-md border {$form.matters.includes(
+                                matter.id,
+                            )
+                                ? 'border-color2/50 bg-color1/5'
+                                : 'border-gray-200'}"
                         >
                             <input
                                 type="checkbox"
@@ -385,7 +417,9 @@
                 width="24"
                 height="24"
             />
-            <span class="text ml-10">{submitStatus === "Crear" ? "Crear" : "Guardar"}</span>
+            <span class="text ml-10"
+                >{submitStatus === "Crear" ? "Crear" : "Guardar"}</span
+            >
             <span class="circle"></span>
         {/if}
     </button>
