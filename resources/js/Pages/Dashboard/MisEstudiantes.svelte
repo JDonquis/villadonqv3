@@ -6,6 +6,7 @@
     export let data = [];
 
     let editable = {};
+    let rasgosEditable = {};
 
     function getInitialGrades(matrix) {
         const grades = [];
@@ -42,7 +43,10 @@
 
     function rebuildEditable(matrix) {
         editable = {};
+        rasgosEditable = {};
         matrix?.students?.forEach((s) => {
+            rasgosEditable[s.id] =
+                s.rasgos != null && s.rasgos !== "" ? String(s.rasgos) : "";
             matrix.items.forEach((item) => {
                 const key = `${s.id}_${item.id}`;
                 const val = s.scores[item.id];
@@ -75,6 +79,10 @@
 
     $: if (data?.matrix?.plan?.id) rebuildEditable(data.matrix);
     $: if (data?.matrix) {
+        // Register reactive deps so the definitive refreshes while typing.
+        void editable;
+        void rasgosEditable;
+        void planRasgosMax;
         definitiveByStudent = {};
         for (const student of data.matrix.students || []) {
             definitiveByStudent[student.id] = computeDefinitive(student);
@@ -120,14 +128,33 @@
     let form = useForm({
         plan_id: data.selected_plan_id || "",
         grades: getInitialGrades(data.matrix),
+        rasgos: [],
     });
 
     $: canPublish = data.matrix?.grade_state?.can_publish === true;
+    $: planRasgosMax = data.matrix?.plan?.rasgos_points || 0;
 
     function updateGrade(key, value) {
         editable[key] = value;
         editable = { ...editable };
         $form.grades = getGradesFromEditable();
+    }
+
+    function updateRasgos(studentId, value) {
+        rasgosEditable[studentId] = value;
+        rasgosEditable = { ...rasgosEditable };
+        const planId = data.matrix?.plan?.id;
+        $form.rasgos = (data.matrix?.students || []).map((s) => {
+            const raw = rasgosEditable[s.id];
+            return {
+                plan_id: planId,
+                student_id: s.id,
+                rasgos_score:
+                    raw === "" || raw === null || raw === undefined
+                        ? null
+                        : parseInt(raw, 10),
+            };
+        });
     }
 
     function getActiveMomentId(schoolLapse) {
@@ -266,6 +293,15 @@
             if (isNaN(num)) return null;
             total += num * (item.percentage / 100);
         }
+
+        if (planRasgosMax > 0) {
+            const raw = rasgosEditable[student.id];
+            if (raw === "" || raw === null || raw === undefined) return null;
+            const rasgosNum = parseFloat(raw);
+            if (isNaN(rasgosNum)) return null;
+            total += rasgosNum;
+        }
+
         return Math.round(total * 100) / 100;
     }
 
@@ -334,9 +370,22 @@
             });
         });
 
+        const rasgos = [];
+        data.matrix.students.forEach((s) => {
+            const raw = rasgosEditable[s.id];
+            rasgos.push({
+                student_id: s.id,
+                rasgos_score:
+                    raw === "" || raw === null || raw === undefined
+                        ? null
+                        : parseInt(raw, 10),
+            });
+        });
+
         $form.clearErrors();
         $form.plan_id = data.matrix.plan.id;
         $form.grades = grades;
+        $form.rasgos = rasgos;
         $form.post("/dashboard/mis-estudiantes/guardar-notas", {
             preserveScroll: true,
             onSuccess: () => {
@@ -520,6 +569,16 @@
                                 </div>
                             </th>
                         {/each}
+                        {#if planRasgosMax > 0}
+                            <th
+                                class="px-3 py-3 text-center bg-gray-50"
+                                title="Puntos de rasgos (conducta)"
+                            >
+                                <span class="font-semibold"
+                                    >Rasgos ({planRasgosMax})</span
+                                >
+                            </th>
+                        {/if}
                         <th class="px-3 py-3 text-left bg-gray-50">
                             <button
                                 type="button"
@@ -588,6 +647,25 @@
                                     />
                                 </td>
                             {/each}
+                            {#if planRasgosMax > 0}
+                                <td class="px-3 py-2 text-center bg-gray-50">
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max={planRasgosMax}
+                                        step="1"
+                                        class="w-16 rounded-md border border-gray-300 px-2 py-1.5 text-sm text-center"
+                                        inputmode="numeric"
+                                        title="Puntos de rasgos (0-{planRasgosMax})"
+                                        value={rasgosEditable[student.id]}
+                                        on:input={(event) =>
+                                            updateRasgos(
+                                                student.id,
+                                                event.currentTarget.value,
+                                            )}
+                                    />
+                                </td>
+                            {/if}
                             <td class="px-3 py-2 bg-gray-50">
                                 {#if definitive !== null}
                                     {@const medal = getDefinitiveMedal(student)}

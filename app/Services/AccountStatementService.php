@@ -7,7 +7,8 @@ use App\Models\BalanceStudent;
 use App\Models\MainConfig;
 use App\Models\SchoolLapse;
 use App\Models\Section;
-use Illuminate\Support\Facades\DB;
+use App\Models\Student;
+use App\Support\PaymentDeadline;
 
 class AccountStatementService
 {
@@ -78,23 +79,23 @@ class AccountStatementService
             ->select('balance_students.*')
             ->with('balancePayments')
             ->get();
-        $totalDebt = $allBalancesForTotals->sum(fn($b) => $this->calculateBalanceDebt($b));
-        $totalIncome = $allBalancesForTotals->sum(fn($b) => $b->balancePayments->sum('amount'));
+        $totalDebt = $allBalancesForTotals->sum(fn ($b) => $this->calculateBalanceDebt($b));
+        $totalIncome = $allBalancesForTotals->sum(fn ($b) => $b->balancePayments->sum('amount'));
 
         // Student query for pagination
-        $studentQuery = \App\Models\Student::query()
+        $studentQuery = Student::query()
             ->join('courses', 'students.course_id', '=', 'courses.id')
             ->join('sections', 'students.section_id', '=', 'sections.id')
             ->join('representatives', 'students.representative_id', '=', 'representatives.id')
             ->join('users', 'representatives.user_id', '=', 'users.id')
-            ->where(function ($q) use ($hasRealDebtSql, $params, $currentLapse) {
-                if (!empty($params['debt_filter']) && $params['debt_filter'] === 'graduated_with_debts') {
+            ->where(function ($q) use ($hasRealDebtSql, $params) {
+                if (! empty($params['debt_filter']) && $params['debt_filter'] === 'graduated_with_debts') {
                     $q->where('students.graduate', 1);
                 } else {
                     $q->where('students.status', '!=', 0)
                         ->orWhere(function ($q) use ($hasRealDebtSql) {
                             $q->where('students.graduate', 1)
-                                ->whereHas('balances', function($q) use ($hasRealDebtSql) {
+                                ->whereHas('balances', function ($q) use ($hasRealDebtSql) {
                                     $q->whereRaw($hasRealDebtSql);
                                 });
                         });
@@ -103,7 +104,7 @@ class AccountStatementService
             ->select('students.*');
 
         // Apply search filter (only needs the already joined tables)
-        if (!empty($params['search'])) {
+        if (! empty($params['search'])) {
             $search = $params['search'];
             $studentQuery->where(function ($q) use ($search) {
                 $q->where('students.name', 'LIKE', "%$search%")
@@ -118,8 +119,8 @@ class AccountStatementService
         }
 
         // Apply debt filter via whereHas
-        if (!empty($params['debt_filter'])) {
-            $studentQuery->whereHas('balances', function($q) use ($params, $hasRealDebtSql, $currentLapse) {
+        if (! empty($params['debt_filter'])) {
+            $studentQuery->whereHas('balances', function ($q) use ($params, $hasRealDebtSql, $currentLapse) {
                 $this->applyDebtFilter($q, $params['debt_filter'], $hasRealDebtSql, $currentLapse);
             });
         } else {
@@ -136,12 +137,11 @@ class AccountStatementService
                 $studentQuery->orderBy(
                     BalanceStudent::selectRaw("SUM($debtSumSql)")
                         ->whereColumn('student_id', 'students.id')
-                        ->where(function($q) use ($params, $hasRealDebtSql, $currentLapse) {
-                            if (!empty($params['debt_filter'])) {
+                        ->where(function ($q) use ($params, $hasRealDebtSql, $currentLapse) {
+                            if (! empty($params['debt_filter'])) {
                                 $this->applyDebtFilter($q, $params['debt_filter'], $hasRealDebtSql, $currentLapse);
                             }
-                        })
-                    , $sortDirection
+                        }), $sortDirection
                 );
                 break;
             case 'name':
@@ -166,13 +166,13 @@ class AccountStatementService
             'course',
             'section',
             'representative.user',
-            'balances' => function($q) use ($params, $hasRealDebtSql, $currentLapse) {
-                if (!empty($params['debt_filter'])) {
+            'balances' => function ($q) use ($params, $hasRealDebtSql, $currentLapse) {
+                if (! empty($params['debt_filter'])) {
                     $this->applyDebtFilter($q, $params['debt_filter'], $hasRealDebtSql, $currentLapse);
                 }
             },
             'balances.schoolLapse',
-            'balances.balancePayments.payment.accountPayment.method'
+            'balances.balancePayments.payment.accountPayment.method',
         ])->paginate($perPage);
 
         // Transformation to match frontend expectation
@@ -189,14 +189,14 @@ class AccountStatementService
                     'inscription' => $balance->inscription,
                     'inscription_status' => $balance->inscription_status,
                     'months' => collect(self::MONTHS)->mapWithKeys(function ($month) use ($balance) {
-                        return [$month => $balance->$month, $month . '_status' => $balance->{$month . '_status'}];
+                        return [$month => $balance->$month, $month.'_status' => $balance->{$month.'_status'}];
                     }),
                     'total_debt' => $balanceDebt,
                     'total_income' => $balanceIncome,
                     'has_real_debt' => $hasRealDebt,
                     'balance_payments' => $balance->balancePayments
-                        ->groupBy(fn($bp) => $bp->is_inscription ? 'inscription' : $bp->month)
-                        ->map(fn($bps) => $bps->map(fn($bp) => [
+                        ->groupBy(fn ($bp) => $bp->is_inscription ? 'inscription' : $bp->month)
+                        ->map(fn ($bps) => $bps->map(fn ($bp) => [
                             'id' => $bp->id,
                             'amount' => $bp->amount,
                             'payment' => $bp->payment ? [
@@ -250,7 +250,7 @@ class AccountStatementService
     private function applyFilters($query, $params, $hasRealDebtSql, $currentLapse)
     {
         // Search Filter
-        if (!empty($params['search'])) {
+        if (! empty($params['search'])) {
             $search = $params['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('students.name', 'LIKE', "%$search%")
@@ -265,7 +265,7 @@ class AccountStatementService
         }
 
         // Debt Filter
-        if (!empty($params['debt_filter'])) {
+        if (! empty($params['debt_filter'])) {
             if ($params['debt_filter'] === 'graduated_with_debts') {
                 $query->where('students.graduate', 1);
             }
@@ -318,7 +318,8 @@ class AccountStatementService
     private function getDebtSumSql(): string
     {
         $cols = array_merge(['inscription'], self::MONTHS);
-        $parts = array_map(fn($col) => "(CASE WHEN $col < 0 THEN ABS($col) ELSE 0 END)", $cols);
+        $parts = array_map(fn ($col) => "(CASE WHEN $col < 0 THEN ABS($col) ELSE 0 END)", $cols);
+
         return implode(' + ', $parts);
     }
 
@@ -326,29 +327,29 @@ class AccountStatementService
     {
         $debtVal = BalanceStudentStatusEnum::Debt->value;
         $partialVal = BalanceStudentStatusEnum::PartiallyPaid->value;
-        $isPastDay = now()->day >= ($dayOfPayment + $gracePeriod);
+        $isPastDay = PaymentDeadline::currentMonthPastDue($dayOfPayment, $gracePeriod);
 
         $sql = "(inscription_status = '$debtVal' OR inscription_status = '$partialVal')";
 
         foreach (self::SCHOOL_MONTHS as $index => $month) {
-            $col = $month . '_status';
+            $col = $month.'_status';
 
-            $isDueCondition = "";
+            $isDueCondition = '';
             if ($currentLapse) {
                 $lapseId = $currentLapse->id;
                 $pastLapsesSubquery = "(SELECT id FROM school_lapses WHERE start < '{$currentLapse->start}')";
 
                 $isDueCondition = "(school_lapse_id IN $pastLapsesSubquery OR (school_lapse_id = $lapseId AND (";
                 if ($index < $currentMonthIndex) {
-                    $isDueCondition .= "1=1";
+                    $isDueCondition .= '1=1';
                 } elseif ($index == $currentMonthIndex) {
-                    $isDueCondition .= ($isPastDay ? "1=1" : "1=0");
+                    $isDueCondition .= ($isPastDay ? '1=1' : '1=0');
                 } else {
-                    $isDueCondition .= "1=0";
+                    $isDueCondition .= '1=0';
                 }
-                $isDueCondition .= ")))";
+                $isDueCondition .= ')))';
             } else {
-                $isDueCondition = "1=1";
+                $isDueCondition = '1=1';
             }
 
             $sql .= " OR (($col = '$debtVal' OR $col = '$partialVal') AND $isDueCondition)";
@@ -360,10 +361,15 @@ class AccountStatementService
     private function calculateBalanceDebt($balance): float
     {
         $debt = 0;
-        if ($balance->inscription < 0) $debt += abs($balance->inscription);
-        foreach (self::MONTHS as $month) {
-            if ($balance->$month < 0) $debt += abs($balance->$month);
+        if ($balance->inscription < 0) {
+            $debt += abs($balance->inscription);
         }
+        foreach (self::MONTHS as $month) {
+            if ($balance->$month < 0) {
+                $debt += abs($balance->$month);
+            }
+        }
+
         return (float) $debt;
     }
 
@@ -376,10 +382,10 @@ class AccountStatementService
             return true;
         }
 
-        $isPastDay = now()->day >= ($dayOfPayment + $gracePeriod);
+        $isPastDay = PaymentDeadline::currentMonthPastDue($dayOfPayment, $gracePeriod);
 
         foreach (self::SCHOOL_MONTHS as $index => $month) {
-            $status = $balance->{$month . '_status'};
+            $status = $balance->{$month.'_status'};
             if ($status === BalanceStudentStatusEnum::Debt || $status === BalanceStudentStatusEnum::PartiallyPaid) {
                 if ($currentLapse) {
                     if ($balance->school_lapse_id === $currentLapse->id) {
@@ -394,6 +400,7 @@ class AccountStatementService
                 }
             }
         }
+
         return false;
     }
 }

@@ -139,6 +139,8 @@
     let form = useForm({
         name: "",
         description: "",
+        rasgos_points: 0,
+        status: "pending",
         matter_id: "",
         school_lapse_id: defaultLapseId,
         lapse_id: initialMomentId(activeSchoolLapse),
@@ -147,9 +149,30 @@
         units: [createEmptyUnit(1)],
     });
 
+    $: evalTotalPct = Math.round(
+        ($form.units || []).reduce(
+            (acc, u) =>
+                acc +
+                (u.topics || []).reduce(
+                    (a, t) => a + (parseFloat(t.percentage) || 0),
+                    0,
+                ),
+            0,
+        ) * 100,
+    ) / 100;
+    $: rasgosPts = parseInt($form.rasgos_points, 10) || 0;
+    $: rasgosPct = rasgosPts * 5;
+    $: planTotalPct = Math.round((evalTotalPct + rasgosPct) * 100) / 100;
+    $: totalIsValid = Math.abs(planTotalPct - 100) <= 0.01;
+
     $: selectedSchoolLapse = data.school_lapses?.find(
         (l) => String(l.id) === String($form.school_lapse_id),
     );
+    $: courseSections =
+        data.courses?.find(
+            (c) => String(c.id) === String($form.course_id),
+        )?.sections || [];
+    $: courseSectionsCount = courseSections.length;
     $: momentOptions = selectedSchoolLapse?.lapses || [];
     $: if (submitStatus === "Crear") {
         const autoName = getAutoPlanName();
@@ -166,10 +189,7 @@
     function normalizeSectionIdsForAllowed() {
         const sel = normalizeSectionSelection($form.section_id);
         if (sel.includes("all")) {
-            return (data.all_section_ids?.length
-                ? data.all_section_ids
-                : data.sections?.map((s) => s.id) || []
-            ).map(Number);
+            return courseSections.map((s) => Number(s.id));
         }
         return sel.map(Number);
     }
@@ -336,7 +356,7 @@
             return "Todas las secciones";
         }
 
-        const names = data.sections
+        const names = courseSections
             ?.filter((section) => selected.includes(String(section.id)))
             .map((section) => section.name);
 
@@ -371,8 +391,10 @@
     let selectedRow = { status: false, data: null };
     let editingPlanId = null;
     let submitStatus = "Crear";
+    let formIntent = "pending";
 
     const statusBadges = {
+        draft: "bg-gray-200 text-gray-700",
         pending: "bg-yellow text-gray-800",
         approved: "bg-green-100 text-green-700",
         rejected: "bg-red text-white",
@@ -435,6 +457,7 @@
     function handleSubmit(event) {
         event.preventDefault();
         $form.clearErrors();
+        $form.status = formIntent;
 
         if (submitStatus === "Crear") {
             $form.post("/dashboard/mis-planes", {
@@ -453,7 +476,10 @@
                     $form.units = [createEmptyUnit(1)];
                     displayAlert({
                         type: "success",
-                        message: "Plan de evaluación creado correctamente",
+                        message:
+                            formIntent === "draft"
+                                ? "Borrador guardado correctamente"
+                                : "Plan enviado a aprobación correctamente",
                     });
                     showFormModal = false;
                     editingPlanId = null;
@@ -476,7 +502,10 @@
                     $form.units = [createEmptyUnit(1)];
                     displayAlert({
                         type: "success",
-                        message: "Plan actualizado correctamente",
+                        message:
+                            formIntent === "draft"
+                                ? "Borrador actualizado correctamente"
+                                : "Plan actualizado y enviado a aprobación correctamente",
                     });
                     showFormModal = false;
                     editingPlanId = null;
@@ -500,6 +529,8 @@
         submitStatus = "Editar";
         $form.name = plan.name;
         $form.description = plan.description || "";
+        $form.rasgos_points = plan.rasgos_points ?? 0;
+        $form.status = plan.status === "draft" ? "draft" : "pending";
         $form.matter_id = plan.matter_id;
         $form.school_lapse_id = plan.school_lapse_id;
         $form.lapse_id = plan.lapse_id || "";
@@ -701,7 +732,11 @@
                     {/if}
                 </td>
 
-                <td>{plan.items_total}%</td>
+                <td>
+                    {plan.items_total}%{plan.rasgos_points
+                        ? ` + ${plan.rasgos_points * 5}% r.`
+                        : ""}
+                </td>
                 <td>
                     <span
                         class="px-2 py-0.5 rounded text-xs font-bold {statusBadges[
@@ -777,6 +812,9 @@
                     error={$form.errors?.course_id}
                     required={true}
                     classes={"col-span-2"}
+                    on:change={() => {
+                        $form.section_id = [];
+                    }}
                 >
                     {#each data.courses as course}
                         <option value={course.id}>{course.name}</option>
@@ -806,7 +844,12 @@
                         </label>
 
                         <div class="space-y-1 flex gap-3 max-h-[180px] overflow-y-auto">
-                            {#each data.sections as section}
+                            {#if courseSectionsCount === 0}
+                                <p class="text-xs text-gray-500">
+                                    Seleccione un curso para ver sus secciones.
+                                </p>
+                            {/if}
+                            {#each courseSections as section}
                                 <label class="flex items-center gap-1 text-sm">
                                     <input
                                         type="checkbox"
@@ -836,6 +879,47 @@
                     classes={"col-span-3"}
                     error={$form.errors.description}
                 />
+            </div>
+
+            <div class="flex flex-wrap items-end gap-x-6 gap-y-2 mt-3">
+                <div class="flex flex-col gap-1">
+                    <label
+                        class="form__label text-xs md:text-sm font-semibold text-gray-700"
+                    >
+                        Puntos de rasgos (0-10)
+                    </label>
+                    <select
+                        class="rounded-md border border-gray-300 px-3 py-2 text-sm bg-white"
+                        bind:value={$form.rasgos_points}
+                    >
+                        {#each Array.from({ length: 11 }, (_, i) => i) as n}
+                            <option value={n}>{n}</option>
+                        {/each}
+                    </select>
+                    <p class="text-[11px] text-gray-500">
+                        Conducta/puntualidad. 1 punto = 5%.
+                    </p>
+                    {#if $form.errors?.rasgos_points}
+                        <p class="text-red text-xs font-semibold">
+                            {$form.errors.rasgos_points}
+                        </p>
+                    {/if}
+                </div>
+
+                <div
+                    class="rounded-md px-4 py-2 text-sm font-semibold {totalIsValid
+                        ? "bg-green-50 text-green-700 border border-green-200"
+                        : "bg-red/10 text-red border border-red/30"}"
+                >
+                    Total: {evalTotalPct}% (evaluaciones)
+                    {rasgosPct > 0 ? ` + ${rasgosPct}% (rasgos)` : ""} =
+                    {planTotalPct}%
+                    {#if !totalIsValid}
+                        <span class="block text-xs font-normal mt-0.5"
+                            >Debe sumar 100% (evaluaciones + rasgos).</span
+                        >
+                    {/if}
+                </div>
             </div>
 
             <div class="mt-5 col-span-7">
@@ -1061,24 +1145,46 @@
             </div>
         </div>
     </form>
-    <button
-        form="pl-form"
-        slot="btn_footer"
-        type="submit"
-        class="animated-button min-w-[200px] flex gap-2 hover:bg-[#c5e5e4]"
-        disabled={$form.processing}
-    >
-        {#if $form.processing}
-            Cargando...
-        {:else}
-            <iconify-icon
-                icon="material-symbols:save-sharp"
-                width="24"
-                height="24"
-            />
-            <span class=""
-                >{submitStatus === "Crear" ? "Crear" : "Guardar"}</span
-            >
-        {/if}
-    </button>
+    <div slot="btn_footer" class="flex gap-3 items-center justify-end">
+        <button
+            form="pl-form"
+            type="submit"
+            class="toolbar-secondary min-w-[190px] justify-center"
+            disabled={$form.processing}
+            on:click={() => (formIntent = "draft")}
+        >
+            {#if $form.processing}
+                Cargando...
+            {:else}
+                <iconify-icon
+                    icon="mdi:note-edit-outline"
+                    width="20"
+                    height="20"
+                />
+                Guardar borrador
+            {/if}
+        </button>
+        <button
+            form="pl-form"
+            type="submit"
+            class="animated-button w-fitcontent min-w-[200px] flex gap-2 hover:bg-[#c5e5e4]"
+            disabled={$form.processing}
+            on:click={() => (formIntent = "pending")}
+        >
+            {#if $form.processing}
+                Cargando...
+            {:else}
+                <iconify-icon
+                    icon="material-symbols:send-rounded"
+                    width="22"
+                    height="22"
+                />
+                <span>
+                    {submitStatus === "Crear"
+                        ? "Enviar a aprobación"
+                        : "Guardar y enviar"}
+                </span>
+            {/if}
+        </button>
+    </div>
 </Modal>

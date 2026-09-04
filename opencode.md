@@ -286,3 +286,36 @@ esources/js/components/ (Windows case-insensitive lo toleraba; Linux no). Correg
 - StudentController@index calcula student_count (activos, status != 0) por course_id con groupBy y lo adjunta a cada curso de data.courses.
 - Matricula.svelte: el select de grado/año del filtro superior muestra "{course.name} ({course.student_count})" (ej. "1er Año (25)") y se amplio el contenedor de w-44 a w-56. Solo el filtro superior (no los selects de los modales). Verificado: smoke devuelve conteos correctos, build OK, phpunit OK.
 >>>>>>> 18a45eb61168293827791b4ffe29eee5723ea715
+
+## 2026-08-31 - FIX grace period en estatus de meses (pending vs debt)
+- Bug: el mes actual nunca se marcaba como debt cuando day_of_monthly_payment + grace_period > 31 (30+5=35) porque se comparaba now()->day >= umbral (nunca true). 39 estudiantes debian agosto (august_status=debt) pero aparecian como "al dia" (sin deuda real) en Estados de Cuenta.
+- Nuevo helper app/Support/PaymentDeadline.php::currentMonthPastDue($day, $grace): calcula por FECHA (Carbon::create(año, mes, day)->addDays(grace)) y maneja el cruce de fin de mes (day 30 + grace 5 -> vence 04-sep).
+- Aplicado en los 4 lugares: BalanceService::determineMonthStatus (mes actual -> Debt solo si currentMonthPastDue, sino Pending; +param grace en 3 call-sites), listener ChangeDebtsForStudents::determineMonthStatus, comando balance:recalculate-status, y AccountStatementService::getHasRealDebtSql/checkHasRealDebt ($isPastDay). Ahora respeta grace: dentro de gracia = pending (no deudor), pasado = debt.
+- Ejecutado php artisan balance:recalculate-status: 39 balances actualizados (august_status debt->pending). Filtros consistentes: Al dia=40, Deudores=0, Deudores periodo actual=0. phpunit OK. El BalanceBar (frontend) ya manejaba el overflow correctamente y colorea por status guardado, no requirio cambios.
+
+## 2026-09-04 - Puntos de rasgos (0-10) en planes de evaluacion + validacion 100%
+- Concepto: rasgos (conducta/puntualidad) valen hasta 10 puntos; cada punto = 5% (escala /20). El plan declara rasgos_points (entero 0-10, default 0). Validacion en creacion/edicion del plan: suma(porcentajes de temas) + rasgos*5 == 100 (±0.01). Antes solo se rechazaba >100.
+- Migraciones: add rasgos_points a evaluation_plans; tablas student_plan_rasgos (draft por plan+estudiante) y student_grade_publication_rasgos (snapshot al publicar). Modelos nuevos StudentPlanRasgo y StudentGradePublicationRasgo; relaciones en EvaluationPlan y StudentGradePublication.
+- EvaluationPlanService: createPlan/updatePlan guardan rasgos_points; formatPlan expone rasgos_points/rasgos_percentage/total_percentage.
+- Requests Store/UpdateEvaluationPlanRequest (+heredado admin): regla rasgos 0-10 y check de 100% en withValidator (reemplaza el >100).
+- Frontend plan: MisPlanes y EvaluationPlanCreateModal tienen select rasgos 0-10 + indicador en vivo (suma% + rasgos*5, rojo si !=100); PlanUnitsView muestra rasgos; columna % de lista muestra rasgos.
+- Notas: getMatrixData incluye rasgos por estudiante y definitiva = sum(score*%/100) + rasgos del estudiante (null hasta calificar); computeDefinitive(items,scores,?rasgos=0); definitiveForStudent y publishedDefinitiveForStudent suman rasgos; saveGrades persiste rasgos (0..plan.rasgos_points); publishGrades copia rasgos al snapshot; canPublish considera rasgos. ReportService/RepresentativeService ya usan publishedDefinitiveForStudent -> boletas con rasgos.
+- MisEstudiantes: columna "Rasgos (max)" por estudiante (0..max), input numerico; envio via $form.rasgos. Si plan.rasgos_points=0 no se muestra.
+- Verificado: build OK, phpunit OK, smoke createPlan guarda rasgos_points y items suman 90 (rasgos=2).
+
+## 2026-09-04 - Planes de evaluacion: secciones filtradas por grado/curso
+- Bug: los formularios/filtros de Planes de Evaluacion mostraban TODAS las secciones (A-F) sin filtrar por el curso (grado) seleccionado. Las secciones pertenecen a un curso via course_sections (relacion Course::section()).
+- Backend: EvaluationPlanService::getCourses() ahora hace Course::with('section') y cada curso trae 'sections' [{id,name}]. Validacion servidor en Store/UpdateEvaluationPlanRequest: cada section_id (si no es 'all') debe existir en course_sections del course_id; si no, error "Alguna(s) seccion(es) no pertenecen al año escolar seleccionado."
+- Frontend:
+  - MisPlanes (profesor): reactive courseSections desde data.courses; checkboxes de secciones muestran las del curso; al cambiar "Curso" se limpia section_id; normalizeSectionIdsForAllowed (caso 'all') y getSelectedSectionsLabel usan courseSections.
+  - EvaluationPlanCreateModal (admin): igual (courseSections, checkboxes, normalizeSectionIds, reset secciones al cambiar Año; se oculta "Todas las secciones" si no hay secciones).
+  - PlanesEvaluacion (filtro listado admin): el select "Seccion" muestra las secciones del "Año" seleccionado (filterCourseSections); cambiar "Año" resetea section_id a "".
+- Verificado: getCourses devuelve secciones por curso; logica de pertenencia course_sections ok; build OK; phpunit OK.
+
+## 2026-09-04 - Estado "Borrador" (draft) en planes de evaluacion + visibilidad estudiantes
+- Nuevo estado draft en EvaluationPlanStatusEnum (label "Borrador"). "Publicado" == "aprobado" (sin flag nuevo): estudiantes/boletas ya filtran por status approved (RepresentativeService, ReportService) -> drafts/pendientes nunca visibles.
+- createPlan ya respetaba $data['status'] ?? pending; updatePlan ahora tambien respeta status (draft/pending) en vez de forzar pending (3 lugares).
+- Store/UpdateEvaluationPlanRequest: regla status sometimes|in:draft,pending (el profesor solo draft o pending).
+- getPlansForTeacher (MisPlanes) incluye draft en el whereIn por defecto para que el profesor vea sus borradores. Admin (PlanesEvaluacion): el filtro "Estado" excluye draft (los borradores no entran a la cola del admin).
+- MisPlanes: badge draft gris; form defaults status pending; fillFormToEdit setea status segun plan; dos botones de submit en el pie -> "Guardar borrador" (status draft) y "Enviar a aprobacion"/"Guardar y enviar" (status pending). Mensajes de exito diferenciados. Borradores se editan/eliminan (canEdit permite != approved).
+- Nota: se descarto el endpoint/quick action por fila submitPlan (aprobacion posterior se hace desde el form). Verificado: smoke crea plan status=draft label=Borrador y aparece en la lista del profesor; build OK; phpunit OK.

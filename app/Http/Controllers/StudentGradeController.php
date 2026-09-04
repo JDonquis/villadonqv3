@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreGradesRequest;
 use App\Models\EvaluationPlan;
+use App\Models\SchoolLapse;
 use App\Services\EvaluationPlanService;
 use App\Services\StudentGradeService;
 use App\Support\ErrorTranslator;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -27,11 +29,11 @@ class StudentGradeController extends Controller
     {
         $schoolLapseId = (int) ($request->input('school_lapse_id') ?: $this->planService->currentSchoolLapseId());
 
-        $schoolLapse = \App\Models\SchoolLapse::with('lapses')->find($schoolLapseId);
+        $schoolLapse = SchoolLapse::with('lapses')->find($schoolLapseId);
         $defaultLapseId = $request->input('lapse_id');
 
         if (empty($defaultLapseId) && $schoolLapse) {
-            $today = \Carbon\Carbon::now()->toDateString();
+            $today = Carbon::now()->toDateString();
             $defaultLapseId = $schoolLapse->lapses
                 ->first(fn ($lap) => $today >= ($lap->start ?? '') && $today <= ($lap->end ?? ''))
                 ?->id
@@ -71,7 +73,7 @@ class StudentGradeController extends Controller
         }
 
         try {
-            $this->gradeService->saveGrades($plan->id, $request->input('grades', []));
+            $this->gradeService->saveGrades($plan->id, $request->input('grades', []), $request->input('rasgos', []));
 
             return back()->with(['status' => true, 'message' => 'Notas guardadas correctamente.']);
         } catch (Exception $e) {

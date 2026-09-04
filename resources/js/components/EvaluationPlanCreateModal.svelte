@@ -36,6 +36,7 @@
         teacher_id: "",
         name: "",
         description: "",
+        rasgos_points: 0,
         matter_id: "",
         school_lapse_id: activeLapse?.id || "",
         lapse_id: activeLapse?.lapses?.[0]?.id || "",
@@ -43,6 +44,22 @@
         section_id: [],
         units: [createUnit()],
     });
+
+    $: evalTotalPct = Math.round(
+        ($form.units || []).reduce(
+            (acc, u) =>
+                acc +
+                (u.topics || []).reduce(
+                    (a, t) => a + (parseFloat(t.percentage) || 0),
+                    0,
+                ),
+            0,
+        ) * 100,
+    ) / 100;
+    $: rasgosPts = parseInt($form.rasgos_points, 10) || 0;
+    $: rasgosPct = rasgosPts * 5;
+    $: planTotalPct = Math.round((evalTotalPct + rasgosPct) * 100) / 100;
+    $: totalIsValid = Math.abs(planTotalPct - 100) <= 0.01;
 
     $: selectedLapse = data.school_lapses?.find(
         (item) => String(item.id) === String($form.school_lapse_id),
@@ -55,11 +72,16 @@
     $: availableMatters = data.matters?.filter((matter) =>
         teacherMatterIds.includes(String(matter.id)),
     ) || [];
+    $: courseSections =
+        data.courses?.find(
+            (course) => String(course.id) === String($form.course_id),
+        )?.sections || [];
+    $: courseSectionsCount = courseSections.length;
 
     function normalizeSectionIds() {
         const selected = ($form.section_id || []).map(String);
         if (selected.includes("all")) {
-            return (data.sections || []).map((section) => section.id);
+            return courseSections.map((section) => section.id);
         }
         return selected.map(Number).filter(Boolean);
     }
@@ -261,7 +283,7 @@
                     <option value={moment.id}>{moment.label}</option>
                 {/each}
             </Input>
-            <Input type="select" label="Año" bind:value={$form.course_id} error={$form.errors?.course_id} required={true} classes="col-span-2">
+            <Input type="select" label="Año" bind:value={$form.course_id} error={$form.errors?.course_id} required={true} classes="col-span-2" on:change={() => ($form.section_id = [])}>
                 <option value="">Seleccione...</option>
                 {#each data.courses || [] as course}
                     <option value={course.id}>{course.name}</option>
@@ -272,16 +294,23 @@
                 <div class="mb-4 col-span-7">
                     <label class="block text-sm font-semibold text-gray-600 mb-1 mt-7">Secciones</label>
                     <div class="flex flex-wrap gap-3">
-                        {#each data.sections || [] as section}
+                        {#if courseSectionsCount === 0}
+                            <p class="text-xs text-gray-500">
+                                Seleccione un año para ver sus secciones.
+                            </p>
+                        {/if}
+                        {#each courseSections as section}
                         <label class="flex items-center gap-1 text-sm">
                             <input type="checkbox" disabled={($form.section_id || []).includes("all")} checked={($form.section_id || []).map(String).includes(String(section.id))} on:change={() => toggleSection(section.id)} />
                             {section.name}
                         </label>
                         {/each}
-                        <label class="flex items-center w-full gap-1  -mt-1 text-sm font-semibold">
-                            <input type="checkbox" checked={($form.section_id || []).includes("all")} on:change={(event) => toggleAllSections(event.currentTarget.checked)} />
-                            Todas las secciones
-                        </label>
+                        {#if courseSectionsCount > 0}
+                            <label class="flex items-center w-full gap-1  -mt-1 text-sm font-semibold">
+                                <input type="checkbox" checked={($form.section_id || []).includes("all")} on:change={(event) => toggleAllSections(event.currentTarget.checked)} />
+                                Todas las secciones
+                            </label>
+                        {/if}
                     </div>
                     {#if $form.errors?.section_id}<p class="text-xs text-red mt-1">{$form.errors.section_id}</p>{/if}
                 </div>
@@ -290,6 +319,45 @@
 
             </div>
 
+        </div>
+
+        <div class="flex flex-wrap items-end gap-x-6 gap-y-2 mt-3 mb-2">
+            <div class="flex flex-col gap-1">
+                <label class="text-xs md:text-sm font-semibold text-gray-700">
+                    Puntos de rasgos (0-10)
+                </label>
+                <select
+                    class="rounded-md border border-gray-300 px-3 py-2 text-sm bg-white"
+                    bind:value={$form.rasgos_points}
+                >
+                    {#each Array.from({ length: 11 }, (_, i) => i) as n}
+                        <option value={n}>{n}</option>
+                    {/each}
+                </select>
+                <p class="text-[11px] text-gray-500">
+                    Conducta/puntualidad. 1 punto = 5%.
+                </p>
+                {#if $form.errors?.rasgos_points}
+                    <p class="text-red text-xs font-semibold">
+                        {$form.errors.rasgos_points}
+                    </p>
+                {/if}
+            </div>
+
+            <div
+                class="rounded-md px-4 py-2 text-sm font-semibold {totalIsValid
+                    ? "bg-green-50 text-green-700 border border-green-200"
+                    : "bg-red/10 text-red border border-red/30"}"
+            >
+                Total: {evalTotalPct}% (evaluaciones)
+                {rasgosPct > 0 ? ` + ${rasgosPct}% (rasgos)` : ""} =
+                {planTotalPct}%
+                {#if !totalIsValid}
+                    <span class="block text-xs font-normal mt-0.5"
+                        >Debe sumar 100% (evaluaciones + rasgos).</span
+                    >
+                {/if}
+            </div>
         </div>
 
 

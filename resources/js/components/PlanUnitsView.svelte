@@ -98,6 +98,14 @@
 
     <div class="text-sm font-semibold text-gray-700 mt-3 text-right">
         Total: {plan.items_total}%
+        {#if plan.rasgos_points}
+            + {plan.rasgos_points * 5}% (rasgos {plan.rasgos_points} pts)
+        {/if}
+        {#if plan.total_percentage != null && plan.total_percentage != 100}
+            = <span class="text-red">{plan.total_percentage}%</span>
+        {:else if plan.total_percentage != null}
+            = 100%
+        {/if}
     </div>
 
     {#if plan.status === "rejected" && plan.admin_note}

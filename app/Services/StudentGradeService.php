@@ -7,6 +7,8 @@ use App\Models\Student;
 use App\Models\StudentGrade;
 use App\Models\StudentGradePublication;
 use App\Models\StudentGradePublicationItem;
+use App\Models\StudentGradePublicationRasgo;
+use App\Models\StudentPlanRasgo;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -18,7 +20,7 @@ class StudentGradeService
 
     public function getMatrixData(int $planId): array
     {
-        $plan = EvaluationPlan::with(['items', 'course', 'section', 'matter', 'lapse', 'schoolLapse'])
+        $plan = EvaluationPlan::with(['items', 'course', 'section', 'matter', 'lapse', 'schoolLapse', 'rasgos'])
             ->findOrFail($planId);
 
         $students = Student::where('course_id', $plan->course_id)
@@ -76,11 +78,16 @@ class StudentGradeService
             ];
         })->values()->all();
 
-        $studentsData = $students->map(function ($student) use ($gradesByItemStudent, $items) {
+        $rasgosByStudent = $plan->rasgos->pluck('rasgos_score', 'student_id');
+        $planRasgosPoints = (int) $plan->rasgos_points;
+
+        $studentsData = $students->map(function ($student) use ($gradesByItemStudent, $items, $rasgosByStudent, $planRasgosPoints) {
             $scores = [];
             foreach ($items as $item) {
                 $scores[$item['id']] = $gradesByItemStudent[$item['id']][$student->id] ?? null;
             }
+
+            $rasgos = $rasgosByStudent[$student->id] ?? null;
 
             return [
                 'id' => $student->id,
@@ -88,13 +95,14 @@ class StudentGradeService
                 'last_name' => $student->last_name,
                 'ci' => $student->ci,
                 'scores' => $scores,
-                'definitive' => $this->computeDefinitive($items, $scores),
+                'rasgos' => $rasgos !== null ? (int) $rasgos : null,
+                'definitive' => $this->computeDefinitive($items, $scores, $planRasgosPoints > 0 ? $rasgos : 0),
             ];
         })->values()->all();
 
         $latestPublication = StudentGradePublication::where('evaluation_plan_id', $plan->id)
             ->latest('version')
-            ->with('items')
+            ->with(['items', 'rasgos'])
             ->first();
         $draftGrades = $grades->mapWithKeys(fn ($grade) => [
             $grade->plan_item_id.'_'.$grade->student_id => $grade->score === null ? null : (float) $grade->score,
@@ -102,9 +110,18 @@ class StudentGradeService
         $publishedGrades = $latestPublication?->items->mapWithKeys(fn ($grade) => [
             $grade->plan_item_id.'_'.$grade->student_id => $grade->score === null ? null : (float) $grade->score,
         ])->all() ?? [];
+
+        $draftRasgos = $plan->rasgos->mapWithKeys(fn ($rasgo) => [
+            $rasgo->student_id => $rasgo->rasgos_score === null ? null : (int) $rasgo->rasgos_score,
+        ])->all();
+        $publishedRasgos = $latestPublication?->rasgos->mapWithKeys(fn ($rasgo) => [
+            $rasgo->student_id => $rasgo->rasgos_score === null ? null : (int) $rasgo->rasgos_score,
+        ])->all() ?? [];
+
+        $hasDraftContent = $grades->isNotEmpty() || $plan->rasgos->isNotEmpty();
         $canPublish = $latestPublication === null
-            ? $grades->isNotEmpty()
-            : $draftGrades !== $publishedGrades;
+            ? $hasDraftContent
+            : $draftGrades !== $publishedGrades || $draftRasgos !== $publishedRasgos;
 
         return [
             'plan' => [
@@ -115,6 +132,7 @@ class StudentGradeService
                 'lapse_label' => $this->momentLabel($plan->lapse),
                 'course_name' => $plan->course?->name,
                 'section_name' => $plan->section?->name,
+                'rasgos_points' => $planRasgosPoints,
             ],
             'items' => $items,
             'units' => $units,
@@ -127,9 +145,9 @@ class StudentGradeService
         ];
     }
 
-    public function saveGrades(int $planId, array $grades): int
+    public function saveGrades(int $planId, array $grades, array $rasgos = []): int
     {
-        $plan = EvaluationPlan::with('items')->findOrFail($planId);
+        $plan = EvaluationPlan::with(['items', 'rasgos'])->findOrFail($planId);
 
         $itemIds = $plan->items->pluck('id');
         $studentIds = Student::where('course_id', $plan->course_id)
@@ -159,6 +177,31 @@ class StudentGradeService
             );
 
             $saved++;
+        }
+
+        $maxRasgos = (int) $plan->rasgos_points;
+        if ($maxRasgos > 0) {
+            foreach ($rasgos as $rasgo) {
+                $studentId = (int) ($rasgo['student_id'] ?? 0);
+
+                if (! $studentIds->contains($studentId)) {
+                    continue;
+                }
+
+                $raw = $rasgo['rasgos_score'] ?? null;
+                $score = ($raw === null || $raw === '') ? null : (int) $raw;
+
+                if ($score !== null) {
+                    $score = max(0, min($maxRasgos, $score));
+                }
+
+                StudentPlanRasgo::updateOrCreate(
+                    ['evaluation_plan_id' => $planId, 'student_id' => $studentId],
+                    ['rasgos_score' => $score]
+                );
+
+                $saved++;
+            }
         }
 
         return $saved;
@@ -198,6 +241,14 @@ class StudentGradeService
                     'score' => $grade->score,
                 ]));
 
+            StudentPlanRasgo::where('evaluation_plan_id', $plan->id)
+                ->get()
+                ->each(fn ($rasgo) => StudentGradePublicationRasgo::create([
+                    'publication_id' => $publication->id,
+                    'student_id' => $rasgo->student_id,
+                    'rasgos_score' => $rasgo->rasgos_score,
+                ]));
+
             return $publication;
         });
     }
@@ -227,10 +278,19 @@ class StudentGradeService
             'percentage' => (float) $item->percentage,
         ])->all();
 
-        return $this->computeDefinitive($items, $scores);
+        $publication = StudentGradePublication::where('evaluation_plan_id', $plan->id)
+            ->latest('version')
+            ->first();
+        $rasgos = $publication
+            ? StudentGradePublicationRasgo::where('publication_id', $publication->id)
+                ->where('student_id', $studentId)
+                ->value('rasgos_score')
+            : null;
+
+        return $this->computeDefinitive($items, $scores, (int) $plan->rasgos_points > 0 ? $rasgos : 0);
     }
 
-    public function computeDefinitive(array $items, array $scores): ?float
+    public function computeDefinitive(array $items, array $scores, ?float $rasgos = 0): ?float
     {
         $total = 0.0;
 
@@ -244,7 +304,11 @@ class StudentGradeService
             $total += (float) $score * ((float) $item['percentage'] / 100);
         }
 
-        return round($total, 2);
+        if ($rasgos === null) {
+            return null;
+        }
+
+        return round($total + (float) $rasgos, 2);
     }
 
     public function definitiveForStudent(EvaluationPlan $plan, int $studentId): ?float
@@ -257,7 +321,11 @@ class StudentGradeService
             $scores[$item->id] = $item->grades->firstWhere('student_id', $studentId)?->score ?? null;
         }
 
-        return $this->computeDefinitive($items, $scores);
+        $rasgos = StudentPlanRasgo::where('evaluation_plan_id', $plan->id)
+            ->where('student_id', $studentId)
+            ->value('rasgos_score');
+
+        return $this->computeDefinitive($items, $scores, (int) $plan->rasgos_points > 0 ? $rasgos : 0);
     }
 
     private function lapseLabel(?object $lapse): ?string

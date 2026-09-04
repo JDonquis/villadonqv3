@@ -6,7 +6,7 @@ use App\Enums\BalanceStudentStatusEnum;
 use App\Models\BalanceStudent;
 use App\Models\MainConfig;
 use App\Models\SchoolLapse;
-use App\Models\Student;
+use App\Support\PaymentDeadline;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -48,25 +48,25 @@ class RecalculateBalanceStatus extends Command
     public function handle()
     {
 
-        Log::info("Iniciando comando balance:recalculate-status");
+        Log::info('Iniciando comando balance:recalculate-status');
 
         $this->info('Iniciando recalculación de estatus de balances...');
 
         $config = MainConfig::first();
-        if (!$config) {
+        if (! $config) {
             $this->error('No se encontró configuración principal (MainConfig).');
+
             return 1;
         }
 
         $dayOfPayment = $config->day_of_monthly_payment ?? 5;
         $gracePeriod = $config->grace_period ?? 0;
-        $dueDate = $dayOfPayment + $gracePeriod;
 
         $currentLapse = SchoolLapse::where('status', 1)->first();
         $now = Carbon::now();
         $currentMonthName = strtolower($now->format('F'));
         $currentMonthIndex = array_search($currentMonthName, self::SCHOOL_MONTHS);
-        $isPastDueDate = $now->day >= $dueDate;
+        $isPastDueDate = PaymentDeadline::currentMonthPastDue($dayOfPayment, $gracePeriod);
 
         // Solo procesamos balances que NO estén marcados como Paid (pagados completamente)
         $balances = BalanceStudent::where('status', '!=', BalanceStudentStatusEnum::Paid->value)
@@ -78,11 +78,13 @@ class RecalculateBalanceStatus extends Command
             $changed = false;
             $student = $balance->student;
 
-            if (!$student) continue;
+            if (! $student) {
+                continue;
+            }
 
             // Recalcular estatus de meses
             foreach (self::SCHOOL_MONTHS as $index => $month) {
-                $statusField = $month . '_status';
+                $statusField = $month.'_status';
                 $value = (float) $balance->$month;
                 $currentStatus = $balance->$statusField;
 
@@ -92,6 +94,7 @@ class RecalculateBalanceStatus extends Command
                         $balance->$statusField = BalanceStudentStatusEnum::Paid->value;
                         $changed = true;
                     }
+
                     continue;
                 }
 
@@ -169,25 +172,27 @@ class RecalculateBalanceStatus extends Command
         }
 
         foreach (self::SCHOOL_MONTHS as $month) {
-            $statusField = $month . '_status';
+            $statusField = $month.'_status';
             $statuses[] = $balance->$statusField instanceof BalanceStudentStatusEnum
                 ? $balance->$statusField->value
                 : $balance->$statusField;
         }
 
-        $allPaid = collect($statuses)->every(fn($status) => $status === BalanceStudentStatusEnum::Paid->value);
+        $allPaid = collect($statuses)->every(fn ($status) => $status === BalanceStudentStatusEnum::Paid->value);
         if ($allPaid) {
             $balance->status = BalanceStudentStatusEnum::Paid->value;
+
             return;
         }
 
-        $hasDebt = collect($statuses)->contains(fn($status) => $status === BalanceStudentStatusEnum::Debt->value);
+        $hasDebt = collect($statuses)->contains(fn ($status) => $status === BalanceStudentStatusEnum::Debt->value);
         if ($hasDebt) {
             $balance->status = BalanceStudentStatusEnum::Debt->value;
+
             return;
         }
 
-        $hasPartial = collect($statuses)->contains(fn($status) => $status === BalanceStudentStatusEnum::PartiallyPaid->value);
+        $hasPartial = collect($statuses)->contains(fn ($status) => $status === BalanceStudentStatusEnum::PartiallyPaid->value);
         $balance->status = $hasPartial
             ? BalanceStudentStatusEnum::PartiallyPaid->value
             : BalanceStudentStatusEnum::Pending->value;

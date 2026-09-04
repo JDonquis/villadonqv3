@@ -19,6 +19,9 @@ class StoreGradesRequest extends FormRequest
             'grades.*.plan_item_id' => ['required', 'integer'],
             'grades.*.student_id' => ['required', 'integer'],
             'grades.*.score' => ['nullable', 'numeric', 'min:0', 'max:20'],
+            'rasgos' => ['nullable', 'array'],
+            'rasgos.*.student_id' => ['required', 'integer'],
+            'rasgos.*.rasgos_score' => ['nullable', 'integer', 'min:0', 'max:10'],
         ];
     }
 }

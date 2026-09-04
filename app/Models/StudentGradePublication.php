@@ -34,4 +34,9 @@ class StudentGradePublication extends Model
     {
         return $this->hasMany(StudentGradePublicationItem::class, 'publication_id');
     }
+
+    public function rasgos()
+    {
+        return $this->hasMany(StudentGradePublicationRasgo::class, 'publication_id');
+    }
 }

@@ -67,7 +67,10 @@ class EvaluationPlanService
                 'date' => $item->date,
             ])->values(),
             'units' => $units,
+            'rasgos_points' => (int) $plan->rasgos_points,
             'items_total' => round($itemsTotal, 2),
+            'rasgos_percentage' => round((int) $plan->rasgos_points * 5, 2),
+            'total_percentage' => round($itemsTotal + ((int) $plan->rasgos_points * 5), 2),
             'created_at' => $plan->created_at?->format('Y-m-d H:i'),
         ];
     }
@@ -155,6 +158,7 @@ class EvaluationPlanService
             $query->whereIn('status', [
                 EvaluationPlanStatusEnum::Approved->value,
                 EvaluationPlanStatusEnum::Pending->value,
+                EvaluationPlanStatusEnum::Draft->value,
             ]);
         }
 
@@ -242,7 +246,7 @@ class EvaluationPlanService
             $courseId = $data['course_id'] ?? null;
             if ($courseId) {
                 $course = Course::find($courseId);
-                $sectionIds = $course ? $course->section()->pluck('id')->map(fn($v) => (string) $v)->values()->all() : [];
+                $sectionIds = $course ? $course->section()->pluck('id')->map(fn ($v) => (string) $v)->values()->all() : [];
             } else {
                 $sectionIds = [];
             }
@@ -261,6 +265,7 @@ class EvaluationPlanService
                     'section_id' => $sectionId,
                     'name' => $data['name'],
                     'description' => $data['description'] ?? null,
+                    'rasgos_points' => (int) ($data['rasgos_points'] ?? 0),
                     'status' => $data['status'] ?? EvaluationPlanStatusEnum::Pending->value,
                     'approved_by' => $data['approved_by'] ?? null,
                     'approved_at' => $data['approved_at'] ?? null,
@@ -287,6 +292,7 @@ class EvaluationPlanService
             'section_id' => is_array($sectionIds) ? ($sectionIds[0] ?? null) : $sectionIds,
             'name' => $data['name'],
             'description' => $data['description'] ?? null,
+            'rasgos_points' => (int) ($data['rasgos_points'] ?? 0),
             'status' => $data['status'] ?? EvaluationPlanStatusEnum::Pending->value,
             'approved_by' => $data['approved_by'] ?? null,
             'approved_at' => $data['approved_at'] ?? null,
@@ -308,7 +314,7 @@ class EvaluationPlanService
             $courseId = $data['course_id'] ?? null;
             if ($courseId) {
                 $course = Course::find($courseId);
-                $sectionIds = $course ? $course->section()->pluck('id')->map(fn($v) => (string) $v)->values()->all() : [];
+                $sectionIds = $course ? $course->section()->pluck('id')->map(fn ($v) => (string) $v)->values()->all() : [];
             } else {
                 $sectionIds = [];
             }
@@ -326,7 +332,8 @@ class EvaluationPlanService
                 'section_id' => $first,
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
-                'status' => EvaluationPlanStatusEnum::Pending->value,
+                'rasgos_points' => (int) ($data['rasgos_points'] ?? 0),
+                'status' => $data['status'] ?? EvaluationPlanStatusEnum::Pending->value,
                 'admin_note' => null,
                 'approved_by' => null,
                 'approved_at' => null,
@@ -346,7 +353,8 @@ class EvaluationPlanService
                     'section_id' => $sectionId,
                     'name' => $data['name'],
                     'description' => $data['description'] ?? null,
-                    'status' => EvaluationPlanStatusEnum::Pending->value,
+                    'rasgos_points' => (int) ($data['rasgos_points'] ?? 0),
+                    'status' => $data['status'] ?? EvaluationPlanStatusEnum::Pending->value,
                 ]);
 
                 $this->registerCourseMatter($data['course_id'] ?? null, $data['matter_id']);
@@ -365,7 +373,8 @@ class EvaluationPlanService
             'section_id' => is_array($sectionIds) ? ($sectionIds[0] ?? null) : $sectionIds,
             'name' => $data['name'],
             'description' => $data['description'] ?? null,
-            'status' => EvaluationPlanStatusEnum::Pending->value,
+            'rasgos_points' => (int) ($data['rasgos_points'] ?? 0),
+            'status' => $data['status'] ?? EvaluationPlanStatusEnum::Pending->value,
             'admin_note' => null,
             'approved_by' => null,
             'approved_at' => null,
@@ -486,10 +495,18 @@ class EvaluationPlanService
 
     public function getCourses(): array
     {
-        return Course::orderBy('id')->get()->map(fn ($c) => [
-            'id' => $c->id,
-            'name' => $c->name,
-        ])->values()->all();
+        return Course::with('section')->orderBy('id')->get()->map(function ($c) {
+            return [
+                'id' => $c->id,
+                'name' => $c->name,
+                'sections' => $c->section
+                    ->sortBy('name')
+                    ->values()
+                    ->map(fn ($s) => ['id' => $s->id, 'name' => $s->name])
+                    ->values()
+                    ->all(),
+            ];
+        })->values()->all();
     }
 
     public function getSections(): array
@@ -551,6 +568,7 @@ class EvaluationPlanService
             if ($ranges->isEmpty()) {
                 return false;
             }
+
             return $today >= $ranges->first()->start && $today <= $ranges->last()->end;
         });
 

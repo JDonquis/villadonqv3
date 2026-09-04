@@ -8,6 +8,7 @@ use App\Models\BalanceStudent;
 use App\Models\MainConfig;
 use App\Models\Payment;
 use App\Models\Student;
+use App\Support\PaymentDeadline;
 use Carbon\Carbon;
 use Exception;
 
@@ -41,10 +42,11 @@ class BalanceService
 
         $remainingAmount = $amount;
 
-        $config = MainConfig::select('monthly_payment', 'day_of_monthly_payment')->first();
+        $config = MainConfig::select('monthly_payment', 'day_of_monthly_payment', 'grace_period')->first();
         $basePrice = (float) ($config->monthly_payment ?? 0);
         $dayOfMonthlyPayment = $config->day_of_monthly_payment ?? 1;
-        
+        $gracePeriod = $config->grace_period ?? 0;
+
         $multiplier = $student->is_exempt ? (1 - (($student->exemption_percentage ?? 0) / 100)) : 1;
         $effectivePrice = $basePrice * $multiplier;
 
@@ -109,12 +111,13 @@ class BalanceService
                     $balance->$month += $paymentToMonth;
 
                     $monthValue = $balance->$month;
-                    $balance->{$month . '_status'} = $this->determineMonthStatus(
-                        $monthValue, 
-                        $effectivePrice, 
-                        $index, 
-                        $currentMonthIndex, 
-                        $dayOfMonthlyPayment
+                    $balance->{$month.'_status'} = $this->determineMonthStatus(
+                        $monthValue,
+                        $effectivePrice,
+                        $index,
+                        $currentMonthIndex,
+                        $dayOfMonthlyPayment,
+                        $gracePeriod
                     );
 
                     BalancePayment::create([
@@ -144,10 +147,11 @@ class BalanceService
 
         $groupedByBalance = $balancePayments->groupBy('balance_student_id');
 
-        $config = MainConfig::select('monthly_payment', 'day_of_monthly_payment')->first();
+        $config = MainConfig::select('monthly_payment', 'day_of_monthly_payment', 'grace_period')->first();
         $basePrice = (float) ($config->monthly_payment ?? 0);
         $dayOfMonthlyPayment = $config->day_of_monthly_payment ?? 1;
-        
+        $gracePeriod = $config->grace_period ?? 0;
+
         $multiplier = $student->is_exempt ? (1 - (($student->exemption_percentage ?? 0) / 100)) : 1;
         $effectivePrice = $basePrice * $multiplier;
 
@@ -182,12 +186,13 @@ class BalanceService
 
             foreach (self::MONTH_ORDER as $index => $month) {
                 $monthValue = $balance->$month;
-                $balance->{$month . '_status'} = $this->determineMonthStatus(
-                    $monthValue, 
-                    $effectivePrice, 
-                    $index, 
-                    $currentMonthIndex, 
-                    $dayOfMonthlyPayment
+                $balance->{$month.'_status'} = $this->determineMonthStatus(
+                    $monthValue,
+                    $effectivePrice,
+                    $index,
+                    $currentMonthIndex,
+                    $dayOfMonthlyPayment,
+                    $gracePeriod
                 );
             }
 
@@ -199,11 +204,11 @@ class BalanceService
     public function recalculateBalanceForExemption(Student $student, float $exemptionPercentage, bool $applyToPastDebts): void
     {
         $multiplier = 1 - ($exemptionPercentage / 100);
-        $config = MainConfig::select('monthly_payment', 'new_inscription_price', 'day_of_monthly_payment')->first();
-        
+        $config = MainConfig::select('monthly_payment', 'new_inscription_price', 'day_of_monthly_payment', 'grace_period')->first();
         $baseMonthlyPayment = (float) ($config->monthly_payment ?? 0);
         $baseInscriptionPrice = (float) ($config->new_inscription_price ?? 0);
         $dayOfMonthlyPayment = $config->day_of_monthly_payment ?? 1;
+        $gracePeriod = $config->grace_period ?? 0;
 
         $newEffectiveMonthlyPrice = $baseMonthlyPayment * $multiplier;
         $newEffectiveInscriptionPrice = $baseInscriptionPrice * $multiplier;
@@ -227,15 +232,16 @@ class BalanceService
                 }
 
                 $totalPaid = (float) (($paymentsByMonth->get($month, collect()))->sum('amount'));
-                
+
                 // Recalcular balance basado en el nuevo precio efectivo
                 $balance->$month = $totalPaid - $newEffectiveMonthlyPrice;
-                $balance->{$month . '_status'} = $this->determineMonthStatus(
-                    (float) $balance->$month, 
+                $balance->{$month.'_status'} = $this->determineMonthStatus(
+                    (float) $balance->$month,
                     $newEffectiveMonthlyPrice,
                     $index,
                     $currentMonthIndex,
-                    $dayOfMonthlyPayment
+                    $dayOfMonthlyPayment,
+                    $gracePeriod
                 );
             }
 
@@ -256,7 +262,7 @@ class BalanceService
         }
     }
 
-    private function determineMonthStatus(float $monthValue, float $effectivePrice, int $monthIndex, int $currentMonthIndex, int $dayOfMonthlyPayment): string
+    private function determineMonthStatus(float $monthValue, float $effectivePrice, int $monthIndex, int $currentMonthIndex, int $dayOfMonthlyPayment, int $gracePeriod = 0): string
     {
         if ($monthValue >= 0) {
             return BalanceStudentStatusEnum::Paid->value;
@@ -276,7 +282,7 @@ class BalanceService
             return BalanceStudentStatusEnum::Debt->value;
         }
 
-        return Carbon::now()->day >= $dayOfMonthlyPayment
+        return PaymentDeadline::currentMonthPastDue($dayOfMonthlyPayment, $gracePeriod)
             ? BalanceStudentStatusEnum::Debt->value
             : BalanceStudentStatusEnum::Pending->value;
     }
@@ -287,13 +293,13 @@ class BalanceService
 
         $inscriptionStatus = $balance->inscription_status;
         if ($inscriptionStatus) {
-            $statuses[] = $inscriptionStatus instanceof BalanceStudentStatusEnum 
-                ? $inscriptionStatus->value 
+            $statuses[] = $inscriptionStatus instanceof BalanceStudentStatusEnum
+                ? $inscriptionStatus->value
                 : $inscriptionStatus;
         }
 
         foreach (self::MONTH_ORDER as $month) {
-            $statusField = $month . '_status';
+            $statusField = $month.'_status';
             $monthStatus = $balance->$statusField;
             if ($monthStatus) {
                 $statuses[] = $monthStatus instanceof BalanceStudentStatusEnum
@@ -303,7 +309,7 @@ class BalanceService
         }
 
         $allPaid = collect($statuses)->every(
-            fn($status) => $status === BalanceStudentStatusEnum::Paid->value
+            fn ($status) => $status === BalanceStudentStatusEnum::Paid->value
         );
 
         if ($allPaid) {
@@ -313,7 +319,7 @@ class BalanceService
         }
 
         $hasDebt = collect($statuses)->contains(
-            fn($status) => $status === BalanceStudentStatusEnum::Debt->value
+            fn ($status) => $status === BalanceStudentStatusEnum::Debt->value
         );
 
         if ($hasDebt) {
@@ -323,7 +329,7 @@ class BalanceService
         }
 
         $hasPartial = collect($statuses)->contains(
-            fn($status) => $status === BalanceStudentStatusEnum::PartiallyPaid->value
+            fn ($status) => $status === BalanceStudentStatusEnum::PartiallyPaid->value
         );
 
         $balance->status = $hasPartial

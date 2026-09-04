@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Models\CourseSection;
+use App\Models\Section;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreEvaluationPlanRequest extends FormRequest
@@ -36,6 +38,8 @@ class StoreEvaluationPlanRequest extends FormRequest
             'section_id.*' => ['required'],
             'name' => ['required', 'string', 'max:100'],
             'description' => ['nullable', 'string'],
+            'rasgos_points' => ['nullable', 'integer', 'min:0', 'max:10'],
+            'status' => ['sometimes', 'string', 'in:draft,pending'],
             'units' => ['required_without:items', 'array', 'min:1'],
             'units.*.name' => ['nullable', 'string', 'max:100'],
             'units.*.unit_number' => ['nullable', 'integer', 'min:1'],
@@ -74,10 +78,13 @@ class StoreEvaluationPlanRequest extends FormRequest
                 return;
             }
 
+            $rasgos = max(0, (int) ($this->input('rasgos_points') ?? 0));
             $total = collect($flattened)->sum(fn ($item) => (float) ($item['percentage'] ?? 0));
+            $rasgosPercentage = $rasgos * 5;
+            $totalWithRasgos = round($total + $rasgosPercentage, 2);
 
-            if ($total > 100) {
-                $validator->errors()->add('units', 'La suma de los porcentajes no puede superar el 100%.');
+            if (abs($totalWithRasgos - 100) > 0.01) {
+                $validator->errors()->add('units', "La suma de los porcentajes de evaluación ({$total}%) más los puntos de rasgos ({$rasgos} punto(s) = {$rasgosPercentage}%) debe ser 100%. Actual: {$totalWithRasgos}%.");
             }
 
             // Validate section_id values: accept array with 'all' or existing section ids
@@ -85,6 +92,7 @@ class StoreEvaluationPlanRequest extends FormRequest
 
             if (! is_array($sectionIds) || empty($sectionIds)) {
                 $validator->errors()->add('section_id', 'Debe seleccionar al menos una sección.');
+
                 return;
             }
 
@@ -93,16 +101,33 @@ class StoreEvaluationPlanRequest extends FormRequest
                 return;
             }
 
-            $ids = array_values(array_filter($sectionIds, function ($v) { return $v !== null && $v !== ''; }));
+            $ids = array_values(array_filter($sectionIds, function ($v) {
+                return $v !== null && $v !== '';
+            }));
 
             if (empty($ids)) {
                 $validator->errors()->add('section_id', 'Debe seleccionar al menos una sección.');
+
                 return;
             }
 
-            $count = \App\Models\Section::whereIn('id', $ids)->count();
+            $count = Section::whereIn('id', $ids)->count();
             if ($count !== count($ids)) {
                 $validator->errors()->add('section_id', 'Se seleccionaron secciones inválidas.');
+
+                return;
+            }
+
+            $courseId = $this->input('course_id');
+            if ($courseId) {
+                $courseSections = CourseSection::where('course_id', $courseId)
+                    ->whereIn('section_id', $ids)
+                    ->pluck('section_id');
+
+                $notInCourse = array_values(array_filter($ids, fn ($id) => ! $courseSections->contains((int) $id)));
+                if ($notInCourse) {
+                    $validator->errors()->add('section_id', 'Alguna(s) sección(es) no pertenecen al año escolar seleccionado.');
+                }
             }
         });
     }

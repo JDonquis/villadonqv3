@@ -18,6 +18,7 @@ class EvaluationPlan extends Model
         'section_id',
         'name',
         'description',
+        'rasgos_points',
         'status',
         'admin_note',
         'approved_by',
@@ -61,6 +62,16 @@ class EvaluationPlan extends Model
     public function items()
     {
         return $this->hasMany(EvaluationPlanItem::class)->orderBy('order');
+    }
+
+    public function rasgos()
+    {
+        return $this->hasMany(StudentPlanRasgo::class, 'evaluation_plan_id');
+    }
+
+    public function rasgosScoreFor(int $studentId): ?int
+    {
+        return $this->rasgos->firstWhere('student_id', $studentId)?->rasgos_score;
     }
 
     public function approver()

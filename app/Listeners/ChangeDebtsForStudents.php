@@ -6,9 +6,8 @@ use App\Enums\BalanceStudentStatusEnum;
 use App\Models\BalanceStudent;
 use App\Models\MainConfig;
 use App\Models\SchoolLapse;
+use App\Support\PaymentDeadline;
 use Carbon\Carbon;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
 
 class ChangeDebtsForStudents
 {
@@ -43,7 +42,7 @@ class ChangeDebtsForStudents
         $newPrice = $event->newPrice;
         $activeLapse = SchoolLapse::where('status', 1)->first();
 
-        if (!$activeLapse) {
+        if (! $activeLapse) {
             return;
         }
 
@@ -51,8 +50,9 @@ class ChangeDebtsForStudents
         $monthOrder = array_flip(self::MONTH_ORDER);
         $currentMonthIndex = $monthOrder[$currentMonthName] ?? -1;
 
-        $config = MainConfig::select('day_of_monthly_payment')->first();
+        $config = MainConfig::select('day_of_monthly_payment', 'grace_period')->first();
         $dayOfMonthlyPayment = $config->day_of_monthly_payment ?? 1;
+        $gracePeriod = $config->grace_period ?? 0;
 
         // Recuperar todos los balances del periodo escolar activo
         $balances = BalanceStudent::where('school_lapse_id', $activeLapse->id)
@@ -61,7 +61,7 @@ class ChangeDebtsForStudents
 
         foreach ($balances as $balance) {
             $student = $balance->student;
-            
+
             // Calcular precio efectivo basado en exoneración del estudiante
             $exemptionPercentage = $student->is_exempt ? ($student->exemption_percentage ?? 0) : 0;
             $multiplier = 1 - ($exemptionPercentage / 100);
@@ -77,12 +77,12 @@ class ChangeDebtsForStudents
 
                 // Sumar todos los pagos realizados para este mes específico
                 $totalPaid = (float) (($paymentsByMonth->get($month, collect()))->sum('amount'));
-                
+
                 // Recalcular balance: Pago Total - Precio Efectivo
                 $newBalanceValue = $totalPaid - $effectivePrice;
 
                 $balance->$month = $newBalanceValue;
-                $balance->{$month . '_status'} = $this->determineMonthStatus($newBalanceValue, $effectivePrice, $index, $currentMonthIndex, $dayOfMonthlyPayment);
+                $balance->{$month.'_status'} = $this->determineMonthStatus($newBalanceValue, $effectivePrice, $index, $currentMonthIndex, $dayOfMonthlyPayment, $gracePeriod);
             }
 
             $this->updateGeneralStatus($balance);
@@ -93,7 +93,7 @@ class ChangeDebtsForStudents
     /**
      * Determina el estado de un mes específico basándose en el balance y la fecha actual.
      */
-    private function determineMonthStatus(float $monthValue, float $effectivePrice, int $monthIndex, int $currentMonthIndex, int $dayOfMonthlyPayment): string
+    private function determineMonthStatus(float $monthValue, float $effectivePrice, int $monthIndex, int $currentMonthIndex, int $dayOfMonthlyPayment, int $gracePeriod = 0): string
     {
         if ($monthValue >= 0) {
             return BalanceStudentStatusEnum::Paid->value;
@@ -114,7 +114,7 @@ class ChangeDebtsForStudents
         }
 
         // mes actual (monthIndex == currentMonthIndex)
-        return Carbon::now()->day >= $dayOfMonthlyPayment
+        return PaymentDeadline::currentMonthPastDue($dayOfMonthlyPayment, $gracePeriod)
             ? BalanceStudentStatusEnum::Debt->value
             : BalanceStudentStatusEnum::Pending->value;
     }
@@ -128,38 +128,40 @@ class ChangeDebtsForStudents
 
         // Estado de inscripción
         if ($balance->inscription_status) {
-            $statuses[] = $balance->inscription_status instanceof BalanceStudentStatusEnum 
-                ? $balance->inscription_status->value 
+            $statuses[] = $balance->inscription_status instanceof BalanceStudentStatusEnum
+                ? $balance->inscription_status->value
                 : $balance->inscription_status;
         }
 
         // Estados mensuales
         foreach (self::MONTH_ORDER as $month) {
-            $statusField = $month . '_status';
+            $statusField = $month.'_status';
             $val = $balance->$statusField;
             $statuses[] = $val instanceof BalanceStudentStatusEnum ? $val->value : $val;
         }
 
         $allPaid = collect($statuses)->every(
-            fn($status) => $status === BalanceStudentStatusEnum::Paid->value
+            fn ($status) => $status === BalanceStudentStatusEnum::Paid->value
         );
 
         if ($allPaid) {
             $balance->status = BalanceStudentStatusEnum::Paid->value;
+
             return;
         }
 
         $hasDebt = collect($statuses)->contains(
-            fn($status) => $status === BalanceStudentStatusEnum::Debt->value
+            fn ($status) => $status === BalanceStudentStatusEnum::Debt->value
         );
 
         if ($hasDebt) {
             $balance->status = BalanceStudentStatusEnum::Debt->value;
+
             return;
         }
 
         $hasPartial = collect($statuses)->contains(
-            fn($status) => $status === BalanceStudentStatusEnum::PartiallyPaid->value
+            fn ($status) => $status === BalanceStudentStatusEnum::PartiallyPaid->value
         );
 
         $balance->status = $hasPartial

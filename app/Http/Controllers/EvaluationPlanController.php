@@ -54,10 +54,13 @@ class EvaluationPlanController extends Controller
                 'sections' => $this->planService->getSections(),
                 'matters' => $this->planService->getMatters(),
                 'teachers' => $teachers,
-                'statuses' => collect(EvaluationPlanStatusEnum::cases())->map(fn ($s) => [
-                    'value' => $s->value,
-                    'label' => $s->label(),
-                ])->values(),
+                'statuses' => collect(EvaluationPlanStatusEnum::cases())
+                    ->filter(fn ($s) => $s !== EvaluationPlanStatusEnum::Draft)
+                    ->map(fn ($s) => [
+                        'value' => $s->value,
+                        'label' => $s->label(),
+                    ])
+                    ->values(),
             ],
             'filters' => [
                 'status' => $filters['status'] ?? null,

@@ -61,6 +61,10 @@
             (l) => String(l.id) === String(filters.school_lapse_id),
         ) || activeSchoolLapse;
     $: momentOptions = selectedSchoolLapse?.lapses || [];
+    $: filterCourseSections =
+        data.courses?.find(
+            (c) => String(c.id) === String(filters.course_id || ""),
+        )?.sections || [];
 
     $: extraSearchParams = {
         ...(effectiveStatus ? { status: effectiveStatus } : {}),
@@ -101,6 +105,11 @@
 
     function applyFilter(key, value) {
         const overrides = { [key]: value };
+
+        if (key === "course_id") {
+            overrides.section_id = "";
+        }
+
         router.get("/dashboard/planes-evaluacion", buildParams(overrides), {
             preserveState: true,
             replace: true,
@@ -295,7 +304,7 @@
             on:change={(e) => applyFilter("section_id", e.target.value)}
         >
             <option value="">Todas</option>
-            {#each data.sections as section}
+            {#each filterCourseSections as section}
                 <option value={String(section.id)}>{section.name}</option>
             {/each}
         </select>
