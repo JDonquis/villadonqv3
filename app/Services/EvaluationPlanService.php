@@ -15,7 +15,7 @@ use Carbon\Carbon;
 
 class EvaluationPlanService
 {
-    private function formatPlan(EvaluationPlan $plan): array
+    public function formatPlan(EvaluationPlan $plan): array
     {
         $itemsTotal = $plan->items->sum(fn ($item) => (float) $item->percentage);
 

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Course;
 use App\Models\EvaluationPlan;
 use App\Models\Representative;
 use App\Models\SchoolLapse;
@@ -182,6 +183,114 @@ class RepresentativeService
         $ordinals = [1 => '1er', 2 => '2do', 3 => '3er'];
 
         return ($ordinals[$lapse->number] ?? $lapse->number).' Momento';
+    }
+
+    public function materiasHijo(User $user, Student $student, array $filters = []): array
+    {
+        $student->load('course.matters');
+
+        $children = $this->getStudents($user);
+
+        $courses = $children->pluck('course')
+            ->filter()
+            ->unique('id')
+            ->values()
+            ->map(fn ($course) => [
+                'id' => (int) $course->id,
+                'name' => $course->name,
+            ]);
+
+        $activeLapse = SchoolLapse::where('status', 1)->with('lapses')->first()
+            ?? SchoolLapse::with('lapses')->orderByDesc('start')->first();
+
+        $currentLapse = $this->currentLapse($activeLapse);
+
+        $selectedCourseId = (int) ($filters['course_id'] ?? $student->course_id);
+        $selectedLapseId = (int) ($filters['lapse_id']
+            ?? $currentLapse?->id
+            ?? $activeLapse?->lapses->sortByDesc('number')->first()?->id
+            ?? 0);
+
+        $moments = collect($activeLapse?->lapses)
+            ->sortBy('number')
+            ->map(fn ($lapse) => [
+                'id' => (int) $lapse->id,
+                'label' => $this->momentLabel($lapse),
+            ])
+            ->values();
+
+        $course = (int) $selectedCourseId === (int) $student->course_id
+            ? $student->course
+            : Course::with('matters')->find($selectedCourseId);
+
+        $matters = $course?->matters ?? collect();
+
+        $plans = EvaluationPlan::with(['teacher', 'lapse', 'schoolLapse', 'items'])
+            ->where('course_id', $selectedCourseId)
+            ->where('status', 'approved')
+            ->where('school_lapse_id', $activeLapse->id ?? 0)
+            ->when($selectedLapseId, fn ($q) => $q->where('lapse_id', $selectedLapseId))
+            ->get()
+            ->groupBy('matter_id');
+
+        $subjects = $matters->map(function ($matter) use ($plans, $student) {
+            $plan = $plans->get($matter->id)?->first();
+
+            if (! $plan) {
+                return [
+                    'matter_id' => $matter->id,
+                    'matter_name' => $matter->name,
+                    'status' => 'sin_plan',
+                    'status_label' => 'Sin plan',
+                    'definitive' => null,
+                    'lapse_label' => null,
+                    'plan' => null,
+                    'items' => [],
+                ];
+            }
+
+            $definitive = $this->gradeService->publishedDefinitiveForStudent($plan, $student->id);
+            $scores = $this->gradeService->publishedScoresForStudent($plan, $student->id);
+
+            $status = $definitive === null
+                ? 'en_curso'
+                : ($definitive >= StudentGradeService::PASSING_SCORE ? 'aprobada' : 'reprobada');
+
+            return [
+                'matter_id' => $matter->id,
+                'matter_name' => $matter->name,
+                'status' => $status,
+                'status_label' => match ($status) {
+                    'aprobada' => 'Aprobada',
+                    'reprobada' => 'Reprobada',
+                    default => 'En curso',
+                },
+                'definitive' => $definitive !== null ? round($definitive, 2) : null,
+                'lapse_label' => $this->momentLabel($plan->lapse),
+                'plan' => (new EvaluationPlanService)->formatPlan($plan),
+                'items' => $plan->items->map(function ($item) use ($scores) {
+                    return [
+                        'id' => $item->id,
+                        'name' => $item->name,
+                        'percentage' => (float) $item->percentage,
+                        'date' => $item->date,
+                        'score' => $scores[$item->id] ?? null,
+                    ];
+                })->values(),
+            ];
+        })->values();
+
+        return [
+            'student' => $this->formatStudent($student),
+            'courses' => $courses,
+            'moments' => $moments,
+            'filters' => [
+                'school_lapse_id' => $activeLapse?->id,
+                'course_id' => $selectedCourseId,
+                'lapse_id' => $selectedLapseId,
+            ],
+            'subjects' => $subjects,
+        ];
     }
 
     public function misPagos(User $user): array

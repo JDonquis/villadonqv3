@@ -60,11 +60,14 @@
                             <iconify-icon icon="mdi:calendar-clock"></iconify-icon>
                             Su horario
                         </a>
-                        <span
-                            class="text-xs px-2 py-1 bg-color1/10 text-color1 rounded-full"
+                        <a
+                            href={`/dashboard/mis-hijos/${student.id}/materias`}
+                            use:inertia
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-md border border-color1 text-color1 hover:bg-color1/5 transition"
                         >
-                            {student.subjects?.length ?? 0} materias
-                        </span>
+                            <iconify-icon icon="mdi:book-open-page-variant-outline"></iconify-icon>
+                            Sus materias
+                        </a>
                     </div>
                 </div>
 
