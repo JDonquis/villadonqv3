@@ -290,7 +290,7 @@
                 {/each}
             </Input>
 
-            <div class="col-span-12 flex">
+            <div class="col-span-12 flex gap-5">
                 <div class="mb-4 col-span-7">
                     <label class="block text-sm font-semibold text-gray-600 mb-1 mt-7">Secciones</label>
                     <div class="flex flex-wrap gap-3">
