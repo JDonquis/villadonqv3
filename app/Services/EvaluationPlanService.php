@@ -15,7 +15,7 @@ use Carbon\Carbon;
 
 class EvaluationPlanService
 {
-    private function formatPlan(EvaluationPlan $plan): array
+    public function formatPlan(EvaluationPlan $plan): array
     {
         $itemsTotal = $plan->items->sum(fn ($item) => (float) $item->percentage);
 
@@ -246,7 +246,7 @@ class EvaluationPlanService
             $courseId = $data['course_id'] ?? null;
             if ($courseId) {
                 $course = Course::find($courseId);
-                $sectionIds = $course ? $course->section()->pluck('id')->map(fn ($v) => (string) $v)->values()->all() : [];
+                $sectionIds = $course ? $course->section()->pluck('sections.id')->map(fn ($v) => (string) $v)->values()->all() : [];
             } else {
                 $sectionIds = [];
             }
@@ -263,7 +263,7 @@ class EvaluationPlanService
                     'lapse_id' => $data['lapse_id'] ?? null,
                     'course_id' => $data['course_id'] ?? null,
                     'section_id' => $sectionId,
-                    'name' => $data['name'],
+                    'name' => $this->buildPlanName($data),
                     'description' => $data['description'] ?? null,
                     'rasgos_points' => (int) ($data['rasgos_points'] ?? 0),
                     'status' => $data['status'] ?? EvaluationPlanStatusEnum::Pending->value,
@@ -290,7 +290,7 @@ class EvaluationPlanService
             'lapse_id' => $data['lapse_id'] ?? null,
             'course_id' => $data['course_id'] ?? null,
             'section_id' => is_array($sectionIds) ? ($sectionIds[0] ?? null) : $sectionIds,
-            'name' => $data['name'],
+            'name' => $this->buildPlanName($data),
             'description' => $data['description'] ?? null,
             'rasgos_points' => (int) ($data['rasgos_points'] ?? 0),
             'status' => $data['status'] ?? EvaluationPlanStatusEnum::Pending->value,
@@ -314,7 +314,7 @@ class EvaluationPlanService
             $courseId = $data['course_id'] ?? null;
             if ($courseId) {
                 $course = Course::find($courseId);
-                $sectionIds = $course ? $course->section()->pluck('id')->map(fn ($v) => (string) $v)->values()->all() : [];
+                $sectionIds = $course ? $course->section()->pluck('sections.id')->map(fn ($v) => (string) $v)->values()->all() : [];
             } else {
                 $sectionIds = [];
             }
@@ -351,7 +351,7 @@ class EvaluationPlanService
                     'lapse_id' => $data['lapse_id'] ?? null,
                     'course_id' => $data['course_id'] ?? null,
                     'section_id' => $sectionId,
-                    'name' => $data['name'],
+                    'name' => $this->buildPlanName($data),
                     'description' => $data['description'] ?? null,
                     'rasgos_points' => (int) ($data['rasgos_points'] ?? 0),
                     'status' => $data['status'] ?? EvaluationPlanStatusEnum::Pending->value,
@@ -371,7 +371,7 @@ class EvaluationPlanService
             'lapse_id' => $data['lapse_id'] ?? null,
             'course_id' => $data['course_id'] ?? null,
             'section_id' => is_array($sectionIds) ? ($sectionIds[0] ?? null) : $sectionIds,
-            'name' => $data['name'],
+            'name' => $this->buildPlanName($data),
             'description' => $data['description'] ?? null,
             'rasgos_points' => (int) ($data['rasgos_points'] ?? 0),
             'status' => $data['status'] ?? EvaluationPlanStatusEnum::Pending->value,
@@ -393,6 +393,63 @@ class EvaluationPlanService
         }
 
         Course::find($courseId)?->matters()->syncWithoutDetaching([$matterId]);
+    }
+
+    private function buildPlanName(array $data): string
+    {
+        $parts = [];
+
+        if (! empty($data['matter_id'])) {
+            $matter = Matter::find($data['matter_id']);
+            if ($matter) {
+                $parts[] = trim($matter->name);
+            }
+        }
+
+        if (! empty($data['school_lapse_id'])) {
+            $schoolLapse = SchoolLapse::find($data['school_lapse_id']);
+            if ($schoolLapse && $schoolLapse->start && $schoolLapse->end) {
+                $startYear = Carbon::parse($schoolLapse->start)->format('y');
+                $endYear = Carbon::parse($schoolLapse->end)->format('y');
+                $parts[] = "{$startYear}-{$endYear}";
+            }
+        }
+
+        if (! empty($data['course_id'])) {
+            $course = Course::find($data['course_id']);
+            if ($course) {
+                $parts[] = trim($course->name);
+            }
+        }
+
+        if (! empty($data['lapse_id'])) {
+            $moment = Lapse::find($data['lapse_id']);
+            if ($moment) {
+                $parts[] = trim((string) $this->momentLabel($moment));
+            }
+        }
+
+        $rawSections = $data['section_id'] ?? [];
+        $sectionIds = is_array($rawSections) ? $rawSections : [$rawSections];
+        $sectionIds = array_values(array_filter($sectionIds, fn ($v) => $v !== null && $v !== ''));
+
+        if (! empty($sectionIds)) {
+            if (in_array('all', $sectionIds, true)) {
+                $parts[] = 'Todas las secciones';
+            } else {
+                $names = Section::whereIn('id', $sectionIds)
+                    ->orderBy('id')
+                    ->pluck('name')
+                    ->filter(fn ($name) => $name !== null && $name !== '')
+                    ->values();
+
+                if ($names->isNotEmpty()) {
+                    $parts[] = $names->join(', ');
+                }
+            }
+        }
+
+        return implode(' ', array_filter($parts, fn ($part) => $part !== ''));
     }
 
     private function flattenUnitsToItems(array $units): array

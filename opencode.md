@@ -1,4 +1,45 @@
-# Session Context — VillaDonq V2
+# Session Context — VillaDonq V3
+
+**Fecha:** 2026-09-07
+**Stack:** Laravel 10 + Inertia.js + Svelte 4 + Vite + Tailwind CSS
+**DB:** MySQL
+
+---
+
+## Sesión 2026-09-07 — Planes de Evaluación: modal compartido + nombre autogenerado en servidor
+
+### Objetivo
+- Refactorizar `EvaluationPlanCreateModal.svelte` para soportar modo admin (`PlanesEvaluacion`) y profesor (`MisPlanes`) con borradores/envío/edición, reemplazando el formulario propio de `MisPlanes`.
+- Eliminar el campo `name` del formulario; el nombre del plan se genera en el servidor.
+
+### `app/Services/EvaluationPlanService.php`
+- **Nuevo `buildPlanName(array $data)`**: arma `"{Materia} {Yy}-{Yy} {Curso} {Momento_label} {Secciones | 'Todas las secciones'}"` resolviendo `Matter`, `SchoolLapse` (Carbon start/end → años), `Course`, `Lapse` (`momentLabel`), `Section::whereIn()->pluck('name')->orderBy('id')`. Se aplica en `createPlan` (ramas multi-sección y única) y `updatePlan` (ramas clone y única) — se eliminaron los 4 `'name' => $data['name'],`.
+- **Fix** "Column 'id' in field list is ambiguous": la normalización de `$data['section_id'] = 'all'` usaba `pluck('id')` y fallaba (join con `course_sections`); ahora `pluck('sections.id')` en `createPlan` y `updatePlan`.
+
+### `app/Http/Controllers/EvaluationPlanController.php`
+- `myPlans`: pasa a `MisPlanes` `data.plans/matters/courses/sections/school_lapses` + `filters`.
+- `canEdit` ahora incluye `draft` (antes solo pending/rejected) para editor de borradores.
+
+### `resources/js/components/EvaluationPlanCreateModal.svelte`
+- Reescrito: usos admin y teacher; sin campo `name` en `useForm`; `openForEdit(plan)` prefill desde el plan (units→topics, section_id array, rasgos_points, status draft/pending); footer teacher = "Guardar borrador" / "Guardar y enviar"; admin = "Crear".
+- **IMPORTANTE**: Svelte 4 expone las funciones a `bind:this` del padre SOLO si llevan `export`. `open()` y `openForEdit()` pasaron a `export function open()/openForEdit()`. Sintoma del bug: `Uncaught TypeError: planModal?.openForEdit is not a function` en consola y el modal de edición nunca se abría (el de crear sí, porque se abría con el trigger propio del componente en admin).
+
+### `resources/js/Pages/Dashboard/MisPlanes.svelte`
+- Reemplazado el formulario propio por `<EvaluationPlanCreateModal mode="teacher" renderTriggerButton={false} bind:this={planModal}>`.
+- Eliminados: bloque reactivo de auto-nombre, `getAutoPlanName()`, `normalizeSectionSelection()`, `$form.name`. `canEdit` incluye `"draft"`.
+
+### Verificación end-to-end (UI real)
+- **Admin**: planes 17 y 18 creados `Biología 25-26 5to Año 1er Momento Todas las secciones` (status=approved, user=3, matter=11, course=1, sections 1 y 2, approved_by=1) vía POST `/dashboard/planes-evaluacion` [302].
+- **Profesor (Durán, user 3)**: draft plan 19 `Biología 25-26 5to Año 1er Momento A` POST `/mis-planes`; edit PUT `/mis-planes/19` mantiene draft con items; "Guardar y enviar" PUT → status=pending (items se recrean, id item 37→38, updated_at avanza).
+- Build `vite build` OK (warning de chunk >500kB pre-existente).
+
+### Notas
+- Botones del toolbar de `Table.svelte` son solo ícono (sin texto) — para clics programáticos buscar `iconify-icon` con `ic:baseline-edit`/`mdi:eye`/`material-symbols:delete-outline`.
+- Datos de prueba en BD: planes 12/13 (Arte y Patrimonio), 17/18 (Biología approved), 19 (Biología pending).
+
+---
+
+# Sesión anterior — VillaDonq V2
 
 **Fecha:** 2026-05-16
 **Stack:** Laravel 10 + Inertia.js + Svelte 4 + Vite + Tailwind CSS
@@ -319,6 +360,38 @@ esources/js/components/ (Windows case-insensitive lo toleraba; Linux no). Correg
 - getPlansForTeacher (MisPlanes) incluye draft en el whereIn por defecto para que el profesor vea sus borradores. Admin (PlanesEvaluacion): el filtro "Estado" excluye draft (los borradores no entran a la cola del admin).
 - MisPlanes: badge draft gris; form defaults status pending; fillFormToEdit setea status segun plan; dos botones de submit en el pie -> "Guardar borrador" (status draft) y "Enviar a aprobacion"/"Guardar y enviar" (status pending). Mensajes de exito diferenciados. Borradores se editan/eliminan (canEdit permite != approved).
 - Nota: se descarto el endpoint/quick action por fila submitPlan (aprobacion posterior se hace desde el form). Verificado: smoke crea plan status=draft label=Borrador y aparece en la lista del profesor; build OK; phpunit OK.
+
+## 2026-09-04 - FIX: filtro "Momento escolar" en MisEstudiantes volvia al 3 (tablas sin migrar)
+- Sintoma reportado: al hacer click en otro momento en el select de "Momento escolar" (MisEstudiantes), siempre volvia a "3er Momento" aunque se seleccionase 1er/2do.
+- Diagnostico (en navegador, user Dur�n con plan 13 aprobado): el request Inertia a /dashboard/mis-estudiantes?school_lapse_id=1&lapse_id=1&plan_id= recibia un 302 con Location a /dashboard/mis-estudiantes (URL limpia); el controller luego recibia la query VACIA (log temporal: QUERY_STRING=null), aplicaba default-por-fecha (hoy fuera de rango -> ultimo momento = 3), y la UI se resetaba al 3.
+- Causa raiz real: 4 migraciones pendientes nunca aplicadas => al cargar un plan con rasgos, StudentGradeService::getMatrixData() hacia with('items','rasgos') y student_plan_rasgos NO existia => SQLSTATE 1146 => App\Exceptions\Handler (render, linea ~59) hacia redirect()->back() = el 302, y back() lleva al referer sin query.
+- Fix: php artisan migrate -> se aplicaron: 2026_09_03_160000_create_student_grade_publications_tables, 2026_09_04_120723_add_rasgos_points_to_evaluation_plans_table, 2026_09_04_120724_create_student_plan_rasgos_table, 2026_09_04_120725_create_student_grade_publication_rasgos_table.
+- Verificado en navegador (Dur�n): select 1er Momento se queda + carga plan "Arte y Patrimonio � 5to A�o � B" con matriz de los 13 estudiantes; select 2do Momento se queda (sin plan, mensaje "Aun no tienes planes").
+- Nota: los profesores de prueba 3 (witexi4040@prorises.com) y 9 (genio@gmail.com) quedaron con password temporal 'test1234' (se dejo para debug del navegador; reinstalar/avisar).
+## 2026-09-04 - FIX frontend: MisEstudiantes no actualizaba al PRIMER cambio de momento
+- Sintoma: al entrar a Mis Estudiantes (default 3er Momento) y cambiar de momento por PRIMERA vez, la URL cambiaba (lapse_id) pero la pagina seguia igual; habia que cambiar de momento una segunda vez para que reaccionara.
+- Causa: el select de momento usaba bind:value={selectedLapseId} + on:change={() => selectMoment(selectedLapseId)} (patron fragil): el handler lee la variable bound, cuyo orden de flush respecto al evento change es indeterminado -> en el primer cambio puede tomar el valor viejo (default) y el router.get no surte efecto visual.
+- Fix: cambiar a value={selectedLapseId} + on:change={(e) => selectMoment(e.target.value)} (consistente con los selects de Periodo y Plan que ya usaban e.target.value), y dentro de selectMoment setear selectedLapseId = momentId explicitamente (ya no depende del bind). Se mantiene la logica userSelectedLapse para no pisar la seleccion manual con el default-por-fecha al recibir props del servidor.
+- Verificado en navegador (Duran): entrada limpia -> 1er click en 1er Momento -> URL lapse_id=1 + plan Arte y Patrimonio + matriz 13 estudiantes cargados en un solo cambio.
+
+## 2026-09-04 - Representante: nueva pagina "Materias del Estudiante" (desde Mis Hijos)
+- Pedido: en MisHijos reemplazar el span "N materias" por un boton "Sus materias" que abre una pagina con filtro de curso (default el actual del hijo) + filtro de momento (lapses, default el momento actual), desglosando las materias del estudiante una por una con sus notas por examen (estilo fila de MisEstudiantes) y un boton "Ver plan" (a la derecha, arriba de las notas) que abre un modal con PlanUnitsView.
+- Backend:
+  - `RepresentativeService::materiasHijo(User, Student, array $filters = [])`: valida/implica seleccion de curso (default = course del estudiante) y lapse (default = currentLapse() mismo que MisHijos); `courses` = cursos DISTINTOS de los hijos del representante; `moments` = lapses del periodo activo con label; por materia del curso elegido busca el plan aprobado (course_id + periodo + lapse) y arma status/definitive/items con `publishedScoresForStudent` + `publishedDefinitiveForStudent` (solo notas PUBLICADAS, igual que MisHijos). Devuelve { student, courses, moments, filters{school_lapse_id,course_id,lapse_id}, subjects }.
+  - `EvaluationPlanService::formatPlan` paso de private a public para reusarlo y poder alimentar PlanUnitsView desde el servicio del representante.
+  - Nueva ruta GET `/dashboard/mis-hijos/{student}/materias` -> `RepresentativeController@materiasHijo` (abort_unless 404 si no es hijo del representante, misma validacion que horarioHijo).
+- Frontend `resources/js/Pages/Dashboard/MateriasHijo.svelte`: pagina Dashboard/ con select Curso + select Momento (patron value={} + on:change con e.target.value para no caer en el bug de bind:value), reload via router.get preserveState+preserveScroll, tarjetas por materia (nombre + badge estado + boton "Ver plan"), tabla de ficha con columnas por examen (nombre + %) y columna "Definitiva ({momento})", Modal con PlanUnitsView. MisHijos.svelte: span reemplazado por link "Sus materias" (outline, junto a "Su horario").
+- Gotcha (IMPORTANTE, como en Horarios): los datos derivados de `data` deben ser reactivos ($:), NO const al init. Primera version usaba `const subjects = data.subjects` y al cambiar de momento SI cambio la URL pero la lista quedo stale (solo reacciono al recargar). Fix: $: student/courses/moments/filters/subjects/activeMomentLabel.
+- Verificado en navegador (repre de Pedro Francisco Ugarte Espinoza, msocratis2018@gmail.com / 12345678): boton Sus materias en MisHijos; pagina con default 3er Momento (mismo currentLapse que MisHijos); al elegir 1er Momento (lapse_id=1) Arte y Patrimonio muestra plan con 4 examenes (Tierra 20%, Jupiter 25%, Sol 15%, lejana 40%), notas "—" (no hay publicacion para ese plan) y Definitive "En curso"; "Ver plan" abre PlanUnitsView con unidades/temas/pts/fechas y total 100%; switch reactivo 1er<->2do actualiza URL + contenido sin recarga; modal cierra con Escape.
+
+## 2026-09-04 - FIX: selects de Curso/Momento en MateriasHijo quedaban vacios
+- Sintoma: los valores de los inputs (selects) de "Curso" y "Momento" no se actualizaban con la realidad y quedaban vacios aunque los options existieran (devtools mostraba value="" con options correctos).
+- Causa raiz (SSR hydration): el componente usaba value={selectedCourseId} en el <select> (patron Svelte que NO actualiza el valor del select durante el hydration inicial / al recibir props nuevas con preserveState). Ademas selectedXxx eran variables derivadas $: que no se reflejaban en el DOM del select.
+- Fix (3 partes):
+  1) selectedCourseId/selectedLapseId pasan a ser let normales sincronizadas desde el servidor por un bloque $: if (!userTouched) (mismo patron userSelectedLapse de MisEstudiantes) -> al cargar/recibir props se setean, y NO se pisotea la seleccion manual mientras el request esta en vuelo.
+  2) En el <select> se quito value={} y se puso selected={String(course.id) === selectedCourseId} en cada <option> (marca el option correcto; funciona en SSR + cliente) manteniendo on:change={(e)=>...} con e.target.value + userTouched = true.
+  3) Estilo: value del select (ej. "5to Año", "3er Momento") visible en el DOM/snapshot.
+- Verificado en navegador: entrada limpia -> Curso=1 ("5to Año") y Momento=3 ("3er Momento") seleccionados; cambio a 1er Momento (lapse_id=1) actualiza select a "1er Momento" + carga plan Arte con examenes; back/forward restaura el estado filtrado (lapse_id=1) con los selects correctos.
 
 ## 2026-09-06 - Copiar planes de evaluacion a otro momento/período (MisPlanes + PlanesEvaluacion)
 - Objetivo: reutilizar un plan en un lapso/año siguiente sin recrearlo. Los selectores de Período/Momento ya dejaban ver planes de años anteriores (sin cambios); se agrega la accion "Copiar plan". La copia nace como **borrador** y **sin fechas** (scheduled_date vacio).

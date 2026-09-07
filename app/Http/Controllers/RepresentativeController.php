@@ -63,6 +63,23 @@ class RepresentativeController extends Controller
         ]);
     }
 
+    public function materiasHijo(Request $request, int $student): Response
+    {
+        $user = Auth::user();
+
+        $student = $this->representativeService->getStudents($user)->firstWhere('id', $student);
+
+        abort_unless($student, 404);
+
+        $data = $this->representativeService->materiasHijo(
+            $user,
+            $student,
+            $request->only(['course_id', 'lapse_id']),
+        );
+
+        return inertia('Dashboard/MateriasHijo', ['data' => $data]);
+    }
+
     private function formatPeriod(SchoolLapse $lapse): string
     {
         $startYear = date('Y', strtotime($lapse->start));

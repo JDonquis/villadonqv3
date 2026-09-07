@@ -158,7 +158,26 @@ class EvaluationPlanController extends Controller
         }
 
         try {
-            $this->planService->updatePlan($plan, $request->validated());
+            $data = $request->validated();
+
+            // If the existing plan is approved, do not modify it directly.
+            // Instead create a new plan in 'pending' state that contains
+            // the teacher's edits. The already-approved plan remains active
+            // for everyone until the teacher publishes the new version.
+            if ($plan->status === EvaluationPlanStatusEnum::Approved->value) {
+                $data['status'] = EvaluationPlanStatusEnum::Pending->value;
+                // Ensure the plan is created for the same section/course/matter
+                // if the frontend did not include them in the payload.
+                $data['course_id'] = $data['course_id'] ?? $plan->course_id;
+                $data['section_id'] = $data['section_id'] ?? $plan->section_id;
+                $data['matter_id'] = $data['matter_id'] ?? $plan->matter_id;
+
+                $newPlan = $this->planService->createPlan(auth()->id(), $data);
+
+                return back()->with(['status' => true, 'message' => 'Se creó una versión pendiente del plan; la versión aprobada sigue vigente hasta publicación.']);
+            }
+
+            $this->planService->updatePlan($plan, $data);
 
             return back()->with(['status' => true, 'message' => 'Plan de evaluación actualizado correctamente.']);
         } catch (Exception $e) {
@@ -294,8 +313,10 @@ class EvaluationPlanController extends Controller
     private function canEdit(EvaluationPlan $plan): bool
     {
         return in_array($plan->status, [
+            EvaluationPlanStatusEnum::Draft->value,
             EvaluationPlanStatusEnum::Pending->value,
             EvaluationPlanStatusEnum::Rejected->value,
+            EvaluationPlanStatusEnum::Approved->value,
         ], true);
     }
 }

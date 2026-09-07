@@ -290,6 +290,23 @@ class StudentGradeService
         return $this->computeDefinitive($items, $scores, (int) $plan->rasgos_points > 0 ? $rasgos : 0);
     }
 
+    public function publishedRasgosForStudent(EvaluationPlan $plan, int $studentId): ?int
+    {
+        $publication = StudentGradePublication::where('evaluation_plan_id', $plan->id)
+            ->latest('version')
+            ->first();
+
+        if (! $publication) {
+            return null;
+        }
+
+        $rasgos = StudentGradePublicationRasgo::where('publication_id', $publication->id)
+            ->where('student_id', $studentId)
+            ->value('rasgos_score');
+
+        return $rasgos !== null ? (int) $rasgos : null;
+    }
+
     public function computeDefinitive(array $items, array $scores, ?float $rasgos = 0): ?float
     {
         $total = 0.0;

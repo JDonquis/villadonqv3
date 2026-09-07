@@ -179,16 +179,27 @@
         (data.school_lapses || [])[0] ||
         null;
     $: momentOptions = selectedSchoolLapse?.lapses || [];
-    $: selectedLapseId = String(
-        data.lapse_id || getActiveMomentId(selectedSchoolLapse) || "",
-    );
+
+    // Store the currently selected moment. We default to the server value
+    // / active-by-date only when the user hasn't made a manual selection.
+    let selectedLapseId = "";
+    let userSelectedLapse = false;
+
+    $: if (!userSelectedLapse) {
+        const serverLapse = String(
+            data.lapse_id || getActiveMomentId(selectedSchoolLapse) || "",
+        );
+        if (selectedLapseId !== serverLapse) selectedLapseId = serverLapse;
+    }
 
     function selectSchoolLapse(schoolLapseId) {
         const nextSchool = (data.school_lapses || []).find(
             (l) => String(l.id) === String(schoolLapseId),
         );
         const nextMoment = getActiveMomentId(nextSchool);
-
+        // Reset user selection when switching school lapse so the new
+        // period's default moment can be applied.
+        userSelectedLapse = false;
         router.get(
             "/dashboard/mis-estudiantes",
             {
@@ -204,6 +215,11 @@
     }
 
     function selectMoment(momentId) {
+        // Mark that the user explicitly chose a moment so we don't
+        // overwrite their selection with the date-based default.
+        userSelectedLapse = true;
+        if (selectedLapseId !== momentId) selectedLapseId = momentId;
+
         router.get(
             "/dashboard/mis-estudiantes",
             {
