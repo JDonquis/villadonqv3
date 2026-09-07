@@ -438,69 +438,76 @@
 
                 <PlanUnitsView {plan} />
 
-                {#if plan.status === "pending"}
+                {#if rejectMode && (plan.status === "pending" || plan.status === "approved")}
                     <div class="mt-5 flex flex-col gap-3">
-                        {#if rejectMode}
-                            <textarea
-                                bind:value={rejectNote}
-                                placeholder="Motivo del rechazo (opcional)"
-                                rows="3"
-                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                            ></textarea>
-                            <div class="flex gap-3 justify-end">
-                                <button
-                                    on:click={() => (rejectMode = false)}
-                                    class="px-4 py-2 text-sm border border-gray-300 rounded-md"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    on:click={() => confirmReject(plan.id)}
-                                    class="px-4 py-2 text-sm bg-red text-white rounded-md"
-                                >
-                                    Confirmar rechazo
-                                </button>
-                            </div>
-                        {:else}
-                            <div class="flex gap-3 justify-center">
-                                <button
-                                    on:click={() => {
-                                        rejectMode = true;
-                                        rejectingPlanId = plan.id;
-                                    }}
-                                    class="hover:shadow-xl hover:bg-red hover:text-white px-10 py-2 text-sm flex items-center bg-gray-300 text-gray-600 rounded-md"
-                                >
-                                <iconify-icon icon="mdi:close-thick" class="mr-1" width="18" height="18" />
-                                    Rechazar
-                                </button>
-                                <button
-                                    on:click={() => approvePlan(plan.id)}
-                                    class="hover:shadow-xl hover:bg-[#c5e5e4] hover:border hover:border-color1  hover:text-color1 px-10 py-2 text-sm flex items-center bg-color1 text-white rounded-md"
-                                >
-                                <iconify-icon icon="mdi:check" class="mr-1" width="18" height="18" />
-                                    Aprobar
-                                </button>
-                            </div>
+                        {#if plan.status === "approved"}
+                            <p
+                                class="rounded-md border border-amber-300 bg-amber-50 px-2 py-1.5 text-xs font-medium text-amber-700"
+                            >
+                                Este plan está aprobado. Al rechazarlo dejará de mostrarse en boletas/notas publicadas; el profesor deberá corregirlo y reenviarlo para volver a aprobarse.
+                            </p>
                         {/if}
+                        <textarea
+                            bind:value={rejectNote}
+                            placeholder="Motivo del rechazo (opcional)"
+                            rows="3"
+                            class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                        ></textarea>
+                        <div class="flex gap-3 justify-end">
+                            <button
+                                on:click={() => (rejectMode = false)}
+                                class="px-4 py-2 text-sm border border-gray-300 rounded-md"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                on:click={() => confirmReject(plan.id)}
+                                class="px-4 py-2 text-sm bg-red text-white rounded-md"
+                            >
+                                Confirmar rechazo
+                            </button>
+                        </div>
                     </div>
-                {:else if plan.status === "approved"}
-                    <div class="mt-5 flex justify-end">
-                        <button
-                            on:click={() => rejectPlanStart()}
-                            class="px-4 py-2 text-sm bg-red text-white rounded-md"
-                        >
-                            Rechazar
-                        </button>
-                    </div>
-                {:else if plan.status === "rejected"}
-                    <div class="mt-5 flex justify-end">
-                        <button
-                            on:click={() => approvePlan(plan.id)}
-                            class="px-4 py-2 text-sm bg-color1 text-white rounded-md"
-                        >
-                            Aprobar
-                        </button>
-                    </div>
+                {:else}
+                    {#if plan.status === "pending"}
+                        <div class="mt-5 flex gap-3 justify-center">
+                            <button
+                                on:click={() => {
+                                    rejectMode = true;
+                                    rejectingPlanId = plan.id;
+                                }}
+                                class="hover:shadow-xl hover:bg-red hover:text-white px-10 py-2 text-sm flex items-center bg-gray-300 text-gray-600 rounded-md"
+                            >
+                                <iconify-icon icon="mdi:close-thick" class="mr-1" width="18" height="18" />
+                                Rechazar
+                            </button>
+                            <button
+                                on:click={() => approvePlan(plan.id)}
+                                class="hover:shadow-xl hover:bg-[#c5e5e4] hover:border hover:border-color1  hover:text-color1 px-10 py-2 text-sm flex items-center bg-color1 text-white rounded-md"
+                            >
+                                <iconify-icon icon="mdi:check" class="mr-1" width="18" height="18" />
+                                Aprobar
+                            </button>
+                        </div>
+                    {:else if plan.status === "approved"}
+                        <div class="mt-5 flex justify-end">
+                            <button
+                                on:click={() => rejectPlanStart()}
+                                class="px-4 py-2 text-sm bg-red text-white rounded-md"
+                            >
+                                Rechazar
+                            </button>
+                        </div>
+                    {:else if plan.status === "rejected"}
+                        <div class="mt-5 flex justify-end">
+                            <button
+                                on:click={() => approvePlan(plan.id)}
+                                class="px-4 py-2 text-sm bg-color1 text-white rounded-md"
+                            >
+                                Aprobar
+                            </button>
+                        </div>
+                    {/if}
                 {/if}
             </div>
         {/key}

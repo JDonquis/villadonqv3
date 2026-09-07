@@ -15,6 +15,34 @@
 
     export let data = [];
 
+    function courseById(id) {
+        return (data.courses || []).find(
+            (c) => String(c.id) === String(id),
+        );
+    }
+
+    function courseFull(course) {
+        return Boolean(
+            course &&
+                course.quota_assigned != null &&
+                course.quota_remaining != null &&
+                course.quota_remaining <= 0,
+        );
+    }
+
+    function courseFullById(id) {
+        return courseFull(courseById(id));
+    }
+
+    function courseLabel(course) {
+        if (!course) return "";
+        const occupancy =
+            course.quota_assigned != null
+                ? `${course.quota_accepted}/${course.quota_assigned}`
+                : `${course.student_count}`;
+        return `${course.name} (${occupancy})${courseFull(course) ? " · lleno" : ""}`;
+    }
+
     $: selectedCourseId = (data.filters?.course_id || "1").toString();
 
     $: sectionsOfThisYear =
@@ -70,6 +98,7 @@
 
     let submitStatus = "Crear";
     let editingStudentId = null;
+    let originalCourseId = null;
 
     let showModal = false;
     let showModalReinscribe = false;
@@ -115,6 +144,19 @@
 
     function handleSubmit(event) {
         event.preventDefault();
+        const targetCourseId = Number($form.course_id);
+        if (
+            courseFullById(targetCourseId) &&
+            (submitStatus === "Crear" ||
+                targetCourseId !== Number(originalCourseId))
+        ) {
+            displayAlert({
+                type: "error",
+                message:
+                    "El año escolar seleccionado alcanzó su cupo. No se pueden admitir más estudiantes hasta subir la capacidad en Configuración.",
+            });
+            return;
+        }
         if (submitStatus === "Crear") {
             $form.clearErrors();
             $form.post("/dashboard/matricula", {
@@ -157,6 +199,7 @@
                     showModal = false;
                     submitStatus = "Crear";
                     editingStudentId = null;
+                    originalCourseId = null;
                     selectedRow = { status: false, data: null };
                     deletedStudentDetected = null;
                     deletedStudentGraduate = false;
@@ -231,6 +274,7 @@
         const student = selectedRow.data;
         submitStatus = "Editar";
         editingStudentId = student.student_id;
+        originalCourseId = student.course_id;
         $form.student_name = student.student_name;
         $form.student_last_name = student.student_last_name;
         $form.student_date_birth = student.student_date_birth;
@@ -480,7 +524,7 @@
                 disabled={submitStatus == "Editar"}
             >
                 {#each data.courses as course}
-                    <option value={course.id}>{course.name}</option>
+                    <option value={course.id}>{courseLabel(course)}</option>
                 {/each}
             </Input>
             <Input
@@ -619,7 +663,7 @@
                     disabled={submitStatus == "Editar"}
                 >
                     {#each data.courses as course}
-                        <option value={course.id}>{course.name}</option>
+                        <option value={course.id}>{courseLabel(course)}</option>
                     {/each}
                 </Input>
                 <Input
@@ -931,7 +975,7 @@
         >
             {#each data.courses as course}
                 <option class="bg-gray-50" value={course.id.toString()}
-                    >{course.name} ({course.student_count})</option
+                    >{courseLabel(course)}</option
                 >
             {/each}
         </Input>
@@ -965,6 +1009,7 @@
                 $form.reset();
                 submitStatus = "Crear";
                 editingStudentId = null;
+                originalCourseId = null;
                 selectedRow = { status: false, data: null };
             } else {
                 $form.section_id = +data.filters.section_id;

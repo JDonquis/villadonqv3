@@ -46,9 +46,13 @@ Corrida **manual** — marcar cada ítem con `[x]` cuando pase y dejar nota cuan
 - [ ] CRUD de cuentas bancarias (crear, editar, eliminar) funciona.
 - [ ] Las cuentas visibles en MisPagos del representante reflejan los cambios.
 - [ ] Config de pagos (día de corte, gracia) se guarda.
+- [ ] Sección **Cupos**: muestra todos los cursos del periodo activo con cupo asignado / inscritos / disponibles.
+- [ ] Sección **Cupos**: cambiar un cupo, guardar y recargar → persiste (la fila de cupo se crea si no existía).
 - **Edges:**
 - [ ] Guardar precio mensual en 0 o no numérico → validación con mensaje claro.
 - [ ] Cambiar la mensualidad NO altera saldos existentes por sí solo; correr `php artisan balance:recalculate-status` recalcula los estados correctamente.
+- [ ] En Cupos, escribir un cupo menor a los inscritos actuales → la fila se pinta roja con aviso; se permite guardar.
+- [ ] Guardar cupos en 0 o no numérico → validación (entero ≥ 0).
 - [ ] Eliminar una cuenta que ya tiene pagos asociados no rompe el historial (o queda bloqueado con mensaje claro).
 
 ## 4. Catálogos (Personal, Profesores, Materias, Secciones)
@@ -71,17 +75,22 @@ Corrida **manual** — marcar cada ítem con `[x]` cuando pase y dejar nota cuan
 
 - [ ] Alta de estudiante con representante principal (búsqueda por CI) correcta.
 - [ ] Alta de estudiante con segundo representante (búsqueda por CI).
-- [ ] Estudiante queda en el curso/sección y el cupo disponible disminuye.
+- [ ] Estudiante queda en el curso/sección y el "Inscritos" (`accepted`) del curso sube en 1.
+- [ ] Los selects de curso muestran la ocupación "{Año} ({inscritos}/{cupo})" y marcan "· lleno" cuando no hay cupos.
 - [ ] Subir y borrar documentos del estudiante.
-- [ ] Baja (eliminar) estudiante libera el cupo.
+- [ ] Baja (eliminar) estudiante libera el cupo (el "Inscritos" baja) y permite admitir de nuevo hasta el cupo.
 - [ ] Reinscripción de estudiante eliminado vía búsqueda de eliminados; cupo se vuelve a consumir.
 - [ ] Importar estudiantes con plantilla.
 - **Edges:**
-- [ ] Curso con cupo lleno bloquea el alta (mensaje claro).
-- [ ] Cupo asignado = 0 bloquea.
+- [ ] Curso con cupo lleno bloquea el alta (mensaje claro, tanto en UI como en servidor).
+- [ ] Cupo asignado = 0 bloquea todo alta nuevo.
+- [ ] Editar a un estudiante SIN cambiar de curso (aunque esté lleno) → permitido.
+- [ ] Cambiar a un estudiante a un curso lleno → bloqueado.
+- [ ] Re-activar un estudiante eliminado cuyo curso está lleno → bloqueado.
+- [ ] Importar una fila hacia un curso lleno → error solo en esa fila del resumen, el resto importa.
 - [ ] CI duplicado al dar de alta → validación.
 - [ ] Reinscribir a alguien ya activo → evita duplicado.
-- [ ] Cambiar de curso/sección a un estudiante actualiza cupos de origen y destino.
+- [ ] Cambiar de curso/sección a un estudiante actualiza los contadores de cupo de origen y destino.
 
 ## 6. Pagos (admin) y saldos — núcleo delicado
 

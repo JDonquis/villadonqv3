@@ -92,6 +92,7 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::delete('/dashboard/configuracion/eliminar-cuenta/{id}', [MainConfigController::class, 'deleteAccount']);
 
     Route::put('/dashboard/configuracion/pagos', [MainConfigController::class, 'updatePaymentConfig']);
+    Route::put('/dashboard/configuracion/cupos', [MainConfigController::class, 'updateQuotas']);
 
     Route::get('/dashboard/profesores', [TeacherController::class, 'index']);
     Route::get('/dashboard/profesores/plantilla', [TeacherController::class, 'downloadTemplate']);

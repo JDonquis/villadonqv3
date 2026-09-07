@@ -117,6 +117,56 @@
     };
 
     let showPaymentOptions = false;
+
+    let quotasForm = {};
+    (data.quotas || []).forEach((row) => {
+        quotasForm[row.course_id] = row.assigned ?? row.accepted ?? "";
+    });
+    let quotaSaving = false;
+
+    function quotaAssigned(row) {
+        const value = parseInt(quotasForm[row.course_id], 10);
+        return Number.isNaN(value) ? 0 : value;
+    }
+
+    $: overCapacity = (data.quotas || []).some(
+        (row) => row.accepted > quotaAssigned(row),
+    );
+
+    function saveQuotas(e) {
+        e.preventDefault();
+        if (
+            !confirm(
+                "¿Está seguro de guardar los cupos del periodo escolar activo?",
+            )
+        )
+            return;
+        quotaSaving = true;
+        router.put(
+            "/dashboard/configuracion/cupos",
+            { assigned: quotasForm },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    quotaSaving = false;
+                    displayAlert({
+                        type: "success",
+                        message: "Cupos actualizados correctamente",
+                    });
+                },
+                onError: (errors) => {
+                    quotaSaving = false;
+                    displayAlert({
+                        type: "error",
+                        message:
+                            errors.assigned?.[0] ||
+                            errors.message ||
+                            "Error al guardar los cupos",
+                    });
+                },
+            },
+        );
+    }
 </script>
 
 <Alert />
@@ -631,6 +681,87 @@
                 {/each}
             </div>
         </section>
+    </div>
+
+    <div class="my-10 w-full md:px-2">
+        <h2 class="font-bold text-xl mb-1">Cupos (capacidad por año escolar)</h2>
+        <p class="text-sm text-gray-600 mb-4">
+            Periodo escolar activo:
+            {#if data.schoolLapse}
+                {data.schoolLapse.start} / {data.schoolLapse.end}
+            {/if}
+        </p>
+
+        <div class="bg-white rounded-lg shadow-sm overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-color1 text-white text-left">
+                        <th class="px-4 py-2 font-semibold">Año escolar</th>
+                        <th class="px-4 py-2 font-semibold">
+                            Cupo asignado
+                        </th>
+                        <th class="px-4 py-2 font-semibold">Inscritos</th>
+                        <th class="px-4 py-2 font-semibold">Disponibles</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {#each data.quotas || [] as row}
+                        <tr
+                            class="border-b border-gray-100 {row.accepted > quotaAssigned(row) ? 'bg-red-50' : ''}"
+                        >
+                            <td class="px-4 py-2 font-semibold text-gray-800">
+                                {row.name}
+                            </td>
+                            <td class="px-4 py-2">
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={quotasForm[row.course_id] ?? ""}
+                                    on:input={(e) =>
+                                        (quotasForm = {
+                                            ...quotasForm,
+                                            [row.course_id]: e.target.value,
+                                        })}
+                                    class="w-28 rounded-md border border-gray-300 px-2 py-1"
+                                />
+                            </td>
+                            <td class="px-4 py-2 text-gray-700">
+                                {row.accepted}
+                            </td>
+                            <td class="px-4 py-2 text-gray-700">
+                                {row.has_quota
+                                    ? Math.max(0, quotaAssigned(row) - row.accepted)
+                                    : "—"}
+                            </td>
+                        </tr>
+                    {/each}
+                </tbody>
+            </table>
+        </div>
+
+        {#if overCapacity}
+            <p
+                class="mt-3 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700"
+            >
+                Hay cursos con más inscritos que el cupo asignado. Se guarda
+                igualmente, pero no se podrán admitir más estudiantes en ellos
+                hasta subir el cupo.
+            </p>
+        {/if}
+
+        <button
+            type="button"
+            class="animated-button mt-4 flex items-center gap-2"
+            disabled={quotaSaving}
+            on:click={saveQuotas}
+        >
+            {#if quotaSaving}
+                Cargando...
+            {:else}
+                <iconify-icon icon="material-symbols:save" class="text-xl" />
+                Guardar cupos
+            {/if}
+        </button>
     </div>
 
     <hr class=" border-gray-300" />

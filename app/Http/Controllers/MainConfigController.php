@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\PaymentMethod;
-use App\Models\AccountPayment;
-use App\Services\MainConfigService;
 use App\Http\Requests\AccountRequest;
 use App\Http\Requests\PaymentConfigRequest;
 use App\Http\Resources\AccountPaymentResource;
+use App\Models\AccountPayment;
+use App\Models\PaymentMethod;
 use App\Models\SchoolLapse;
+use App\Services\MainConfigService;
+use App\Services\QuotaService;
+use Illuminate\Http\Request;
 
 class MainConfigController extends Controller
 {
@@ -24,29 +25,47 @@ class MainConfigController extends Controller
     {
 
         $methods = $this->mainConfigService->getMethods();
-        $accounts  = $this->mainConfigService->getAccounts();
+        $accounts = $this->mainConfigService->getAccounts();
         $prices = $this->mainConfigService->getPrices();
         $schoolLapse = SchoolLapse::where('status', 1)->first();
+        $quotas = (new QuotaService)->quotasForPeriod($schoolLapse?->id);
+
         return inertia(
             'Dashboard/Configuracion',
             [
-                'data' =>
-                [
+                'data' => [
                     'prices' => $prices,
                     'accounts' => $accounts,
                     'methods' => $methods,
                     'schoolLapse' => $schoolLapse,
-                ]
+                    'quotas' => $quotas,
+                ],
 
             ]
 
         );
     }
 
+    public function updateQuotas(Request $request)
+    {
+        $validated = $request->validate([
+            'assigned' => ['required', 'array'],
+            'assigned.*' => ['required', 'integer', 'min:0'],
+        ]);
+
+        (new QuotaService)->saveAssigned($validated['assigned']);
+
+        return redirect('/dashboard/configuracion')->with([
+            'status' => true,
+            'message' => 'Cupos actualizados correctamente.',
+        ]);
+    }
+
     public function showCreateAccount($methodID)
     {
         $fields = $this->mainConfigService->getFieldsFromMethod($methodID);
         $method = PaymentMethod::where('id', $methodID)->first();
+
         return inertia('Dashboard/MetodosDePago/Crear', ['data' => ['fields' => $fields, 'method' => $method]]);
     }
 
@@ -59,23 +78,25 @@ class MainConfigController extends Controller
         return inertia('Dashboard/MetodosDePago/Editar', ['data' => ['account' => $accountResource, 'method' => $method]]);
     }
 
-
     public function createAccount(AccountRequest $request)
     {
 
         $account = $this->mainConfigService->createAccount($request);
-        return redirect('/dashboard/configuracion#account-' . $account->id);
+
+        return redirect('/dashboard/configuracion#account-'.$account->id);
     }
 
     public function editAccount(AccountRequest $request, $id)
     {
         $this->mainConfigService->updateAccount($id, $request);
-        return redirect('/dashboard/configuracion#account-' . $id);
+
+        return redirect('/dashboard/configuracion#account-'.$id);
     }
 
     public function deleteAccount($id)
     {
         $this->mainConfigService->deleteAccount($id);
+
         return redirect('/dashboard/configuracion');
     }
 

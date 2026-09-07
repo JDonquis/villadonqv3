@@ -32,6 +32,8 @@ class StudentService
 {
     private Student $studentModel;
 
+    private QuotaService $quotaService;
+
     private const STUDENT_IMPORT_MAP = [
         'Nombre del estudiante' => 'student_name',
         'Apellido del estudiante' => 'student_last_name',
@@ -75,6 +77,7 @@ class StudentService
     public function __construct()
     {
         $this->studentModel = new Student;
+        $this->quotaService = new QuotaService;
     }
 
     public function getStudentsPerCourse($request)
@@ -110,6 +113,11 @@ class StudentService
     public function create($request)
     {
         $data = $request->all();
+
+        $courseId = (int) ($data['course_id'] ?? 0);
+        if ($courseId > 0) {
+            $this->quotaService->assertCapacity($courseId);
+        }
 
         $existingDeleted = $this->searchDeletedStudentByCI($data['student_ci'] ?? null, $data['student_document_type'] ?? null);
 
@@ -222,6 +230,8 @@ class StudentService
         }
 
         $representative = $this->resolveRepresentative($data);
+
+        $this->quotaService->assertCapacity($course->id);
 
         $student = $this->createStudent([
             'course_id' => $course->id,
@@ -395,6 +405,8 @@ class StudentService
 
         $previousCourseId = $student->course_id;
 
+        $this->quotaService->assertCapacity((int) $data['course_id']);
+
         $student->update([
             'course_id' => $data['course_id'],
             'section_id' => $data['section_id'],
@@ -466,6 +478,11 @@ class StudentService
         }
 
         $previousCourseId = $student->course_id;
+
+        $newCourseId = (int) $data['course_id'];
+        if ($newCourseId !== (int) $previousCourseId) {
+            $this->quotaService->assertCapacity($newCourseId);
+        }
 
         $previousExemptData = [
             'is_exempt' => $student->is_exempt,
@@ -925,6 +942,10 @@ class StudentService
 
         if (! $student) {
             throw new \Exception('Estudiante no encontrado');
+        }
+
+        if ($student->course_id) {
+            $this->quotaService->release((int) $student->course_id);
         }
 
         $student->update(['status' => 0]);

@@ -159,6 +159,7 @@ class EvaluationPlanService
                 EvaluationPlanStatusEnum::Approved->value,
                 EvaluationPlanStatusEnum::Pending->value,
                 EvaluationPlanStatusEnum::Draft->value,
+                EvaluationPlanStatusEnum::Rejected->value,
             ]);
         }
 

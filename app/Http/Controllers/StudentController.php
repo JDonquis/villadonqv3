@@ -13,6 +13,7 @@ use App\Models\CourseSection;
 use App\Models\Section;
 use App\Models\Student;
 use App\Services\ExcelTemplateService;
+use App\Services\QuotaService;
 use App\Services\StudentService;
 use App\Support\ErrorTranslator;
 use Exception;
@@ -42,8 +43,14 @@ class StudentController extends Controller
             ->groupBy('course_id')
             ->pluck('total', 'course_id');
 
-        $courses->each(function ($course) use ($studentCounts) {
+        $quotasByCourse = collect((new QuotaService)->quotasForPeriod())->keyBy('course_id');
+
+        $courses->each(function ($course) use ($studentCounts, $quotasByCourse) {
             $course->student_count = $studentCounts[$course->id] ?? 0;
+            $quota = $quotasByCourse->get($course->id);
+            $course->quota_assigned = $quota['assigned'] ?? null;
+            $course->quota_accepted = $quota['accepted'] ?? 0;
+            $course->quota_remaining = $quota['remaining'] ?? null;
         });
 
         $course_sections = new CourseSectionCollection(CourseSection::with('section', 'course')->get());
