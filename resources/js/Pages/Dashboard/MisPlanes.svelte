@@ -7,6 +7,7 @@
     import Table from "../../components/Table.svelte";
     import Alert from "../../components/Alert.svelte";
     import PlanUnitsView from "../../components/PlanUnitsView.svelte";
+    import EvaluationPlanCopyModal from "../../components/EvaluationPlanCopyModal.svelte";
     import { displayAlert } from "../../stores/alertStore";
     import SelectableRow from "../../components/SelectableRow.svelte";
 
@@ -388,6 +389,8 @@
 
     let showModal = false;
     let showFormModal = false;
+    let showCopyModal = false;
+    let copyPlan = null;
     let selectedRow = { status: false, data: null };
     let editingPlanId = null;
     let submitStatus = "Crear";
@@ -406,6 +409,7 @@
             editingPlanId = null;
             showModal = false;
             showFormModal = false;
+            showCopyModal = false;
         }
     });
 
@@ -602,6 +606,11 @@
     function openReadOnly() {
         showModal = true;
     }
+
+    function openCopy() {
+        copyPlan = selectedRow.data;
+        showCopyModal = true;
+    }
 </script>
 
 <svelte:head>
@@ -684,6 +693,12 @@
     on:fillFormToEdit={fillFormToEdit}
     on:clickDeleteIcon={handleDelete}
     otherSelectOptions={[
+        {
+            label: "Copiar plan",
+            icon: "mdi:content-copy",
+            classes: "bg-[#0f766e] text-white",
+            onClick: openCopy,
+        },
         {
             label: "Ver plan",
             icon: "mdi:eye",
@@ -1188,3 +1203,12 @@
         </button>
     </div>
 </Modal>
+
+{#if copyPlan}
+    <EvaluationPlanCopyModal
+        bind:showModal={showCopyModal}
+        plan={copyPlan}
+        {data}
+        url="/dashboard/mis-planes/copiar"
+    />
+{/if}

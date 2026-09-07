@@ -109,6 +109,7 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::get('/dashboard/planes-evaluacion', [EvaluationPlanController::class, 'index']);
     Route::get('/dashboard/planes-evaluacion/allowed-days', [EvaluationPlanController::class, 'allowedDays']);
     Route::post('/dashboard/planes-evaluacion', [EvaluationPlanController::class, 'storeByAdmin']);
+    Route::post('/dashboard/planes-evaluacion/copiar', [EvaluationPlanController::class, 'copy']);
     Route::post('/dashboard/planes-evaluacion/{id}/aprobar', [EvaluationPlanController::class, 'approve']);
     Route::post('/dashboard/planes-evaluacion/{id}/rechazar', [EvaluationPlanController::class, 'reject']);
 
@@ -122,6 +123,7 @@ Route::middleware(['auth', 'role:teacher'])->group(function () {
     Route::get('/dashboard/mis-planes', [EvaluationPlanController::class, 'myPlans']);
     Route::get('/dashboard/mis-planes/allowed-days', [EvaluationPlanController::class, 'allowedDays']);
     Route::post('/dashboard/mis-planes', [EvaluationPlanController::class, 'store']);
+    Route::post('/dashboard/mis-planes/copiar', [EvaluationPlanController::class, 'copy']);
     Route::put('/dashboard/mis-planes/{id}', [EvaluationPlanController::class, 'update']);
     Route::delete('/dashboard/mis-planes/{id}', [EvaluationPlanController::class, 'destroy']);
 

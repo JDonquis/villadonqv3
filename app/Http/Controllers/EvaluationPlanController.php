@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\EvaluationPlanStatusEnum;
 use App\Enums\UserTypeEnum;
+use App\Http\Requests\CopyEvaluationPlanRequest;
 use App\Http\Requests\RejectEvaluationPlanRequest;
 use App\Http\Requests\StoreAdminEvaluationPlanRequest;
 use App\Http\Requests\StoreEvaluationPlanRequest;
@@ -211,6 +212,56 @@ class EvaluationPlanController extends Controller
             return $this->redirectBackToPlans($request, 'Plan rechazado correctamente.');
         } catch (Exception $e) {
             Log::error('Error al rechazar plan ID '.$id.': '.$e->getMessage());
+
+            return back()->withErrors(['message' => ErrorTranslator::translate($e)]);
+        }
+    }
+
+    /**
+     * Copia un plan de evaluación a otro período/momento. El profesor solo puede
+     * copiar sus propios planes; el admin puede copiar cualquiera (opcionalmente
+     * reasignándolo a otro profesor). La copia nace como borrador.
+     */
+    public function copy(CopyEvaluationPlanRequest $request)
+    {
+        $source = EvaluationPlan::findOrFail($request->input('source_id'));
+        $user = auth()->user();
+
+        try {
+            if ($user->isTeacher()) {
+                if ((int) $source->user_id !== (int) $user->id) {
+                    return back()->withErrors(['message' => 'No puedes copiar un plan de otro profesor.']);
+                }
+
+                $teacherId = (int) $user->id;
+            } else {
+                $teacherId = (int) ($request->input('teacher_id') ?? $source->user_id);
+            }
+
+            $this->planService->copyPlan($source, $request->validated(), $teacherId);
+
+            if ($user->isTeacher()) {
+                $url = '/dashboard/mis-planes';
+                $params = array_filter([
+                    'school_lapse_id' => $request->input('school_lapse_id'),
+                    'lapse_id' => $request->input('lapse_id'),
+                ], fn ($v) => $v !== null && $v !== '');
+                if ($params) {
+                    $url .= '?'.http_build_query($params);
+                }
+
+                return redirect($url)->with([
+                    'status' => true,
+                    'message' => 'Plan copiado como borrador. Revísalo y envíalo a aprobación.',
+                ]);
+            }
+
+            return back()->with([
+                'status' => true,
+                'message' => 'Plan copiado como borrador para el profesor correctamente.',
+            ]);
+        } catch (Exception $e) {
+            Log::error('Error al copiar plan de evaluación ID '.$source->id.': '.$e->getMessage());
 
             return back()->withErrors(['message' => ErrorTranslator::translate($e)]);
         }

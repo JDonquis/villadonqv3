@@ -8,6 +8,7 @@
     import SelectableRow from "../../components/SelectableRow.svelte";
     import Search from "../../components/Search.svelte";
     import EvaluationPlanCreateModal from "../../components/EvaluationPlanCreateModal.svelte";
+    import EvaluationPlanCopyModal from "../../components/EvaluationPlanCopyModal.svelte";
     import { fade, fly } from "svelte/transition";
 
     export let data = [];
@@ -15,6 +16,8 @@
 
     let selectedRow = { status: false, data: null };
     let showModal = false;
+    let showCopyModal = false;
+    let copyPlan = null;
     let rejectMode = false;
     let rejectNote = "";
     let rejectingPlanId = null;
@@ -133,6 +136,11 @@
 
     function openPlan() {
         openPlanFor(selectedRow.data);
+    }
+
+    function openCopy(plan) {
+        copyPlan = plan;
+        showCopyModal = true;
     }
 
     // Avanza al siguiente plan pendiente de la cola actual (botón "Siguiente ›").
@@ -412,6 +420,22 @@
                 in:fly={{ y: 10, duration: 180 }}
                 out:fade={{ duration: 120 }}
             >
+                <div class="flex justify-end mb-2 -mt-1">
+                    <button
+                        type="button"
+                        on:click={() => openCopy(plan)}
+                        title="Duplicar este plan a otro momento o período"
+                        class="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md border border-gray-200 bg-gray-100 text-gray-700 hover:bg-color1 hover:text-white"
+                    >
+                        <iconify-icon
+                            icon="mdi:content-copy"
+                            width="16"
+                            height="16"
+                        />
+                        Copiar plan
+                    </button>
+                </div>
+
                 <PlanUnitsView {plan} />
 
                 {#if plan.status === "pending"}
@@ -482,3 +506,13 @@
         {/key}
     {/if}
 </Modal>
+
+{#if copyPlan}
+    <EvaluationPlanCopyModal
+        bind:showModal={showCopyModal}
+        plan={copyPlan}
+        {data}
+        isAdmin
+        url="/dashboard/planes-evaluacion/copiar"
+    />
+{/if}

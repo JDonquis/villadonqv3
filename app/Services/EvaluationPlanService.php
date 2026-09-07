@@ -465,6 +465,74 @@ class EvaluationPlanService
         $plan->delete();
     }
 
+    /**
+     * Copia un plan existente a otro período/momento (o al mismo), reutilizando
+     * la lógica de creación/clonación por secciones. El contenido se relee del
+     * plan origen en BD; la copia nace como borrador y sin fechas programadas.
+     */
+    public function copyPlan(EvaluationPlan $source, array $data, int $teacherId): EvaluationPlan
+    {
+        $units = $this->formatPlan($source)['units'];
+
+        foreach ($units as &$unit) {
+            foreach ($unit['topics'] as &$topic) {
+                $topic['scheduled_date'] = null;
+                $topic['date'] = null;
+                unset($topic['id']);
+            }
+            unset($topic);
+            unset($unit['id']);
+        }
+        unset($unit);
+
+        $createData = [
+            'matter_id' => $source->matter_id,
+            'school_lapse_id' => $data['school_lapse_id'],
+            'lapse_id' => $data['lapse_id'] ?? null,
+            'course_id' => $source->course_id,
+            'section_id' => $data['section_id'] ?? ($source->section_id ? [$source->section_id] : []),
+            'name' => $this->buildCopyName($source, $data),
+            'description' => $source->description,
+            'rasgos_points' => $source->rasgos_points,
+            'status' => EvaluationPlanStatusEnum::Draft->value,
+            'units' => $units,
+        ];
+
+        return $this->createPlan($teacherId, $createData);
+    }
+
+    private function buildCopyName(EvaluationPlan $source, array $data): string
+    {
+        $name = trim((string) ($data['name'] ?? ''));
+
+        if ($name !== '') {
+            return $name;
+        }
+
+        $parts = [];
+        if ($source->matter) {
+            $parts[] = $source->matter->name;
+        }
+        $targetSchoolLapse = SchoolLapse::find($data['school_lapse_id'] ?? null);
+        if ($targetSchoolLapse) {
+            $parts[] = $this->lapseLabel($targetSchoolLapse);
+        }
+        if ($source->course) {
+            $parts[] = $source->course->name;
+        }
+        $targetLapse = Lapse::find($data['lapse_id'] ?? null);
+        if ($targetLapse) {
+            $parts[] = $this->momentLabel($targetLapse);
+        }
+        if ($source->section) {
+            $parts[] = $source->section->name;
+        }
+
+        $name = trim(implode(' ', array_values(array_filter($parts))));
+
+        return $name !== '' ? $name : trim($source->name.' (copia)');
+    }
+
     public function approve(EvaluationPlan $plan, int $adminId): void
     {
         $plan->update([
