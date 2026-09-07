@@ -36,7 +36,7 @@ class UpdateEvaluationPlanRequest extends FormRequest
             'course_id' => ['required', 'integer', 'exists:courses,id'],
             'section_id' => ['required', 'array', 'min:1'],
             'section_id.*' => ['required'],
-            'name' => ['required', 'string', 'max:100'],
+            'name' => ['sometimes', 'nullable', 'string', 'max:100'],
             'description' => ['nullable', 'string'],
             'rasgos_points' => ['nullable', 'integer', 'min:0', 'max:10'],
             'status' => ['sometimes', 'string', 'in:draft,pending'],

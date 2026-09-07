@@ -11,8 +11,18 @@
     $: filters = data.filters || {};
     $: subjects = data.subjects || [];
 
-    let selectedCourseId = String((data.filters || {}).course_id ?? student.course_id ?? "");
-    let selectedLapseId = String((data.filters || {}).lapse_id ?? "");
+    let selectedCourseId = "";
+    let selectedLapseId = "";
+    let userTouched = false;
+
+    // Keep the selects in sync with the server's filter values, but only until
+    // the user makes a manual selection (avoids reverting mid-request).
+    $: if (!userTouched) {
+        const serverCourse = String(filters.course_id ?? student.course_id ?? "");
+        const serverLapse = String(filters.lapse_id ?? "");
+        if (selectedCourseId !== serverCourse) selectedCourseId = serverCourse;
+        if (selectedLapseId !== serverLapse) selectedLapseId = serverLapse;
+    }
 
     let planModal = false;
     let activePlan = null;
@@ -62,34 +72,34 @@
     </div>
 
     <div class="bg-white border border-gray-200 rounded-lg p-4 flex flex-wrap items-center gap-5 md:gap-6">
-        <div class="flex flex-col gap-1">
+        <div class="flex items-center gap-2">
             <span class="text-xs font-semibold text-gray-500 uppercase">Curso</span>
             <select
-                value={selectedCourseId}
                 on:change={(e) => {
                     selectedCourseId = e.target.value;
+                    userTouched = true;
                     changeCourse();
                 }}
                 class="rounded-md border border-gray-300 px-3 py-2 text-sm"
             >
                 {#each courses as course}
-                    <option value={course.id}>{course.name}</option>
+                    <option value={course.id} selected={String(course.id) === selectedCourseId}>{course.name}</option>
                 {/each}
             </select>
         </div>
 
-        <div class="flex flex-col gap-1">
+        <div class="flex items-center gap-2">
             <span class="text-xs font-semibold text-gray-500 uppercase">Momento</span>
             <select
-                value={selectedLapseId}
                 on:change={(e) => {
                     selectedLapseId = e.target.value;
+                    userTouched = true;
                     changeLapse();
                 }}
                 class="rounded-md border border-gray-300 px-3 py-2 text-sm"
             >
                 {#each moments as moment}
-                    <option value={moment.id}>{moment.label}</option>
+                    <option value={moment.id} selected={String(moment.id) === selectedLapseId}>{moment.label}</option>
                 {/each}
             </select>
         </div>
@@ -142,6 +152,11 @@
                                                 </p>
                                             </th>
                                         {/each}
+                                            {#if subject.plan && subject.plan.rasgos_points > 0}
+                                                <th class="px-3 py-2 text-left font-semibold text-gray-700">
+                                                    Rasgos ({subject.plan.rasgos_points})
+                                                </th>
+                                            {/if}
                                         <th class="px-3 py-2 text-left font-semibold text-gray-700">
                                             Definitiva ({activeMomentLabel})
                                         </th>
@@ -160,6 +175,15 @@
                                                 {/if}
                                             </td>
                                         {/each}
+                                        {#if subject.plan && subject.plan.rasgos_points > 0}
+                                            <td class="px-3 py-2">
+                                                {#if subject.plan.rasgos_score !== null}
+                                                    <span class="font-medium text-gray-700">{subject.plan.rasgos_score}</span>
+                                                {:else}
+                                                    <span class="text-gray-300">—</span>
+                                                {/if}
+                                            </td>
+                                        {/if}
                                         <td class="px-3 py-2">
                                             {#if subject.definitive !== null}
                                                 <span

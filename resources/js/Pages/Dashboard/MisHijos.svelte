@@ -165,6 +165,20 @@
                                 </td>
                             </tr>
                         {/each}
+                            {#if selectedSubject.plan.rasgos_points > 0}
+                                <tr class="border-t border-gray-100 font-semibold">
+                                    <td class="px-3 py-1.5" colspan="3">
+                                        Rasgos
+                                    </td>
+                                    <td class="px-3 py-1.5">
+                                        {#if selectedSubject.plan.rasgos_score !== null}
+                                            {selectedSubject.plan.rasgos_score} / {selectedSubject.plan.rasgos_points}
+                                        {:else}
+                                            <span class="text-gray-300">—</span>
+                                        {/if}
+                                    </td>
+                                </tr>
+                            {/if}
                         <tr class="border-t border-gray-200 font-semibold">
                             <td class="px-3 py-1.5" colspan="3">
                                 Definitiva ({selectedSubject.lapse_label})

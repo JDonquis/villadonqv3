@@ -161,6 +161,7 @@ class RepresentativeService
             $item['score'] = $scores[$item['id']] ?? null;
             return $item;
         });
+        $rasgosScore = $this->gradeService->publishedRasgosForStudent($plan, $studentId);
 
         return [
             'id' => $plan->id,
@@ -171,6 +172,8 @@ class RepresentativeService
                 ? Carbon::parse($plan->schoolLapse->start)->year.' - '.Carbon::parse($plan->schoolLapse->end)->year
                 : null,
             'items' => $items,
+            'rasgos_points' => (int) $plan->rasgos_points,
+            'rasgos_score' => $rasgosScore,
         ];
     }
 
@@ -267,7 +270,9 @@ class RepresentativeService
                 },
                 'definitive' => $definitive !== null ? round($definitive, 2) : null,
                 'lapse_label' => $this->momentLabel($plan->lapse),
-                'plan' => (new EvaluationPlanService)->formatPlan($plan),
+                'plan' => array_merge((new EvaluationPlanService)->formatPlan($plan), [
+                    'rasgos_score' => $this->gradeService->publishedRasgosForStudent($plan, $student->id),
+                ]),
                 'items' => $plan->items->map(function ($item) use ($scores) {
                     return [
                         'id' => $item->id,

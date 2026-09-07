@@ -1,4 +1,45 @@
-# Session Context — VillaDonq V2
+# Session Context — VillaDonq V3
+
+**Fecha:** 2026-09-07
+**Stack:** Laravel 10 + Inertia.js + Svelte 4 + Vite + Tailwind CSS
+**DB:** MySQL
+
+---
+
+## Sesión 2026-09-07 — Planes de Evaluación: modal compartido + nombre autogenerado en servidor
+
+### Objetivo
+- Refactorizar `EvaluationPlanCreateModal.svelte` para soportar modo admin (`PlanesEvaluacion`) y profesor (`MisPlanes`) con borradores/envío/edición, reemplazando el formulario propio de `MisPlanes`.
+- Eliminar el campo `name` del formulario; el nombre del plan se genera en el servidor.
+
+### `app/Services/EvaluationPlanService.php`
+- **Nuevo `buildPlanName(array $data)`**: arma `"{Materia} {Yy}-{Yy} {Curso} {Momento_label} {Secciones | 'Todas las secciones'}"` resolviendo `Matter`, `SchoolLapse` (Carbon start/end → años), `Course`, `Lapse` (`momentLabel`), `Section::whereIn()->pluck('name')->orderBy('id')`. Se aplica en `createPlan` (ramas multi-sección y única) y `updatePlan` (ramas clone y única) — se eliminaron los 4 `'name' => $data['name'],`.
+- **Fix** "Column 'id' in field list is ambiguous": la normalización de `$data['section_id'] = 'all'` usaba `pluck('id')` y fallaba (join con `course_sections`); ahora `pluck('sections.id')` en `createPlan` y `updatePlan`.
+
+### `app/Http/Controllers/EvaluationPlanController.php`
+- `myPlans`: pasa a `MisPlanes` `data.plans/matters/courses/sections/school_lapses` + `filters`.
+- `canEdit` ahora incluye `draft` (antes solo pending/rejected) para editor de borradores.
+
+### `resources/js/components/EvaluationPlanCreateModal.svelte`
+- Reescrito: usos admin y teacher; sin campo `name` en `useForm`; `openForEdit(plan)` prefill desde el plan (units→topics, section_id array, rasgos_points, status draft/pending); footer teacher = "Guardar borrador" / "Guardar y enviar"; admin = "Crear".
+- **IMPORTANTE**: Svelte 4 expone las funciones a `bind:this` del padre SOLO si llevan `export`. `open()` y `openForEdit()` pasaron a `export function open()/openForEdit()`. Sintoma del bug: `Uncaught TypeError: planModal?.openForEdit is not a function` en consola y el modal de edición nunca se abría (el de crear sí, porque se abría con el trigger propio del componente en admin).
+
+### `resources/js/Pages/Dashboard/MisPlanes.svelte`
+- Reemplazado el formulario propio por `<EvaluationPlanCreateModal mode="teacher" renderTriggerButton={false} bind:this={planModal}>`.
+- Eliminados: bloque reactivo de auto-nombre, `getAutoPlanName()`, `normalizeSectionSelection()`, `$form.name`. `canEdit` incluye `"draft"`.
+
+### Verificación end-to-end (UI real)
+- **Admin**: planes 17 y 18 creados `Biología 25-26 5to Año 1er Momento Todas las secciones` (status=approved, user=3, matter=11, course=1, sections 1 y 2, approved_by=1) vía POST `/dashboard/planes-evaluacion` [302].
+- **Profesor (Durán, user 3)**: draft plan 19 `Biología 25-26 5to Año 1er Momento A` POST `/mis-planes`; edit PUT `/mis-planes/19` mantiene draft con items; "Guardar y enviar" PUT → status=pending (items se recrean, id item 37→38, updated_at avanza).
+- Build `vite build` OK (warning de chunk >500kB pre-existente).
+
+### Notas
+- Botones del toolbar de `Table.svelte` son solo ícono (sin texto) — para clics programáticos buscar `iconify-icon` con `ic:baseline-edit`/`mdi:eye`/`material-symbols:delete-outline`.
+- Datos de prueba en BD: planes 12/13 (Arte y Patrimonio), 17/18 (Biología approved), 19 (Biología pending).
+
+---
+
+# Sesión anterior — VillaDonq V2
 
 **Fecha:** 2026-05-16
 **Stack:** Laravel 10 + Inertia.js + Svelte 4 + Vite + Tailwind CSS
@@ -342,3 +383,12 @@ esources/js/components/ (Windows case-insensitive lo toleraba; Linux no). Correg
 - Frontend `resources/js/Pages/Dashboard/MateriasHijo.svelte`: pagina Dashboard/ con select Curso + select Momento (patron value={} + on:change con e.target.value para no caer en el bug de bind:value), reload via router.get preserveState+preserveScroll, tarjetas por materia (nombre + badge estado + boton "Ver plan"), tabla de ficha con columnas por examen (nombre + %) y columna "Definitiva ({momento})", Modal con PlanUnitsView. MisHijos.svelte: span reemplazado por link "Sus materias" (outline, junto a "Su horario").
 - Gotcha (IMPORTANTE, como en Horarios): los datos derivados de `data` deben ser reactivos ($:), NO const al init. Primera version usaba `const subjects = data.subjects` y al cambiar de momento SI cambio la URL pero la lista quedo stale (solo reacciono al recargar). Fix: $: student/courses/moments/filters/subjects/activeMomentLabel.
 - Verificado en navegador (repre de Pedro Francisco Ugarte Espinoza, msocratis2018@gmail.com / 12345678): boton Sus materias en MisHijos; pagina con default 3er Momento (mismo currentLapse que MisHijos); al elegir 1er Momento (lapse_id=1) Arte y Patrimonio muestra plan con 4 examenes (Tierra 20%, Jupiter 25%, Sol 15%, lejana 40%), notas "—" (no hay publicacion para ese plan) y Definitive "En curso"; "Ver plan" abre PlanUnitsView con unidades/temas/pts/fechas y total 100%; switch reactivo 1er<->2do actualiza URL + contenido sin recarga; modal cierra con Escape.
+
+## 2026-09-04 - FIX: selects de Curso/Momento en MateriasHijo quedaban vacios
+- Sintoma: los valores de los inputs (selects) de "Curso" y "Momento" no se actualizaban con la realidad y quedaban vacios aunque los options existieran (devtools mostraba value="" con options correctos).
+- Causa raiz (SSR hydration): el componente usaba value={selectedCourseId} en el <select> (patron Svelte que NO actualiza el valor del select durante el hydration inicial / al recibir props nuevas con preserveState). Ademas selectedXxx eran variables derivadas $: que no se reflejaban en el DOM del select.
+- Fix (3 partes):
+  1) selectedCourseId/selectedLapseId pasan a ser let normales sincronizadas desde el servidor por un bloque $: if (!userTouched) (mismo patron userSelectedLapse de MisEstudiantes) -> al cargar/recibir props se setean, y NO se pisotea la seleccion manual mientras el request esta en vuelo.
+  2) En el <select> se quito value={} y se puso selected={String(course.id) === selectedCourseId} en cada <option> (marca el option correcto; funciona en SSR + cliente) manteniendo on:change={(e)=>...} con e.target.value + userTouched = true.
+  3) Estilo: value del select (ej. "5to Año", "3er Momento") visible en el DOM/snapshot.
+- Verificado en navegador: entrada limpia -> Curso=1 ("5to Año") y Momento=3 ("3er Momento") seleccionados; cambio a 1er Momento (lapse_id=1) actualiza select a "1er Momento" + carga plan Arte con examenes; back/forward restaura el estado filtrado (lapse_id=1) con los selects correctos.

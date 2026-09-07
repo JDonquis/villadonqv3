@@ -6,14 +6,25 @@
     import { onDestroy, onMount } from "svelte";
 
     export let data = {};
+    export let isUserATeacher = false;
+    export let mode = "admin"; // "admin" | "teacher"
+    export let renderTriggerButton = true;
+    // When editing (teacher mode) the parent passes the plan to prefill.
+    export let editingPlan = null;
 
     let showFormModal = false;
     let allowedWeekdays = null;
     let allowedTimer = null;
     let openTooltip = null;
     let lastShowPickerAt = 0;
+    let editingPlanId = null;
+    let submitStatus = "Crear"; // "Crear" | "Editar"
     const totalPoints = 20;
-    const allowedDaysUrl = "/dashboard/planes-evaluacion/allowed-days";
+
+    const isTeacher = mode === "teacher" || isUserATeacher;
+    const allowedDaysUrl = isTeacher
+        ? "/dashboard/mis-planes/allowed-days"
+        : "/dashboard/planes-evaluacion/allowed-days";
 
     function createTopic() {
         return {
@@ -30,13 +41,17 @@
         return { unit_number: number, name: "", topics: [createTopic()] };
     }
 
-    const activeLapse = data.school_lapses?.find((item) => item.is_active)
-        || data.school_lapses?.[0];
+    const activeLapse =
+        data.school_lapses?.find((item) => item.is_active) ||
+        data.school_lapses?.[0];
+
+    // In teacher mode the materials list is already scoped to the logged-in
+    // teacher (data.matters); in admin mode it's filtered by selected teacher.
     let form = useForm({
         teacher_id: "",
-        name: "",
         description: "",
         rasgos_points: 0,
+        status: "pending",
         matter_id: "",
         school_lapse_id: activeLapse?.id || "",
         lapse_id: activeLapse?.lapses?.[0]?.id || "",
@@ -45,17 +60,18 @@
         units: [createUnit()],
     });
 
-    $: evalTotalPct = Math.round(
-        ($form.units || []).reduce(
-            (acc, u) =>
-                acc +
-                (u.topics || []).reduce(
-                    (a, t) => a + (parseFloat(t.percentage) || 0),
-                    0,
-                ),
-            0,
-        ) * 100,
-    ) / 100;
+    $: evalTotalPct =
+        Math.round(
+            ($form.units || []).reduce(
+                (acc, u) =>
+                    acc +
+                    (u.topics || []).reduce(
+                        (a, t) => a + (parseFloat(t.percentage) || 0),
+                        0,
+                    ),
+                0,
+            ) * 100,
+        ) / 100;
     $: rasgosPts = parseInt($form.rasgos_points, 10) || 0;
     $: rasgosPct = rasgosPts * 5;
     $: planTotalPct = Math.round((evalTotalPct + rasgosPct) * 100) / 100;
@@ -69,9 +85,11 @@
         (teacher) => String(teacher.id) === String($form.teacher_id),
     );
     $: teacherMatterIds = (selectedTeacher?.matter_ids || []).map(String);
-    $: availableMatters = data.matters?.filter((matter) =>
-        teacherMatterIds.includes(String(matter.id)),
-    ) || [];
+    $: availableMatters = isTeacher
+        ? data.matters || []
+        : data.matters?.filter((matter) =>
+              teacherMatterIds.includes(String(matter.id)),
+          ) || [];
     $: courseSections =
         data.courses?.find(
             (course) => String(course.id) === String($form.course_id),
@@ -105,16 +123,23 @@
     async function fetchAllowedDays() {
         allowedWeekdays = null;
         const sectionIds = normalizeSectionIds();
-        if (!$form.teacher_id || !$form.school_lapse_id || !$form.course_id || !$form.matter_id || !sectionIds.length) {
+        if (
+            !$form.school_lapse_id ||
+            !$form.course_id ||
+            !$form.matter_id ||
+            !sectionIds.length
+        ) {
             return;
         }
 
         const query = new URLSearchParams({
-            teacher_id: $form.teacher_id,
             school_lapse_id: $form.school_lapse_id,
             course_id: $form.course_id,
             matter_id: $form.matter_id,
         });
+        if (!isTeacher) {
+            query.set("teacher_id", $form.teacher_id);
+        }
         sectionIds.forEach((id) => query.append("section_ids[]", id));
 
         try {
@@ -126,10 +151,21 @@
         }
     }
 
-    const dayNames = ["", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
+    const dayNames = [
+        "",
+        "lunes",
+        "martes",
+        "miércoles",
+        "jueves",
+        "viernes",
+        "sábado",
+        "domingo",
+    ];
 
     function describeAllowedDays(days) {
-        const names = (days || []).map((day) => dayNames[Number(day)] || "").filter(Boolean);
+        const names = (days || [])
+            .map((day) => dayNames[Number(day)] || "")
+            .filter(Boolean);
         if (names.length < 2) return names[0] || "";
         return `${names.slice(0, -1).join(", ")} y ${names[names.length - 1]}`;
     }
@@ -167,39 +203,166 @@
         window.addEventListener("click", closeTooltipOnOutsideClick);
     });
 
+    function initialMomentIdFor(schoolLapse) {
+        if (!schoolLapse?.lapses?.length) return "";
+        const today = new Date().toISOString().slice(0, 10);
+        const current =
+            schoolLapse.lapses.find(
+                (l) => today >= (l.start || "") && today <= (l.end || ""),
+            ) || schoolLapse.lapses[schoolLapse.lapses.length - 1];
+        return current?.id || "";
+    }
+
     function resetForm() {
         $form.reset();
         allowedWeekdays = null;
         openTooltip = null;
         $form.school_lapse_id = activeLapse?.id || "";
-        $form.lapse_id = activeLapse?.lapses?.[0]?.id || "";
+        $form.lapse_id = isTeacher
+            ? initialMomentIdFor(activeLapse)
+            : activeLapse?.lapses?.[0]?.id || "";
         $form.section_id = [];
         $form.units = [createUnit()];
+        $form.status = "pending";
     }
 
-    function open() {
+    export function open() {
         resetForm();
+        editingPlanId = null;
+        submitStatus = "Crear";
         showFormModal = true;
+    }
+
+    export function openForEdit(plan) {
+        editingPlanId = plan.id;
+        submitStatus = "Editar";
+        $form.description = plan.description || "";
+        $form.rasgos_points = plan.rasgos_points ?? 0;
+        $form.status = plan.status === "draft" ? "draft" : "pending";
+        $form.matter_id = plan.matter_id;
+        $form.school_lapse_id = plan.school_lapse_id;
+        $form.lapse_id = plan.lapse_id || "";
+        $form.course_id = plan.course_id || "";
+        $form.section_id = Array.isArray(plan.section_id)
+            ? plan.section_id
+            : plan.section_id
+              ? [plan.section_id]
+              : [];
+        $form.units =
+            Array.isArray(plan.units) && plan.units.length
+                ? plan.units.map((unit, unitIndex) => ({
+                      unit_number: unit.unit_number ?? unitIndex + 1,
+                      name: unit.name || "",
+                      topics:
+                          Array.isArray(unit.topics) && unit.topics.length
+                              ? unit.topics.map((topic) => ({
+                                    name: topic.name || "",
+                                    assessment_type:
+                                        topic.assessment_type || "",
+                                    percentage: topic.percentage ?? "",
+                                    points: topic.points ?? "",
+                                    scheduled_date: topic.scheduled_date || "",
+                                    description: topic.description || "",
+                                }))
+                              : [createTopic()],
+                  }))
+                : [createUnit()];
+        showFormModal = true;
+    }
+
+    // Tracks the submit intent ("draft" | "pending"). Kept separate from
+    // $form.status because useForm clears state after a successful submit,
+    // so the success message must read this captured value.
+    let submittedAs = "pending";
+
+    function submit(event) {
+        event.preventDefault();
+        $form.clearErrors();
+        submittedAs = $form.status || "pending";
+
+        if (isTeacher && submitStatus === "Editar") {
+            $form.put(`/dashboard/mis-planes/${editingPlanId}`, {
+                onSuccess: () => {
+                    showFormModal = false;
+                    resetForm();
+                    editingPlanId = null;
+                    submitStatus = "Crear";
+                    displayAlert({
+                        type: "success",
+                        message:
+                            submittedAs === "draft"
+                                ? "Borrador actualizado correctamente"
+                                : "Plan actualizado y enviado a aprobación correctamente",
+                    });
+                },
+                onError: (errors) => {
+                    displayAlert({
+                        type: "error",
+                        message:
+                            errors.message ||
+                            errors.units ||
+                            "Verifique los datos del plan",
+                    });
+                },
+            });
+            return;
+        }
+
+        const onSuccess = () => {
+            showFormModal = false;
+            resetForm();
+            editingPlanId = null;
+            submitStatus = "Crear";
+            displayAlert({
+                type: "success",
+                message: isTeacher
+                    ? submittedAs === "draft"
+                        ? "Borrador guardado correctamente"
+                        : "Plan enviado a aprobación correctamente"
+                    : "Plan de evaluación creado y aprobado correctamente",
+            });
+        };
+        const onError = (errors) => {
+            displayAlert({
+                type: "error",
+                message:
+                    errors.message ||
+                    errors.units ||
+                    "Verifique los datos del plan",
+            });
+        };
+
+        if (isTeacher) {
+            $form.post("/dashboard/mis-planes", { onSuccess, onError });
+        } else {
+            $form.post("/dashboard/planes-evaluacion", { onSuccess, onError });
+        }
     }
 
     function percentageToPoints(value) {
         const percentage = parseFloat(value);
-        return Number.isNaN(percentage) ? "" : Math.round(percentage / 100 * totalPoints * 100) / 100;
+        return Number.isNaN(percentage)
+            ? ""
+            : Math.round((percentage / 100) * totalPoints * 100) / 100;
     }
 
     function pointsToPercentage(value) {
         const points = parseFloat(value);
-        return Number.isNaN(points) ? "" : Math.round(points / totalPoints * 100 * 100) / 100;
+        return Number.isNaN(points)
+            ? ""
+            : Math.round((points / totalPoints) * 100 * 100) / 100;
     }
 
     function updatePercentage(unitIndex, topicIndex, value) {
         $form.units[unitIndex].topics[topicIndex].percentage = value;
-        $form.units[unitIndex].topics[topicIndex].points = percentageToPoints(value);
+        $form.units[unitIndex].topics[topicIndex].points =
+            percentageToPoints(value);
     }
 
     function updatePoints(unitIndex, topicIndex, value) {
         $form.units[unitIndex].topics[topicIndex].points = value;
-        $form.units[unitIndex].topics[topicIndex].percentage = pointsToPercentage(value);
+        $form.units[unitIndex].topics[topicIndex].percentage =
+            pointsToPercentage(value);
     }
 
     function addUnit() {
@@ -219,14 +382,18 @@
 
     function removeTopic(unitIndex, topicIndex) {
         const units = [...$form.units];
-        const topics = units[unitIndex].topics.filter((_, index) => index !== topicIndex);
+        const topics = units[unitIndex].topics.filter(
+            (_, index) => index !== topicIndex,
+        );
         units[unitIndex].topics = topics.length ? topics : [createTopic()];
         $form.units = units;
     }
 
     function toggleSection(id) {
         const value = String(id);
-        const selected = ($form.section_id || []).map(String).filter((item) => item !== "all");
+        const selected = ($form.section_id || [])
+            .map(String)
+            .filter((item) => item !== "all");
         $form.section_id = selected.includes(value)
             ? selected.filter((item) => item !== value)
             : [...selected, value];
@@ -235,55 +402,89 @@
     function toggleAllSections(checked) {
         $form.section_id = checked ? ["all"] : [];
     }
-
-    function submit(event) {
-        event.preventDefault();
-        $form.post("/dashboard/planes-evaluacion", {
-            onSuccess: () => {
-                showFormModal = false;
-                resetForm();
-                displayAlert({ type: "success", message: "Plan de evaluación creado y aprobado correctamente" });
-            },
-            onError: (errors) => {
-                displayAlert({ type: "error", message: errors.message || errors.units || "Verifique los datos del plan" });
-            },
-        });
-    }
 </script>
 
-<button class="animated-button w-fitcontent" on:click={open}>
-    <span class="text">Nuevo plan</span>
-    <span class="circle"></span>
-</button>
+{#if renderTriggerButton}
+    <button class="animated-button w-fitcontent" on:click={open}>
+        <span class="text">Nuevo plan</span>
+        <span class="circle"></span>
+    </button>
+{/if}
 
 <Modal bind:showModal={showFormModal} classes={"w-fit"}>
-    <form on:submit={submit} id="admin-plan-form" class="max-w-[1200px] pt-2 px-5">
-        <h3 class="text-lg font-bold text-color1 mb-3">Nuevo plan de evaluación</h3>
+    <form
+        on:submit={submit}
+        id="admin-plan-form"
+        class="max-w-[1200px] pt-2 px-5"
+    >
+        <h3 class="text-lg font-bold text-color1 mb-3">
+            {submitStatus === "Crear"
+                ? "Nuevo plan de evaluación"
+                : "Editar plan de evaluación"}
+        </h3>
 
         <div class="grid grid-cols-12 gap-x-6">
-            <Input type="select" label="Profesor" bind:value={$form.teacher_id} error={$form.errors?.teacher_id} required={true} classes="col-span-3">
+        {#if !isTeacher}
+            <Input
+                type="select"
+                label="Profesor"
+                bind:value={$form.teacher_id}
+                error={$form.errors?.teacher_id}
+                required={true}
+                classes="col-span-3"
+            >
                 <option value="">Seleccione...</option>
                 {#each data.teachers || [] as teacher}
                     <option value={teacher.id}>{teacher.name}</option>
                 {/each}
             </Input>
-            <Input type="select" label="Materia" bind:value={$form.matter_id} error={$form.errors?.matter_id} required={true} classes="col-span-3">
+        {/if}
+            <Input
+                type="select"
+                label="Materia"
+                bind:value={$form.matter_id}
+                error={$form.errors?.matter_id}
+                required={true}
+                classes="col-span-3"
+            >
                 <option value="">Seleccione...</option>
                 {#each availableMatters as matter}
                     <option value={matter.id}>{matter.name}</option>
                 {/each}
             </Input>
-            <Input type="select" label="Período escolar" bind:value={$form.school_lapse_id} error={$form.errors?.school_lapse_id} required={true} classes="col-span-2">
+            <Input
+                type="select"
+                label="Período escolar"
+                bind:value={$form.school_lapse_id}
+                error={$form.errors?.school_lapse_id}
+                required={true}
+                classes="col-span-2"
+            >
                 {#each data.school_lapses || [] as lapse}
                     <option value={lapse.id}>{lapse.label}</option>
                 {/each}
             </Input>
-            <Input type="select" label="Momento escolar" bind:value={$form.lapse_id} error={$form.errors?.lapse_id} required={true} classes="col-span-2">
+            <Input
+                type="select"
+                label="Momento escolar"
+                bind:value={$form.lapse_id}
+                error={$form.errors?.lapse_id}
+                required={true}
+                classes="col-span-2"
+            >
                 {#each moments as moment}
                     <option value={moment.id}>{moment.label}</option>
                 {/each}
             </Input>
-            <Input type="select" label="Año" bind:value={$form.course_id} error={$form.errors?.course_id} required={true} classes="col-span-2" on:change={() => ($form.section_id = [])}>
+            <Input
+                type="select"
+                label="Año"
+                bind:value={$form.course_id}
+                error={$form.errors?.course_id}
+                required={true}
+                classes="col-span-2"
+                on:change={() => ($form.section_id = [])}
+            >
                 <option value="">Seleccione...</option>
                 {#each data.courses || [] as course}
                     <option value={course.id}>{course.name}</option>
@@ -292,7 +493,10 @@
 
             <div class="col-span-12 flex gap-5">
                 <div class="mb-4 col-span-7">
-                    <label class="block text-sm font-semibold text-gray-600 mb-1 mt-7">Secciones</label>
+                    <label
+                        class="block text-sm font-semibold text-gray-600 mb-1 mt-7"
+                        >Secciones</label
+                    >
                     <div class="flex flex-wrap gap-3">
                         {#if courseSectionsCount === 0}
                             <p class="text-xs text-gray-500">
@@ -300,31 +504,58 @@
                             </p>
                         {/if}
                         {#each courseSections as section}
-                        <label class="flex items-center gap-1 text-sm">
-                            <input type="checkbox" disabled={($form.section_id || []).includes("all")} checked={($form.section_id || []).map(String).includes(String(section.id))} on:change={() => toggleSection(section.id)} />
-                            {section.name}
-                        </label>
+                            <label class="flex items-center gap-1 text-sm">
+                                <input
+                                    type="checkbox"
+                                    disabled={($form.section_id || []).includes(
+                                        "all",
+                                    )}
+                                    checked={($form.section_id || [])
+                                        .map(String)
+                                        .includes(String(section.id))}
+                                    on:change={() => toggleSection(section.id)}
+                                />
+                                {section.name}
+                            </label>
                         {/each}
                         {#if courseSectionsCount > 0}
-                            <label class="flex items-center w-full gap-1  -mt-1 text-sm font-semibold">
-                                <input type="checkbox" checked={($form.section_id || []).includes("all")} on:change={(event) => toggleAllSections(event.currentTarget.checked)} />
+                            <label
+                                class="flex items-center w-full gap-1 -mt-1 text-sm font-semibold"
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={($form.section_id || []).includes(
+                                        "all",
+                                    )}
+                                    on:change={(event) =>
+                                        toggleAllSections(
+                                            event.currentTarget.checked,
+                                        )}
+                                />
                                 Todas las secciones
                             </label>
                         {/if}
                     </div>
-                    {#if $form.errors?.section_id}<p class="text-xs text-red mt-1">{$form.errors.section_id}</p>{/if}
+                    {#if $form.errors?.section_id}<p
+                            class="text-xs text-red mt-1"
+                        >
+                            {$form.errors.section_id}
+                        </p>{/if}
                 </div>
-    
-                <Input label="Descripción" bind:value={$form.description} error={$form.errors?.description} classes="" />
 
+                <Input
+                    label="Descripción"
+                    bind:value={$form.description}
+                    error={$form.errors?.description}
+                    classes=""
+                />
             </div>
-
         </div>
 
         <div class="flex flex-wrap items-end gap-x-6 gap-y-2 mt-3 mb-2">
             <div class="flex flex-col gap-1">
                 <label class="text-xs md:text-sm font-semibold text-gray-700">
-                    Puntos de rasgos (0-10)
+                    Puntos de rasgos 
                 </label>
                 <select
                     class="rounded-md border border-gray-300 px-3 py-2 text-sm bg-white"
@@ -346,8 +577,8 @@
 
             <div
                 class="rounded-md px-4 py-2 text-sm font-semibold {totalIsValid
-                    ? "bg-green-50 text-green-700 border border-green-200"
-                    : "bg-red/10 text-red border border-red/30"}"
+                    ? 'bg-green-50 text-green-700 border border-green-200'
+                    : 'bg-red/10 text-red border border-red/30'}"
             >
                 Total: {evalTotalPct}% (evaluaciones)
                 {rasgosPct > 0 ? ` + ${rasgosPct}% (rasgos)` : ""} =
@@ -360,31 +591,110 @@
             </div>
         </div>
 
-
         <div class="space-y-4 max-h-[48vh] overflow-y-auto pr-2">
             {#each $form.units as unit, unitIndex}
-                <div class="border border-gray-200 rounded-md p-3">
+                <div class="rounded-lg shadow-lg bg-gray-50 p-3 md:p-5 ">
                     <div class="flex gap-2 items-center mb-3">
-                        <input class="rounded-md border border-gray-300 px-3 py-2 text-sm flex-1" placeholder="Nombre de la unidad" bind:value={$form.units[unitIndex].name} />
-                        <button type="button" class="text-sm hover:text-red text-gray-500" on:click={() => removeUnit(unitIndex)}>Quitar unidad</button>
+                        <span class="text-xs font-semibold text-gray-500">
+                            Unidad {unitIndex + 1}
+                        </span>
+                        <input
+                            class="rounded-md border border-gray-300 px-3 py-2 text-sm flex-1"
+                            placeholder="Nombre de la unidad"
+                            bind:value={$form.units[unitIndex].name}
+                        />
+                        <button
+                            type="button"
+                            class="text-sm hover:text-red text-gray-500"
+                            on:click={() => removeUnit(unitIndex)}
+                            >Quitar unidad</button
+                        >
                     </div>
                     <div class="space-y-2">
                         {#each unit.topics as topic, topicIndex}
-                            <div class="grid grid-cols-[1.3fr_1fr_1.4fr_70px_63px_140px_32px] gap-2 items-start">
-                                <textarea class="rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="Tema" bind:value={$form.units[unitIndex].topics[topicIndex].name}></textarea>
-                                <input class="rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="Tipo de prueba" bind:value={$form.units[unitIndex].topics[topicIndex].assessment_type} />
-                                <textarea class="rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="Descripción" bind:value={$form.units[unitIndex].topics[topicIndex].description}></textarea>
-                                <div class="flex w-[70px] mr-2 items-center relative">
-                                    <input type="number" min="0.01" max="100" step="0.01" placeholder="%" class="rounded-md border w-[70px] border-gray-300 px-3 py-2 text-sm" value={topic.percentage} on:input={(event) => updatePercentage(unitIndex, topicIndex, event.currentTarget.value)} />
+                            <div
+                                class="grid grid-cols-[5px_1.2fr_1.2fr_1fr_70px_63px_140px_32px] gap-2 items-start"
+                            >
+                                <span
+                                    class="text-xs font-semibold text-gray-500 pt-2"
+                                >
+                                    {topicIndex + 1}.
+                                </span>
+                                <textarea
+                                    class="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                                    placeholder="Tema"
+                                    bind:value={
+                                        $form.units[unitIndex].topics[
+                                            topicIndex
+                                        ].name
+                                    }
+                                ></textarea>
+                                <input
+                                    class="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                                    placeholder="Tipo de prueba"
+                                    bind:value={
+                                        $form.units[unitIndex].topics[
+                                            topicIndex
+                                        ].assessment_type
+                                    }
+                                />
+                                <textarea
+                                    class="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                                    placeholder="Descripción"
+                                    bind:value={
+                                        $form.units[unitIndex].topics[
+                                            topicIndex
+                                        ].description
+                                    }
+                                ></textarea>
+                                <div
+                                    class="flex w-[70px] mr-2 items-center relative"
+                                >
+                                    <input
+                                        type="number"
+                                        min="0.01"
+                                        max="100"
+                                        step="0.01"
+                                        placeholder="%"
+                                        class="rounded-md border w-[70px] border-gray-300 px-3 py-2 text-sm"
+                                        value={topic.percentage}
+                                        on:input={(event) =>
+                                            updatePercentage(
+                                                unitIndex,
+                                                topicIndex,
+                                                event.currentTarget.value,
+                                            )}
+                                    />
                                     {#if topic.percentage > 0}
-                                        <b class="text-xs absolute top-2.5 right-1 p-1 px-2 text-gray-600 bg-white z-10">%</b>
+                                        <b
+                                            class="text-xs absolute top-2.5 right-1 p-1 px-2 text-gray-600 bg-white z-10"
+                                            >%</b
+                                        >
                                     {/if}
                                 </div>
-                                <div class="flex w-[63px] items-center relative">
+                                <div
+                                    class="flex w-[63px] items-center relative"
+                                >
                                     {#if topic.points > 0}
-                                        <b class="text-xs absolute top-2.5 right-1 p-1 px-1 text-gray-600 bg-white z-10">Pts</b>
+                                        <b
+                                            class="text-xs absolute top-2.5 right-1 p-1 px-1 text-gray-600 bg-white z-10"
+                                            >Pts</b
+                                        >
                                     {/if}
-                                    <input type="number" min="0" step="0.01" placeholder="Pts" class="rounded-md border w-[63px] border-gray-300 px-2 py-2 text-sm" value={topic.points} on:input={(event) => updatePoints(unitIndex, topicIndex, event.currentTarget.value)} />
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="Pts"
+                                        class="rounded-md border w-[63px] border-gray-300 px-2 py-2 text-sm"
+                                        value={topic.points}
+                                        on:input={(event) =>
+                                            updatePoints(
+                                                unitIndex,
+                                                topicIndex,
+                                                event.currentTarget.value,
+                                            )}
+                                    />
                                 </div>
                                 <!-- svelte-ignore a11y-no-static-element-interactions -->
                                 <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -392,35 +702,112 @@
                                     <input
                                         type="date"
                                         class="rounded-md border border-gray-300 px-2 py-2 text-sm"
-                                        bind:value={$form.units[unitIndex].topics[topicIndex].scheduled_date}
-                                        on:click={(event) => openCalendar(event.currentTarget)}
+                                        bind:value={
+                                            $form.units[unitIndex].topics[
+                                                topicIndex
+                                            ].scheduled_date
+                                        }
+                                        on:click={(event) =>
+                                            openCalendar(event.currentTarget)}
                                         on:focus={(event) => {
                                             openCalendar(event.currentTarget);
-                                            toggleTooltip(`${unitIndex}-${topicIndex}`);
+                                            toggleTooltip(
+                                                `${unitIndex}-${topicIndex}`,
+                                            );
                                         }}
                                         on:blur={() => toggleTooltip(null)}
                                         title="Clic para abrir el calendario"
                                     />
                                     {#if openTooltip === `${unitIndex}-${topicIndex}` && allowedWeekdays?.length}
-                                        <div class="right-36 absolute bg-white bottom-full z-30 mb-2 w-60 rounded-lg border border-amber-300 bg-amber-50 p-2.5 text-xs font-medium text-amber-700 shadow-lg">
+                                        <div
+                                            class="right-36 absolute bg-white bottom-full z-30 mb-2 w-60 rounded-lg border border-amber-300 bg-amber-50 p-2.5 text-xs font-medium text-amber-700 shadow-lg"
+                                        >
                                             Para esta materia
                                             {allowedSectionsPhrase()}
                                             das clases los días
-                                            <b>{describeAllowedDays(allowedWeekdays)}.</b>
+                                            <b
+                                                >{describeAllowedDays(
+                                                    allowedWeekdays,
+                                                )}.</b
+                                            >
                                         </div>
                                     {/if}
                                 </div>
-                                <button type="button" class="hover:text-red text-gray-500 pt-2" title="Quitar tema" on:click={() => removeTopic(unitIndex, topicIndex)}><iconify-icon icon="mdi:close-circle-outline" width="22" height="22"></iconify-icon></button>
+                                <button
+                                    type="button"
+                                    class="hover:text-red text-gray-500 pt-2"
+                                    title="Quitar tema"
+                                    on:click={() =>
+                                        removeTopic(unitIndex, topicIndex)}
+                                    ><iconify-icon
+                                        icon="mdi:close-circle-outline"
+                                        width="22"
+                                        height="22"
+                                    ></iconify-icon></button
+                                >
                             </div>
                         {/each}
                     </div>
-                    <button type="button" class="mt-3 text-xs px-3 py-1.5 bg-gray-200 text-gray-700 rounded-md" on:click={() => addTopic(unitIndex)}>+ Agregar tema</button>
+                    <button
+                        type="button"
+                        class="mt-3 text-xs px-3 py-1.5 bg-gray-200 hover:shadow-lg hover:font-semibold text-gray-700 rounded-md"
+                        on:click={() => addTopic(unitIndex)}
+                        >+ Agregar tema</button
+                    >
                 </div>
             {/each}
         </div>
-        <button type="button" class="mt-3 text-xs px-3 py-1.5 bg-gray-200 text-gray-700 rounded-md" on:click={addUnit}>+ Agregar unidad</button>
+        <button
+            type="button"
+            class="mt-3 text-xs px-3 py-1.5 bg-color1/20 hover:shadow-lg hover:font-semibold text-gray-700 rounded-md"
+            on:click={addUnit}>+ Agregar unidad</button
+        >
     </form>
-    <button form="admin-plan-form" slot="btn_footer" type="submit" class="animated-button min-w-[200px]" disabled={$form.processing}>
-        {#if $form.processing}Cargando...{:else}<iconify-icon icon="material-symbols:save-sharp" width="24" height="24" /> Crear{/if}
-    </button>
+    <svelte:fragment slot="btn_footer">
+        {#if isTeacher}
+            <div class="flex gap-3 items-center justify-end">
+                <button
+                    form="admin-plan-form"
+                    type="submit"
+                    class="toolbar-secondary min-w-[190px] justify-center"
+                    disabled={$form.processing}
+                    on:click={() => ($form.status = "draft")}
+                >
+                    {#if $form.processing}Cargando...{:else}<iconify-icon
+                            icon="mdi:note-edit-outline"
+                            width="20"
+                            height="20"
+                        />Guardar borrador{/if}
+                </button>
+                <button
+                    form="admin-plan-form"
+                    type="submit"
+                    class="animated-button min-w-[200px] flex gap-2 hover:bg-[#c5e5e4]"
+                    disabled={$form.processing}
+                    on:click={() => ($form.status = "pending")}
+                >
+                    {#if $form.processing}Cargando...{:else}<iconify-icon
+                            icon="material-symbols:send-rounded"
+                            width="22"
+                            height="22"
+                        /><span>{submitStatus === "Crear"
+                                ? "Enviar a aprobación"
+                                : "Guardar y enviar"}</span>{/if}
+                </button>
+            </div>
+        {:else}
+            <button
+                form="admin-plan-form"
+                type="submit"
+                class="animated-button min-w-[200px]"
+                disabled={$form.processing}
+            >
+                {#if $form.processing}Cargando...{:else}<iconify-icon
+                        icon="material-symbols:save-sharp"
+                        width="24"
+                        height="24"
+                    /> Crear{/if}
+            </button>
+        {/if}
+    </svelte:fragment>
 </Modal>

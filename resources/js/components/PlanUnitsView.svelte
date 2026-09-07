@@ -94,7 +94,11 @@
                 {/if}
             </div>
         {/each}
+        <div class="md:p-4 p-3 bg-gray-50 rounded-lg">
+            <p class="text-sm font-bold text-color1">Puntos de rasgos: {plan.rasgos_points}</p>
+        </div>
     </div>
+
 
     <div class="text-sm font-semibold text-gray-700 mt-3 text-right">
         Total: {plan.items_total}%
@@ -116,11 +120,5 @@
             {plan.admin_note}
         </div>
     {/if}
-    {#if plan.status === "approved"}
-        <div
-            class="mt-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md text-sm"
-        >
-            Plan aprobado. Ya no puede editarlo.
-        </div>
-    {/if}
+   
 </div>
