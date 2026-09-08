@@ -176,16 +176,16 @@
         .slice()
         .sort((a, b) => Number(a.number) - Number(b.number));
 
-    function lapseForToday() {
+    function lapseForToday(sorted) {
         const today = new Date().toISOString().slice(0, 10);
         return (
-            lapsesSorted.find(
+            (sorted || []).find(
                 (lapse) => today >= lapse.start && today <= lapse.end,
             ) || null
         );
     }
 
-    $: currentLapse = lapseForToday();
+    $: currentLapse = lapseForToday(lapsesSorted);
     $: currentIndex = currentLapse
         ? lapsesSorted.findIndex((lapse) => lapse.id === currentLapse.id)
         : -1;
