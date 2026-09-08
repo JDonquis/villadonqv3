@@ -167,6 +167,108 @@
             },
         );
     }
+    let momentsForm = {};
+    (data.lapses || []).forEach((lapse) => {
+        momentsForm[lapse.id] = { start: lapse.start, end: lapse.end };
+    });
+
+    $: lapsesSorted = (data.lapses || [])
+        .slice()
+        .sort((a, b) => Number(a.number) - Number(b.number));
+
+    function lapseForToday() {
+        const today = new Date().toISOString().slice(0, 10);
+        return (
+            lapsesSorted.find(
+                (lapse) => today >= lapse.start && today <= lapse.end,
+            ) || null
+        );
+    }
+
+    $: currentLapse = lapseForToday();
+    $: currentIndex = currentLapse
+        ? lapsesSorted.findIndex((lapse) => lapse.id === currentLapse.id)
+        : -1;
+    $: nextLapse = currentIndex >= 0 ? lapsesSorted[currentIndex + 1] : null;
+
+    function setMomentDate(id, key, value) {
+        momentsForm = {
+            ...momentsForm,
+            [id]: { ...momentsForm[id], [key]: value },
+        };
+    }
+
+    let momentSaving = false;
+    let momentClosing = false;
+
+    function saveMomentsDates(e) {
+        e.preventDefault();
+        if (!confirm("¿Guardar las fechas de los momentos escolares?")) return;
+        momentSaving = true;
+        const rows = lapsesSorted.map((lapse) => ({
+            id: lapse.id,
+            start: momentsForm[lapse.id]?.start ?? "",
+            end: momentsForm[lapse.id]?.end ?? "",
+        }));
+        router.put(
+            "/dashboard/configuracion/momentos",
+            { rows },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    momentSaving = false;
+                    displayAlert({
+                        type: "success",
+                        message: "Fechas de momentos guardadas correctamente",
+                    });
+                },
+                onError: (errors) => {
+                    momentSaving = false;
+                    displayAlert({
+                        type: "error",
+                        message:
+                            errors.rows?.[0] ||
+                            errors.message ||
+                            "Error al guardar las fechas",
+                    });
+                },
+            },
+        );
+    }
+
+    function closeCurrentMoment() {
+        if (!currentLapse || !nextLapse) return;
+        if (
+            !confirm(
+                `¿Cerrar el ${currentLapse.label} y pasar al ${nextLapse.label}? El ${nextLapse.label} quedará vigente desde hoy.`,
+            )
+        )
+            return;
+        momentClosing = true;
+        router.post(
+            "/dashboard/configuracion/momentos/cerrar",
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    momentClosing = false;
+                    displayAlert({
+                        type: "success",
+                        message: "Momento cerrado y siguiente activado",
+                    });
+                },
+                onError: (errors) => {
+                    momentClosing = false;
+                    displayAlert({
+                        type: "error",
+                        message:
+                            errors.message ||
+                            "No se pudo cerrar el momento",
+                    });
+                },
+            },
+        );
+    }
 </script>
 
 <Alert />
@@ -762,6 +864,134 @@
                 Guardar cupos
             {/if}
         </button>
+    </div>
+
+    <div class="my-10 w-full md:px-2">
+        <h2 class="font-bold text-xl mb-1">Momentos escolares (lapsos)</h2>
+        <p class="text-sm text-gray-600 mb-4">
+            Periodo escolar activo:
+            {#if data.schoolLapse}
+                {data.schoolLapse.start} / {data.schoolLapse.end}
+            {/if}
+        </p>
+
+        {#if lapsesSorted.length}
+            <div class="bg-white rounded-lg shadow-sm overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-color1 text-white text-left">
+                            <th class="px-4 py-2 font-semibold">Momento</th>
+                            <th class="px-4 py-2 font-semibold">Inicio</th>
+                            <th class="px-4 py-2 font-semibold">Fin</th>
+                            <th class="px-4 py-2 font-semibold">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {#each lapsesSorted as lapse}
+                            <tr
+                                class="border-b border-gray-100 {currentLapse?.id === lapse.id ? 'bg-green/10' : ''}"
+                            >
+                                <td
+                                    class="px-4 py-2 font-semibold text-gray-800"
+                                >
+                                    {lapse.label}
+                                </td>
+                                <td class="px-4 py-2">
+                                    <input
+                                        type="date"
+                                        value={momentsForm[lapse.id]?.start ??
+                                            lapse.start}
+                                        on:input={(e) =>
+                                            setMomentDate(
+                                                lapse.id,
+                                                "start",
+                                                e.target.value,
+                                            )}
+                                        class="rounded-md border border-gray-300 px-2 py-1"
+                                    />
+                                </td>
+                                <td class="px-4 py-2">
+                                    <input
+                                        type="date"
+                                        value={momentsForm[lapse.id]?.end ??
+                                            lapse.end}
+                                        on:input={(e) =>
+                                            setMomentDate(
+                                                lapse.id,
+                                                "end",
+                                                e.target.value,
+                                            )}
+                                        class="rounded-md border border-gray-300 px-2 py-1"
+                                    />
+                                </td>
+                                <td class="px-4 py-2">
+                                    {#if currentLapse?.id === lapse.id}
+                                        <span
+                                            class="rounded-full bg-color1 px-2 py-0.5 text-xs font-semibold text-white"
+                                        >
+                                            Vigente hoy
+                                        </span>
+                                    {/if}
+                                </td>
+                            </tr>
+                        {/each}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-4 flex flex-wrap items-center gap-3">
+                <button
+                    type="button"
+                    class="animated-button flex items-center gap-2"
+                    disabled={momentSaving}
+                    on:click={saveMomentsDates}
+                >
+                    {#if momentSaving}
+                        Cargando...
+                    {:else}
+                        <iconify-icon
+                            icon="material-symbols:save"
+                            class="text-xl"
+                        />
+                        Guardar fechas de momentos
+                    {/if}
+                </button>
+
+                {#if currentLapse && nextLapse}
+                    <button
+                        type="button"
+                        class="flex items-center gap-2 rounded-md bg-color1 px-4 py-2 text-sm font-semibold text-white hover:bg-green hover:text-black disabled:opacity-50"
+                        disabled={momentClosing}
+                        on:click={closeCurrentMoment}
+                    >
+                        {#if momentClosing}
+                            Cargando...
+                        {:else}
+                            <iconify-icon
+                                icon="carbon:next-outline"
+                                class="text-lg"
+                            />
+                            Cerrar {currentLapse.label} y pasar al
+                            {nextLapse.label}
+                        {/if}
+                    </button>
+                {:else if currentLapse}
+                    <p class="text-sm text-gray-600">
+                        El {currentLapse.label} es el último del periodo. Usa
+                        "Iniciar próximo periodo" para pasar al siguiente ciclo.
+                    </p>
+                {:else}
+                    <p class="text-sm text-gray-500">
+                        Hoy no corresponde a ningún momento. Ajusta las fechas
+                        para que el sistema reconozca el momento vigente.
+                    </p>
+                {/if}
+            </div>
+        {:else}
+            <p class="text-sm text-gray-500">
+                No hay momentos configurados para el periodo activo.
+            </p>
+        {/if}
     </div>
 
     <hr class=" border-gray-300" />
