@@ -115,6 +115,8 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::post('/dashboard/planes-evaluacion/copiar', [EvaluationPlanController::class, 'copy']);
     Route::post('/dashboard/planes-evaluacion/{id}/aprobar', [EvaluationPlanController::class, 'approve']);
     Route::post('/dashboard/planes-evaluacion/{id}/rechazar', [EvaluationPlanController::class, 'reject']);
+    Route::put('/dashboard/planes-evaluacion/{id}', [EvaluationPlanController::class, 'updateByAdmin']);
+    Route::delete('/dashboard/planes-evaluacion/{id}', [EvaluationPlanController::class, 'destroyByAdmin']);
 
     Route::get('/dashboard/reportes/boleta/{studentId}', [ReportController::class, 'boleta']);
     Route::get('/dashboard/reportes/certificado/{studentId}', [ReportController::class, 'certificado']);

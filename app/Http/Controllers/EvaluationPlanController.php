@@ -8,6 +8,7 @@ use App\Http\Requests\CopyEvaluationPlanRequest;
 use App\Http\Requests\RejectEvaluationPlanRequest;
 use App\Http\Requests\StoreAdminEvaluationPlanRequest;
 use App\Http\Requests\StoreEvaluationPlanRequest;
+use App\Http\Requests\UpdateAdminEvaluationPlanRequest;
 use App\Http\Requests\UpdateEvaluationPlanRequest;
 use App\Models\EvaluationPlan;
 use App\Models\User;
@@ -56,7 +57,6 @@ class EvaluationPlanController extends Controller
                 'matters' => $this->planService->getMatters(),
                 'teachers' => $teachers,
                 'statuses' => collect(EvaluationPlanStatusEnum::cases())
-                    ->filter(fn ($s) => $s !== EvaluationPlanStatusEnum::Draft)
                     ->map(fn ($s) => [
                         'value' => $s->value,
                         'label' => $s->label(),
@@ -187,6 +187,40 @@ class EvaluationPlanController extends Controller
         }
     }
 
+    /**
+     * El administrador puede editar cualquier plan (contenido y/o profesor,
+     * materia, año, sección y momento destino). Si el plan está aprobado, se
+     * crea una versión pendiente para conservar la aprobada vigente.
+     */
+    public function updateByAdmin(UpdateAdminEvaluationPlanRequest $request, $id)
+    {
+        $plan = EvaluationPlan::findOrFail($id);
+
+        try {
+            $data = $request->validated();
+            $teacherId = (int) $data['teacher_id'];
+
+            if ($plan->status === EvaluationPlanStatusEnum::Approved->value) {
+                $data['status'] = EvaluationPlanStatusEnum::Pending->value;
+                $data['course_id'] = $data['course_id'] ?? $plan->course_id;
+                $data['section_id'] = $data['section_id'] ?? ($plan->section_id ? [$plan->section_id] : []);
+                $data['matter_id'] = $data['matter_id'] ?? $plan->matter_id;
+
+                $this->planService->createPlan($teacherId, $data);
+
+                return back()->with(['status' => true, 'message' => 'Se creó una versión pendiente del plan; la versión aprobada sigue vigente hasta publicación.']);
+            }
+
+            $this->planService->updatePlan($plan, $data, $teacherId);
+
+            return back()->with(['status' => true, 'message' => 'Plan de evaluación actualizado correctamente.']);
+        } catch (Exception $e) {
+            Log::error('Error al actualizar plan de evaluación (admin) ID '.$id.': '.$e->getMessage());
+
+            return back()->withErrors(['message' => ErrorTranslator::translate($e)]);
+        }
+    }
+
     public function destroy($id)
     {
         $plan = EvaluationPlan::findOrFail($id);
@@ -201,6 +235,29 @@ class EvaluationPlanController extends Controller
             return back()->with(['status' => true, 'message' => 'Plan de evaluación eliminado correctamente.']);
         } catch (Exception $e) {
             Log::error('Error al eliminar plan de evaluación ID '.$id.': '.$e->getMessage());
+
+            return back()->withErrors(['message' => ErrorTranslator::translate($e)]);
+        }
+    }
+
+    /**
+     * El administrador puede eliminar cualquier plan salvo los aprobados,
+     * para no romper notas/boletas ya publicadas.
+     */
+    public function destroyByAdmin($id)
+    {
+        $plan = EvaluationPlan::findOrFail($id);
+
+        if ($plan->status === EvaluationPlanStatusEnum::Approved->value) {
+            return back()->withErrors(['message' => 'Un plan aprobado no puede eliminarse.']);
+        }
+
+        try {
+            $this->planService->deletePlan($plan);
+
+            return back()->with(['status' => true, 'message' => 'Plan de evaluación eliminado correctamente.']);
+        } catch (Exception $e) {
+            Log::error('Error al eliminar plan de evaluación (admin) ID '.$id.': '.$e->getMessage());
 
             return back()->withErrors(['message' => ErrorTranslator::translate($e)]);
         }
@@ -275,7 +332,16 @@ class EvaluationPlanController extends Controller
                 ]);
             }
 
-            return back()->with([
+            // Lleva al admin al filtro de borradores del profesor destino para
+            // que vea de inmediato el plan recién copiado.
+            $filters = $request->only([
+                'search', 'school_lapse_id', 'lapse_id', 'course_id', 'section_id', 'matter_id',
+            ]);
+            $filters['status'] = EvaluationPlanStatusEnum::Draft->value;
+            $filters['teacher_id'] = $teacherId;
+            $filters = array_filter($filters, fn ($v) => $v !== null && $v !== '');
+
+            return redirect('/dashboard/planes-evaluacion?'.http_build_query($filters))->with([
                 'status' => true,
                 'message' => 'Plan copiado como borrador para el profesor correctamente.',
             ]);

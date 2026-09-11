@@ -42,11 +42,9 @@
 
     let schoolLapseId = "";
     let lapseId = "";
-    let name = "";
     let teacherId = "";
     let selectedSections = [];
     let saving = false;
-    let lastAutoName = "";
 
     $: selectedSchoolLapse = data.school_lapses?.find(
         (l) => String(l.id) === String(schoolLapseId),
@@ -64,41 +62,6 @@
             : [];
     }
 
-    function sectionLabels() {
-        const chosen = normalizeSections();
-        if (!chosen.length) return "";
-        if (chosen.includes("all")) return "Todas las secciones";
-        const names = courseSections
-            .filter((s) => chosen.includes(String(s.id)))
-            .map((s) => s.name);
-        return names.length ? names.join(", ") : "";
-    }
-
-    function buildAutoName() {
-        const period = data.school_lapses?.find(
-            (l) => String(l.id) === String(schoolLapseId),
-        );
-        const moment = (period?.lapses || []).find(
-            (m) => String(m.id) === String(lapseId),
-        );
-        return [
-            plan?.matter_name,
-            plan?.course_name,
-            moment?.label,
-            sectionLabels(),
-        ]
-            .filter((v) => v && String(v).trim())
-            .join(" ");
-    }
-
-    function refreshAutoName({ force = false } = {}) {
-        const auto = buildAutoName();
-        if (force || !name || name === lastAutoName) {
-            name = auto;
-        }
-        lastAutoName = auto;
-    }
-
     function init() {
         if (!plan) return;
         const active = schoolLapseForToday();
@@ -108,7 +71,6 @@
         selectedSections = plan?.section_id
             ? [String(plan.section_id)]
             : [];
-        refreshAutoName({ force: true });
     }
 
     $: if (showModal && plan) init();
@@ -118,11 +80,6 @@
             (l) => String(l.id) === String(schoolLapseId),
         );
         lapseId = currentMomentId(period);
-        refreshAutoName();
-    }
-
-    function onMomentChange() {
-        refreshAutoName();
     }
 
     function isAllSelected() {
@@ -131,7 +88,6 @@
 
     function toggleAll(checked) {
         selectedSections = checked ? ["all"] : [];
-        refreshAutoName();
     }
 
     function toggleSection(id) {
@@ -140,7 +96,6 @@
         selectedSections = chosen.includes(value)
             ? chosen.filter((v) => v !== value)
             : [...chosen, value];
-        refreshAutoName();
     }
 
     function submit() {
@@ -158,7 +113,6 @@
             school_lapse_id: schoolLapseId,
             lapse_id: lapseId,
             section_id: sections,
-            name: (name || "").trim(),
         };
         if (isAdmin) {
             payload.teacher_id = teacherId || plan.teacher_id;
@@ -239,7 +193,6 @@
                     label={"Momento destino"}
                     bind:value={lapseId}
                     classes={"col-span-6"}
-                    on:change={onMomentChange}
                 >
                     {#if momentOptions.length}
                         {#each momentOptions as moment}
@@ -251,21 +204,6 @@
                         <option value="">Sin momentos</option>
                     {/if}
                 </Input>
-
-                <div class="col-span-12">
-                    <!-- svelte-ignore a11y-label-has-associated-control -->
-                    <label
-                        class="form__label w-full text-xs md:text-sm font-semibold text-gray-700"
-                    >
-                        Nombre del plan
-                    </label>
-                    <input
-                        type="text"
-                        bind:value={name}
-                        placeholder="Nombre del plan copiado"
-                        class="rounded-md border border-gray-300 px-3 py-2 text-sm w-full"
-                    />
-                </div>
 
                 <div class="col-span-12">
                     <!-- svelte-ignore a11y-label-has-associated-control -->

@@ -31,7 +31,7 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request)
     {
-        $dataUser = ['email' => $request->email, 'password' => $request->password];
+        $dataUser = ['email' => $request->email, 'password' => trim($request->password)];
         Log::info('Login attempt for user: '.$request->email);
         Log::info('password '.$request->password);
         if (! $this->loginService->tryLoginOrFail($dataUser)) {

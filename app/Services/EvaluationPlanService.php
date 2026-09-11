@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\EvaluationPlanStatusEnum;
+use App\Exceptions\CustomException;
 use App\Models\Course;
 use App\Models\EvaluationPlan;
 use App\Models\EvaluationPlanItem;
@@ -257,6 +258,16 @@ class EvaluationPlanService
         if (is_array($sectionIds) && count($sectionIds) > 0) {
             $createdPlan = null;
             foreach (array_values($sectionIds) as $index => $sectionId) {
+                if (($data['status'] ?? null) === EvaluationPlanStatusEnum::Approved->value) {
+                    $this->assertNoApprovedPlanExists(
+                        (int) $data['school_lapse_id'],
+                        $data['lapse_id'] ?? null,
+                        $data['course_id'] ?? null,
+                        $sectionId,
+                        (int) $data['matter_id'],
+                    );
+                }
+
                 $plan = EvaluationPlan::create([
                     'user_id' => $teacherId,
                     'matter_id' => $data['matter_id'],
@@ -284,13 +295,25 @@ class EvaluationPlanService
         }
 
         // Fallback single plan
+        $singleSectionId = is_array($sectionIds) ? ($sectionIds[0] ?? null) : $sectionIds;
+
+        if (($data['status'] ?? null) === EvaluationPlanStatusEnum::Approved->value && $singleSectionId !== null) {
+            $this->assertNoApprovedPlanExists(
+                (int) $data['school_lapse_id'],
+                $data['lapse_id'] ?? null,
+                $data['course_id'] ?? null,
+                $singleSectionId,
+                (int) $data['matter_id'],
+            );
+        }
+
         $plan = EvaluationPlan::create([
             'user_id' => $teacherId,
             'matter_id' => $data['matter_id'],
             'school_lapse_id' => $data['school_lapse_id'],
             'lapse_id' => $data['lapse_id'] ?? null,
             'course_id' => $data['course_id'] ?? null,
-            'section_id' => is_array($sectionIds) ? ($sectionIds[0] ?? null) : $sectionIds,
+            'section_id' => $singleSectionId,
             'name' => $this->buildPlanName($data),
             'description' => $data['description'] ?? null,
             'rasgos_points' => (int) ($data['rasgos_points'] ?? 0),
@@ -305,10 +328,11 @@ class EvaluationPlanService
         return $plan;
     }
 
-    public function updatePlan(EvaluationPlan $plan, array $data): EvaluationPlan
+    public function updatePlan(EvaluationPlan $plan, array $data, ?int $ownerId = null): EvaluationPlan
     {
         $sectionIds = $data['section_id'] ?? null;
         $unitsOrItems = $data['units'] ?? $data['items'] ?? [];
+        $ownerId = $ownerId ?? $plan->user_id;
 
         // Normalize 'all' into actual section ids for the course
         if (is_array($sectionIds) && in_array('all', $sectionIds, true)) {
@@ -326,12 +350,13 @@ class EvaluationPlanService
             $first = array_shift($sectionIds);
 
             $plan->update([
+                'user_id' => $ownerId,
                 'matter_id' => $data['matter_id'],
                 'school_lapse_id' => $data['school_lapse_id'],
                 'lapse_id' => $data['lapse_id'] ?? null,
                 'course_id' => $data['course_id'] ?? null,
                 'section_id' => $first,
-                'name' => $data['name'],
+                'name' => $this->buildPlanName($data),
                 'description' => $data['description'] ?? null,
                 'rasgos_points' => (int) ($data['rasgos_points'] ?? 0),
                 'status' => $data['status'] ?? EvaluationPlanStatusEnum::Pending->value,
@@ -346,7 +371,7 @@ class EvaluationPlanService
             // Create clones for remaining sections
             foreach ($sectionIds as $sectionId) {
                 $new = EvaluationPlan::create([
-                    'user_id' => $plan->user_id,
+                    'user_id' => $ownerId,
                     'matter_id' => $data['matter_id'],
                     'school_lapse_id' => $data['school_lapse_id'],
                     'lapse_id' => $data['lapse_id'] ?? null,
@@ -367,6 +392,7 @@ class EvaluationPlanService
 
         // Single section (or no array)
         $plan->update([
+            'user_id' => $ownerId,
             'matter_id' => $data['matter_id'],
             'school_lapse_id' => $data['school_lapse_id'],
             'lapse_id' => $data['lapse_id'] ?? null,
@@ -456,11 +482,20 @@ class EvaluationPlanService
     private function flattenUnitsToItems(array $units): array
     {
         $items = [];
+        $sawTopics = false;
 
         foreach (array_values($units) as $unitIndex => $unit) {
-            $unitTopics = is_array($unit['topics'] ?? null) ? $unit['topics'] : [];
+            if (! is_array($unit['topics'] ?? null)) {
+                continue;
+            }
 
-            foreach (array_values($unitTopics) as $topicIndex => $topic) {
+            $sawTopics = true;
+
+            foreach (array_values($unit['topics']) as $topicIndex => $topic) {
+                if ($this->isBlankTopic($topic)) {
+                    continue;
+                }
+
                 $items[] = [
                     'unit_name' => $unit['name'] ?? null,
                     'unit_number' => $unit['unit_number'] ?? ($unitIndex + 1),
@@ -476,7 +511,7 @@ class EvaluationPlanService
             }
         }
 
-        if ($items === []) {
+        if (! $sawTopics) {
             foreach (array_values($units) as $index => $item) {
                 $items[] = [
                     'unit_name' => null,
@@ -494,6 +529,18 @@ class EvaluationPlanService
         }
 
         return $items;
+    }
+
+    private function isBlankTopic(array $topic): bool
+    {
+        $name = trim((string) ($topic['name'] ?? ''));
+        $percentage = $topic['percentage'] ?? '';
+        $points = $topic['points'] ?? '';
+
+        $hasPercentage = is_numeric($percentage) && (float) $percentage > 0;
+        $hasPoints = is_numeric($points) && (float) $points > 0;
+
+        return $name === '' && ! $hasPercentage && ! $hasPoints;
     }
 
     private function syncItems(EvaluationPlan $plan, array $units): void
@@ -549,7 +596,6 @@ class EvaluationPlanService
             'lapse_id' => $data['lapse_id'] ?? null,
             'course_id' => $source->course_id,
             'section_id' => $data['section_id'] ?? ($source->section_id ? [$source->section_id] : []),
-            'name' => $this->buildCopyName($source, $data),
             'description' => $source->description,
             'rasgos_points' => $source->rasgos_points,
             'status' => EvaluationPlanStatusEnum::Draft->value,
@@ -559,46 +605,60 @@ class EvaluationPlanService
         return $this->createPlan($teacherId, $createData);
     }
 
-    private function buildCopyName(EvaluationPlan $source, array $data): string
-    {
-        $name = trim((string) ($data['name'] ?? ''));
-
-        if ($name !== '') {
-            return $name;
-        }
-
-        $parts = [];
-        if ($source->matter) {
-            $parts[] = $source->matter->name;
-        }
-        $targetSchoolLapse = SchoolLapse::find($data['school_lapse_id'] ?? null);
-        if ($targetSchoolLapse) {
-            $parts[] = $this->lapseLabel($targetSchoolLapse);
-        }
-        if ($source->course) {
-            $parts[] = $source->course->name;
-        }
-        $targetLapse = Lapse::find($data['lapse_id'] ?? null);
-        if ($targetLapse) {
-            $parts[] = $this->momentLabel($targetLapse);
-        }
-        if ($source->section) {
-            $parts[] = $source->section->name;
-        }
-
-        $name = trim(implode(' ', array_values(array_filter($parts))));
-
-        return $name !== '' ? $name : trim($source->name.' (copia)');
-    }
-
     public function approve(EvaluationPlan $plan, int $adminId): void
     {
+        $this->assertNoApprovedPlanExists(
+            (int) $plan->school_lapse_id,
+            $plan->lapse_id,
+            $plan->course_id,
+            $plan->section_id,
+            (int) $plan->matter_id,
+            (int) $plan->id,
+        );
+
         $plan->update([
             'status' => EvaluationPlanStatusEnum::Approved->value,
             'admin_note' => null,
             'approved_by' => $adminId,
             'approved_at' => now(),
         ]);
+    }
+
+    /**
+     * Evita aprobar (o crear ya aprobado) un plan cuando ya existe otro plan
+     * aprobado para el mismo período escolar, momento, año, sección y materia.
+     */
+    private function assertNoApprovedPlanExists(
+        int $schoolLapseId,
+        $lapseId,
+        $courseId,
+        $sectionId,
+        int $matterId,
+        ?int $excludeId = null,
+    ): void {
+        $query = EvaluationPlan::where('status', EvaluationPlanStatusEnum::Approved->value)
+            ->where('school_lapse_id', $schoolLapseId)
+            ->where('matter_id', $matterId);
+
+        $courseId === null
+            ? $query->whereNull('course_id')
+            : $query->where('course_id', $courseId);
+
+        $sectionId === null
+            ? $query->whereNull('section_id')
+            : $query->where('section_id', $sectionId);
+
+        $lapseId === null
+            ? $query->whereNull('lapse_id')
+            : $query->where('lapse_id', $lapseId);
+
+        if ($excludeId !== null) {
+            $query->where('id', '!=', $excludeId);
+        }
+
+        if ($query->exists()) {
+            throw new CustomException('Ya existe un plan de evaluación aprobado para el mismo período escolar, año, sección, momento y materia. No es posible aprobar otro.');
+        }
     }
 
     public function reject(EvaluationPlan $plan, int $adminId, ?string $note): void

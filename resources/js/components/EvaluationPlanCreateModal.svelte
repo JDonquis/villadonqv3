@@ -3,7 +3,7 @@
     import Modal from "./Modal.svelte";
     import Input from "./Input.svelte";
     import { displayAlert } from "../stores/alertStore";
-    import { onDestroy, onMount } from "svelte";
+    import { createEventDispatcher, onDestroy, onMount } from "svelte";
 
     export let data = {};
     export let isUserATeacher = false;
@@ -12,6 +12,8 @@
     // When editing (teacher mode) the parent passes the plan to prefill.
     export let editingPlan = null;
 
+    const dispatch = createEventDispatcher();
+
     let showFormModal = false;
     let allowedWeekdays = null;
     let allowedTimer = null;
@@ -19,6 +21,7 @@
     let lastShowPickerAt = 0;
     let editingPlanId = null;
     let submitStatus = "Crear"; // "Crear" | "Editar"
+    let showDateErrors = false;
     const totalPoints = 20;
 
     const isTeacher = mode === "teacher" || isUserATeacher;
@@ -39,6 +42,31 @@
 
     function createUnit(number = 1) {
         return { unit_number: number, name: "", topics: [createTopic()] };
+    }
+
+    function isBlankTopic(topic) {
+        const name = (topic.name || "").trim();
+        const percentage = parseFloat(topic.percentage);
+        const points = parseFloat(topic.points);
+        return (
+            !name &&
+            !(percentage > 0) &&
+            !(points > 0)
+        );
+    }
+
+    function topicMissingDate(topic) {
+        return !isBlankTopic(topic) && !topic.scheduled_date;
+    }
+
+    function missingDatesCount() {
+        let count = 0;
+        for (const unit of $form.units || []) {
+            for (const topic of unit.topics || []) {
+                if (topicMissingDate(topic)) count++;
+            }
+        }
+        return count;
     }
 
     const activeLapse =
@@ -217,6 +245,7 @@
         $form.reset();
         allowedWeekdays = null;
         openTooltip = null;
+        showDateErrors = false;
         $form.school_lapse_id = activeLapse?.id || "";
         $form.lapse_id = isTeacher
             ? initialMomentIdFor(activeLapse)
@@ -236,6 +265,10 @@
     export function openForEdit(plan) {
         editingPlanId = plan.id;
         submitStatus = "Editar";
+        showDateErrors = false;
+        if (!isTeacher) {
+            $form.teacher_id = plan.teacher_id || "";
+        }
         $form.description = plan.description || "";
         $form.rasgos_points = plan.rasgos_points ?? 0;
         $form.status = plan.status === "draft" ? "draft" : "pending";
@@ -280,19 +313,36 @@
         $form.clearErrors();
         submittedAs = $form.status || "pending";
 
-        if (isTeacher && submitStatus === "Editar") {
-            $form.put(`/dashboard/mis-planes/${editingPlanId}`, {
+        if (submittedAs !== "draft" && missingDatesCount() > 0) {
+            showDateErrors = true;
+            displayAlert({
+                type: "error",
+                message:
+                    "Debes asignar una fecha a cada tema de evaluación antes de enviar el plan a aprobación.",
+            });
+            return;
+        }
+        showDateErrors = false;
+
+        if (submitStatus === "Editar") {
+            const url = isTeacher
+                ? `/dashboard/mis-planes/${editingPlanId}`
+                : `/dashboard/planes-evaluacion/${editingPlanId}`;
+
+            $form.put(url, {
                 onSuccess: () => {
                     showFormModal = false;
                     resetForm();
                     editingPlanId = null;
                     submitStatus = "Crear";
+                    dispatch("saved");
                     displayAlert({
                         type: "success",
-                        message:
-                            submittedAs === "draft"
+                        message: isTeacher
+                            ? submittedAs === "draft"
                                 ? "Borrador actualizado correctamente"
-                                : "Plan actualizado y enviado a aprobación correctamente",
+                                : "Plan actualizado y enviado a aprobación correctamente"
+                            : "Plan de evaluación actualizado correctamente",
                     });
                 },
                 onError: (errors) => {
@@ -313,6 +363,7 @@
             resetForm();
             editingPlanId = null;
             submitStatus = "Crear";
+            dispatch("saved");
             displayAlert({
                 type: "success",
                 message: isTeacher
@@ -702,6 +753,8 @@
                                     <input
                                         type="date"
                                         class="rounded-md border border-gray-300 px-2 py-2 text-sm"
+                                        class:border-red={showDateErrors &&
+                                            topicMissingDate(topic)}
                                         bind:value={
                                             $form.units[unitIndex].topics[
                                                 topicIndex
