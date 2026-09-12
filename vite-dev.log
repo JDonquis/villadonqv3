@@ -1,0 +1,55 @@
+Port 5173 is in use, trying another one...
+
+  [32m[1mVITE[22m v5.4.21[39m  [2mready in [0m[1m1796[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5174[22m/[39m
+[2m  [32m➜[39m  [1mNetwork[22m[2m: use [22m[1m--host[22m[2m to expose[22m
+[2m[32m  ➜[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m
+
+  [31m[1mLARAVEL[22m v10.50.3[39m  [2mplugin[22m [1mv1.3.0[22m
+
+  [32m➜[39m  [1mAPP_URL[22m: [36mhttp://localhost[39m
+Browserslist: caniuse-lite is outdated. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+14:53:13 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/Configuracion.svelte:774:4 Unused CSS selector "textarea"
+14:53:14 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/Horarios.svelte:330:16 A11y: A form label must be associated with a control.
+14:53:14 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/Horarios.svelte:345:16 A11y: A form label must be associated with a control.
+14:53:14 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/Horarios.svelte:424:12 A11y: A form label must be associated with a control.
+14:53:14 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/Horarios.svelte:439:12 A11y: A form label must be associated with a control.
+14:53:14 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/Horarios.svelte:471:12 A11y: A form label must be associated with a control.
+14:53:14 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/Horarios.svelte:503:12 A11y: A form label must be associated with a control.
+14:53:16 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MiHorario.svelte:72:12 A11y: A form label must be associated with a control.
+14:53:16 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:460:8 A11y: A form label must be associated with a control.
+14:53:16 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:475:8 A11y: A form label must be associated with a control.
+14:53:16 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:490:8 A11y: A form label must be associated with a control.
+14:53:16 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisPlanes.svelte:188:8 A11y: A form label must be associated with a control.
+14:53:16 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisPlanes.svelte:204:8 A11y: A form label must be associated with a control.
+14:53:16 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisPlanes.svelte:217:8 A11y: A form label must be associated with a control.
+14:53:17 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/Personal.svelte:14:15 Personal has unused export property 'types'. If it is for external reference only, please consider using `export const types`
+14:53:17 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/PlanesEvaluacion.svelte:258:8 A11y: A form label must be associated with a control.
+14:53:17 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/PlanesEvaluacion.svelte:270:8 A11y: A form label must be associated with a control.
+14:53:17 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/PlanesEvaluacion.svelte:282:8 A11y: A form label must be associated with a control.
+14:53:17 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/PlanesEvaluacion.svelte:295:8 A11y: A form label must be associated with a control.
+14:53:17 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/PlanesEvaluacion.svelte:308:8 A11y: A form label must be associated with a control.
+14:53:17 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/Profesores.svelte:15:15 Profesores has unused export property 'filters'. If it is for external reference only, please consider using `export const filters`
+14:53:17 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/ForgotPassword.svelte:8:15 ForgotPassword has unused export property 'errors'. If it is for external reference only, please consider using `export const errors`
+14:53:17 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Index.svelte:113:4 Unused CSS selector "input[type="submit"]"
+14:53:17 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/DashboardLayout.svelte:25:12 Attributes should not contain ':' characters to prevent ambiguity with Svelte directives
+14:53:18 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Input.svelte:10:15 Input has unused export property 'theme'. If it is for external reference only, please consider using `export const theme`
+14:53:18 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Input.svelte:162:4 Unused CSS selector "select.nb-input"
+14:53:18 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Search.svelte:41:15 Search has unused export property 'allowSearch'. If it is for external reference only, please consider using `export const allowSearch`
+14:53:19 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Table.svelte:353:4 Unused CSS selector "tr"
+14:53:19 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Modal.svelte:7:0 A11y: <div> with click handler must have an ARIA role
+14:53:19 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Modal.svelte:30:1 Unused CSS selector "dialog"
+14:53:19 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Modal.svelte:35:1 Unused CSS selector "dialog::backdrop"
+14:53:19 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Modal.svelte:40:1 Unused CSS selector "dialog > div"
+14:53:19 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Modal.svelte:43:1 Unused CSS selector "dialog[open]"
+14:53:19 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Modal.svelte:54:1 Unused CSS selector "dialog[open]::backdrop"
+14:53:19 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/EvaluationPlanCreateModal.svelte:496:20 A11y: A form label must be associated with a control.
+14:53:19 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/EvaluationPlanCreateModal.svelte:557:16 A11y: A form label must be associated with a control.
+14:53:19 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/EvaluationPlanCreateModal.svelte:13:15 EvaluationPlanCreateModal has unused export property 'editingPlan'. If it is for external reference only, please consider using `export const editingPlan`
+14:53:19 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Header.svelte:97:12 A11y: <div> with click handler must have an ARIA role
+14:53:19 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Header.svelte:111:12 A11y: <div> with click handler must have an ARIA role
+14:53:20 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/DateRange.svelte:104:8 A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details.
+14:53:20 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/DateRange.svelte:104:8 A11y: <div> with click handler must have an ARIA role

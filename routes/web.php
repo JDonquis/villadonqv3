@@ -7,6 +7,7 @@ use App\Http\Controllers\EvaluationPlanController;
 use App\Http\Controllers\MainConfigController;
 use App\Http\Controllers\MatterController;
 use App\Http\Controllers\MyScheduleController;
+use App\Http\Controllers\PaymentConceptController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
@@ -77,6 +78,9 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::get('/dashboard/pagos', [PaymentController::class, 'index']);
     Route::get('/dashboard/pagos/search-representative', [StudentController::class, 'searchRepresentative']);
     Route::post('/dashboard/pagos', [PaymentController::class, 'store']);
+    Route::post('/dashboard/pagos/conceptos', [PaymentConceptController::class, 'store']);
+    Route::put('/dashboard/pagos/conceptos/{id}', [PaymentConceptController::class, 'update']);
+    Route::delete('/dashboard/pagos/conceptos/{id}', [PaymentConceptController::class, 'destroy']);
     Route::put('/dashboard/pagos/{id}', [PaymentController::class, 'update']);
     Route::delete('/dashboard/pagos/{id}', [PaymentController::class, 'destroy']);
 

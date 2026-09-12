@@ -149,7 +149,7 @@
 
 {#if inlineFilters && filtersOptions}
     <div
-        class="border border-gray-200 bg-gray-50 rounded-xl p-4"
+        class="border border-gray-200 bg-gray-50 rounded-xl p-4 pt-2"
     >
         <FilterControls
             {filtersOptions}

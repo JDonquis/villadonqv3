@@ -274,7 +274,7 @@
     {#if pagination}
         <!-- Pagination ---------------------------------------------------------------------------------------------- -->
         <div
-            class="mt-2 px-3 py-1 rounded-xl bg-white sm:flex sm:items-center sm:justify-between flex-wrap gap-2"
+            class="mt-5 px-3 py-1 rounded-xl bg-white sm:flex sm:items-center sm:justify-between flex-wrap gap-2"
         >
             <div class="text-sm text-gray-500 flex items-center gap-2">
                 <span>Mostrando</span>

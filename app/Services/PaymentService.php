@@ -11,7 +11,7 @@ class PaymentService
     public function getAll($params = [], ?array $allowedStudentIds = null)
     {
         $query = Payment::query()
-            ->with('students', 'accountPayment.method', 'user', 'deletedBy')
+            ->with('students', 'accountPayment.method', 'user', 'deletedBy', 'paymentConcept')
             ->when($allowedStudentIds, function ($q) use ($allowedStudentIds) {
                 $q->whereHas('students', function ($query) use ($allowedStudentIds) {
                     $query->whereIn('students.id', $allowedStudentIds);
@@ -28,6 +28,9 @@ class PaymentService
                                 ->orWhere('last_name', 'like', '%'.$search.'%');
                         })
                         ->orWhereHas('accountPayment.method', function ($q) use ($search) {
+                            $q->where('name', 'like', '%'.$search.'%');
+                        })
+                        ->orWhereHas('paymentConcept', function ($q) use ($search) {
                             $q->where('name', 'like', '%'.$search.'%');
                         })
                         ->orWhereHas('students', function ($q) use ($search) {
@@ -61,6 +64,28 @@ class PaymentService
                     ? $params['account_payment_id']
                     : [$params['account_payment_id']];
                 $q->whereIn('account_payment_id', $accountPaymentIds);
+            })
+            ->when(isset($params['payment_concept_id']), function ($q) use ($params) {
+                $conceptIds = is_array($params['payment_concept_id'])
+                    ? $params['payment_concept_id']
+                    : [$params['payment_concept_id']];
+                $q->where(function ($query) use ($conceptIds) {
+                    $regular = false;
+                    $ids = [];
+                    foreach ($conceptIds as $id) {
+                        if (in_array((string) $id, ['regular', '0'], true)) {
+                            $regular = true;
+                        } else {
+                            $ids[] = $id;
+                        }
+                    }
+                    if ($regular) {
+                        $query->whereNull('payment_concept_id');
+                    }
+                    if ($ids) {
+                        $query->whereIn('payment_concept_id', $ids);
+                    }
+                });
             });
 
         $totalIncome = (clone $query)->where('status', '!=', 0)->sum('total_in_dolars');
@@ -84,6 +109,7 @@ class PaymentService
         $payment = Payment::create([
             'user_id' => $userId,
             'account_payment_id' => $data['account_payment_id'],
+            'payment_concept_id' => ! empty($data['payment_concept_id']) ? $data['payment_concept_id'] : null,
             'date' => $data['date'],
             'total_in_dolars' => $data['total_in_dolars'],
             'total_in_bs' => $data['total_in_bs'],
@@ -96,6 +122,8 @@ class PaymentService
         // Asociar estudiantes con el pago
 
         $studentsData = collect($data['students']);
+
+        $hasConcept = ! empty($data['payment_concept_id']);
 
         $balanceService = new BalanceService;
 
@@ -114,10 +142,12 @@ class PaymentService
                 'amount_in_dolars' => $studentData['amount_in_dolars'],
             ]);
 
-            $balanceService->updateStudentBalance($payment, $student, $studentData['balances']);
+            if (! $hasConcept) {
+                $balanceService->updateStudentBalance($payment, $student, $studentData['balances']);
+            }
         }
 
-        $payment->load('students', 'accountPayment');
+        $payment->load('students', 'accountPayment', 'paymentConcept');
 
         return $payment;
     }

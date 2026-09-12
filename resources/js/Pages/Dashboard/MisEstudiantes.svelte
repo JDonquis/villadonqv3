@@ -522,9 +522,9 @@
         </div>
     {:else}
         <div
-            class="bg-white border border-gray-200 rounded-lg shadow overflow-x-auto"
+            class="bg-white border mb-14 border-gray-200 rounded-lg shadow overflow-x-auto"
         >
-            <table class="w-full text-sm">
+            <table class="w-full text-sm ">
                 <thead class="bg-gray-50">
                     <tr>
                         <th
@@ -739,7 +739,7 @@
             {#if $form.isDirty}
                 <button
                     on:click={handleSave}
-                    class="max-w-[300px] animated-button flex items-center gap-10 "
+                    class="max-w-[300px] animated-button flex items-center gap-10 hover:shadow-lg "
                     disabled={$form.processing}
                 >
                     {#if $form.processing}
@@ -753,7 +753,7 @@
 
             {#if !$form.isDirty && canPublish}
 
-            <button type="button" on:click={handlePublish} disabled={$form.processing} class="bg-color4 rounded-full text-dark min-w-fit font-bold py-3 px-4 mt-5">
+            <button type="button" on:click={handlePublish} disabled={$form.processing} class="bg-color4  hover:bg-color4/80 hover:shadow-lg  rounded-full text-dark min-w-fit font-bold py-3 px-4 mt-5">
                 Publicar notas
             </button>
             {/if}

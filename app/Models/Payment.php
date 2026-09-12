@@ -17,6 +17,7 @@ class Payment extends Model
     protected $fillable = [
         'user_id',
         'account_payment_id',
+        'payment_concept_id',
         'date',
         'total_in_dolars',
         'total_in_bs',
@@ -43,6 +44,11 @@ class Payment extends Model
     public function accountPayment()
     {
         return $this->belongsTo(AccountPayment::class, 'account_payment_id');
+    }
+
+    public function paymentConcept()
+    {
+        return $this->belongsTo(PaymentConcept::class, 'payment_concept_id');
     }
 
     public function students()

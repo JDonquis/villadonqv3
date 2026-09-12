@@ -35,6 +35,7 @@
         reported_date: currentDateString,
         students: [],
         account_payment_id: "",
+        payment_concept_id: "",
         total_in_dolars: "1",
         total_in_bs: "",
         reference: "",
@@ -49,6 +50,135 @@
     $: showModalFormEdit = false;
     let selectedRow = { status: false, data: null };
     let submitStatus = "Registrar";
+
+    let concepts = [...(data?.concepts ?? [])];
+    let showConceptModal = false;
+    let editingConceptId = null;
+    let conceptForm = useForm({
+        name: "",
+        description: "",
+        price: "",
+    });
+
+    $: isConceptPayment = !!$form.payment_concept_id;
+
+    function applyConceptToStudents() {
+        const concept = concepts.find(
+            (c) => String(c.id) === String($form.payment_concept_id),
+        );
+        if (!concept) return;
+        const price = parseFloat(concept.price);
+        if (!(price > 0)) return;
+        $form.students = $form.students.map((s) => ({
+            ...s,
+            amount_in_dolars: price.toFixed(2),
+            amount_in_bs: (price * dolarPrice).toFixed(2),
+        }));
+        $form.total_in_dolars = $form.students
+            .reduce(
+                (total, s) =>
+                    total + (parseFloat(s.amount_in_dolars) || 0),
+                0,
+            )
+            .toFixed(2);
+        $form.total_in_bs = ($form.total_in_dolars * dolarPrice).toFixed(2);
+    }
+
+    const openCreateConcept = () => {
+        $conceptForm.reset();
+        editingConceptId = null;
+        showConceptModal = true;
+    };
+
+    const openEditConcept = (concept) => {
+        $conceptForm.reset();
+        $conceptForm.name = concept.name;
+        $conceptForm.description = concept.description || "";
+        $conceptForm.price = concept.price;
+        editingConceptId = concept.id;
+        showConceptModal = true;
+    };
+
+    const saveConcept = async () => {
+        if (!$conceptForm.name.trim()) {
+            displayAlert({
+                type: "error",
+                message: "El nombre del concepto es obligatorio",
+            });
+            return;
+        }
+        if ($conceptForm.price === "" || $conceptForm.price == null) {
+            $conceptForm.price = 0;
+        }
+        try {
+            if (editingConceptId) {
+                const { data } = await axios.put(
+                    `/dashboard/pagos/conceptos/${editingConceptId}`,
+                    {
+                        name: $conceptForm.name,
+                        description: $conceptForm.description,
+                        price: $conceptForm.price,
+                    },
+                );
+                const updated = data.concept;
+                concepts = concepts.map((c) =>
+                    c.id === updated.id ? updated : c,
+                );
+                displayAlert({
+                    type: "success",
+                    message: "Concepto actualizado correctamente",
+                });
+            } else {
+                const { data } = await axios.post(
+                    "/dashboard/pagos/conceptos",
+                    {
+                        name: $conceptForm.name,
+                        description: $conceptForm.description,
+                        price: $conceptForm.price,
+                    },
+                );
+                const created = data.concept;
+                concepts = [...concepts, created];
+                $form.payment_concept_id = created.id;
+                applyConceptToStudents();
+                displayAlert({
+                    type: "success",
+                    message: "Concepto creado correctamente",
+                });
+            }
+        } catch (error) {
+            displayAlert({
+                type: "error",
+                message:
+                    error?.response?.data?.message ||
+                    error?.response?.data?.errors?.name?.[0] ||
+                    "Error al guardar el concepto",
+            });
+        }
+        showConceptModal = false;
+    };
+
+    const deleteConcept = async (id) => {
+        if (!confirm("¿Está seguro de eliminar este concepto?")) return;
+        try {
+            await axios.delete(`/dashboard/pagos/conceptos/${id}`);
+            concepts = concepts.filter((c) => c.id !== id);
+            if (String($form.payment_concept_id) === String(id)) {
+                $form.payment_concept_id = "";
+            }
+            displayAlert({
+                type: "success",
+                message: "Concepto eliminado correctamente",
+            });
+        } catch (error) {
+            displayAlert({
+                type: "error",
+                message:
+                    error?.response?.data?.message ||
+                    "Error al eliminar el concepto",
+            });
+        }
+    };
 
     function formatFechaCorta(dateString) {
         if (!dateString) return "";
@@ -282,6 +412,7 @@
         // );
 
         $form.id = selectedData.id;
+        $form.payment_concept_id = selectedData.payment_concept_id || "";
         // console.log({ studentsWithBalances });
         $form.students = selectedData.students.map((s) => ({
             id: s.id,
@@ -428,6 +559,7 @@
                                             is_exempt: student.is_exempt,
                                         },
                                     ];
+                                    applyConceptToStudents();
                                 }
                                 isSearchTableOpen = false;
                             }}
@@ -616,7 +748,7 @@
                         </tr>
                         <tr class=" ">
                             <td colspan="7" class="px-3 pb-10">
-                                {#if submitStatus !== "Solo lectura"}
+                                {#if !isConceptPayment && submitStatus !== "Solo lectura"}
                                     <BalanceBar
                                         balances={student.balances.map((b) => ({
                                             ...b,
@@ -639,6 +771,35 @@
         </div>
 
         <div class="col-span-4 w-full grid md:grid-cols-2 md:gap-x-5">
+          <div class="col-span-2 w-full">
+                <Input
+                    type="select"
+                    label={"Concepto de pago"}
+                    bind:value={$form.payment_concept_id}
+                    error={$form.errors?.payment_concept_id}
+                    readonly={submitStatus === "Solo lectura"}
+                    on:change={applyConceptToStudents}
+                >
+                    <option value="">Mensualidad / Inscripciones</option>
+                    {#each concepts as concept}
+                        <option value={concept.id}>
+                            {concept.name}
+                            {#if concept.price != null && Number(concept.price) > 0}
+                                - ${concept.price}
+                            {/if}
+                        </option>
+                    {/each}
+                </Input>
+                {#if submitStatus !== "Solo lectura"}
+                    <button
+                        type="button"
+                        class="text-xs font-semibold text-color2 bg-gray-200 hover:text-color1 hover:shadow-md mt-1 px-1 py-0.5 rounded-md"
+                        on:click={openCreateConcept}
+                    >
+                        + Crear concepto
+                    </button>
+                {/if}
+            </div>
             <Input
                 type="date"
                 required={true}
@@ -677,6 +838,7 @@
                     </option>
                 {/each}
             </Input>
+          
             <Input
                 type="number"
                 label={"Total en Dólares ($)"}
@@ -735,16 +897,118 @@
     </form>
 </Modal>
 
+<Modal bind:showModal={showConceptModal} classes="w-11/12 max-w-2xl">
+    <h2 slot="header" class="text-sm text-center">
+        GESTIÓN DE CONCEPTOS DE PAGO
+    </h2>
+
+    <div class="px-4">
+        {#if concepts.length > 0}
+            <div class="max-h-44 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
+                {#each concepts as concept}
+                    <div
+                        class="flex items-center justify-between gap-3 px-3 py-2"
+                    >
+                        <div class="min-w-0">
+                            <p class="font-semibold text-sm text-gray-800 truncate">
+                                {concept.name}
+                                {#if concept.price != null && Number(concept.price) > 0}
+                                    <span class="font-mono text-xs text-gray-500">
+                                        (${concept.price})
+                                    </span>
+                                {/if}
+                            </p>
+                            {#if concept.description}
+                                <p class="text-xs text-gray-500 truncate">
+                                    {concept.description}
+                                </p>
+                            {/if}
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button
+                                type="button"
+                                class="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                                on:click={() => openEditConcept(concept)}
+                            >
+                                Editar
+                            </button>
+                            <button
+                                type="button"
+                                class="text-xs font-semibold text-red-600 hover:text-red-800"
+                                on:click={() => deleteConcept(concept.id)}
+                            >
+                                Eliminar
+                            </button>
+                        </div>
+                    </div>
+                {/each}
+            </div>
+        {:else}
+            <p class="text-sm text-gray-400 text-center py-4">
+                Aún no hay conceptos. Crea uno para poder registrar pagos por
+                concepto.
+            </p>
+        {/if}
+
+        <div class="border-t border-gray-100 mt-4 pt-4">
+            <h3 class="text-xs font-semibold text-gray-700 mb-1">
+                {editingConceptId ? "Editar concepto" : "Nuevo concepto"}
+            </h3>
+            <Input
+                type="text"
+                label={"Nombre"}
+                required={true}
+                bind:value={$conceptForm.name}
+                error={$conceptForm.errors?.name}
+            />
+            <Input
+                type="text"
+                label={"Descripción"}
+                bind:value={$conceptForm.description}
+            />
+            <Input
+                type="number"
+                label={"Precio ($)"}
+                min="0"
+                step="0.01"
+                bind:value={$conceptForm.price}
+                error={$conceptForm.errors?.price}
+            />
+            <div class="flex justify-end gap-2 mt-4">
+                <button
+                    type="button"
+                    class="px-4 py-2 text-xs font-semibold text-gray-500 border border-gray-300 rounded-md hover:bg-gray-50"
+                    on:click={() => (showConceptModal = false)}
+                >
+                    Cancelar
+                </button>
+                <button
+                    type="button"
+                    class="animated-button px-4 py-2 text-xs"
+                    on:click={saveConcept}
+                >
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</Modal>
+
 <div class=" items-start justify-between gap-5 mt-1">
     <div class="flex justify-between items-end gap-3 w-full">
         {#if data.total_income}
-            <div class=" flex items-center gap-2">
+            <div class=" flex items-center  max-w-fit gap-2">
                 <span class="font-semibold">Total ingresos:</span>
-                <b
-                    class={`text-sm bg-white shadow-sm px-2 ${showTotalIncome ? "opacity-100" : "opacity-0 blur-sm"} text-green transition-all duration-200`}
-                >
-                    {showTotalIncome ? `$${data.total_income}` : "•••"}
-                </b>
+                {#if showTotalIncome}
+                    <b
+                        class={`text-sm bg-white shadow-sm px-2 text-green transition-all duration-200`}
+                    >
+                        ${data.total_income}
+                    </b>
+            
+                {/if}
+               
+                
                 <button
                     type="button"
                     class="inline-flex items-center justify-center bg-white/10 p-2 text-gray-700 transition hover:bg-green/10 focus:outline-none"
@@ -813,6 +1077,22 @@
         <Search
             inlineFilters
             filtersOptions={{
+                  payment_concept_id: {
+                    type: "select",
+                    multiple: true,
+                    label: "Concepto de pago",
+                    options: [
+                        {
+                            id: "regular",
+                            name: "Mensualidad / Inscripciones",
+                            color: "color1",
+                        },
+                        ...concepts.map((c) => ({
+                            id: String(c.id),
+                            name: c.name,
+                        })),
+                    ],
+                },
                 date: {
                     type: "date",
                     label: "Fecha de la transacción",
@@ -834,6 +1114,7 @@
                         color: ColorsPayMethods()[account.payment_method_name],
                     })),
                 },
+              
             }}
         />
     </div>
@@ -872,6 +1153,7 @@
             <th>Total USD$</th>
             <th>Total Bs</th>
             <th>Método de pago</th>
+            <th>Concepto</th>
             <th>Referencia</th>
             <!-- <th>Representante</th> -->
         </tr>
@@ -972,6 +1254,19 @@
                             .account_payment.cash_currency}{/if}
                     {#if row.account_payment.username}- {row.account_payment
                             .username}{/if}
+                </td>
+                <td>
+                    {#if row.payment_concept}
+                        <span
+                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200"
+                        >
+                            {row.payment_concept.name}
+                        </span>
+                    {:else}
+                        <span class="text-gray-400 text-xs">
+                            Mensualidad / Inscripciones
+                        </span>
+                    {/if}
                 </td>
                 <td>{row.reference}</td>
             </SelectableRow>

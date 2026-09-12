@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePaymentRequest;
 use App\Models\MainConfig;
+use App\Models\PaymentConcept;
 use App\Services\MainConfigService;
 use App\Services\PaymentService;
 use App\Support\ErrorTranslator;
@@ -31,6 +32,7 @@ class PaymentController extends Controller
         $accounts = $this->mainConfigService->getAccounts();
         $result = $this->paymentService->getAll($request->all());
         $config = MainConfig::select('day_of_monthly_payment', 'grace_period')->first();
+        $concepts = PaymentConcept::active()->orderBy('name')->get();
 
         return inertia('Dashboard/Pagos', [
             'data' => [
@@ -38,6 +40,7 @@ class PaymentController extends Controller
                 'payments' => $result['payments'],
                 'prices' => $prices,
                 'total_income' => $result['total_income'],
+                'concepts' => $concepts,
             ],
             'config' => $config,
         ]);

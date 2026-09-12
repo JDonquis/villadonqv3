@@ -134,41 +134,48 @@ Corrida **manual** — marcar cada ítem con `[x]` cuando pase y dejar nota cuan
 
 ## 9. Planes de evaluación (profesor + admin) — incluye copiado
 
-### Creación (profesor)
-- [ ] Crear plan para **una sección**; unidades → temas con % y puntos.
-- [ ] Crear plan con **"Todas las secciones"** → genera un plan por sección (N clones).
-- [ ] Suma evaluaciones + rasgos = **100%**; si no, bloquea en UI **y** servidor (tolerancia 0.01).
-- [ ] Guardar como **borrador** vs **enviar a aprobación** generan estados `borrador`/`pendiente`.
-- [ ] El tooltip de "días permitidos" coincide con el horario real de esa materia/profesor/sección.
-- [ ] Elegir fecha sin restricción funciona; la fecha se guarda en `scheduled_date`.
+### Creación (profesor) — QA 2026-09-08
+- [x] Crear plan para **una sección**; unidades → temas con % y puntos. *(plan 21 borrador Biología A; luego eliminado)*
+- [x] Crear plan con **"Todas las secciones"** → genera un plan por sección (N clones). *(planes 22/23 = A y B)*
+- [x] Suma evaluaciones + rasgos = **100%**; si no, bloquea en UI **y** servidor (tolerancia 0.01). *(UI: "Debe sumar 100%…" sin POST; servidor rechaza 50% y acepta 100%/95%+1r; rechaza sección ajena al curso)*
+- [x] Guardar como **borrador** vs **enviar a aprobación** generan estados `borrador`/`pendiente`.
+- [x] El tooltip de "días permitidos" coincide con el horario real de esa materia/profesor/sección. *(Biología A teacher 3: lunes + martes = schedule días 1 y 2)*
+- [x] Elegir fecha sin restricción funciona; la fecha se guarda en `scheduled_date`. *(2026-09-14 persistida en item)*
 
 ### Editar / eliminar (profesor)
-- [ ] Plan `pendiente` se puede editar y al guardar vuelve a quedar en revisión (borra nota admin).
-- [ ] Plan `rechazado` se puede editar (queda `pendiente` al enviar).
-- [ ] Plan `aprobado` NO se puede editar ni eliminar (mensaje claro).
-- [ ] Eliminar `pendiente`/`borrador` funciona y desaparece de la lista.
+- [x] Plan `pendiente` se puede editar y al guardar vuelve a quedar en revisión (borra nota admin). *(plan 22)*
+- [x] Plan `rechazado` se puede editar (queda `pendiente` al enviar). *(plan 19)*
+- [c] Plan `aprobado` NO se puede editar ni eliminar (mensaje claro). *(UI: eliminar bloqueado con mensaje "Un plan aprobado no puede eliminarse."; EDITAR abre modal informando "se creará una versión pendiente" y no toca el aprobado, lo que es el diseño actual → ver BUG-3: `canEdit()` en servidor permite editar/borrar aprobados por API)*
+- [x] Eliminar `pendiente`/`borrador` funciona y desaparece de la lista. *(plan 24 borrador)*
 
 ### Admin (PlanesEvaluacion)
-- [ ] Aprobar un plan → estado `aprobado` con aprobador/fecha.
-- [ ] Rechazar con nota → estado `rechazado` + nota visible.
-- [ ] En filtro "Pendiente", al aprobar/rechazar el modal **auto-avanza al siguiente pendiente**.
-- [ ] Botón "Siguiente ›" recorre la cola de pendientes.
-- [ ] Aprobar un plan `rechazado` funciona; rechazar un `aprobado` funciona.
-- [ ] Filtros Período/Momento/Año/Sección/Búsqueda se mantienen entre sí (escribir en search conserva selects y viceversa).
-- [ ] Se pueden ver planes de **años anteriores** cambiando el período.
-- [ ] Los borradores NO aparecen en la cola/listado del admin.
+- [x] Aprobar un plan → estado `aprobado` con aprobador/fecha. *(plan 22: approved_by=1, approved_at=2026-09-08 19:11:18)*
+- [x] Rechazar con nota → estado `rechazado` + nota visible. *(plan 23: nota "Nota QA rechazo plan 23" en caja roja al verlo)*
+- [x] En filtro "Pendiente", al aprobar/rechazar el modal **auto-avanza al siguiente pendiente**. *(22→23→19)*
+- [c] Botón "Siguiente ›" recorre la cola de pendientes. *(funciona tras recargar: "Plan 2 de 2"; NO avanza si se aprieta justo tras aprobar/rechazar → BUG-2)*
+- [x] Aprobar un plan `rechazado` funciona; rechazar un `aprobado` funciona. *(plan 23 rechazado→aprobado; plan 22 aprobado→rechazado con aviso ámbar)*
+- [x] Filtros Período/Momento/Año/Sección/Búsqueda se mantienen entre sí (escribir en search conserva selects y viceversa). *(status+search ↔ lapse_id; rondas cruzadas)*
+- [ ] Se pueden ver planes de **años anteriores** cambiando el período. *(NO PROBABLE: la BD solo tiene el período 2025-2026 — `school_lapses` tiene 1 fila)*
+- [x] Los borradores NO aparecen en la cola/listado del admin. *(borrador 21 ausente; el filtro Estado ni siquiera ofrece "Borrador")*
 
 ### Copiar plan (nuevo)
-- [ ] **Profesor:** filtrar a un momento anterior → acción "Copiar plan" → destino otro momento → queda como **borrador**, con **fechas vacías**, y se redirige a MisPlanes del destino donde se ve/edita.
-- [ ] **Profesor:** copiar un plan **aprobado** de un año anterior al momento actual del año en curso.
-- [ ] **Profesor:** intentar copiar plan ajeno → error de permisos.
-- [ ] **Profesor:** copiar al **mismo** momento (duplicado permitido) funciona.
-- [ ] **Profesor:** con "Todas las secciones" genera N copias.
-- [ ] **Admin:** copiar un plan de un profesor a otro momento.
-- [ ] **Admin:** reasignar a otro profesor que NO da esa materia → error validado; con un profesor válido → OK.
-- [ ] **Admin:** dejar el nombre vacío → se autogenera.
-- [ ] Copiar con destino momento de otro período distinto al del momento elegido → error "el momento no pertenece al período".
-- [ ] La copia NUNCA arrastra `scheduled_date` ni estado `aprobado`; el plan original queda intacto.
+- [x] **Profesor:** filtrar a un momento anterior → acción "Copiar plan" → destino otro momento → queda como **borrador**, con **fechas vacías**, y se redirige a MisPlanes del destino donde se ve/edita. *(plan 20 → 2do Momento; dos GET redirigieron a `mis-planes?school_lapse_id=1&lapse_id=2`; clones 25/26 con `scheduled_date`/`date` = null)*
+- [ ] **Profesor:** copiar un plan **aprobado** de un año anterior al momento actual del año en curso. *(NO PROBABLE: falta un 2.º período escolar en la BD)*
+- [c] **Profesor:** intentar copiar plan ajeno → error de permisos. *(validado por revisión de código: en `EvaluationPlanController::copy()` el teacher con `source.user_id` ajeno → `back()` con "No puedes copiar un plan de otro profesor."; en la UI MisPlanes solo lista planes propios, así que el caso no es alcanzable desde la UI — el 100% de los planes en BD son del mismo profesor)*
+- [c] **Profesor:** copiar al **mismo** momento (duplicado permitido) funciona. *(no se completó por sesión; validado por revisión de código: sin regla de unicidad en `CopyEvaluationPlanRequest` ni `copyPlan()`)*
+- [x] **Profesor:** con "Todas las secciones" genera N copias. *(2 clones, planes 25/26)*
+- [x] **Admin:** copiar un plan de un profesor a otro momento. *(plan 19 → 3er Momento, planes 29/30)*
+- [x] **Admin:** reasignar a otro profesor que NO da esa materia → error validado; con un profesor válido → OK. *(Moswinda(8), que NO da Biología, bloqueado; Durán(3) válido → OK)*
+- [x] **Admin:** dejar el nombre vacío → se autogenera. *(nombres "…Todas las secciones" generados por servidor)*
+- [ ] Copiar con destino momento de otro período distinto al del momento elegido → error "el momento no pertenece al período". *(NO PROBABLE: solo hay 1 período escolar; la regla está en `CopyEvaluationPlanRequest::withValidator`)*
+- [x] La copia NUNCA arrastra `scheduled_date` ni estado `aprobado`; el plan original queda intacto. *(clones 25/26 y 29/30 son `draft` con fechas null; el plan 20 original quedó `approved` con sus fechas)*
+
+### BUGs detectados en este QA (§9)
+- **BUG-1 (copiar con sección específica — BLOQUEANTE).** `CopyEvaluationPlanRequest::withValidator()` línea ~66 ejecuta `$source->course->section()->pluck('id')` sobre un join `sections`×`course_sections` → `SQLSTATE[23000]: 1052 Column 'id' in field list is ambiguous`. Resultado: copiar un plan indicando **una sección concreta** (no "Todas") lanza 500/ErrorTranslator y `back()`, sin crear nada. Con `section_id = ['all']` sí funciona. Impacto: profesor/admin no pueden copiar a una sola sección.
+- **BUG-2 (Siguiente › congelado tras swipe).** Tras aprobar/rechazar, `redirectBackToPlans()` inyecta `filters.open_plan` (session pull) y el bloque reactivo `$: if (filters.open_plan && currentPlanId !== Number(filters.open_plan))` en `PlanesEvaluacion.svelte:233` reabre el plan ya mostrado; el botón "Siguiente ›" muta `currentQueueIndex` pero el `$:` vuelve a reabrir el mismo plan → no avanza hasta recargar la página (donde `open_plan` ya no existe).
+- **BUG-3 (`canEdit()` incluye `approved`).** `EvaluationPlanController::canEdit()` acepta `approved`, así que por API se puede editar/eliminar un plan aprobado; la UI bloquea el delete ("Un plan aprobado no puede eliminarse.") pero el server no. La edición FE de un aprobado crea (por diseño) una versión pendiente sin tocar el original.
+- **BUG-4 (`reject()` escribe aprobación).** `EvaluationPlanService::reject()` setea `approved_by`/`approved_at` aunque el plan nunca fue aprobado (y si lo fue, sobrescribe `approved_at` con la hora del rechazo). Verificado en plan 23 (rechazado con `approved_at=19:15:13` sin haber sido aprobado antes) y en plan 22 (`approved_at` pasó de 19:11:18 a 19:17:38 al rechazarlo).
+- **BUG-5 (modal de copia sin preselección de período).** `EvaluationPlanCopyModal` abre con "Sin momentos" y el período sin valor aunque solo exista 1 período y `init()` deba calcularlo (`schoolLapseForToday()` → solo hay `data.school_lapses[0]`); hay que elegir el período a mano para que carguen los momentos. Se da igual en teacher y admin. *(el auto-nombre y las secciones sí se llenan; el fallo es en `selectedSchoolLapse`/`momentOptions`)*
 
 ## 10. Notas (MisEstudiantes) y publicación
 
