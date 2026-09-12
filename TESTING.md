@@ -54,6 +54,14 @@ Corrida **manual** — marcar cada ítem con `[x]` cuando pase y dejar nota cuan
 - [ ] En Cupos, escribir un cupo menor a los inscritos actuales → la fila se pinta roja con aviso; se permite guardar.
 - [ ] Guardar cupos en 0 o no numérico → validación (entero ≥ 0).
 - [ ] Eliminar una cuenta que ya tiene pagos asociados no rompe el historial (o queda bloqueado con mensaje claro).
+- [ ] Sección **Momentos (lapsos)**: muestra los 3 momentos del periodo activo con sus fechas y marca "Vigente hoy" al que corresponde por fecha.
+- [ ] Sección **Momentos**: cambiar la fecha de fin del momento vigente y guardar → persiste y el "vigente" se recalcula.
+- [ ] Botón **"Cerrar {vigente} y pasar al {siguiente}"**: al pulsarlo el momento actual termina (hoy-1) y el siguiente empieza hoy → desde hoy las vistas por defecto (MisPlanes/MisEstudiantes/representante) usan el siguiente momento.
+- [ ] Si el momento vigente es el 3º, el botón no aparece y se sugiere usar "Iniciar próximo periodo".
+- **Edges Momentos:**
+- [ ] Guardar momentos solapados (fin de uno ≥ inicio del siguiente) → rechazado con mensaje.
+- [ ] Guardar un momento con fechas fuera del periodo escolar → rechazado con mensaje.
+- [ ] Guardar un momento con inicio posterior a su fin → rechazado con mensaje.
 
 ## 4. Catálogos (Personal, Profesores, Materias, Secciones)
 

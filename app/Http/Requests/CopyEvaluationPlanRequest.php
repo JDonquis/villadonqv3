@@ -63,7 +63,7 @@ class CopyEvaluationPlanRequest extends FormRequest
                     if ($count !== count($ids)) {
                         $validator->errors()->add('section_id', 'Se seleccionaron secciones inválidas.');
                     } elseif ($source->course) {
-                        $courseSections = $source->course->section()->pluck('id');
+                        $courseSections = $source->course->section()->pluck('sections.id');
                         $notInCourse = array_values(array_filter($ids, fn ($id) => ! $courseSections->contains((int) $id)));
 
                         if ($notInCourse) {

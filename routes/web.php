@@ -97,6 +97,8 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
 
     Route::put('/dashboard/configuracion/pagos', [MainConfigController::class, 'updatePaymentConfig']);
     Route::put('/dashboard/configuracion/cupos', [MainConfigController::class, 'updateQuotas']);
+    Route::put('/dashboard/configuracion/momentos', [MainConfigController::class, 'updateMoments']);
+    Route::post('/dashboard/configuracion/momentos/cerrar', [MainConfigController::class, 'closeCurrentMoment']);
 
     Route::get('/dashboard/profesores', [TeacherController::class, 'index']);
     Route::get('/dashboard/profesores/plantilla', [TeacherController::class, 'downloadTemplate']);
@@ -117,6 +119,8 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::post('/dashboard/planes-evaluacion/copiar', [EvaluationPlanController::class, 'copy']);
     Route::post('/dashboard/planes-evaluacion/{id}/aprobar', [EvaluationPlanController::class, 'approve']);
     Route::post('/dashboard/planes-evaluacion/{id}/rechazar', [EvaluationPlanController::class, 'reject']);
+    Route::put('/dashboard/planes-evaluacion/{id}', [EvaluationPlanController::class, 'updateByAdmin']);
+    Route::delete('/dashboard/planes-evaluacion/{id}', [EvaluationPlanController::class, 'destroyByAdmin']);
 
     Route::get('/dashboard/reportes/boleta/{studentId}', [ReportController::class, 'boleta']);
     Route::get('/dashboard/reportes/certificado/{studentId}', [ReportController::class, 'certificado']);

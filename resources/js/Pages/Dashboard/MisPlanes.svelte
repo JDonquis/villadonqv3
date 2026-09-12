@@ -75,6 +75,15 @@
     let selectedRow = { status: false, data: null };
     let planModal = null;
 
+    // Tras guardar, Inertia conserva el estado local (preserveState), por lo que
+    // `selectedRow.data` sigue apuntando al objeto viejo. Resolvemos el plan
+    // fresco desde `data.plans` por id para que editar/ver/copiar usen lo último.
+    $: selectedPlan = selectedRow.data
+        ? (data.plans?.find(
+              (p) => String(p.id) === String(selectedRow.data.id),
+          ) ?? selectedRow.data)
+        : null;
+
     const statusBadges = {
         draft: "bg-gray-200 text-gray-700",
         pending: "bg-yellow text-gray-800",
@@ -100,8 +109,8 @@
     }
 
     function fillFormToEdit() {
-        const plan = selectedRow.data;
-        if (!canEdit(plan)) {
+        const plan = selectedPlan;
+        if (!plan || !canEdit(plan)) {
             displayAlert({
                 type: "error",
                 message: "Un plan aprobado no puede editarse.",
@@ -119,8 +128,8 @@
     }
 
     function handleDelete() {
-        if (!selectedRow.data) return;
-        if (selectedRow.data.status === "approved") {
+        if (!selectedPlan) return;
+        if (selectedPlan.status === "approved") {
             displayAlert({
                 type: "error",
                 message: "Un plan aprobado no puede eliminarse.",
@@ -128,13 +137,11 @@
             return;
         }
         if (
-            !confirm(
-                `¿Está seguro de eliminar el plan "${selectedRow.data.name}"?`,
-            )
+            !confirm(`¿Está seguro de eliminar el plan "${selectedPlan.name}"?`)
         )
             return;
 
-        router.delete(`/dashboard/mis-planes/${selectedRow.data.id}`, {
+        router.delete(`/dashboard/mis-planes/${selectedPlan.id}`, {
             onSuccess: () => {
                 displayAlert({
                     type: "success",
@@ -156,7 +163,7 @@
     }
 
     function openCopy() {
-        copyPlan = selectedRow.data;
+        copyPlan = selectedPlan;
         showCopyModal = true;
     }
 </script>
@@ -312,8 +319,8 @@
 </Table>
 
 <Modal bind:showModal classes={"w-fit"}>
-    {#if selectedRow.data}
-        {@const plan = selectedRow.data}
+    {#if selectedPlan}
+        {@const plan = selectedPlan}
         <PlanUnitsView {plan} showTeacher={false} />
     {/if}
 </Modal>
@@ -323,6 +330,7 @@
     mode="teacher"
     renderTriggerButton={false}
     bind:this={planModal}
+    on:saved={() => (selectedRow = { status: false, data: null })}
 />
 
 {#if copyPlan}

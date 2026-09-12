@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\EvaluationPlanStatusEnum;
 use App\Models\CourseSection;
 use App\Models\Section;
 use Illuminate\Foundation\Http\FormRequest;
@@ -29,6 +30,8 @@ class UpdateEvaluationPlanRequest extends FormRequest
 
     public function rules(): array
     {
+        $isDraft = $this->input('status') === EvaluationPlanStatusEnum::Draft->value;
+
         return [
             'matter_id' => ['required', 'integer', 'exists:matters,id'],
             'school_lapse_id' => ['required', 'integer', 'exists:school_lapses,id'],
@@ -40,19 +43,19 @@ class UpdateEvaluationPlanRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'rasgos_points' => ['nullable', 'integer', 'min:0', 'max:10'],
             'status' => ['sometimes', 'string', 'in:draft,pending'],
-            'units' => ['required_without:items', 'array', 'min:1'],
+            'units' => [$isDraft ? 'nullable' : 'required_without:items', 'array'],
             'units.*.name' => ['nullable', 'string', 'max:100'],
             'units.*.unit_number' => ['nullable', 'integer', 'min:1'],
-            'units.*.topics' => ['required', 'array', 'min:1'],
-            'units.*.topics.*.name' => ['required', 'string', 'max:150'],
+            'units.*.topics' => [$isDraft ? 'nullable' : 'required', 'array'],
+            'units.*.topics.*.name' => [$isDraft ? 'nullable' : 'required', 'string', 'max:150'],
             'units.*.topics.*.assessment_type' => ['nullable', 'string', 'max:150'],
-            'units.*.topics.*.percentage' => ['required', 'numeric', 'min:0.01', 'max:100'],
+            'units.*.topics.*.percentage' => [$isDraft ? 'nullable' : 'required', 'numeric', 'min:0.01', 'max:100'],
             'units.*.topics.*.points' => ['nullable', 'numeric', 'min:0'],
-            'units.*.topics.*.scheduled_date' => ['nullable', 'date'],
+            'units.*.topics.*.scheduled_date' => [$isDraft ? 'nullable' : 'required', 'date'],
             'units.*.topics.*.description' => ['nullable', 'string'],
-            'items' => ['required_without:units', 'array', 'min:1'],
-            'items.*.name' => ['required', 'string', 'max:100'],
-            'items.*.percentage' => ['required', 'numeric', 'min:0.01', 'max:100'],
+            'items' => [$isDraft ? 'nullable' : 'required_without:units', 'array'],
+            'items.*.name' => [$isDraft ? 'nullable' : 'required', 'string', 'max:100'],
+            'items.*.percentage' => [$isDraft ? 'nullable' : 'required', 'numeric', 'min:0.01', 'max:100'],
             'items.*.date' => ['nullable', 'date'],
         ];
     }
@@ -60,6 +63,7 @@ class UpdateEvaluationPlanRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
+            $isDraft = $this->input('status') === EvaluationPlanStatusEnum::Draft->value;
             $units = $this->input('units');
             $items = $this->input('items');
             $flattened = [];
@@ -83,7 +87,7 @@ class UpdateEvaluationPlanRequest extends FormRequest
             $rasgosPercentage = $rasgos * 5;
             $totalWithRasgos = round($total + $rasgosPercentage, 2);
 
-            if (abs($totalWithRasgos - 100) > 0.01) {
+            if (! $isDraft && abs($totalWithRasgos - 100) > 0.01) {
                 $validator->errors()->add('units', "La suma de los porcentajes de evaluación ({$total}%) más los puntos de rasgos ({$rasgos} punto(s) = {$rasgosPercentage}%) debe ser 100%. Actual: {$totalWithRasgos}%.");
             }
 

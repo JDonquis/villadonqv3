@@ -18,6 +18,16 @@
     let showModal = false;
     let showCopyModal = false;
     let copyPlan = null;
+    let planModal = null;
+
+    // Tras editar/guardar, Inertia conserva el estado local, por lo que
+    // `selectedRow.data` puede apuntar al objeto viejo; resolvemos el plan
+    // fresco desde `data.plans` por id.
+    $: selectedPlan = selectedRow.data
+        ? (data.plans?.find(
+              (p) => String(p.id) === String(selectedRow.data.id),
+          ) ?? selectedRow.data)
+        : null;
     let rejectMode = false;
     let rejectNote = "";
     let rejectingPlanId = null;
@@ -27,6 +37,7 @@
     let currentQueueIndex = 0;
 
     const statusBadges = {
+        draft: "bg-gray-200 text-gray-700",
         pending: "bg-yellow text-gray-800",
         approved: "bg-green-100 text-green-700",
         rejected: "bg-red text-white",
@@ -143,6 +154,44 @@
         showCopyModal = true;
     }
 
+    function editPlan() {
+        if (!selectedPlan) return;
+        showModal = false;
+        planModal?.openForEdit(selectedPlan);
+    }
+
+    function handleDelete() {
+        if (!selectedPlan) return;
+        if (selectedPlan.status === "approved") {
+            displayAlert({
+                type: "error",
+                message: "Un plan aprobado no puede eliminarse.",
+            });
+            return;
+        }
+        if (
+            !confirm(`¿Está seguro de eliminar el plan "${selectedPlan.name}"?`)
+        )
+            return;
+
+        router.delete(`/dashboard/planes-evaluacion/${selectedPlan.id}`, {
+            onSuccess: () => {
+                displayAlert({
+                    type: "success",
+                    message: "Plan eliminado correctamente",
+                });
+                selectedRow = { status: false, data: null };
+                showModal = false;
+            },
+            onError: (errors) => {
+                displayAlert({
+                    type: "error",
+                    message: errors.message || "Error al eliminar",
+                });
+            },
+        });
+    }
+
     // Avanza al siguiente plan pendiente de la cola actual (botón "Siguiente ›").
     function advanceToNextPlan() {
         const nextIndex = currentQueueIndex + 1;
@@ -248,7 +297,15 @@
 
 <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
     <h2 class="text-2xl font-bold text-color1">Planes de Evaluación</h2>
-    <EvaluationPlanCreateModal {data} isUserATeacher={false} />
+    <EvaluationPlanCreateModal
+        {data}
+        isUserATeacher={false}
+        bind:this={planModal}
+        on:saved={() => {
+            selectedRow = { status: false, data: null };
+            showModal = false;
+        }}
+    />
 </div>
 
 <Search {extraSearchParams} />
@@ -326,6 +383,7 @@
     serverSideData={{ filters: {} }}
     pagination={false}
     edit={false}
+    on:clickDeleteIcon={handleDelete}
     otherSelectOptions={[
         {
             label: "Ver plan",
@@ -384,8 +442,8 @@
 </Table>
 
 <Modal bind:showModal classes={"w-fit"}>
-    {#if selectedRow.data}
-        {@const plan = selectedRow.data}
+    {#if selectedPlan}
+        {@const plan = selectedPlan}
         {#if effectiveStatus === "pending" && pendingQueue.length > 1}
             <div class="flex items-center justify-between mb-3 mt-4 text-xs text-gray-500">
                 <span>
@@ -420,7 +478,20 @@
                 in:fly={{ y: 10, duration: 180 }}
                 out:fade={{ duration: 120 }}
             >
-                <div class="flex justify-end mb-2 -mt-1">
+                <div class="flex justify-end gap-2 mb-2 -mt-1">
+                    <button
+                        type="button"
+                        on:click={editPlan}
+                        title="Editar este plan de evaluación"
+                        class="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md border border-gray-200 bg-gray-100 text-gray-700 hover:bg-color1 hover:text-white"
+                    >
+                        <iconify-icon
+                            icon="mdi:pencil"
+                            width="16"
+                            height="16"
+                        />
+                        Editar plan
+                    </button>
                     <button
                         type="button"
                         on:click={() => openCopy(plan)}

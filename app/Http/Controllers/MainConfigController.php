@@ -8,9 +8,12 @@ use App\Http\Resources\AccountPaymentResource;
 use App\Models\AccountPayment;
 use App\Models\PaymentMethod;
 use App\Models\SchoolLapse;
+use App\Services\LapseService;
 use App\Services\MainConfigService;
 use App\Services\QuotaService;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class MainConfigController extends Controller
 {
@@ -29,6 +32,7 @@ class MainConfigController extends Controller
         $prices = $this->mainConfigService->getPrices();
         $schoolLapse = SchoolLapse::where('status', 1)->first();
         $quotas = (new QuotaService)->quotasForPeriod($schoolLapse?->id);
+        $lapses = $schoolLapse ? (new LapseService)->forPeriod($schoolLapse) : [];
 
         return inertia(
             'Dashboard/Configuracion',
@@ -39,11 +43,67 @@ class MainConfigController extends Controller
                     'methods' => $methods,
                     'schoolLapse' => $schoolLapse,
                     'quotas' => $quotas,
+                    'lapses' => $lapses,
                 ],
 
             ]
 
         );
+    }
+
+    public function updateMoments(Request $request)
+    {
+        $validated = $request->validate([
+            'rows' => ['required', 'array', 'min:1'],
+            'rows.*.id' => ['required', 'integer'],
+            'rows.*.start' => ['required', 'date'],
+            'rows.*.end' => ['required', 'date'],
+        ]);
+
+        try {
+            $period = SchoolLapse::where('status', 1)->first();
+
+            if (! $period) {
+                throw new Exception('No hay un periodo escolar activo.');
+            }
+
+            (new LapseService)->saveMoments($period->id, $validated['rows']);
+
+            return back()->with([
+                'status' => true,
+                'message' => 'Fechas de momentos guardadas correctamente.',
+            ]);
+        } catch (Exception $e) {
+            Log::error('Error al guardar fechas de momentos: '.$e->getMessage());
+
+            return back()->withErrors(['message' => $e->getMessage()]);
+        }
+    }
+
+    public function closeCurrentMoment(Request $request)
+    {
+        try {
+            $period = SchoolLapse::where('status', 1)->first();
+
+            if (! $period) {
+                throw new Exception('No hay un periodo escolar activo.');
+            }
+
+            $result = (new LapseService)->closeAndAdvance($period);
+
+            if (! isset($result['closed'])) {
+                return back()->withErrors(['message' => $result['message']]);
+            }
+
+            return back()->with([
+                'status' => true,
+                'message' => $result['message'],
+            ]);
+        } catch (Exception $e) {
+            Log::error('Error al cerrar momento: '.$e->getMessage());
+
+            return back()->withErrors(['message' => $e->getMessage()]);
+        }
     }
 
     public function updateQuotas(Request $request)
