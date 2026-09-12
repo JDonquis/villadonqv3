@@ -58,6 +58,14 @@
             <td class="info-label">Sección:</td>
             <td>{{ $student['section'] }}</td>
         </tr>
+        @if (!empty($student['plan_de_estudio_code']))
+            <tr>
+                <td class="info-label">Plan de Estudio:</td>
+                <td>{{ $student['plan_de_estudio_code'] }}</td>
+                <td class="info-label"></td>
+                <td></td>
+            </tr>
+        @endif
         <tr>
             <td class="info-label">Año escolar:</td>
             <td>{{ $period['label'] ?? '—' }}</td>

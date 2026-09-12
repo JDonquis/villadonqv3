@@ -118,14 +118,25 @@
 
     let showPaymentOptions = false;
 
-    let quotasForm = {};
-    (data.quotas || []).forEach((row) => {
-        quotasForm[row.course_id] = row.assigned ?? row.accepted ?? "";
-    });
+    let accordionState = {
+        quotas: false,
+        lapses: false,
+        plans: false,
+    };
+
     let quotaSaving = false;
 
+    const quotasForm = useForm(
+        Object.fromEntries(
+            (data.quotas || []).map((row) => [
+                row.course_id,
+                String(row.assigned ?? row.accepted ?? ""),
+            ]),
+        ),
+    );
+
     function quotaAssigned(row) {
-        const value = parseInt(quotasForm[row.course_id], 10);
+        const value = parseInt($quotasForm[row.course_id], 10);
         return Number.isNaN(value) ? 0 : value;
     }
 
@@ -144,11 +155,13 @@
         quotaSaving = true;
         router.put(
             "/dashboard/configuracion/cupos",
-            { assigned: quotasForm },
+            { assigned: $quotasForm.data() },
             {
                 preserveScroll: true,
                 onSuccess: () => {
                     quotaSaving = false;
+                    $quotasForm.defaults();
+                    $quotasForm.reset();
                     displayAlert({
                         type: "success",
                         message: "Cupos actualizados correctamente",
@@ -167,10 +180,83 @@
             },
         );
     }
-    let momentsForm = {};
-    (data.lapses || []).forEach((lapse) => {
-        momentsForm[lapse.id] = { start: lapse.start, end: lapse.end };
-    });
+    const momentsForm = useForm(
+        Object.fromEntries(
+            (data.lapses || []).map((lapse) => [
+                lapse.id,
+                { start: lapse.start, end: lapse.end },
+            ]),
+        ),
+    );
+
+    const planForm = useForm(
+        Object.fromEntries(
+            (data.courses || []).map((course) => [
+                course.id,
+                course.plan_de_estudio_code ?? "",
+            ]),
+        ),
+    );
+    let planSaving = false;
+
+    $: planGroups = [
+        {
+            label: "Educación Media General",
+            courses: (data.courses || []).filter((c) =>
+                c.name.includes("Año"),
+            ),
+        },
+        {
+            label: "Educación Primaria",
+            courses: (data.courses || []).filter((c) =>
+                c.name.includes("Grado"),
+            ),
+        },
+        {
+            label: "Educación Inicial / Preescolar",
+            courses: (data.courses || []).filter((c) =>
+                c.name.includes("Nivel"),
+            ),
+        },
+    ].filter((group) => group.courses.length > 0);
+
+    function saveCoursePlans(e) {
+        e.preventDefault();
+        if (
+            !confirm(
+                "¿Está seguro de guardar los códigos de plan de estudio?",
+            )
+        )
+            return;
+        planSaving = true;
+        router.put(
+            "/dashboard/configuracion/planes-de-estudio",
+            { codes: $planForm.data() },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    planSaving = false;
+                    $planForm.defaults();
+                    $planForm.reset();
+                    displayAlert({
+                        type: "success",
+                        message:
+                            "Códigos de plan de estudio guardados correctamente",
+                    });
+                },
+                onError: (errors) => {
+                    planSaving = false;
+                    displayAlert({
+                        type: "error",
+                        message:
+                            errors.codes?.[0] ||
+                            errors.message ||
+                            "Error al guardar los códigos",
+                    });
+                },
+            },
+        );
+    }
 
     $: lapsesSorted = (data.lapses || [])
         .slice()
@@ -192,10 +278,7 @@
     $: nextLapse = currentIndex >= 0 ? lapsesSorted[currentIndex + 1] : null;
 
     function setMomentDate(id, key, value) {
-        momentsForm = {
-            ...momentsForm,
-            [id]: { ...momentsForm[id], [key]: value },
-        };
+        $momentsForm[id] = { ...$momentsForm[id], [key]: value };
     }
 
     let momentSaving = false;
@@ -207,8 +290,8 @@
         momentSaving = true;
         const rows = lapsesSorted.map((lapse) => ({
             id: lapse.id,
-            start: momentsForm[lapse.id]?.start ?? "",
-            end: momentsForm[lapse.id]?.end ?? "",
+            start: $momentsForm[lapse.id]?.start ?? "",
+            end: $momentsForm[lapse.id]?.end ?? "",
         }));
         router.put(
             "/dashboard/configuracion/momentos",
@@ -217,6 +300,8 @@
                 preserveScroll: true,
                 onSuccess: () => {
                     momentSaving = false;
+                    $momentsForm.defaults();
+                    $momentsForm.reset();
                     displayAlert({
                         type: "success",
                         message: "Fechas de momentos guardadas correctamente",
@@ -786,211 +871,345 @@
     </div>
 
     <div class="my-10 w-full md:px-2">
-        <h2 class="font-bold text-xl mb-1">Cupos (capacidad por año escolar)</h2>
-        <p class="text-sm text-gray-600 mb-4">
-            Periodo escolar activo:
-            {#if data.schoolLapse}
-                {data.schoolLapse.start} / {data.schoolLapse.end}
-            {/if}
-        </p>
-
-        <div class="bg-white rounded-lg shadow-sm overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="bg-color1 text-white text-left">
-                        <th class="px-4 py-2 font-semibold">Año escolar</th>
-                        <th class="px-4 py-2 font-semibold">
-                            Cupo asignado
-                        </th>
-                        <th class="px-4 py-2 font-semibold">Inscritos</th>
-                        <th class="px-4 py-2 font-semibold">Disponibles</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {#each data.quotas || [] as row}
-                        <tr
-                            class="border-b border-gray-100 {row.accepted > quotaAssigned(row) ? 'bg-red-50' : ''}"
-                        >
-                            <td class="px-4 py-2 font-semibold text-gray-800">
-                                {row.name}
-                            </td>
-                            <td class="px-4 py-2">
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={quotasForm[row.course_id] ?? ""}
-                                    on:input={(e) =>
-                                        (quotasForm = {
-                                            ...quotasForm,
-                                            [row.course_id]: e.target.value,
-                                        })}
-                                    class="w-28 rounded-md border border-gray-300 px-2 py-1"
-                                />
-                            </td>
-                            <td class="px-4 py-2 text-gray-700">
-                                {row.accepted}
-                            </td>
-                            <td class="px-4 py-2 text-gray-700">
-                                {row.has_quota
-                                    ? Math.max(0, quotaAssigned(row) - row.accepted)
-                                    : "—"}
-                            </td>
-                        </tr>
-                    {/each}
-                </tbody>
-            </table>
-        </div>
-
-        {#if overCapacity}
-            <p
-                class="mt-3 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700"
-            >
-                Hay cursos con más inscritos que el cupo asignado. Se guarda
-                igualmente, pero no se podrán admitir más estudiantes en ellos
-                hasta subir el cupo.
-            </p>
-        {/if}
-
         <button
             type="button"
-            class="animated-button mt-4 flex items-center gap-2"
-            disabled={quotaSaving}
-            on:click={saveQuotas}
+            class="accordion-trigger w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-color1"
+            on:click={() => (accordionState.quotas = !accordionState.quotas)}
         >
-            {#if quotaSaving}
-                Cargando...
-            {:else}
-                <iconify-icon icon="material-symbols:save" class="text-xl" />
-                Guardar cupos
-            {/if}
-        </button>
-    </div>
-
-    <div class="my-10 w-full md:px-2">
-        <h2 class="font-bold text-xl mb-1">Momentos escolares (lapsos)</h2>
-        <p class="text-sm text-gray-600 mb-4">
-            Periodo escolar activo:
-            {#if data.schoolLapse}
-                {data.schoolLapse.start} / {data.schoolLapse.end}
-            {/if}
-        </p>
-
-        {#if lapsesSorted.length}
-            <div class="bg-white rounded-lg shadow-sm overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="bg-color1 text-white text-left">
-                            <th class="px-4 py-2 font-semibold">Momento</th>
-                            <th class="px-4 py-2 font-semibold">Inicio</th>
-                            <th class="px-4 py-2 font-semibold">Fin</th>
-                            <th class="px-4 py-2 font-semibold">Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {#each lapsesSorted as lapse}
-                            <tr
-                                class="border-b border-gray-100 {currentLapse?.id === lapse.id ? 'bg-green/10' : ''}"
-                            >
-                                <td
-                                    class="px-4 py-2 font-semibold text-gray-800"
-                                >
-                                    {lapse.label}
-                                </td>
-                                <td class="px-4 py-2">
-                                    <input
-                                        type="date"
-                                        value={momentsForm[lapse.id]?.start ??
-                                            lapse.start}
-                                        on:input={(e) =>
-                                            setMomentDate(
-                                                lapse.id,
-                                                "start",
-                                                e.target.value,
-                                            )}
-                                        class="rounded-md border border-gray-300 px-2 py-1"
-                                    />
-                                </td>
-                                <td class="px-4 py-2">
-                                    <input
-                                        type="date"
-                                        value={momentsForm[lapse.id]?.end ??
-                                            lapse.end}
-                                        on:input={(e) =>
-                                            setMomentDate(
-                                                lapse.id,
-                                                "end",
-                                                e.target.value,
-                                            )}
-                                        class="rounded-md border border-gray-300 px-2 py-1"
-                                    />
-                                </td>
-                                <td class="px-4 py-2">
-                                    {#if currentLapse?.id === lapse.id}
-                                        <span
-                                            class="rounded-full bg-color1 px-2 py-0.5 text-xs font-semibold text-white"
-                                        >
-                                            Vigente hoy
-                                        </span>
-                                    {/if}
-                                </td>
-                            </tr>
-                        {/each}
-                    </tbody>
-                </table>
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <h2 class="font-bold text-xl">Cupos (capacidad por año escolar)</h2>
+                    <p class="text-sm text-gray-600 mt-1">
+                        Periodo escolar activo:
+                        {#if data.schoolLapse}
+                            {data.schoolLapse.start} / {data.schoolLapse.end}
+                        {/if}
+                    </p>
+                </div>
+                <iconify-icon
+                    icon={accordionState.quotas ? "mdi:chevron-up" : "mdi:chevron-down"}
+                    class="text-2xl text-gray-600"
+                ></iconify-icon>
             </div>
+        </button>
 
-            <div class="mt-4 flex flex-wrap items-center gap-3">
-                <button
-                    type="button"
-                    class="animated-button flex items-center gap-2"
-                    disabled={momentSaving}
-                    on:click={saveMomentsDates}
-                >
-                    {#if momentSaving}
-                        Cargando...
-                    {:else}
-                        <iconify-icon
-                            icon="material-symbols:save"
-                            class="text-xl"
-                        />
-                        Guardar fechas de momentos
-                    {/if}
-                </button>
+        {#if accordionState.quotas}
+            <div class="mt-4">
+                <div class="bg-white rounded-lg shadow-sm overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-color1 text-white text-left">
+                                <th class="px-4 py-2 font-semibold">Año escolar</th>
+                                <th class="px-4 py-2 font-semibold">
+                                    Cupo asignado
+                                </th>
+                                <th class="px-4 py-2 font-semibold">Inscritos</th>
+                                <th class="px-4 py-2 font-semibold">Disponibles</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {#each data.quotas || [] as row}
+                                <tr
+                                    class="border-b border-gray-100 {row.accepted > quotaAssigned(row) ? 'bg-red-50' : ''}"
+                                >
+                                    <td class="px-4 py-2 font-semibold text-gray-800">
+                                        {row.name}
+                                    </td>
+                                    <td class="px-4 py-2">
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            value={$quotasForm[row.course_id] ?? ""}
+                                            on:input={(e) =>
+                                                ($quotasForm[row.course_id] =
+                                                    e.target.value)}
+                                            class="w-28 rounded-md border border-gray-300 px-2 py-1"
+                                        />
+                                    </td>
+                                    <td class="px-4 py-2 text-gray-700">
+                                        {row.accepted}
+                                    </td>
+                                    <td class="px-4 py-2 text-gray-700">
+                                        {row.has_quota
+                                            ? Math.max(0, quotaAssigned(row) - row.accepted)
+                                            : "—"}
+                                    </td>
+                                </tr>
+                            {/each}
+                        </tbody>
+                    </table>
+                </div>
 
-                {#if currentLapse && nextLapse}
+                {#if overCapacity}
+                    <p
+                        class="mt-3 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700"
+                    >
+                        Hay cursos con más inscritos que el cupo asignado. Se guarda
+                        igualmente, pero no se podrán admitir más estudiantes en ellos
+                        hasta subir el cupo.
+                    </p>
+                {/if}
+
+                {#if $quotasForm.isDirty}
                     <button
                         type="button"
-                        class="flex items-center gap-2 rounded-md bg-color1 px-4 py-2 text-sm font-semibold text-white hover:bg-green hover:text-black disabled:opacity-50"
-                        disabled={momentClosing}
-                        on:click={closeCurrentMoment}
+                        class="animated-button mt-4 flex items-center gap-2"
+                        disabled={quotaSaving}
+                        on:click={saveQuotas}
                     >
-                        {#if momentClosing}
+                        {#if quotaSaving}
                             Cargando...
                         {:else}
                             <iconify-icon
-                                icon="carbon:next-outline"
-                                class="text-lg"
+                                icon="material-symbols:save"
+                                class="text-xl"
                             />
-                            Cerrar {currentLapse.label} y pasar al
-                            {nextLapse.label}
+                            Guardar cupos
                         {/if}
                     </button>
-                {:else if currentLapse}
-                    <p class="text-sm text-gray-600">
-                        El {currentLapse.label} es el último del periodo. Usa
-                        "Iniciar próximo periodo" para pasar al siguiente ciclo.
+                {/if}
+            </div>
+        {/if}
+    </div>
+
+    <div class="my-10 w-full md:px-2">
+        <button
+            type="button"
+            class="accordion-trigger w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-color1"
+            on:click={() => (accordionState.lapses = !accordionState.lapses)}
+        >
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <h2 class="font-bold text-xl">Momentos escolares (lapsos)</h2>
+                    <p class="text-sm text-gray-600 mt-1">
+                        Periodo escolar activo:
+                        {#if data.schoolLapse}
+                            {data.schoolLapse.start} / {data.schoolLapse.end}
+                        {/if}
                     </p>
+                </div>
+                <iconify-icon
+                    icon={accordionState.lapses ? "mdi:chevron-up" : "mdi:chevron-down"}
+                    class="text-2xl text-gray-600"
+                ></iconify-icon>
+            </div>
+        </button>
+
+        {#if accordionState.lapses}
+            <div class="mt-4">
+                {#if lapsesSorted.length}
+                    <div class="bg-white rounded-lg shadow-sm overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-color1 text-white text-left">
+                                    <th class="px-4 py-2 font-semibold">Momento</th>
+                                    <th class="px-4 py-2 font-semibold">Inicio</th>
+                                    <th class="px-4 py-2 font-semibold">Fin</th>
+                                    <th class="px-4 py-2 font-semibold">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {#each lapsesSorted as lapse}
+                                    <tr
+                                        class="border-b border-gray-100 {currentLapse?.id === lapse.id ? 'bg-green/10' : ''}"
+                                    >
+                                        <td
+                                            class="px-4 py-2 font-semibold text-gray-800"
+                                        >
+                                            {lapse.label}
+                                        </td>
+                                        <td class="px-4 py-2">
+                                            <input
+                                                type="date"
+                                                value={$momentsForm[lapse.id]?.start ??
+                                                    lapse.start}
+                                                on:input={(e) =>
+                                                    setMomentDate(
+                                                        lapse.id,
+                                                        "start",
+                                                        e.target.value,
+                                                    )}
+                                                class="rounded-md border border-gray-300 px-2 py-1"
+                                            />
+                                        </td>
+                                        <td class="px-4 py-2">
+                                            <input
+                                                type="date"
+                                                value={$momentsForm[lapse.id]?.end ??
+                                                    lapse.end}
+                                                on:input={(e) =>
+                                                    setMomentDate(
+                                                        lapse.id,
+                                                        "end",
+                                                        e.target.value,
+                                                    )}
+                                                class="rounded-md border border-gray-300 px-2 py-1"
+                                            />
+                                        </td>
+                                        <td class="px-4 py-2">
+                                            {#if currentLapse?.id === lapse.id}
+                                                <span
+                                                    class="rounded-full bg-color1 px-2 py-0.5 text-xs font-semibold text-white"
+                                                >
+                                                    Vigente hoy
+                                                </span>
+                                            {/if}
+                                        </td>
+                                    </tr>
+                                {/each}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-4 flex flex-wrap items-center gap-3">
+                        {#if $momentsForm.isDirty}
+                            <button
+                                type="button"
+                                class="animated-button flex items-center gap-2"
+                                disabled={momentSaving}
+                                on:click={saveMomentsDates}
+                            >
+                                {#if momentSaving}
+                                    Cargando...
+                                {:else}
+                                    <iconify-icon
+                                        icon="material-symbols:save"
+                                        class="text-xl"
+                                    />
+                                    Guardar fechas de momentos
+                                {/if}
+                            </button>
+                        {/if}
+
+                        {#if currentLapse && nextLapse}
+                            <button
+                                type="button"
+                                class="flex items-center gap-2 rounded-md bg-color1 px-4 py-2 text-sm font-semibold text-white hover:bg-green hover:text-black disabled:opacity-50"
+                                disabled={momentClosing}
+                                on:click={closeCurrentMoment}
+                            >
+                                {#if momentClosing}
+                                    Cargando...
+                                {:else}
+                                    <iconify-icon
+                                        icon="carbon:next-outline"
+                                        class="text-lg"
+                                    />
+                                    Cerrar {currentLapse.label} y pasar al
+                                    {nextLapse.label}
+                                {/if}
+                            </button>
+                        {:else if currentLapse}
+                            <p class="text-sm text-gray-600">
+                                El {currentLapse.label} es el último del periodo. Usa
+                                "Iniciar próximo periodo" para pasar al siguiente ciclo.
+                            </p>
+                        {:else}
+                            <p class="text-sm text-gray-500">
+                                Hoy no corresponde a ningún momento. Ajusta las fechas
+                                para que el sistema reconozca el momento vigente.
+                            </p>
+                        {/if}
+                    </div>
                 {:else}
                     <p class="text-sm text-gray-500">
-                        Hoy no corresponde a ningún momento. Ajusta las fechas
-                        para que el sistema reconozca el momento vigente.
+                        No hay momentos configurados para el periodo activo.
                     </p>
                 {/if}
             </div>
-        {:else}
-            <p class="text-sm text-gray-500">
-                No hay momentos configurados para el periodo activo.
-            </p>
+        {/if}
+    </div>
+
+    <div class="my-10 w-full md:px-2">
+        <button
+            type="button"
+            class="accordion-trigger w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-color1"
+            on:click={() => (accordionState.plans = !accordionState.plans)}
+        >
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <h2 class="font-bold text-xl">
+                        Plan de Estudio (Resolución / Pensum)
+                    </h2>
+                    <p class="text-sm text-gray-600 mt-1">
+                        Código oficial de 5 dígitos que aparece en boletines y
+                        certificados.
+                    </p>
+                </div>
+                <iconify-icon
+                    icon={accordionState.plans ? "mdi:chevron-up" : "mdi:chevron-down"}
+                    class="text-2xl text-gray-600"
+                ></iconify-icon>
+            </div>
+        </button>
+
+        {#if accordionState.plans}
+            <div class="mt-4">
+                {#each planGroups as group}
+                    <div class="mb-6">
+                        <h3
+                            class="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500"
+                        >
+                            {group.label}
+                        </h3>
+                        <div class="bg-white rounded-lg shadow-sm overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="bg-color1 text-white text-left">
+                                        <th class="px-4 py-2 font-semibold">
+                                            Año / Grado / Nivel
+                                        </th>
+                                        <th class="px-4 py-2 font-semibold">
+                                            Código de plan de estudio
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {#each group.courses as course}
+                                        <tr class="border-b border-gray-100">
+                                            <td
+                                                class="px-4 py-2 font-semibold text-gray-800"
+                                            >
+                                                {course.name}
+                                            </td>
+                                            <td class="px-4 py-2">
+                                                <input
+                                                    type="text"
+                                                    inputmode="numeric"
+                                                    maxlength="5"
+                                                    value={$planForm[course.id] ?? ""}
+                                                    on:input={(e) =>
+                                                        ($planForm[course.id] = e.target.value
+                                                            .replace(/\D/g, "")
+                                                            .slice(0, 5))}
+                                                    placeholder="Ej: 31011"
+                                                    class="w-32 rounded-md border border-gray-300 px-2 py-1"
+                                                />
+                                            </td>
+                                        </tr>
+                                    {/each}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                {/each}
+
+                {#if $planForm.isDirty}
+                    <button
+                        type="button"
+                        class="animated-button mt-2 flex items-center gap-2"
+                        disabled={planSaving}
+                        on:click={saveCoursePlans}
+                    >
+                        {#if planSaving}
+                            Cargando...
+                        {:else}
+                            <iconify-icon icon="material-symbols:save" class="text-xl" />
+                            Guardar códigos de plan de estudio
+                        {/if}
+                    </button>
+                {/if}
+            </div>
         {/if}
     </div>
 

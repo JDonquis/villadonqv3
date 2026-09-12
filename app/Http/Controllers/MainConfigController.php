@@ -6,6 +6,7 @@ use App\Http\Requests\AccountRequest;
 use App\Http\Requests\PaymentConfigRequest;
 use App\Http\Resources\AccountPaymentResource;
 use App\Models\AccountPayment;
+use App\Models\Course;
 use App\Models\PaymentMethod;
 use App\Models\SchoolLapse;
 use App\Services\LapseService;
@@ -44,6 +45,7 @@ class MainConfigController extends Controller
                     'schoolLapse' => $schoolLapse,
                     'quotas' => $quotas,
                     'lapses' => $lapses,
+                    'courses' => Course::orderBy('id')->get(['id', 'name', 'plan_de_estudio_code']),
                 ],
 
             ]
@@ -165,6 +167,30 @@ class MainConfigController extends Controller
         $this->mainConfigService->updatePaymentConfig($request->validated());
 
         return redirect('/dashboard/configuracion');
+    }
+
+    public function updateCoursePlans(Request $request)
+    {
+        $validated = $request->validate([
+            'codes' => ['required', 'array'],
+            'codes.*' => ['nullable', 'string', 'max:10', 'regex:/^\d*$/'],
+        ]);
+
+        $existing = Course::whereIn('id', array_keys($validated['codes']))->pluck('id');
+        $unknown = array_diff(array_keys($validated['codes']), $existing->all());
+
+        if ($unknown) {
+            return back()->withErrors(['message' => 'La solicitud contiene cursos no válidos.']);
+        }
+
+        foreach ($validated['codes'] as $id => $code) {
+            Course::where('id', $id)->update(['plan_de_estudio_code' => $code !== '' && $code !== null ? $code : null]);
+        }
+
+        return redirect('/dashboard/configuracion')->with([
+            'status' => true,
+            'message' => 'Códigos de plan de estudio guardados correctamente.',
+        ]);
     }
 
     /**
