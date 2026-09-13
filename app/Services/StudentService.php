@@ -84,11 +84,19 @@ class StudentService
     {
         $courseId = $request->input('course_id') ?? 1;
         $sectionId = $request->input('section_id') ?? 1;
+        $graduate = $request->boolean('graduate');
 
-        $students = Student::query()
-            ->where('status', '!=', 0)
-            ->where('course_id', $courseId)
-            ->where('section_id', $sectionId)
+        $query = Student::query();
+
+        if ($graduate) {
+            $query->where('graduate', 1)->where('status', 0);
+        } else {
+            $query->where('status', '!=', 0)
+                ->where('course_id', $courseId)
+                ->where('section_id', $sectionId);
+        }
+
+        $students = $query
             ->when($request->input('search'), function ($query, $search) {
                 $query->where('search', 'like', '%'.$search.'%');
                 $query->orWhere('ci', 'like', '%'.$search.'%')
@@ -101,7 +109,6 @@ class StudentService
                         ->orWhere('ci', 'like', '%'.$search.'%');
                 });
             })
-
             ->with('representative.user', 'course', 'section')
             ->get();
 
@@ -417,6 +424,107 @@ class StudentService
         event(new ReEnrollEvent($student));
 
         return 0;
+    }
+
+    /**
+     * Promueve a todos los estudiantes activos al siguiente grado escolar del
+     * período recién iniciado. Los de 5to año (course_id 1) pasan a graduados,
+     * salvo los marcados como repitientes, que repiten el mismo grado.
+     * Reutiliza ReEnrollEvent para crear inscripción, balance, cupo y cobro
+     * escolar del nuevo período.
+     *
+     * @return array{promoted:int, graduated:int, repeated:int}
+     */
+    public function promoteAllStudentsForNewLapse(): array
+    {
+        $summary = ['promoted' => 0, 'graduated' => 0, 'repeated' => 0];
+
+        $students = Student::where('status', '!=', 0)
+            ->where(function ($query) {
+                $query->where('graduate', 0)->orWhereNull('graduate');
+            })
+            ->with(['representative.user', 'course', 'section'])
+            ->get();
+
+        foreach ($students as $student) {
+            $isRepeating = (bool) $student->is_repeating;
+
+            if (! $isRepeating && (int) $student->course_id === 1) {
+                $student->update([
+                    'graduate' => true,
+                    'status' => 0,
+                ]);
+
+                $summary['graduated']++;
+
+                continue;
+            }
+
+            // Repitiente: se queda en el mismo grado. El resto sube uno.
+            $nextCourseId = $isRepeating
+                ? (int) $student->course_id
+                : (int) $student->course_id - 1;
+
+            if ($nextCourseId < 1) {
+                continue;
+            }
+
+            $sectionId = (int) $student->section_id;
+
+            $this->ensureCourseSection($nextCourseId, $sectionId);
+
+            $student->update([
+                'course_id' => $nextCourseId,
+                'section_id' => $sectionId,
+                'is_repeating' => false,
+            ]);
+
+            $student->load('representative.user', 'course', 'section');
+            $student->update(['search' => $this->generateSearch($student)]);
+
+            event(new ReEnrollEvent($student));
+
+            if ($isRepeating) {
+                $summary['repeated']++;
+            }
+
+            $summary['promoted']++;
+        }
+
+        return $summary;
+    }
+
+    /**
+     * Marca/desmarca al estudiante para que repita el grado en la próxima
+     * promoción (solo aplica a estudiantes activos y no graduados).
+     */
+    public function toggleRepeating($studentId): bool
+    {
+        $student = Student::find($studentId);
+
+        if (! $student) {
+            throw new \Exception('Estudiante no encontrado');
+        }
+
+        if ($student->graduate) {
+            throw new \Exception('Un estudiante graduado no puede marcarse como repitiente.');
+        }
+
+        $student->update(['is_repeating' => ! $student->is_repeating]);
+
+        return (bool) $student->is_repeating;
+    }
+
+    private function ensureCourseSection(int $courseId, int $sectionId): void
+    {
+        if ($sectionId < 1) {
+            return;
+        }
+
+        CourseSection::firstOrCreate([
+            'course_id' => $courseId,
+            'section_id' => $sectionId,
+        ]);
     }
 
     public function update($request, $studentId)

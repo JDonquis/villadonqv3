@@ -6,6 +6,7 @@ use App\Enums\BalanceStudentStatusEnum;
 use App\Models\BalanceStudent;
 use App\Models\MainConfig;
 use App\Models\SchoolLapse;
+use App\Support\EducationLevel;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -72,7 +73,7 @@ class DatabaseSeeder extends Seeder
 
     public function recalculateStudentsDebt()
     {
-        $configData = MainConfig::select('new_inscription_price', 'monthly_payment')->first();
+        $configData = MainConfig::select('new_inscription_price', 'preescolar_inscription_price', 'primaria_inscription_price', 'secundaria_inscription_price', 'monthly_payment')->first();
         if (! $configData) {
             return;
         }
@@ -98,7 +99,7 @@ class DatabaseSeeder extends Seeder
         foreach ($balances as $balance) {
             $student = $balance->student;
             $effectiveMonthlyPayment = (float) $configData->monthly_payment;
-            $effectiveInscriptionPrice = (float) $configData->new_inscription_price;
+            $effectiveInscriptionPrice = EducationLevel::inscriptionPrice($configData, (int) $student->course_id);
 
             if ($student->is_exempt && $student->exemption_percentage) {
                 $multiplier = 1 - ($student->exemption_percentage / 100);

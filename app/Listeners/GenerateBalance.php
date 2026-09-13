@@ -5,6 +5,7 @@ namespace App\Listeners;
 use App\Enums\BalanceStudentStatusEnum;
 use App\Models\MainConfig;
 use App\Models\SchoolLapse;
+use App\Support\EducationLevel;
 use App\Support\PaymentDeadline;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -40,7 +41,7 @@ class GenerateBalance
     {
         $student = $event->student;
 
-        $configData = MainConfig::select('new_inscription_price', 'monthly_payment', 'day_of_monthly_payment', 'grace_period')->first();
+        $configData = MainConfig::select('new_inscription_price', 'preescolar_inscription_price', 'primaria_inscription_price', 'secundaria_inscription_price', 'monthly_payment', 'day_of_monthly_payment', 'grace_period')->first();
         $schoolLapseActive = SchoolLapse::where('status', 1)->first();
 
         if (! $schoolLapseActive) {
@@ -57,7 +58,7 @@ class GenerateBalance
         }
 
         $effectiveMonthlyPayment = (float) $configData->monthly_payment;
-        $effectiveInscriptionPrice = (float) $configData->new_inscription_price;
+        $effectiveInscriptionPrice = EducationLevel::inscriptionPrice($configData, (int) $student->course_id);
 
         if ($student->is_exempt && $student->exemption_percentage) {
             $multiplier = 1 - ($student->exemption_percentage / 100);

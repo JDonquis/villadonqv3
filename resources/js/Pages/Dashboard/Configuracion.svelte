@@ -38,6 +38,9 @@
         const formData = {
             regular_inscription_price: $prices.regular_inscription_price,
             new_inscription_price: $prices.new_inscription_price,
+            preescolar_inscription_price: $prices.preescolar_inscription_price,
+            primaria_inscription_price: $prices.primaria_inscription_price,
+            secundaria_inscription_price: $prices.secundaria_inscription_price,
             monthly_payment: $prices.monthly_payment,
             day_of_monthly_payment: $prices.day_of_monthly_payment,
             grace_period: $prices.grace_period,
@@ -89,6 +92,8 @@
             "⚠️ ¿ESTÁ SEGURO DE INICIAR EL PRÓXIMO PERIODO ESCOLAR?\n\n" +
             "Esta acción NO se puede deshacer. Tenga en cuenta lo siguiente:\n\n" +
             "• El periodo actual quedará finalizado (esto NO borra ninguna información).\n" +
+            "• Los estudiantes activos se promoverán automáticamente al siguiente grado y quedarán reinscritos en el nuevo periodo.\n" +
+            "• Los estudiantes de 5to año pasarán a graduados.\n" +
             "• Todas las nuevas inscripciones y movimientos financieros se registrarán bajo este nuevo ciclo.\n\n" +
             "¿Desea continuar?";
 
@@ -597,10 +602,22 @@
 
                 <div class="w-full gap-10 pl-1">
                     <Input
-                        label="Inscripción ($)"
+                        label="Inscripción Preescolar ($)"
                         type="number"
                         required={true}
-                        bind:value={$prices.new_inscription_price}
+                        bind:value={$prices.preescolar_inscription_price}
+                    />
+                    <Input
+                        label="Inscripción Primaria ($)"
+                        type="number"
+                        required={true}
+                        bind:value={$prices.primaria_inscription_price}
+                    />
+                    <Input
+                        label="Inscripción Secundaria ($)"
+                        type="number"
+                        required={true}
+                        bind:value={$prices.secundaria_inscription_price}
                     />
                     <Input
                         label="Mensualidad ($)"

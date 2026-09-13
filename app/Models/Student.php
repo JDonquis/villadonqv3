@@ -33,9 +33,14 @@ class Student extends Model
         'exemption_observations',
         'apply_to_past_debts',
         'document_type',
+        'is_repeating',
     ];
 
     public $timestamps = false;
+
+    protected $casts = [
+        'is_repeating' => 'boolean',
+    ];
 
     public function representative()
     {

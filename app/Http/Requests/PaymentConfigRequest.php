@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class PaymentConfigRequest extends FormRequest
@@ -17,13 +18,16 @@ class PaymentConfigRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\Rule|array|string>
+     * @return array<string, Rule|array|string>
      */
     public function rules(): array
     {
         return [
             'regular_inscription_price' => ['required'],
             'new_inscription_price' => ['required'],
+            'preescolar_inscription_price' => ['nullable', 'integer', 'min:0'],
+            'primaria_inscription_price' => ['nullable', 'integer', 'min:0'],
+            'secundaria_inscription_price' => ['nullable', 'integer', 'min:0'],
             'monthly_payment' => ['required'],
             'ame_price' => ['required'],
             'investment_plan_price' => ['required'],

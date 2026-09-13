@@ -11,6 +11,8 @@
     const documentTypes = data.document_types || [];
     const report = data.report || {};
 
+    $: isRepeating = !!(data.student && data.student.is_repeating);
+
     const reportScopes = [
         { value: "anual", label: "Anual (todos los momentos)" },
         ...(report.lapses || []).map((l) => ({
@@ -86,6 +88,38 @@
         return name ? name.replace(/_/g, " ") : "";
     }
 
+    function toggleRepeating() {
+        const wasRepeating = isRepeating;
+        const message = wasRepeating
+            ? "¿Quitar la marca de repitiente a este estudiante?"
+            : "¿Marcar que este estudiante repetirá el grado en el próximo período escolar?";
+        if (!confirm(message)) return;
+
+        router.patch(
+            `/dashboard/matricula/${student.student_id}/repitencia`,
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    displayAlert({
+                        type: "success",
+                        message: wasRepeating
+                            ? "Se quitó la repetición."
+                            : "Estudiante marcado como repitiente.",
+                    });
+                },
+                onError: (errors) => {
+                    displayAlert({
+                        type: "error",
+                        message:
+                            errors.message ||
+                            "No se pudo actualizar la repitencia.",
+                    });
+                },
+            },
+        );
+    }
+
     function periodLabel(inscription) {
         return inscription?.period || "";
     }
@@ -112,6 +146,29 @@
         >
             Graduado
         </span>
+    {:else if isRepeating}
+        <div class="flex items-center gap-3">
+            <span
+                class="px-3 py-1 rounded-md text-sm font-bold text-gray-800 bg-yellow flex items-center gap-1"
+            >
+                <iconify-icon icon="mdi:repeat"></iconify-icon>
+                Repite grado
+            </span>
+            <button
+                on:click={toggleRepeating}
+                class="px-3 py-2 rounded-md text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-300 hover:bg-amber-100"
+            >
+                Quitar repetición
+            </button>
+        </div>
+    {:else}
+        <button
+            on:click={toggleRepeating}
+            class="px-3 py-2 rounded-md text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-300 hover:bg-amber-100 flex items-center gap-2"
+        >
+            <iconify-icon icon="mdi:repeat"></iconify-icon>
+            Marcar que repite grado
+        </button>
     {/if}
 </div>
 

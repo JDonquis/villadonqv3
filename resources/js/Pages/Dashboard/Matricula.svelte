@@ -43,7 +43,9 @@
         return `${course.name} (${occupancy})${courseFull(course) ? " · lleno" : ""}`;
     }
 
-    $: selectedCourseId = (data.filters?.course_id || "1").toString();
+    $: selectedCourseId = data.filters?.graduate
+        ? "graduated"
+        : (data.filters?.course_id || "1").toString();
 
     $: sectionsOfThisYear =
         data.course_sections?.data?.[`course_${data.filters.course_id}`];
@@ -74,6 +76,7 @@
         rep_email: "",
         rep_profession: "",
         rep_workplace: "",
+        rep_relationship: "",
         second_rep_name: "",
         second_rep_last_name: "",
         second_rep_ci: "",
@@ -83,6 +86,7 @@
         second_rep_email: "",
         second_rep_profession: "",
         second_rep_workplace: "",
+        second_rep_relationship: "",
         rep_id: null,
         is_exempt: false,
         exemption_percentage: "",
@@ -285,7 +289,7 @@
         $form.course_id = student.course_id;
         $form.section_id = student.section_id;
         $form.student_sex = student.student_sex;
-        $form.student_previous_school = student.previous_school;
+        $form.student_previous_school = student.student_previous_school ?? "";
         $form.state = student.state;
         $form.city = student.city;
         $form.address = student.address;
@@ -298,6 +302,7 @@
         $form.rep_email = student.rep_email;
         $form.rep_profession = student.rep_profession;
         $form.rep_workplace = student.rep_workplace;
+        $form.rep_relationship = student.rep_relationship ?? "";
         $form.rep_id = student.rep_id;
         $form.second_rep_name = student.second_rep_name;
         $form.second_rep_last_name = student.second_rep_last_name;
@@ -308,6 +313,7 @@
         $form.second_rep_email = student.second_rep_email;
         $form.second_rep_profession = student.second_rep_profession;
         $form.second_rep_workplace = student.second_rep_workplace;
+        $form.second_rep_relationship = student.second_rep_relationship ?? "";
         $form.is_exempt = student.is_exempt ?? false;
         $form.exemption_percentage = student.exemption_percentage ?? "";
         $form.exemption_observations = student.exemption_observations ?? "";
@@ -317,7 +323,9 @@
     function handleInscribeClick() {
         showModalReinscribe = true;
         const student = selectedRow.data;
-        $formReinscribe.course_id = student.course_id - 1 || 1;
+        $formReinscribe.course_id = student.is_repeating
+            ? student.course_id
+            : student.course_id - 1 || 1;
         $formReinscribe.section_id = student.section_id;
         $formReinscribe.student_id = student.student_id;
         console.log(showModalReinscribe);
@@ -395,10 +403,24 @@
     }
     function changeYear(course_id) {
         console.log("Cambiando curso a:", course_id);
+
+        if (course_id === "graduated") {
+            router.get(
+                window.location.pathname,
+                { ...data.filters, graduate: 1 },
+                {
+                    preserveState: false,
+                    replace: true,
+                },
+            );
+            return;
+        }
+
         const params = {
             ...data.filters,
             course_id: course_id,
             section_id: 1, // Reset section to 1 when year changes
+            graduate: 0,
         };
         router.get(window.location.pathname, params, {
             preserveState: false, // Ensure we get fresh data
@@ -462,6 +484,7 @@
         $form.student_document_type = student.student_document_type || "V";
         $form.student_phone_number = student.student_phone_number || "";
         $form.student_sex = student.student_sex || "";
+        $form.student_previous_school = student.student_previous_school || "";
         $form.course_id = student.course_id;
         $form.section_id = student.section_id;
         $form.is_exempt = student.is_exempt ?? false;
@@ -509,7 +532,14 @@
 
 <Modal bind:showModal={showModalReinscribe} classes={"w-96"}>
     <form class="px-2" id="r-form" on:submit={handleSubmitReinscribe}>
-        {#if $formReinscribe.course_id == 1}
+        {#if selectedRow.data?.is_repeating}
+            <p
+                class="text-center text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-300 rounded-md p-3 mb-3"
+            >
+                Marcado como repitiente: se reinscribe en el mismo grado.
+            </p>
+        {/if}
+        {#if $formReinscribe.course_id == 1 && !selectedRow.data?.is_repeating}
             <p class="text-center p-5">
                 Como este estudiante está en 5to año, al dar click en el botón
                 de reinscribir quedará como graduado
@@ -978,6 +1008,7 @@
                     >{courseLabel(course)}</option
                 >
             {/each}
+            <option class="bg-gray-50" value="graduated">Graduados</option>
         </Input>
     </div>
     <div class="flex items-center gap-3">
@@ -1084,32 +1115,36 @@
         },
     ]}
     serverSideData={{ filters: data.filters }}
-    filtersOptions={{ section_id: sectionsOfThisYear }}
+    filtersOptions={data.filters.graduate
+        ? {}
+        : { section_id: sectionsOfThisYear }}
     pagination={false}
 >
     <div slot="filterBox">
-        {#if lastSectionId < 6}
-            <button
-                on:click={() => createSection()}
-                class="text-xs px-4 text-gray-400 hover:text-gray-700 py-2"
-            >
-            <iconify-icon
-                    class="text-lg relative top-1"
-                    icon="ic:baseline-plus"
-                ></iconify-icon>
-                Crear sección
-            </button>
-        {/if}
+        {#if !data.filters.graduate}
+            {#if lastSectionId < 6}
+                <button
+                    on:click={() => createSection()}
+                    class="text-xs px-4 text-gray-400 hover:text-gray-700 py-2"
+                >
+                <iconify-icon
+                        class="text-lg relative top-1"
+                        icon="ic:baseline-plus"
+                    ></iconify-icon>
+                    Crear sección
+                </button>
+            {/if}
 
-        {#if sectionsOfThisYear.length !== 1 && lastSectionId == data.filters.section_id}
-            <button
-                on:click={() => deleteSection(data.filters.section_id)}
-                class="ml-3 p-2 px-3 bg-gray-100"
-                title="Elimar Sección"
-            >
-                <iconify-icon class="text-xl relative top-1" icon="ph:trash"
-                ></iconify-icon>
-            </button>
+            {#if sectionsOfThisYear.length !== 1 && lastSectionId == data.filters.section_id}
+                <button
+                    on:click={() => deleteSection(data.filters.section_id)}
+                    class="ml-3 p-2 px-3 bg-gray-100"
+                    title="Elimar Sección"
+                >
+                    <iconify-icon class="text-xl relative top-1" icon="ph:trash"
+                    ></iconify-icon>
+                </button>
+            {/if}
         {/if}
     </div>
     <thead slot="thead" class="sticky top-0 z-40">
@@ -1142,6 +1177,14 @@
                         <span>
                             {row.student_name}
                         </span>
+                        {#if row.is_repeating}
+                            <span
+                                class="inline-flex align-middle ml-1 text-amber-500"
+                                title="Repite el grado"
+                            >
+                                <iconify-icon icon="mdi:repeat" />
+                            </span>
+                        {/if}
                         {#if row.is_exempt}
                             <div
                                 class="text-purple font-bold absolute -bottom-3 left-0 flex items-center gap-1 text-xs"

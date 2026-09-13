@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\SchoolLapse;
 use App\Models\Student;
 use App\Support\BalanceMonthStatus;
+use App\Support\EducationLevel;
 use App\Support\PaymentDeadline;
 use Carbon\Carbon;
 use Exception;
@@ -208,9 +209,9 @@ class BalanceService
     public function recalculateBalanceForExemption(Student $student, float $exemptionPercentage, bool $applyToPastDebts): void
     {
         $multiplier = 1 - ($exemptionPercentage / 100);
-        $config = MainConfig::select('monthly_payment', 'new_inscription_price', 'day_of_monthly_payment', 'grace_period')->first();
+        $config = MainConfig::select('monthly_payment', 'new_inscription_price', 'preescolar_inscription_price', 'primaria_inscription_price', 'secundaria_inscription_price', 'day_of_monthly_payment', 'grace_period')->first();
         $baseMonthlyPayment = (float) ($config->monthly_payment ?? 0);
-        $baseInscriptionPrice = (float) ($config->new_inscription_price ?? 0);
+        $baseInscriptionPrice = EducationLevel::inscriptionPrice($config, (int) $student->course_id);
         $dayOfMonthlyPayment = $config->day_of_monthly_payment ?? 1;
         $gracePeriod = $config->grace_period ?? 0;
 
