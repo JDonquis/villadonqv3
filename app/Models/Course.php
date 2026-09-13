@@ -9,7 +9,9 @@ class Course extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name'];
+    public $timestamps = false;
+
+    protected $fillable = ['name', 'plan_de_estudio_code'];
 
     // public function quota()
     // {

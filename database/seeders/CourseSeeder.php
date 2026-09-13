@@ -17,22 +17,22 @@ class CourseSeeder extends Seeder
         $fields = 
         [
 
-            ['name' => '5to Año' ],
-            ['name' => '4to Año' ],
-            ['name' => '3er Año' ],
-            ['name' => '2do Año' ],
-            ['name' => '1er Año' ],
+            ['name' => '5to Año', 'plan_de_estudio_code' => '31022' ],
+            ['name' => '4to Año', 'plan_de_estudio_code' => '31022' ],
+            ['name' => '3er Año', 'plan_de_estudio_code' => '31022' ],
+            ['name' => '2do Año', 'plan_de_estudio_code' => '31022' ],
+            ['name' => '1er Año', 'plan_de_estudio_code' => '31022' ],
 
-            ['name' => '6to Grado' ],
-            ['name' => '5to Grado' ],
-            ['name' => '4to Grado' ],
-            ['name' => '3er Grado' ],   
-            ['name' => '2do Grado' ],
-            ['name' => '1er Grado' ],
+            ['name' => '6to Grado', 'plan_de_estudio_code' => '31011' ],
+            ['name' => '5to Grado', 'plan_de_estudio_code' => '31011' ],
+            ['name' => '4to Grado', 'plan_de_estudio_code' => '31011' ],
+            ['name' => '3er Grado', 'plan_de_estudio_code' => '31011' ],   
+            ['name' => '2do Grado', 'plan_de_estudio_code' => '31011' ],
+            ['name' => '1er Grado', 'plan_de_estudio_code' => '31011' ],
 
-            ['name' => '3er Nivel' ],
-            ['name' => '2do Nivel' ],
-            ['name' => '1er Nivel' ],
+            ['name' => '3er Nivel', 'plan_de_estudio_code' => null ],
+            ['name' => '2do Nivel', 'plan_de_estudio_code' => null ],
+            ['name' => '1er Nivel', 'plan_de_estudio_code' => null ],
 
 
          ];   

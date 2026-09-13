@@ -52,7 +52,10 @@
         Quien suscribe, <strong>Dirección de {{ $config->name }}</strong>, hace constar que
         el/la estudiante <strong>{{ $student['name'] }} {{ $student['last_name'] }}</strong>,
         titular de la cédula de identidad N° <strong>{{ $student['document_type'] }}-{{ $student['ci'] }}</strong>,
-        cursó el <strong>{{ $student['course'] }}</strong>, sección <strong>{{ $student['section'] }}</strong>,
+        cursó el <strong>{{ $student['course'] }}</strong>, sección <strong>{{ $student['section'] }}</strong>
+        @if (!empty($student['plan_de_estudio_code']))
+            (Plan de Estudio N° <strong>{{ $student['plan_de_estudio_code'] }}</strong>)
+        @endif
         durante el año escolar <strong>{{ $period['label'] ?? '—' }}</strong>,
         @if ($selected_lapse)
             en el <strong>{{ $selected_lapse['label'] }}</strong>,

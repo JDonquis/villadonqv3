@@ -78,6 +78,7 @@ class ReportService
                 'ci' => $student->ci,
                 'age' => Carbon::parse($student->date_birth)->age,
                 'course' => $student->course?->name,
+                'plan_de_estudio_code' => $student->course?->plan_de_estudio_code,
                 'section' => $student->section?->name,
                 'rep_name' => $student->representative?->user?->name,
                 'rep_last_name' => $student->representative?->user?->last_name,

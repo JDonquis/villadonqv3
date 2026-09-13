@@ -98,6 +98,7 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::put('/dashboard/configuracion/pagos', [MainConfigController::class, 'updatePaymentConfig']);
     Route::put('/dashboard/configuracion/cupos', [MainConfigController::class, 'updateQuotas']);
     Route::put('/dashboard/configuracion/momentos', [MainConfigController::class, 'updateMoments']);
+    Route::put('/dashboard/configuracion/planes-de-estudio', [MainConfigController::class, 'updateCoursePlans']);
     Route::post('/dashboard/configuracion/momentos/cerrar', [MainConfigController::class, 'closeCurrentMoment']);
 
     Route::get('/dashboard/profesores', [TeacherController::class, 'index']);
