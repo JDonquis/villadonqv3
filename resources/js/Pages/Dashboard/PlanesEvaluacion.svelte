@@ -219,11 +219,6 @@
         return next ? next.id : null;
     }
 
-    function rejectPlanStart() {
-        rejectMode = true;
-        rejectNote = "";
-    }
-
     function approvePlan(id) {
         const next = nextPlanId(id);
         router.post(
@@ -420,7 +415,7 @@
                 }}
             >
                 <td>{i + 1}</td>
-               
+
                 <td>{plan.teacher_name}</td>
                 <td>{plan.matter_name}</td>
                 <td>{plan.lapse_label || "—"}</td>
@@ -478,7 +473,7 @@
                 in:fly={{ y: 10, duration: 180 }}
                 out:fade={{ duration: 120 }}
             >
-                <div class="flex justify-end gap-2 mb-2 -mt-1">
+                <div class="flex justify-end gap-2 mb-2 -mt-1 p-4">
                     <button
                         type="button"
                         on:click={editPlan}
@@ -509,15 +504,8 @@
 
                 <PlanUnitsView {plan} />
 
-                {#if rejectMode && (plan.status === "pending" || plan.status === "approved")}
+                {#if rejectMode && plan.status === "pending"}
                     <div class="mt-5 flex flex-col gap-3">
-                        {#if plan.status === "approved"}
-                            <p
-                                class="rounded-md border border-amber-300 bg-amber-50 px-2 py-1.5 text-xs font-medium text-amber-700"
-                            >
-                                Este plan está aprobado. Al rechazarlo dejará de mostrarse en boletas/notas publicadas; el profesor deberá corregirlo y reenviarlo para volver a aprobarse.
-                            </p>
-                        {/if}
                         <textarea
                             bind:value={rejectNote}
                             placeholder="Motivo del rechazo (opcional)"
@@ -558,15 +546,6 @@
                             >
                                 <iconify-icon icon="mdi:check" class="mr-1" width="18" height="18" />
                                 Aprobar
-                            </button>
-                        </div>
-                    {:else if plan.status === "approved"}
-                        <div class="mt-5 flex justify-end">
-                            <button
-                                on:click={() => rejectPlanStart()}
-                                class="px-4 py-2 text-sm bg-red text-white rounded-md"
-                            >
-                                Rechazar
                             </button>
                         </div>
                     {:else if plan.status === "rejected"}

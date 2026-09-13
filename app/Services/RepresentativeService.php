@@ -159,6 +159,7 @@ class RepresentativeService
             ];
         })->values()->map(function ($item) use ($scores) {
             $item['score'] = $scores[$item['id']] ?? null;
+
             return $item;
         });
         $rasgosScore = $this->gradeService->publishedRasgosForStudent($plan, $studentId);
@@ -364,16 +365,6 @@ class RepresentativeService
 
     private function calculateDebt($balance): float
     {
-        $debt = 0;
-        if ($balance->inscription < 0) {
-            $debt += abs($balance->inscription);
-        }
-        foreach (self::SCHOOL_MONTHS as $month) {
-            if ($balance->$month < 0) {
-                $debt += abs($balance->$month);
-            }
-        }
-
-        return (float) $debt;
+        return $balance->currentDebt();
     }
 }

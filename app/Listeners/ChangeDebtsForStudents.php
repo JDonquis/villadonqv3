@@ -6,6 +6,7 @@ use App\Enums\BalanceStudentStatusEnum;
 use App\Models\BalanceStudent;
 use App\Models\MainConfig;
 use App\Models\SchoolLapse;
+use App\Support\BalanceMonthStatus;
 use App\Support\PaymentDeadline;
 use Carbon\Carbon;
 
@@ -53,6 +54,7 @@ class ChangeDebtsForStudents
         $config = MainConfig::select('day_of_monthly_payment', 'grace_period')->first();
         $dayOfMonthlyPayment = $config->day_of_monthly_payment ?? 1;
         $gracePeriod = $config->grace_period ?? 0;
+        $currentMonthPastDue = PaymentDeadline::currentMonthPastDue($dayOfMonthlyPayment, $gracePeriod);
 
         // Recuperar todos los balances del periodo escolar activo
         $balances = BalanceStudent::where('school_lapse_id', $activeLapse->id)
@@ -82,41 +84,13 @@ class ChangeDebtsForStudents
                 $newBalanceValue = $totalPaid - $effectivePrice;
 
                 $balance->$month = $newBalanceValue;
-                $balance->{$month.'_status'} = $this->determineMonthStatus($newBalanceValue, $effectivePrice, $index, $currentMonthIndex, $dayOfMonthlyPayment, $gracePeriod);
+                $isDue = BalanceMonthStatus::isDue($index, $currentMonthIndex, $currentMonthPastDue, BalanceMonthStatus::CURRENT);
+                $balance->{$month.'_status'} = BalanceMonthStatus::determine($newBalanceValue, $effectivePrice, $isDue);
             }
 
             $this->updateGeneralStatus($balance);
             $balance->save();
         }
-    }
-
-    /**
-     * Determina el estado de un mes específico basándose en el balance y la fecha actual.
-     */
-    private function determineMonthStatus(float $monthValue, float $effectivePrice, int $monthIndex, int $currentMonthIndex, int $dayOfMonthlyPayment, int $gracePeriod = 0): string
-    {
-        if ($monthValue >= 0) {
-            return BalanceStudentStatusEnum::Paid->value;
-        }
-
-        $fullDebtAmount = $effectivePrice * -1;
-
-        if ($monthValue > $fullDebtAmount) {
-            return BalanceStudentStatusEnum::PartiallyPaid->value;
-        }
-
-        if ($monthIndex > $currentMonthIndex) {
-            return BalanceStudentStatusEnum::Pending->value;
-        }
-
-        if ($monthIndex < $currentMonthIndex) {
-            return BalanceStudentStatusEnum::Debt->value;
-        }
-
-        // mes actual (monthIndex == currentMonthIndex)
-        return PaymentDeadline::currentMonthPastDue($dayOfMonthlyPayment, $gracePeriod)
-            ? BalanceStudentStatusEnum::Debt->value
-            : BalanceStudentStatusEnum::Pending->value;
     }
 
     /**

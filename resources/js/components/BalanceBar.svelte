@@ -104,21 +104,6 @@
         ago: "august",
     };
 
-    const monthsCalendar = {
-        january: 0,
-        february: 1,
-        march: 2,
-        april: 3,
-        may: 4,
-        june: 5,
-        july: 6,
-        august: 7,
-        september: 8,
-        october: 9,
-        november: 10,
-        december: 11,
-    };
-
     export let balances;
     export let amountToPay = 0;
     export let classes = "";
@@ -132,34 +117,18 @@
 
     // $: console.log("Balances actualizados:", balances);
 
-    // Obtener el año actual y el día actual para la comparación histórica
-    const currentMonth = new Date().getMonth(); // 0-11
-    const currentYear = new Date().getFullYear();
-    const currentDay = new Date().getDate();
+    // Indica si el balance tiene algún abono registrado para ese mes.
+    // En Estados de Cuenta `balance_payments` viene agrupado por mes (objeto);
+    // en MisPagos viene como arreglo plano.
+    function hasMonthPayment(balance, month) {
+        const payments = balance.balance_payments;
+        if (!payments) return false;
 
-    function checkIfMonthIsExpired(monthName) {
-        const monthIndex = monthsCalendar[monthName];
-        const expirationDay = dayOfPayment + gracePeriod;
-
-        // Hardcode: Si el mes es Enero (0), usar año pasado
-        // Si es cualquier otro mes, usar año actual
-        let year = currentYear;
-        if (monthIndex > 7) {
-            year = currentYear - 1;
+        if (Array.isArray(payments)) {
+            return payments.some((payment) => payment.month === month);
         }
 
-        let expirationDate;
-        if (expirationDay > 30) {
-            expirationDate = new Date(year, monthIndex + 1, expirationDay - 30);
-        } else {
-            expirationDate = new Date(year, monthIndex, expirationDay);
-        }
-
-        const today = new Date();
-        expirationDate.setHours(0, 0, 0, 0);
-        today.setHours(0, 0, 0, 0);
-
-        return expirationDate < today;
+        return Array.isArray(payments[month]) && payments[month].length > 0;
     }
 
     export let id = "";
@@ -366,7 +335,8 @@
                             class={`group/month hover:brightness-110  hover:border-x border-black/30 relative col-span-1 text-xs capitalize text-center font-bold p-1 text-gray-700
             ${balance[month + "_status"] === "debt" ? "bg-red/70" : ""}
             ${balance[month + "_status"] === "paid" ? "bg-green/50" : ""}
-            ${balance[month + "_status"] === "partially_paid" ? (checkIfMonthIsExpired(month) ? "bg-yellow/70" : "bg-blue") : ""}
+            ${balance[month + "_status"] === "partially_paid" ? "bg-yellow/70" : ""}
+            ${balance[month + "_status"] === "pending" && hasMonthPayment(balance, month) ? "bg-blue" : ""}
             ${!balance[month + "_status"] ? "bg-gray-50 " : ""}
         `}
                             title={balance[month + "_status"] == "pending"

@@ -10,6 +10,21 @@ class BalanceStudent extends Model
 {
     use HasFactory;
 
+    public const MONTHS = [
+        'september',
+        'october',
+        'november',
+        'december',
+        'january',
+        'february',
+        'march',
+        'april',
+        'may',
+        'june',
+        'july',
+        'august',
+    ];
+
     protected $fillable = [
         'student_id',
         'status',
@@ -72,5 +87,34 @@ class BalanceStudent extends Model
     public function balancePayments()
     {
         return $this->hasMany(BalancePayment::class);
+    }
+
+    /**
+     * Deuda efectivamente vencida: inscripción + meses con status debt/partially_paid.
+     * Los meses futuros (pending) no cuentan.
+     */
+    public function currentDebt(): float
+    {
+        $dueStatuses = [
+            BalanceStudentStatusEnum::Debt->value,
+            BalanceStudentStatusEnum::PartiallyPaid->value,
+        ];
+
+        $debt = 0.0;
+
+        if ($this->inscription < 0) {
+            $debt += abs((float) $this->inscription);
+        }
+
+        foreach (self::MONTHS as $month) {
+            $status = $this->{$month.'_status'};
+            $statusValue = $status instanceof BalanceStudentStatusEnum ? $status->value : $status;
+
+            if ($this->$month < 0 && in_array($statusValue, $dueStatuses, true)) {
+                $debt += abs((float) $this->$month);
+            }
+        }
+
+        return $debt;
     }
 }

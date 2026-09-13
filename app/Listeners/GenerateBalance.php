@@ -5,6 +5,7 @@ namespace App\Listeners;
 use App\Enums\BalanceStudentStatusEnum;
 use App\Models\MainConfig;
 use App\Models\SchoolLapse;
+use App\Support\PaymentDeadline;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -39,7 +40,7 @@ class GenerateBalance
     {
         $student = $event->student;
 
-        $configData = MainConfig::select('new_inscription_price', 'monthly_payment')->first();
+        $configData = MainConfig::select('new_inscription_price', 'monthly_payment', 'day_of_monthly_payment', 'grace_period')->first();
         $schoolLapseActive = SchoolLapse::where('status', 1)->first();
 
         if (! $schoolLapseActive) {
@@ -69,10 +70,18 @@ class GenerateBalance
         $currentMonthName = strtolower($currentDate->englishMonth);
         $setValue = false;
 
+        $isPastDue = PaymentDeadline::currentMonthPastDue(
+            (int) ($configData->day_of_monthly_payment ?? 1),
+            (int) ($configData->grace_period ?? 0)
+        );
+
         foreach ($this->months as $monthName => $value) {
             if ($monthName == $currentMonthName) {
                 $setValue = true;
-                $this->monthStatuses[$monthName] = BalanceStudentStatusEnum::Debt->value;
+                // El mes actual solo es deuda si ya venció (día de corte + gracia); si no, queda pendiente.
+                $this->monthStatuses[$monthName] = $isPastDue
+                    ? BalanceStudentStatusEnum::Debt->value
+                    : BalanceStudentStatusEnum::Pending->value;
                 $this->months[$monthName] = $this->months[$monthName] - $effectiveMonthlyPayment;
             } elseif ($setValue) {
                 $this->monthStatuses[$monthName] = BalanceStudentStatusEnum::Pending->value;
@@ -82,9 +91,13 @@ class GenerateBalance
             }
         }
 
+        $generalStatus = in_array(BalanceStudentStatusEnum::Debt->value, $this->monthStatuses, true)
+            ? BalanceStudentStatusEnum::Debt->value
+            : BalanceStudentStatusEnum::Pending->value;
+
         DB::table('balance_students')->insert(
             [
-                'status' => BalanceStudentStatusEnum::Debt->value,
+                'status' => $generalStatus,
                 'student_id' => $student->id,
                 'school_lapse_id' => $schoolLapseActive->id,
                 'inscription' => -$effectiveInscriptionPrice,

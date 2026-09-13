@@ -6,6 +6,7 @@ use App\Enums\BalanceStudentStatusEnum;
 use App\Models\BalanceStudent;
 use App\Models\MainConfig;
 use App\Models\SchoolLapse;
+use App\Support\BalanceMonthStatus;
 use App\Support\PaymentDeadline;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -82,70 +83,23 @@ class RecalculateBalanceStatus extends Command
                 continue;
             }
 
+            $multiplier = $student->is_exempt ? (1 - (($student->exemption_percentage ?? 0) / 100)) : 1;
+            $effectivePrice = (float) ($config->monthly_payment ?? 0) * $multiplier;
+            $lapsePosition = BalanceMonthStatus::lapsePosition($balance, $currentLapse);
+
             // Recalcular estatus de meses
             foreach (self::SCHOOL_MONTHS as $index => $month) {
                 $statusField = $month.'_status';
                 $value = (float) $balance->$month;
-                $currentStatus = $balance->$statusField;
 
-                // Si ya está pagado o no tiene deuda, no cambiamos nada para ese mes
-                if ($value >= 0) {
-                    if ($currentStatus !== BalanceStudentStatusEnum::Paid->value) {
-                        $balance->$statusField = BalanceStudentStatusEnum::Paid->value;
-                        $changed = true;
-                    }
+                $isDue = BalanceMonthStatus::isDue($index, $currentMonthIndex, $isPastDueDate, $lapsePosition);
+                $newStatus = BalanceMonthStatus::determine($value, $effectivePrice, $isDue);
 
-                    continue;
-                }
+                $oldValue = $balance->$statusField instanceof BalanceStudentStatusEnum
+                    ? $balance->$statusField->value
+                    : $balance->$statusField;
 
-                // Si tiene deuda (valor < 0)
-                $newStatus = $currentStatus;
-
-                // Determinamos el nuevo estatus basado en el periodo
-                if ($currentLapse && $balance->school_lapse_id === $currentLapse->id) {
-                    // Meses futuros en el mismo lapso
-                    if ($index > $currentMonthIndex) {
-                        $newStatus = BalanceStudentStatusEnum::Pending->value;
-                    }
-                    // Meses pasados en el mismo lapso
-                    elseif ($index < $currentMonthIndex) {
-                        $newStatus = BalanceStudentStatusEnum::Debt->value;
-                    }
-                    // Mes actual
-                    else {
-                        $newStatus = $isPastDueDate
-                            ? BalanceStudentStatusEnum::Debt->value
-                            : BalanceStudentStatusEnum::Pending->value;
-                    }
-                }
-                // Lapsos anteriores o sin lapso activo (todo lo pendiente es deuda)
-                elseif ($balance->schoolLapse && $balance->schoolLapse->start < ($currentLapse->start ?? $now->toDateString())) {
-                    $newStatus = BalanceStudentStatusEnum::Debt->value;
-                } else {
-                    // Si es un lapso futuro o no identificado, se mantiene como pendiente
-                    $newStatus = BalanceStudentStatusEnum::Pending->value;
-                }
-
-                // Si es un pago parcial (tiene deuda pero algo se ha pagado), mantenemos PartiallyPaid
-                // Nota: Asumimos que si hay deuda pero el valor es mayor a -precio_completo, es parcial.
-                // Sin embargo, para simplificar y seguir la lógica de BalanceService,
-                // solo lo cambiamos si no es ya PartiallyPaid o si el valor indica deuda total.
-                // Ajuste: Si el valor es negativo, verificamos si es deuda completa o parcial.
-
-                // Obtenemos el precio efectivo para este estudiante (opcional si queremos ser muy precisos)
-                // Pero basándonos en tu requerimiento de "verificar fechas y grace period":
-                if ($currentStatus === BalanceStudentStatusEnum::PartiallyPaid->value) {
-                    // No cambiamos PartiallyPaid a Pending/Debt a menos que sea necesario,
-                    // pero el requerimiento se enfoca en Debt vs Pending por fechas.
-                }
-
-                if ($balance->$statusField instanceof BalanceStudentStatusEnum) {
-                    $oldValue = $balance->$statusField->value;
-                } else {
-                    $oldValue = $balance->$statusField;
-                }
-
-                if ($oldValue !== $newStatus && $oldValue !== BalanceStudentStatusEnum::PartiallyPaid->value) {
+                if ($oldValue !== $newStatus) {
                     $balance->$statusField = $newStatus;
                     $changed = true;
                 }
