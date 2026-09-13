@@ -22,6 +22,30 @@
 
     $: console.log({ data }, { tableData });
     $: console.log(config);
+
+    async function copyToClipboard(value, label = "Texto") {
+        if (!value) {
+            displayAlert({
+                type: "error",
+                message: `No hay ${label.toLowerCase()} para copiar.`,
+            });
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(String(value));
+            displayAlert({
+                type: "success",
+                message: `${label} copiado al portapapeles`,
+            });
+        } catch (error) {
+            displayAlert({
+                type: "error",
+                message: "No se pudo copiar al portapapeles.",
+            });
+        }
+    }
+
     async function sendToWhatsApp(student) {
         const element = document.getElementById(`balance-bar-${student.id}`);
 
@@ -118,11 +142,13 @@ Si ya realizó el pago, por favor ignore este mensaje o envíenos el comprobante
 {#if data.total_debt}
     <div class="w-max mb-5 flex flex-wrap items-center gap-2">
         <span class="font-semibold">Deuda:</span>
-        <b
-            class={`text-sm ${showTotalDebt ? "opacity-100" : "opacity-0 blur-sm"} text-red transition-all duration-200`}
-        >
-            {showTotalDebt ? `$${data.total_debt}` : "•••"}
-        </b>
+        {#if showTotalDebt}
+            <b class="text-sm text-red transition-all duration-200">
+                ${data.total_debt}
+            </b>
+  
+        {/if}
+      
         <button
             type="button"
             class="inline-flex items-center justify-center bg-white/10 p-2 text-gray-700 transition hover:bg-red/10 focus:outline-none"
@@ -182,16 +208,35 @@ Si ya realizó el pago, por favor ignore este mensaje o envíenos el comprobante
                                     class="flex items-center gap-1.5 flex-wrap text-xs text-gray-500"
                                 >
                                    
-                                    <span
-                                        class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
+                                    <div
+                                        class="group relative inline-flex items-center"
                                     >
-                                        {#if student.document_type}
-                                            <span class="uppercase"
-                                                >{student.document_type}-</span
-                                            >
-                                        {/if}
-                                        {student.ci}
-                                    </span>
+                                        <span
+                                            class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
+                                        >
+                                            {#if student.document_type}
+                                                <span class="uppercase"
+                                                    >{student.document_type}-</span
+                                                >
+                                            {/if}
+                                            {student.ci}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            class="absolute -right-1 top-1/2 -translate-y-1/2 rounded border border-gray-200 bg-white p-1 text-[10px] text-gray-500 opacity-0 shadow-sm transition-all duration-200 group-hover:opacity-100 hover:text-color1"
+                                            aria-label="Copiar cédula"
+                                            title="Copiar cédula"
+                                            on:click|stopPropagation={() =>
+                                                copyToClipboard(
+                                                    `${student.document_type ? `${student.document_type}-` : ""}${student.ci}`,
+                                                    "Cédula",
+                                                )}
+                                        >
+                                            <iconify-icon
+                                                icon="mdi:content-copy"
+                                            ></iconify-icon>
+                                        </button>
+                                    </div>
 
                                     <span class="text-gray-300">•</span>
 

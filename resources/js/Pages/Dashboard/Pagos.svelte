@@ -388,6 +388,29 @@
         });
     }
 
+    async function copyToClipboard(value, label = "Texto") {
+        if (!value) {
+            displayAlert({
+                type: "error",
+                message: `No hay ${label.toLowerCase()} para copiar.`,
+            });
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(String(value));
+            displayAlert({
+                type: "success",
+                message: `${label} copiado al portapapeles`,
+            });
+        } catch (error) {
+            displayAlert({
+                type: "error",
+                message: "No se pudo copiar al portapapeles.",
+            });
+        }
+    }
+
     async function fillFormToEdit() {
         showModal = true;
         submitStatus = "Solo lectura";
@@ -1194,7 +1217,7 @@
 
                                 <!-- Línea Inferior: Metadatos organizados en chips/badges -->
                                 <div
-                                    class="flex items-center gap-1.5 flex-wrap text-xs text-gray-500"
+                                    class="flex items-center gap-1.5  text-xs text-gray-500"
                                 >
                                     <!-- Monto individual (si aplica) -->
                                     {#if student.pivot?.amount_in_dolars}
@@ -1206,16 +1229,35 @@
                                     {/if}
 
                                     <!-- Cédula -->
-                                    <span
-                                        class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
+                                    <div
+                                        class="group relative inline-flex items-center"
                                     >
-                                        {#if student.document_type}
-                                            <span class="uppercase"
-                                                >{student.document_type}-</span
-                                            >
-                                        {/if}
-                                        {student.ci}
-                                    </span>
+                                        <span
+                                            class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
+                                        >
+                                            {#if student.document_type}
+                                                <span class="uppercase"
+                                                    >{student.document_type}-</span
+                                                >
+                                            {/if}
+                                            {student.ci}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            class="absolute -right-1 top-1/2 -translate-y-1/2 rounded border border-gray-200 bg-white p-1 text-[10px] text-gray-500 opacity-0 shadow-sm transition-all duration-200 group-hover:opacity-100 hover:text-color1"
+                                            aria-label="Copiar cédula"
+                                            title="Copiar cédula"
+                                            on:click|stopPropagation={() =>
+                                                copyToClipboard(
+                                                    `${student.document_type ? `${student.document_type}-` : ""}${student.ci}`,
+                                                    "Cédula",
+                                                )}
+                                        >
+                                            <iconify-icon
+                                                icon="mdi:content-copy"
+                                            ></iconify-icon>
+                                        </button>
+                                    </div>
 
                                     <!-- Separador opcional o punto -->
                                     <span class="text-gray-300">•</span>

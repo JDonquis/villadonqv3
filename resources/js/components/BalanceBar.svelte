@@ -363,7 +363,7 @@
                     {#each Object.entries(months) as [spanishLabel, month], indexMonth}
                         <!-- svelte-ignore a11y-no-static-element-interactions -->
                         <div
-                            class={`group/month hover:brightness-110  hover:border-x border-black/30 relative col-span-1 text-xs capitalize text-center font-bold p-1 text-gray-700
+                            class={`group/month hover:brightness-110  hover:shadow-2xl hover:border-x border-black/10 relative col-span-1 text-xs capitalize text-center font-bold p-1 text-gray-700
             ${balance[month + "_status"] === "debt" ? "bg-red/70" : ""}
             ${balance[month + "_status"] === "paid" ? "bg-green/50" : ""}
             ${balance[month + "_status"] === "partially_paid" ? (checkIfMonthIsExpired(month) ? "bg-yellow/70" : "bg-blue") : ""}

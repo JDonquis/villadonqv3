@@ -62,7 +62,7 @@
     <title>Materias del Estudiante</title>
 </svelte:head>
 
-<div class="w-full max-w-[1400px] mx-auto space-y-6">
+<div class="w-full max-w-[1400px] mx-auto space-y-6 p-2">
     <div>
         <h3 class="text-2xl font-bold text-color1">Materias del Estudiante</h3>
         <p class="text-sm text-gray-500">

@@ -319,7 +319,7 @@
         <p class="text-gray-400 text-sm">No tienes hijos inscritos.</p>
     {/if}
 
-    <nav class="flex items-center ">
+    <nav class="flex items-center mt-3">
         <button
             class=" z-0 font-semibold  rounded-t-xl py-2 px-3 md:px-4 {activeTab ===
             'pagar'
@@ -344,15 +344,15 @@
 
     {#if activeTab === "pagar"}
         <div
-            class="z-20 md:grid grid-cols-12 gap-6 bg-white md:p-3 md:px-4 rounded-lg rounded-tl-none"
+            class="z-20 md:grid grid-cols-12 gap-6 bg-white p-2 md:p-3 md:px-4 rounded-lg rounded-tl-none"
         >
-            <div class="col-span-8">
+            <div class="col-span-8 pt-3">
                 {#each data.students as student, i}
                     {#if data.students.length > 1}
                         <div class="md:flex gap-4 md:gap-5">
                             <div>
                                 <div
-                                    class="md:min-w-[200px] flex items-center mb-1"
+                                    class="md:min-w-[200px] flex items-center mb-1 mt-2"
                                 >
                                     <span class="font-semibold text-gray-800">
                                         {student.name}
@@ -539,7 +539,7 @@
                     {/each}
                 {/each}
             </div>
-            <div class="col-span-4">
+            <div class="col-span-4 mb-4">
                 {#if !showFormPay}
                     <button
                         class="ml-auto animated-button w-fitcontent"
@@ -792,7 +792,7 @@
     {/if}
 
     {#if activeTab === "historial"}
-        <div class="bg-white pt-5  rounded-lg rounded-tl-none text-gray-600">
+        <div class=" mt-5 md:mt-0  p-3 md:p-0 rounded-lg rounded-tl-none text-gray-700">
         
             <Search
                 filtersOptions={{
