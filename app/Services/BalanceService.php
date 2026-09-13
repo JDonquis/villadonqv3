@@ -7,7 +7,10 @@ use App\Models\BalancePayment;
 use App\Models\BalanceStudent;
 use App\Models\MainConfig;
 use App\Models\Payment;
+use App\Models\SchoolLapse;
 use App\Models\Student;
+use App\Support\BalanceMonthStatus;
+use App\Support\EducationLevel;
 use App\Support\PaymentDeadline;
 use Carbon\Carbon;
 use Exception;
@@ -53,6 +56,8 @@ class BalanceService
         $currentMonthName = strtolower(Carbon::now()->englishMonth);
         $monthOrder = array_flip(self::MONTH_ORDER);
         $currentMonthIndex = $monthOrder[$currentMonthName] ?? -1;
+        $currentLapse = SchoolLapse::where('status', 1)->first();
+        $currentMonthPastDue = PaymentDeadline::currentMonthPastDue($dayOfMonthlyPayment, $gracePeriod);
 
         foreach ($sortedBalances as $balanceData) {
             if ($remainingAmount <= 0) {
@@ -111,14 +116,13 @@ class BalanceService
                     $balance->$month += $paymentToMonth;
 
                     $monthValue = $balance->$month;
-                    $balance->{$month.'_status'} = $this->determineMonthStatus(
-                        $monthValue,
-                        $effectivePrice,
+                    $isDue = BalanceMonthStatus::isDue(
                         $index,
                         $currentMonthIndex,
-                        $dayOfMonthlyPayment,
-                        $gracePeriod
+                        $currentMonthPastDue,
+                        BalanceMonthStatus::lapsePosition($balance, $currentLapse)
                     );
+                    $balance->{$month.'_status'} = BalanceMonthStatus::determine($monthValue, $effectivePrice, $isDue);
 
                     BalancePayment::create([
                         'payment_id' => $payment->id,
@@ -158,6 +162,8 @@ class BalanceService
         $currentMonthName = strtolower(Carbon::now()->englishMonth);
         $monthOrder = array_flip(self::MONTH_ORDER);
         $currentMonthIndex = $monthOrder[$currentMonthName] ?? -1;
+        $currentLapse = SchoolLapse::where('status', 1)->first();
+        $currentMonthPastDue = PaymentDeadline::currentMonthPastDue($dayOfMonthlyPayment, $gracePeriod);
 
         foreach ($groupedByBalance as $balanceId => $bps) {
             $balance = BalanceStudent::find($balanceId);
@@ -186,14 +192,13 @@ class BalanceService
 
             foreach (self::MONTH_ORDER as $index => $month) {
                 $monthValue = $balance->$month;
-                $balance->{$month.'_status'} = $this->determineMonthStatus(
-                    $monthValue,
-                    $effectivePrice,
+                $isDue = BalanceMonthStatus::isDue(
                     $index,
                     $currentMonthIndex,
-                    $dayOfMonthlyPayment,
-                    $gracePeriod
+                    $currentMonthPastDue,
+                    BalanceMonthStatus::lapsePosition($balance, $currentLapse)
                 );
+                $balance->{$month.'_status'} = BalanceMonthStatus::determine($monthValue, $effectivePrice, $isDue);
             }
 
             $this->updateGeneralStatus($balance);
@@ -204,9 +209,9 @@ class BalanceService
     public function recalculateBalanceForExemption(Student $student, float $exemptionPercentage, bool $applyToPastDebts): void
     {
         $multiplier = 1 - ($exemptionPercentage / 100);
-        $config = MainConfig::select('monthly_payment', 'new_inscription_price', 'day_of_monthly_payment', 'grace_period')->first();
+        $config = MainConfig::select('monthly_payment', 'new_inscription_price', 'preescolar_inscription_price', 'primaria_inscription_price', 'secundaria_inscription_price', 'day_of_monthly_payment', 'grace_period')->first();
         $baseMonthlyPayment = (float) ($config->monthly_payment ?? 0);
-        $baseInscriptionPrice = (float) ($config->new_inscription_price ?? 0);
+        $baseInscriptionPrice = EducationLevel::inscriptionPrice($config, (int) $student->course_id);
         $dayOfMonthlyPayment = $config->day_of_monthly_payment ?? 1;
         $gracePeriod = $config->grace_period ?? 0;
 
@@ -216,6 +221,8 @@ class BalanceService
         $currentMonthName = strtolower(Carbon::now()->englishMonth);
         $monthOrder = array_flip(self::MONTH_ORDER);
         $currentMonthIndex = $monthOrder[$currentMonthName] ?? -1;
+        $currentLapse = SchoolLapse::where('status', 1)->first();
+        $currentMonthPastDue = PaymentDeadline::currentMonthPastDue($dayOfMonthlyPayment, $gracePeriod);
 
         $balances = BalanceStudent::where('student_id', $student->id)->get();
 
@@ -235,14 +242,13 @@ class BalanceService
 
                 // Recalcular balance basado en el nuevo precio efectivo
                 $balance->$month = $totalPaid - $newEffectiveMonthlyPrice;
-                $balance->{$month.'_status'} = $this->determineMonthStatus(
-                    (float) $balance->$month,
-                    $newEffectiveMonthlyPrice,
+                $isDue = BalanceMonthStatus::isDue(
                     $index,
                     $currentMonthIndex,
-                    $dayOfMonthlyPayment,
-                    $gracePeriod
+                    $currentMonthPastDue,
+                    BalanceMonthStatus::lapsePosition($balance, $currentLapse)
                 );
+                $balance->{$month.'_status'} = BalanceMonthStatus::determine((float) $balance->$month, $newEffectiveMonthlyPrice, $isDue);
             }
 
             // Inscripción (solo si aplica a deudas pasadas o si aún no está pagada totalmente y queremos ajustarla)
@@ -260,31 +266,6 @@ class BalanceService
             $this->updateGeneralStatus($balance);
             $balance->save();
         }
-    }
-
-    private function determineMonthStatus(float $monthValue, float $effectivePrice, int $monthIndex, int $currentMonthIndex, int $dayOfMonthlyPayment, int $gracePeriod = 0): string
-    {
-        if ($monthValue >= 0) {
-            return BalanceStudentStatusEnum::Paid->value;
-        }
-
-        $fullDebtAmount = $effectivePrice * -1;
-
-        if ($monthValue > $fullDebtAmount) {
-            return BalanceStudentStatusEnum::PartiallyPaid->value;
-        }
-
-        if ($monthIndex > $currentMonthIndex) {
-            return BalanceStudentStatusEnum::Pending->value;
-        }
-
-        if ($monthIndex < $currentMonthIndex) {
-            return BalanceStudentStatusEnum::Debt->value;
-        }
-
-        return PaymentDeadline::currentMonthPastDue($dayOfMonthlyPayment, $gracePeriod)
-            ? BalanceStudentStatusEnum::Debt->value
-            : BalanceStudentStatusEnum::Pending->value;
     }
 
     private function updateGeneralStatus(BalanceStudent $balance): void

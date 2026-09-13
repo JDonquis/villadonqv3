@@ -6,6 +6,7 @@ use App\Models\Course;
 use App\Models\Lapse;
 use App\Models\Quota;
 use App\Models\SchoolLapse;
+use App\Services\StudentService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -107,6 +108,14 @@ class CreateNextSchoolLapse extends Command
             }
 
             $this->info('Cupos renovados para '.$courses->count().' cursos.');
+
+            // Promover a los estudiantes activos al siguiente grado del nuevo período.
+            // Los de 5to año pasan a graduados.
+            $this->info('Promoviendo estudiantes al siguiente grado...');
+
+            $promotion = (new StudentService)->promoteAllStudentsForNewLapse();
+
+            $this->info("Estudiantes promovidos: {$promotion['promoted']}. Repitientes: {$promotion['repeated']}. Graduados: {$promotion['graduated']}.");
         });
 
         $this->info('Proceso finalizado con éxito.');

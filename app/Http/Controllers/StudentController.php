@@ -68,6 +68,7 @@ class StudentController extends Controller
                         'course_id' => $request->input('course_id') ?? 1,
                         'section_id' => $request->input('section_id') ?? 1,
                         'search' => $request->input('search') ?? null,
+                        'graduate' => $request->boolean('graduate'),
                     ],
                 ],
 
@@ -195,6 +196,21 @@ class StudentController extends Controller
             Log::error('Error al reinscribir estudiante ID '.$request->student_id.': '.$e->getMessage());
 
             return redirect()->back()->withErrors(['status' => false,  'message' => ErrorTranslator::translate($e)]);
+        }
+    }
+
+    public function toggleRepeating($id)
+    {
+        try {
+            $isRepeating = $this->studentService->toggleRepeating($id);
+
+            return redirect()->back()->with('success', $isRepeating
+                ? 'Estudiante marcado como repitiente.'
+                : 'Se quitó la repetición al estudiante.');
+        } catch (Exception $e) {
+            Log::error('Error al cambiar repitencia del estudiante ID '.$id.': '.$e->getMessage());
+
+            return redirect()->back()->withErrors(['message' => ErrorTranslator::translate($e)]);
         }
     }
 

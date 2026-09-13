@@ -17,7 +17,6 @@
 		<button class="absolute right-4 top-4" on:click={() => (showModal = false)}>
 			<iconify-icon icon="line-md:close" width="24" height="24"></iconify-icon>
 		</button>
-		<hr class="mt-3" />
 		<slot />
 		<hr class="my-4" />
 		<div class="flex justify-end gap-12">

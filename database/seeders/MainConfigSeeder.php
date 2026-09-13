@@ -26,14 +26,16 @@ class MainConfigSeeder extends Seeder
                 'motto' => 'La escuela del futuro ya llegó a prestarte a mejor educación',
                 'regular_inscription_price' => 35,
                 'new_inscription_price' => 30,
+                'preescolar_inscription_price' => 30,
+                'primaria_inscription_price' => 30,
+                'secundaria_inscription_price' => 30,
                 'monthly_payment' => 50,
                 'day_of_monthly_payment' => 30,
                 'grace_period' => 5,
                 'ame_price' => 0,
                 'investment_plan_price' => 0,
                 'payment_carton_price' => 0,
-            ]
-
+            ],
 
         ];
 

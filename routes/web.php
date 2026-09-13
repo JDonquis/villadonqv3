@@ -60,6 +60,7 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::post('/dashboard/matricula/importar', [StudentController::class, 'import']);
     Route::post('/dashboard/matricula', [StudentController::class, 'store']);
     Route::put('/dashboard/matricula/{id}', [StudentController::class, 'update']);
+    Route::patch('/dashboard/matricula/{id}/repitencia', [StudentController::class, 'toggleRepeating']);
     Route::delete('/dashboard/matricula/{studentId}', [StudentController::class, 'destroy']);
     Route::post('/dashboard/matricula/reinscribir', [StudentController::class, 'reEnrollment']);
 

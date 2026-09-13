@@ -3,29 +3,15 @@
 namespace App\Services;
 
 use App\Enums\PaymentMethodEnum;
-use App\Events\StudentCreated;
-use App\Events\StudentUpdated;
 use App\Events\UpdateMonthlyPaymentEvent;
 use App\Http\Resources\AccountPaymentCollection;
-use App\Http\Resources\StudentCollection;
-use App\Http\Resources\StudentResource;
-use App\Http\Resources\UserResource;
 use App\Models\AccountPayment;
-use App\Models\Activity;
-use App\Models\CourseSection;
 use App\Models\MainConfig;
 use App\Models\PaymentMethod;
-use App\Models\Representative;
-use App\Models\Student;
-use App\Models\User;
-use DB;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 
 class MainConfigService
 {
     private MainConfig $mainConfigModel;
-
 
     public function __construct()
     {
@@ -73,6 +59,9 @@ class MainConfigService
         return [
             'regular_inscription_price' => $this->mainConfigModel->regular_inscription_price,
             'new_inscription_price' => $this->mainConfigModel->new_inscription_price,
+            'preescolar_inscription_price' => $this->mainConfigModel->preescolar_inscription_price,
+            'primaria_inscription_price' => $this->mainConfigModel->primaria_inscription_price,
+            'secundaria_inscription_price' => $this->mainConfigModel->secundaria_inscription_price,
             'monthly_payment' => $this->mainConfigModel->monthly_payment,
             'ame_price' => $this->mainConfigModel->ame_price,
             'investment_plan_price' => $this->mainConfigModel->investment_plan_price,
@@ -111,6 +100,7 @@ class MainConfigService
     public function deleteAccount($id)
     {
         AccountPayment::where('id', $id)->update(['status' => 2]);
+
         return 0;
     }
 
@@ -126,7 +116,7 @@ class MainConfigService
             PaymentMethodEnum::Binance => ['email'],
             PaymentMethodEnum::PuntoDeVenta => ['bank', 'comision'],
             default => null,
-            //a
+            // a
         };
     }
 }
