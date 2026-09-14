@@ -106,7 +106,8 @@ class StudentService
                 $query->orWhereHas('representative.user', function ($q) use ($search) {
                     $q->where('name', 'like', '%'.$search.'%')
                         ->orWhere('last_name', 'like', '%'.$search.'%')
-                        ->orWhere('ci', 'like', '%'.$search.'%');
+                        ->orWhere('ci', 'like', '%'.$search.'%')
+                        ->orWhere('email', 'like', '%'.$search.'%');
                 });
             })
             ->with('representative.user', 'course', 'section')

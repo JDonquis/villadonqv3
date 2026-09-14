@@ -267,7 +267,7 @@
 
     <div bind:this={chartContainer} class="w-full h-[400px]"></div>
 
-    <div class="mt-6 border-t border-gray-200 pt-6 flex flex-col gap-4">
+    <!-- <div class="mt-6 border-t border-gray-200 pt-6 flex flex-col gap-4">
         <div class="flex items-center justify-between">
             <h3 class="text-lg font-bold text-gray-800 tracking-tight">
                 Deuda acumulada a favor (cobro de $1 por estudiante inscrito)
@@ -327,5 +327,5 @@
                 </tbody>
             </table>
         </div>
-    </div>
+    </div> -->
 </div>

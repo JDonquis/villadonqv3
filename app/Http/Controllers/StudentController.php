@@ -172,11 +172,11 @@ class StudentController extends Controller
 
             Log::info('Estudiante ID '.$studentId.' eliminado correctamente');
 
-            return redirect('/dashboard/matricula');
+            return redirect()->back();
         } catch (Exception $e) {
             Log::error('Error al eliminar estudiante ID '.$studentId.': '.$e->getMessage());
 
-            return redirect('/dashboard/matricula')->withErrors(['message' => 'Ha ocurrido un error al eliminar el estudiante. Por favor, intente más tarde.']);
+            return redirect()->back()->withErrors(['message' => 'Ha ocurrido un error al eliminar el estudiante. Por favor, intente más tarde.']);
         }
     }
 
@@ -189,7 +189,7 @@ class StudentController extends Controller
 
             DB::commit();
 
-            return redirect('/dashboard/matricula');
+            return redirect()->back();
         } catch (Exception $e) {
             DB::rollback();
 

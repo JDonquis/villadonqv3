@@ -226,10 +226,39 @@
         <div class="md:col-span-2 mt-4">
             <button
                 type="submit"
-                class="bg-color1 text-white px-6 py-2 rounded-md text-sm hover:opacity-90"
+                class="animated-button w-full md:w-fitcontent flex items-center justify-center gap-3"
                 disabled={$form.processing}
             >
-                {#if $form.processing}Cargando...{:else}Guardar cambios{/if}
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="arr-2"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                    ></path>
+                </svg>
+                <iconify-icon
+                    class="text"
+                    icon="material-symbols:save-sharp"
+                    width="22"
+                    height="22"
+                />
+                {#if $form.processing}
+                    <span class="text">Cargando...</span>
+                {:else}
+                    <span class="text">Guardar cambios</span>
+                {/if}
+                <span class="circle"></span>
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="arr-1"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                    ></path>
+                </svg>
             </button>
         </div>
     </form>
@@ -266,14 +295,39 @@
             <div class="md:col-span-3 mt-4">
                 <button
                     type="submit"
-                    class="bg-color1 text-white px-6 py-2 rounded-md text-sm hover:opacity-90"
+                    class="animated-button w-full md:w-fitcontent flex items-center justify-center gap-3"
                     disabled={$passForm.processing}
                 >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="arr-2"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                        ></path>
+                    </svg>
+                    <iconify-icon
+                        class="text"
+                        icon="material-symbols:save-sharp"
+                        width="22"
+                        height="22"
+                    />
                     {#if $passForm.processing}
-                        Cargando...
+                        <span class="text">Cargando...</span>
                     {:else}
-                        Cambiar contraseña
+                        <span class="text">Cambiar contraseña</span>
                     {/if}
+                    <span class="circle"></span>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="arr-1"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                        ></path>
+                    </svg>
                 </button>
             </div>
         </form>

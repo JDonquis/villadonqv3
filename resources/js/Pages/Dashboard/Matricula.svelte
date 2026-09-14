@@ -125,6 +125,11 @@
             );
             importSummary = data;
             showImportResult = true;
+
+            router.reload({
+                preserveScroll: true,
+                preserveState: true,
+            });
         } catch (err) {
             displayAlert({
                 type: "error",
@@ -971,24 +976,41 @@
         form="a-form"
         slot="btn_footer"
         type="submit"
-        class="animated-button min-w-[300px] max-w-fit flex gap-2"
+        class="animated-button min-w-[300px] max-w-fit flex items-center justify-center gap-3"
         disabled={$form.processing || deletedStudentGraduate}
     >
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="arr-2"
+            viewBox="0 0 24 24"
+        >
+            <path
+                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+            ></path>
+        </svg>
         {#if $form.processing}
-            Cargando...
+            <span class="text">Cargando...</span>
         {:else}
-             <iconify-icon
+            <iconify-icon
                 icon="material-symbols:save-sharp"
-                class=" mr-2 pr-10 inline-block arr-1 "
+                class="text"
                 width="24"
                 height="24"
             />
-            <span class="text ">
+            <span class="text">
                 {submitStatus === "Crear" ? "Crear" : "Editar"}
             </span>
-            <span class="circle"></span>
-
         {/if}
+        <span class="circle"></span>
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="arr-1"
+            viewBox="0 0 24 24"
+        >
+            <path
+                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+            ></path>
+        </svg>
     </button>
 </Modal>
 
@@ -1074,7 +1096,13 @@
     </div>
 </div>
 
-<Search />
+<Search
+    extraSearchParams={{
+        course_id: data.filters?.course_id,
+        section_id: data.filters?.section_id,
+        graduate: data.filters?.graduate,
+    }}
+/>
 
 <Table
     {selectedRow}

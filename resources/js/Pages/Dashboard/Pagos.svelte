@@ -76,8 +76,7 @@
         }));
         $form.total_in_dolars = $form.students
             .reduce(
-                (total, s) =>
-                    total + (parseFloat(s.amount_in_dolars) || 0),
+                (total, s) => total + (parseFloat(s.amount_in_dolars) || 0),
                 0,
             )
             .toFixed(2);
@@ -794,7 +793,7 @@
         </div>
 
         <div class="col-span-4 w-full grid md:grid-cols-2 md:gap-x-5">
-          <div class="col-span-2 w-full">
+            <div class="col-span-2 w-full">
                 <Input
                     type="select"
                     label={"Concepto de pago"}
@@ -861,7 +860,7 @@
                     </option>
                 {/each}
             </Input>
-          
+
             <Input
                 type="number"
                 label={"Total en Dólares ($)"}
@@ -902,6 +901,15 @@
                     class="animated-button max-w-[430px] mt-7 flex items-center justify-center gap-3"
                     disabled={$form.processing}
                 >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="arr-2"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                        ></path>
+                    </svg>
                     <iconify-icon
                         class="text"
                         icon="material-symbols:save-sharp"
@@ -914,29 +922,44 @@
                         <span class="text">{submitStatus}</span>
                     {/if}
                     <span class="circle"></span>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="arr-1"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                        ></path>
+                    </svg>
                 </button>
             </div>
         {/if}
     </form>
 </Modal>
 
-<Modal bind:showModal={showConceptModal} classes="w-11/12 max-w-2xl">
+<Modal bind:showModal={showConceptModal} classes="w-fitcontent">
     <h2 slot="header" class="text-sm text-center">
         GESTIÓN DE CONCEPTOS DE PAGO
     </h2>
 
     <div class="px-4">
         {#if concepts.length > 0}
-            <div class="max-h-44 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
+            <div
+                class="max-h-44 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100"
+            >
                 {#each concepts as concept}
                     <div
                         class="flex items-center justify-between gap-3 px-3 py-2"
                     >
                         <div class="min-w-0">
-                            <p class="font-semibold text-sm text-gray-800 truncate">
+                            <p
+                                class="font-semibold text-sm text-gray-800 truncate"
+                            >
                                 {concept.name}
                                 {#if concept.price != null && Number(concept.price) > 0}
-                                    <span class="font-mono text-xs text-gray-500">
+                                    <span
+                                        class="font-mono text-xs text-gray-500"
+                                    >
                                         (${concept.price})
                                     </span>
                                 {/if}
@@ -997,20 +1020,41 @@
                 bind:value={$conceptForm.price}
                 error={$conceptForm.errors?.price}
             />
-            <div class="flex justify-end gap-2 mt-4">
+            <div class="flex justify-end gap-5 mt-4">
+               
                 <button
                     type="button"
-                    class="px-4 py-2 text-xs font-semibold text-gray-500 border border-gray-300 rounded-md hover:bg-gray-50"
-                    on:click={() => (showConceptModal = false)}
-                >
-                    Cancelar
-                </button>
-                <button
-                    type="button"
-                    class="animated-button px-4 py-2 text-xs"
+                    class="animated-button w-full mt-2 flex items-center justify-center gap-3 text-xs"
                     on:click={saveConcept}
                 >
-                    Guardar
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="arr-2"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                        ></path>
+                    </svg>
+                    <iconify-icon
+                        class="text"
+                        icon="material-symbols:save-sharp"
+                        width="18"
+                        height="18"
+                    />
+                    <span class="text">
+                        {editingConceptId ? "Guardar cambios" : "Guardar concepto"}
+                    </span>
+                    <span class="circle"></span>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="arr-1"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                        ></path>
+                    </svg>
                 </button>
             </div>
         </div>
@@ -1020,7 +1064,7 @@
 <div class=" items-start justify-between gap-5 mt-1">
     <div class="flex justify-between items-end gap-3 w-full">
         {#if data.total_income}
-            <div class=" flex items-center  max-w-fit gap-2">
+            <div class=" flex items-center max-w-fit gap-2">
                 <span class="font-semibold">Total ingresos:</span>
                 {#if showTotalIncome}
                     <b
@@ -1028,10 +1072,8 @@
                     >
                         ${data.total_income}
                     </b>
-            
                 {/if}
-               
-                
+
                 <button
                     type="button"
                     class="inline-flex items-center justify-center bg-white/10 p-2 text-gray-700 transition hover:bg-green/10 focus:outline-none"
@@ -1100,7 +1142,7 @@
         <Search
             inlineFilters
             filtersOptions={{
-                  payment_concept_id: {
+                payment_concept_id: {
                     type: "select",
                     multiple: true,
                     label: "Concepto de pago",
@@ -1137,7 +1179,6 @@
                         color: ColorsPayMethods()[account.payment_method_name],
                     })),
                 },
-              
             }}
         />
     </div>
@@ -1217,7 +1258,7 @@
 
                                 <!-- Línea Inferior: Metadatos organizados en chips/badges -->
                                 <div
-                                    class="flex items-center gap-1.5  text-xs text-gray-500"
+                                    class="flex items-center gap-1.5 text-xs text-gray-500"
                                 >
                                     <!-- Monto individual (si aplica) -->
                                     {#if student.pivot?.amount_in_dolars}

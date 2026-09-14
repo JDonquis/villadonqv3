@@ -683,15 +683,36 @@
                         /> -->
                     {#if $prices.isDirty}
                         <button
-                                class="animated-button flex items-center gap-3 mb-2 mt-7 w-full"
-                                type="submit"
-                                form={"pricesForm"}
+                            class="animated-button flex items-center justify-center gap-3 mb-2 mt-7 w-full"
+                            type="submit"
+                            form={"pricesForm"}
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="arr-2"
+                                viewBox="0 0 24 24"
                             >
+                                <path
+                                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                                ></path>
+                            </svg>
                             <iconify-icon
                                 icon="material-symbols:save"
-                                class="text-3xl"
+                                class="text"
+                                width="22"
+                                height="22"
                             ></iconify-icon>
-                            <span> GUARDAR TARIFAS </span>
+                            <span class="text">Guardar tarifas</span>
+                            <span class="circle"></span>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="arr-1"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                                ></path>
+                            </svg>
                         </button>
                     {/if}
                 </div>
@@ -732,7 +753,7 @@
                     <button
                         on:click={() =>
                             (showPaymentOptions = !showPaymentOptions)}
-                        class="animated-button"
+                        class="animated-button flex items-center justify-center gap-2"
                         use:clickOutside={() => {
                             showPaymentOptions = false;
                         }}
@@ -742,12 +763,23 @@
                             class="arr-2"
                             viewBox="0 0 24 24"
                         >
+                            <path
+                                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                            ></path>
                         </svg>
+                        <iconify-icon icon="line-md:plus" class="text"></iconify-icon>
                         <span class="text">Nuevo Método</span>
                         <span class="circle"></span>
-
-                        <iconify-icon icon="line-md:plus"></iconify-icon>
-                        <iconify-icon icon="mingcute:down-line"></iconify-icon>
+                        <iconify-icon icon="mingcute:down-line" class="text"></iconify-icon>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="arr-1"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                            ></path>
+                        </svg>
                     </button>
                     {#if showPaymentOptions}
                         <div
@@ -970,19 +1002,40 @@
                 {#if $quotasForm.isDirty}
                     <button
                         type="button"
-                        class="animated-button mt-4 flex items-center gap-2"
+                        class="animated-button mt-4 flex items-center justify-center gap-3"
                         disabled={quotaSaving}
                         on:click={saveQuotas}
                     >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="arr-2"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                            ></path>
+                        </svg>
                         {#if quotaSaving}
-                            Cargando...
+                            <span class="text">Cargando...</span>
                         {:else}
                             <iconify-icon
                                 icon="material-symbols:save"
-                                class="text-xl"
+                                class="text"
+                                width="20"
+                                height="20"
                             />
-                            Guardar cupos
+                            <span class="text">Guardar cupos</span>
                         {/if}
+                        <span class="circle"></span>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="arr-1"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                            ></path>
+                        </svg>
                     </button>
                 {/if}
             </div>
@@ -1082,39 +1135,83 @@
                         {#if $momentsForm.isDirty}
                             <button
                                 type="button"
-                                class="animated-button flex items-center gap-2"
+                                class="animated-button flex items-center justify-center gap-3"
                                 disabled={momentSaving}
                                 on:click={saveMomentsDates}
                             >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="arr-2"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                                    ></path>
+                                </svg>
                                 {#if momentSaving}
-                                    Cargando...
+                                    <span class="text">Cargando...</span>
                                 {:else}
                                     <iconify-icon
                                         icon="material-symbols:save"
-                                        class="text-xl"
+                                        class="text"
+                                        width="20"
+                                        height="20"
                                     />
-                                    Guardar fechas de momentos
+                                    <span class="text">Guardar fechas de momentos</span>
                                 {/if}
+                                <span class="circle"></span>
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="arr-1"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                                    ></path>
+                                </svg>
                             </button>
                         {/if}
 
                         {#if currentLapse && nextLapse}
                             <button
                                 type="button"
-                                class="flex items-center gap-2 rounded-md bg-color1 px-4 py-2 text-sm font-semibold text-white hover:bg-green hover:text-black disabled:opacity-50"
+                                class="animated-button flex items-center justify-center gap-3"
                                 disabled={momentClosing}
                                 on:click={closeCurrentMoment}
                             >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="arr-2"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                                    ></path>
+                                </svg>
                                 {#if momentClosing}
-                                    Cargando...
+                                    <span class="text">Cargando...</span>
                                 {:else}
                                     <iconify-icon
                                         icon="carbon:next-outline"
-                                        class="text-lg"
+                                        class="text"
+                                        width="20"
+                                        height="20"
                                     />
-                                    Cerrar {currentLapse.label} y pasar al
-                                    {nextLapse.label}
+                                    <span class="text">
+                                        Cerrar {currentLapse.label} y pasar al
+                                        {nextLapse.label}
+                                    </span>
                                 {/if}
+                                <span class="circle"></span>
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="arr-1"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                                        ></path>
+                                </svg>
                             </button>
                         {:else if currentLapse}
                             <p class="text-sm text-gray-600">
@@ -1214,16 +1311,40 @@
                 {#if $planForm.isDirty}
                     <button
                         type="button"
-                        class="animated-button mt-2 flex items-center gap-2"
+                        class="animated-button mt-2 flex items-center justify-center gap-3"
                         disabled={planSaving}
                         on:click={saveCoursePlans}
                     >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="arr-2"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                            ></path>
+                        </svg>
                         {#if planSaving}
-                            Cargando...
+                            <span class="text">Cargando...</span>
                         {:else}
-                            <iconify-icon icon="material-symbols:save" class="text-xl" />
-                            Guardar códigos de plan de estudio
+                            <iconify-icon
+                                icon="material-symbols:save"
+                                class="text"
+                                width="20"
+                                height="20"
+                            />
+                            <span class="text">Guardar códigos de plan de estudio</span>
                         {/if}
+                        <span class="circle"></span>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="arr-1"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                            ></path>
+                        </svg>
                     </button>
                 {/if}
             </div>

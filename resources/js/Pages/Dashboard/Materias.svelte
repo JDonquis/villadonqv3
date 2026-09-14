@@ -107,7 +107,7 @@
 <div class="flex justify-between items-center mb-3">
     <h2 class="text-2xl font-bold text-color1">Materias</h2>
     <button
-        class="animated-button w-fitcontent"
+        class="animated-button w-fitcontent min-w-[250px] flex items-center justify-center gap-3"
         on:click={(e) => {
             e.preventDefault();
             $form.reset();
@@ -116,8 +116,27 @@
             showModal = true;
         }}
     >
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="arr-2"
+            viewBox="0 0 24 24"
+        >
+            <path
+                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+            ></path>
+        </svg>
+        <iconify-icon icon="line-md:plus" class="text" width="20" height="20"></iconify-icon>
         <span class="text">Nueva materia</span>
         <span class="circle"></span>
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="arr-1"
+            viewBox="0 0 24 24"
+        >
+            <path
+                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+            ></path>
+        </svg>
     </button>
 </div>
 
@@ -175,18 +194,38 @@
         form="m-form"
         slot="btn_footer"
         type="submit"
-        class="animated-button min-w-[200px] flex gap-2"
+        class="animated-button min-w-[200px] flex items-center justify-center gap-3"
         disabled={$form.processing}
     >
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="arr-2"
+            viewBox="0 0 24 24"
+        >
+            <path
+                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+            ></path>
+        </svg>
         {#if $form.processing}
-            Cargando...
+            <span class="text">Cargando...</span>
         {:else}
             <iconify-icon
                 icon="material-symbols:save-sharp"
+                class="text"
                 width="24"
                 height="24"
             />
-            <span>{submitStatus === "Crear" ? "Crear" : "Guardar"}</span>
+            <span class="text">{submitStatus === "Crear" ? "Crear" : "Guardar"}</span>
         {/if}
+        <span class="circle"></span>
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="arr-1"
+            viewBox="0 0 24 24"
+        >
+            <path
+                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+            ></path>
+        </svg>
     </button>
 </Modal>

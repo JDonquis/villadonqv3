@@ -686,18 +686,18 @@
         {/each}
     </div>
 
-    <div class="flex justify-end items-center gap-3 mt-6">
+    <div class="flex justify-end items-center gap-5 mt-6">
         <button
             type="button"
             on:click={showGrid}
-            class="px-4 py-2 text-sm font-semibold rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
+            class="px-4 mt-4 py-2 text-sm font-semibold rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
         >
             Ver vista de horario
         </button>
         <button
             type="button"
             on:click={save}
-            class="animated-button w-fitcontent"
+            class="animated-button w-fitcontent "
         >
             <svg
                 xmlns="http://www.w3.org/2000/svg"

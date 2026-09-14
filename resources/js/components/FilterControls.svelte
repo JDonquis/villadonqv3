@@ -53,7 +53,7 @@
                             {#if filterClientData[filterKey]?.length > 0}
                                 {#each filterClientData[filterKey] as selectedId (selectedId)}
                                     <span
-                                        class="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded"
+                                        class="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-gray-200 text-blue-800 rounded-lg"
                                     >
                                         {#each filterOption.options as option (option.id)}
                                             {#if String(option.id) === selectedId}
@@ -87,6 +87,7 @@
                                                 icon="mdi:close"
                                                 width="14"
                                                 height="14"
+                                                class="relative top-0.5 hover:text-color1"
                                             />
                                         </button>
                                     </span>

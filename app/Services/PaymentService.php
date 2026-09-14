@@ -79,11 +79,16 @@ class PaymentService
                             $ids[] = $id;
                         }
                     }
-                    if ($regular) {
+
+                    if ($regular && ! $ids) {
                         $query->whereNull('payment_concept_id');
-                    }
-                    if ($ids) {
+                    } elseif ($ids && ! $regular) {
                         $query->whereIn('payment_concept_id', $ids);
+                    } else {
+                        $query->where(function ($sub) use ($ids) {
+                            $sub->whereNull('payment_concept_id')
+                                ->orWhereIn('payment_concept_id', $ids);
+                        });
                     }
                 });
             });

@@ -784,7 +784,13 @@
     >
 </div>
 
-<Search />
+<Search
+    extraSearchParams={{
+        course_id: data.filters?.course_id,
+        section_id: data.filters?.section_id,
+        graduate: data.filters?.graduate,
+    }}
+/>
 
 <Table
     {selectedRow}
