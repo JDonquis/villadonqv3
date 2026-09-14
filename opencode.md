@@ -432,3 +432,28 @@ esources/js/components/ (Windows case-insensitive lo toleraba; Linux no). Correg
   - Rutas: PUT /dashboard/configuracion/momentos y POST /dashboard/configuracion/momentos/cerrar (grupo administrator).
 - Frontend Configuracion.svelte: nueva seccion amplia "Momentos escolares (lapsos)" bajo Cupos: tabla Momento | Inicio | Fin | Estado, fila resaltada "Vigente hoy"; inputs date por momento (momentsForm), boton "Guardar fechas de momentos" (router.put rows [{id,start,end}]); boton "Cerrar {vigente} y pasar al {siguiente}" (router.post, con confirm) que aparece solo si hay siguiente; si el vigente es el 3ro se sugiere "Iniciar proximo periodo"; si hoy no cae en ningun momento se muestra aviso. Errores via displayAlert(errors.message).
 - Verificado: php -l OK; route:list muestra PUT y POST; tinker con la BD local (periodo activo 2027-2028, hoy 2026-09-07 fuera de rango) -> forPeriod devuelve los 3 momentos y currentByDate=none (comportamiento correcto); yarn build OK (warnings preexistentes).
+
+## 2026-09-14 — Importación fallida de Matrícula: tabla `failed_imports` + reintento
+- Pedido: cuando un import Excel falla, guardar los registros en una tabla para editarlos reintento tras reintento.
+- **Migration**: `2026_09_14_000000_create_failed_imports_table` con `row_number`, `data` (JSON), `error_message`.
+- **Modelo**: `app/Models/FailedImport.php` con cast `data => 'array'`.
+- **`app/Services/StudentService.php`**:
+  - Extraído `mapRowData(array $raw): array` del mapping de `STUDENT_IMPORT_MAP` (antes inline en `createStudentFromRow`).
+  - Extraído `createStudentFromMappedData(array $data, int $rowNumber)` con toda la lógica de validación/curso/sección/representante/cuota/creación/evento.
+  - `createStudentFromRow` ahora es `mapRowData` → `createStudentFromMappedData`.
+  - `importStudents()`: en el catch de cada fila, llama a `mapRowData` y crea un `FailedImport`.
+  - Nuevo `retryImport(int $failedImportId)`: llama `createStudentFromMappedData` y elimina el `FailedImport` si éxito.
+- **`app/Http/Controllers/StudentImportFailedController.php`** (nuevo):
+  - `index()`: Inertia page con todos los `FailedImport` ordenados por created_at.
+  - `update($id)`: recibe campos editables y actualiza `data` JSON.
+  - `retry($id)`: llama `studentService.retryImport`, devuelve JSON success/fail.
+  - `destroy($id)`: elimina el registro.
+- **Rutas**: GET/PUT/POST DELETE `/dashboard/importaciones-fallidas` (grupo administrator). Import añadido en `web.php`.
+- **Frontend**:
+   - `resources/js/Pages/Dashboard/ImportacionesFallidas.svelte`: tabla con filas editables inline (nombre, CI, rep, curso/sección, etc.), botones "Editar/Guardar/Cancelar", "Reintentar", "Eliminar". Mensaje "No hay registros con errores" si la lista está vacía.
+   - `resources/js/components/ImportResultModal.svelte`: enlace "Ver N registro(s) con error para editar" → `/dashboard/importaciones-fallidas`.
+   - **`StudentService::createStudentFromMappedData`**: `rep_email` es campo requerido. Si el CI del estudiante ya existe (cualquier status), se actualiza en lugar de crear (status 0 → reactiva a 1, status 1 → actualiza datos). Si está graduado, lanza error. Esto permite re-importar estudiantes eliminados o actualizar los datos de los existentes.
+   - **`StudentService::resolveRepresentative`**: cuando el email ya existe, busca el `Representative` asociado y lo reutiliza en vez de tirar error (permite re-intento correcto cuando un import previo creó el representante pero falló en crear el estudiante).
+- **Frontend**: `Matricula.svelte` muestra un botón naranja "N errores" en el toolbar cuando hay `failed_imports` (enlaza a `/dashboard/importaciones-fallidas`). El conteo viene del controller via `data.data.failedImportsCount`.
+- **Notas**: solo para estudiantes (Matrícula). Los imports de profesores/personales no tienen esta funcionalidad aún.
+- **Verificado**: php -l OK en StudentController/StudentService/routes; php artisan migrate OK; table `failed_imports` tiene columnas (id, row_number, data, error_message, timestamps); route:list muestra las 4 rutas; yarn build OK; vendor/bin/phpunit OK (2 tests).

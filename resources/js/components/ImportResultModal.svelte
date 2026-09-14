@@ -80,6 +80,15 @@
             {/if}
         {/if}
 
+        {#if hasErrors()}
+            <a
+                href="/dashboard/importaciones-fallidas"
+                class="toolbar-secondary mx-auto text-center"
+            >
+                Ver {summary.errors.length} registro(s) con error para editar
+            </a>
+        {/if}
+
         <button
             type="button"
             class="toolbar-secondary mx-auto"

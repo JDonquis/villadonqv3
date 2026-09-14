@@ -10,6 +10,7 @@ use App\Http\Resources\CourseSectionCollection;
 use App\Http\Resources\StudentResource;
 use App\Models\Course;
 use App\Models\CourseSection;
+use App\Models\FailedImport;
 use App\Models\Section;
 use App\Models\Student;
 use App\Services\ExcelTemplateService;
@@ -64,6 +65,7 @@ class StudentController extends Controller
                     'sections' => $sections,
                     'course_sections' => $course_sections,
                     'students' => $studentsPerCourse,
+                    'failedImportsCount' => FailedImport::count(),
                     'filters' => [
                         'course_id' => $request->input('course_id') ?? 1,
                         'section_id' => $request->input('section_id') ?? 1,

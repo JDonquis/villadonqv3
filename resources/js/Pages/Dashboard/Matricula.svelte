@@ -868,7 +868,7 @@
                     error={$form.errors?.rep_phone_number2}
                 />
 
-                <!-- <Input
+                <Input
                     type="text"
                     label={"Profesión"}
                     bind:value={$form.rep_profession}
@@ -880,7 +880,7 @@
                     label={"Lugar de trabajo"}
                     bind:value={$form.rep_workplace}
                     error={$form.errors?.rep_workplace}
-                /> -->
+                />
             </fieldset>
 
             <fieldset
@@ -1052,6 +1052,16 @@
             <iconify-icon icon="material-symbols:download" width="20" height="20" />
             Descargar plantilla
         </a>
+        {#if data.failedImportsCount > 0}
+            <a
+                href="/dashboard/importaciones-fallidas"
+                class="toolbar-secondary"
+                style="background-color: #b45309; color: white;"
+            >
+                <iconify-icon icon="material-symbols:error-outline" width="20" height="20" />
+                {data.failedImportsCount} error{data.failedImportsCount !== 1 ? 'es' : ''}
+            </a>
+        {/if}
         <button
             class="animated-button w-fitcontent"
             on:click={(e) => {

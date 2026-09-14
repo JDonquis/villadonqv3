@@ -18,6 +18,7 @@ use App\Http\Controllers\SchoolLapseController;
 use App\Http\Controllers\SectionController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentGradeController;
+use App\Http\Controllers\StudentImportFailedController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -71,6 +72,11 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::get('/dashboard/matricula/{id}', [StudentController::class, 'show']);
     Route::post('/dashboard/matricula/documentos', [StudentController::class, 'storeDocument']);
     Route::delete('/dashboard/matricula/documentos/{id}', [StudentController::class, 'destroyDocument']);
+
+    Route::get('/dashboard/importaciones-fallidas', [StudentImportFailedController::class, 'index']);
+    Route::put('/dashboard/importaciones-fallidas/{id}', [StudentImportFailedController::class, 'update']);
+    Route::post('/dashboard/importaciones-fallidas/{id}/reintentar', [StudentImportFailedController::class, 'retry']);
+    Route::delete('/dashboard/importaciones-fallidas/{id}', [StudentImportFailedController::class, 'destroy']);
 
     Route::post('/dashboard/secciones', [SectionController::class, 'store']);
     Route::delete('/dashboard/secciones/{course_id}/{section_id}', [SectionController::class, 'destroy']);

@@ -12,6 +12,7 @@ use App\Mail\RepresentativeWelcomeMail;
 use App\Models\Course;
 use App\Models\CourseSection;
 use App\Models\DocumentStudent;
+use App\Models\FailedImport;
 use App\Models\Inscription;
 use App\Models\Representative;
 use App\Models\SchoolLapse;
@@ -173,6 +174,12 @@ class StudentService
                 $this->createStudentFromRow($raw, $rowNumber);
                 $summary['created']++;
             } catch (\Exception $e) {
+                $mappedData = $this->mapRowData($raw);
+                FailedImport::create([
+                    'row_number' => $rowNumber,
+                    'data' => $mappedData,
+                    'error_message' => ErrorTranslator::translate($e),
+                ]);
                 $summary['errors'][] = [
                     'row' => $rowNumber,
                     'message' => ErrorTranslator::translate($e),
@@ -183,13 +190,24 @@ class StudentService
         return $summary;
     }
 
-    private function createStudentFromRow(array $raw, int $rowNumber): void
+    private function mapRowData(array $raw): array
     {
         $data = [];
         foreach (self::STUDENT_IMPORT_MAP as $header => $field) {
             $data[$field] = $raw[$this->normalizeHeader($header)] ?? '';
         }
 
+        return $data;
+    }
+
+    private function createStudentFromRow(array $raw, int $rowNumber): void
+    {
+        $data = $this->mapRowData($raw);
+        $this->createStudentFromMappedData($data, $rowNumber);
+    }
+
+    private function createStudentFromMappedData(array $data, int $rowNumber): void
+    {
         $required = [
             'student_name' => 'el nombre del estudiante',
             'student_last_name' => 'el apellido del estudiante',
@@ -198,6 +216,7 @@ class StudentService
             'rep_name' => 'el nombre del representante',
             'rep_last_name' => 'el apellido del representante',
             'rep_ci' => 'la cédula del representante',
+            'rep_email' => 'el correo electrónico del representante',
         ];
         foreach ($required as $field => $label) {
             if (empty($data[$field])) {
@@ -217,10 +236,6 @@ class StudentService
             throw new \Exception("La sección '{$data['section_name']}' no existe para el año escolar '{$data['course_name']}'.");
         }
 
-        if (Student::where('ci', $data['student_ci'])->where('status', '!=', 0)->exists()) {
-            throw new \Exception("La cédula del estudiante {$data['student_ci']} ya está registrada.");
-        }
-
         $birthDate = $this->parseImportDate($data['student_date_birth']);
         if (! $birthDate) {
             throw new \Exception('La fecha de nacimiento no es válida.');
@@ -235,6 +250,50 @@ class StudentService
         $exemptionPercentage = $data['exemption_percentage'] === '' ? null : (int) $data['exemption_percentage'];
         if ($isExempt && (empty($exemptionPercentage) || $exemptionPercentage < 1 || $exemptionPercentage > 100)) {
             throw new \Exception('El estudiante está marcado como exonerado pero el porcentaje de exoneración no es válido (1-100).');
+        }
+
+        $existingStudent = Student::where('ci', $data['student_ci'])->first();
+
+        if ($existingStudent) {
+            if ($existingStudent->graduate) {
+                throw new \Exception('El estudiante está marcado como graduado y no puede reinscribirse.');
+            }
+
+            $representative = $this->resolveRepresentative($data);
+            $this->quotaService->assertCapacity($course->id);
+
+            $existingStudent->update([
+                'representative_id' => $representative->id,
+                'course_id' => $course->id,
+                'section_id' => $courseSection->section_id,
+                'name' => $data['student_name'],
+                'last_name' => $data['student_last_name'],
+                'date_birth' => $birthDate,
+                'email' => $data['student_email'] !== '' ? $data['student_email'] : null,
+                'ci' => $data['student_ci'],
+                'phone_number' => $data['student_phone_number'] !== '' ? $data['student_phone_number'] : null,
+                'sex' => $sex !== '' ? $sex : null,
+                'previous_school' => $data['student_previous_school'] !== '' ? $data['student_previous_school'] : null,
+                'is_exempt' => $isExempt,
+                'exemption_percentage' => $isExempt ? $exemptionPercentage : null,
+                'exemption_observations' => $data['exemption_observations'] !== '' ? $data['exemption_observations'] : null,
+                'document_type' => $data['student_document_type'] !== '' ? $data['student_document_type'] : null,
+                'status' => 1,
+                'graduate' => false,
+            ]);
+
+            $representative->update([
+                'profession' => $data['rep_profession'] ?? null,
+                'workplace' => $data['rep_workplace'] ?? null,
+                'relationship' => $data['rep_relationship'] ?? null,
+                'document_type' => $data['rep_document_type'] ?? null,
+            ]);
+
+            $existingStudent->load('representative.user', 'course', 'section');
+            $existingStudent->update(['search' => $this->generateSearch($existingStudent)]);
+            event(new StudentCreated($existingStudent));
+
+            return;
         }
 
         $representative = $this->resolveRepresentative($data);
@@ -281,12 +340,27 @@ class StudentService
 
         $email = $data['rep_email'] ?? '';
         if ($email !== '' && User::where('email', $email)->exists()) {
+            $existingUser = User::where('email', $email)->first();
+            $existingRepresentative = Representative::where('user_id', $existingUser->id)->first();
+            if ($existingRepresentative) {
+                return $existingRepresentative;
+            }
             throw new \Exception("El correo del representante '{$email}' ya está registrado en el sistema.");
         }
 
         $newUser = $this->createUser($data, false);
 
         return $this->createRepresentative($data, $newUser->id);
+    }
+
+    public function retryImport(int $failedImportId): void
+    {
+        $failedImport = FailedImport::findOrFail($failedImportId);
+        $data = $failedImport->data;
+
+        $this->createStudentFromMappedData($data, $failedImport->row_number);
+
+        $failedImport->delete();
     }
 
     private function parseImportDate(string $value): ?string
