@@ -16,9 +16,7 @@
     export let data = [];
 
     function courseById(id) {
-        return (data.courses || []).find(
-            (c) => String(c.id) === String(id),
-        );
+        return (data.courses || []).find((c) => String(c.id) === String(id));
     }
 
     function courseFull(course) {
@@ -121,7 +119,7 @@
             const { data } = await axios.post(
                 "/dashboard/matricula/importar",
                 formData,
-                { headers: { Accept: "application/json" } }
+                { headers: { Accept: "application/json" } },
             );
             importSummary = data;
             showImportResult = true;
@@ -144,6 +142,24 @@
     }
     let deletedStudentDetected = null;
     let deletedStudentGraduate = false;
+    let showMobileActions = false;
+
+    function openInscribirModal() {
+        deletedStudentDetected = null;
+        deletedStudentGraduate = false;
+        if (submitStatus === "Editar") {
+            $form.reset();
+            submitStatus = "Crear";
+            editingStudentId = null;
+            originalCourseId = null;
+            selectedRow = { status: false, data: null };
+        } else {
+            $form.section_id = +data.filters.section_id;
+            $form.course_id = +data.filters.course_id;
+        }
+
+        showModal = true;
+    }
 
     document.addEventListener("keydown", ({ key }) => {
         if (key === "Escape") {
@@ -249,7 +265,8 @@
         if (!representativeUserId) {
             displayAlert({
                 type: "error",
-                message: "Este estudiante no tiene un representante con correo registrado",
+                message:
+                    "Este estudiante no tiene un representante con correo registrado",
             });
             return;
         }
@@ -262,14 +279,16 @@
                 onSuccess: () => {
                     displayAlert({
                         type: "success",
-                        message: "Correo reenviado correctamente al representante",
+                        message:
+                            "Correo reenviado correctamente al representante",
                     });
                     selectedRow = { status: false, data: null };
                 },
                 onError: (errors) => {
                     displayAlert({
                         type: "error",
-                        message: errors.message || "Error al reenviar el correo",
+                        message:
+                            errors.message || "Error al reenviar el correo",
                     });
                 },
             },
@@ -513,7 +532,8 @@
         $form.second_rep_name = student.second_rep_name || "";
         $form.second_rep_last_name = student.second_rep_last_name || "";
         $form.second_rep_ci = student.second_rep_ci || "";
-        $form.second_rep_document_type = student.second_rep_document_type || "V";
+        $form.second_rep_document_type =
+            student.second_rep_document_type || "V";
         $form.second_rep_phone_number = student.second_rep_phone_number || "";
         $form.second_rep_phone_number2 = student.second_rep_phone_number2 || "";
         $form.second_rep_email = student.second_rep_email || "";
@@ -534,6 +554,10 @@
 </svelte:head>
 
 <Alert />
+
+<h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden mb-3">
+    Matrícula
+</h2>
 
 <Modal bind:showModal={showModalReinscribe} classes={"w-96"}>
     <form class="px-2" id="r-form" on:submit={handleSubmitReinscribe}>
@@ -615,11 +639,11 @@
         id="a-form"
         on:submit={handleSubmit}
         action=""
-        class="max-w-[1260px] gap-10 flex justify-around pt-2 px-7"
+        class="max-w-[1260px] gap-10 md:flex justify-around pt-2 md:px-7"
     >
         <div>
             <fieldset
-                class="pb-6 bg-color1/5 rounded-lg grid grid-cols-2 gap-x-10 h-fit md:px-9 md:pt-2"
+                class="pb-6 md:bg-color1/5 rounded-lg grid grid-cols-2 gap-x-3 md:gap-x-10 h-fit md:px-9 md:pt-2"
             >
                 <legend
                     class="text-color1 text-center px-5 font-bold rounded-sm bg"
@@ -727,7 +751,7 @@
                 />
             </fieldset>
             <fieldset
-                class="pb-6 bg-color1/5 rounded-lg mt-7 grid grid-cols-2 gap-x-10 h-fit md:px-9 md:pt-2"
+                class="pb-6 md:bg-color1/5 rounded-lg mt-7 grid grid-cols-2 gap-x-3 md:gap-x-10 h-fit md:px-9 md:pt-2"
             >
                 <legend
                     class="text-color1 text-center px-5 font-bold rounded-sm bg"
@@ -790,7 +814,7 @@
 
         <div>
             <fieldset
-                class="pb-6 bg-color1/5 rounded-lg grid grid-cols-2 gap-x-10 h-fit md:px-9 md:pt-2"
+                class="pb-6 md:bg-color1/5 rounded-lg grid grid-cols-2 gap-x-3 md:gap-x-10 h-fit md:px-9 md:pt-2"
             >
                 <legend
                     class="text-color1 text-center px-5 font-bold rounded-sm bg"
@@ -884,7 +908,7 @@
             </fieldset>
 
             <fieldset
-                class="pb-6 bg-color1/5 rounded-lg pb-9 px-5 mt-9 bg-gray-50 grid grid-cols-2 gap-x-10 h-fit md:px-9 md:pt-2"
+                class="pb-6 md:bg-color1/5 rounded-lg md:pb-9  mt-9  grid grid-cols-2 gap-x-3 md:gap-x-10 h-fit md:px-9 md:pt-2"
             >
                 <legend
                     class="text-color1 text-center px-5 font-bold rounded-sm bg"
@@ -1014,7 +1038,7 @@
     </button>
 </Modal>
 
-<div class="flex justify-between items-center">
+<div class="flex  justify-between items-center">
     <div class="w-56 mb-3">
         <Input
             id="filterYear"
@@ -1033,7 +1057,7 @@
             <option class="bg-gray-50" value="graduated">Graduados</option>
         </Input>
     </div>
-    <div class="flex items-center gap-3">
+    <div class="flex flex-col md:flex-row items-center gap-3 relative ">
         <input
             type="file"
             accept=".xlsx"
@@ -1041,67 +1065,127 @@
             bind:this={importFileInput}
             on:change={handleImportFile}
         />
-        <button type="button" class="toolbar-secondary opacity-50 hover:opacity-100" on:click={() => importFileInput?.click()}>
-            <iconify-icon icon="material-symbols:upload" width="20" height="20" />
-            Importar
-        </button>
-        <a
-            href="/dashboard/matricula/plantilla"
-            class="toolbar-secondary opacity-50 hover:opacity-100"
-        >
-            <iconify-icon icon="material-symbols:download" width="20" height="20" />
-            Descargar plantilla
-        </a>
+        <!-- Desktop: show buttons -->
+        <div class="hidden flex-col md:flex-row items-center gap-3">
+            <button
+                type="button"
+                class="toolbar-secondary opacity-50 hover:opacity-100"
+                on:click={() => importFileInput?.click()}
+            >
+                <iconify-icon
+                    icon="material-symbols:upload"
+                    width="20"
+                    height="20"
+                />
+                Importar
+            </button>
+            <a
+                href="/dashboard/matricula/plantilla"
+                class="toolbar-secondary opacity-50 hover:opacity-100"
+            >
+                <iconify-icon
+                    icon="material-symbols:download"
+                    width="20"
+                    height="20"
+                />
+                Descargar plantilla
+            </a>
+        </div>
+        <!-- Mobile: show a small button that opens a Modal with the two actions -->
+        <div class="md:hidden ">
+            <button
+                class="toolbar-secondary p-2 "
+                on:click={() => (showMobileActions = true)}
+                aria-label="Más acciones"
+            >
+                <iconify-icon
+                    icon="material-symbols:upload"
+                    width="20"
+                    height="20"
+                />
+            </button>
+            <Modal bind:showModal={showMobileActions} classes={"w-72"}>
+                <div class="flex flex-col gap-3 p-2">
+                    <button
+                        type="button"
+                        class="toolbar-secondary"
+                        on:click={() => {
+                            importFileInput?.click();
+                            showMobileActions = false;
+                        }}
+                    >
+                        <iconify-icon
+                            icon="material-symbols:upload"
+                            width="20"
+                            height="20"
+                        />
+                        <span class="ml-2">Importar</span>
+                    </button>
+                    <a
+                        href="/dashboard/matricula/plantilla"
+                        class="toolbar-secondary"
+                        on:click={() => (showMobileActions = false)}
+                    >
+                        <iconify-icon
+                            icon="material-symbols:download"
+                            width="20"
+                            height="20"
+                        />
+                        <span class="ml-2">Descargar plantilla</span>
+                    </a>
+                </div>
+            </Modal>
+        </div>
         {#if data.failedImportsCount > 0}
             <a
                 href="/dashboard/importaciones-fallidas"
                 class="toolbar-secondary"
                 style="background-color: #b45309; color: white;"
             >
-                <iconify-icon icon="material-symbols:error-outline" width="20" height="20" />
-                {data.failedImportsCount} error{data.failedImportsCount !== 1 ? 'es' : ''}
+                <iconify-icon
+                    icon="material-symbols:error-outline"
+                    width="20"
+                    height="20"
+                />
+                {data.failedImportsCount} error{data.failedImportsCount !== 1
+                    ? "es"
+                    : ""}
             </a>
         {/if}
+        <div class="hidden sm:flex">
+            <button
+                class="animated-button w-fitcontent"
+                on:click={openInscribirModal}
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="arr-2"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                    ></path>
+                </svg>
+                <span class="text">Inscribir</span>
+                <span class="circle"></span>
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="arr-1"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                    ></path>
+                </svg>
+            </button>
+        </div>
         <button
-            class="animated-button w-fitcontent"
-            on:click={(e) => {
-            e.preventDefault();
-            deletedStudentDetected = null;
-            deletedStudentGraduate = false;
-            if (submitStatus === "Editar") {
-                $form.reset();
-                submitStatus = "Crear";
-                editingStudentId = null;
-                originalCourseId = null;
-                selectedRow = { status: false, data: null };
-            } else {
-                $form.section_id = +data.filters.section_id;
-                $form.course_id = +data.filters.course_id;
-            }
-
-            showModal = true;
-        }}
-    >
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="arr-2"
-            viewBox="0 0 24 24"
+            type="button"
+            class="fixed-bottom-mobile fab sm:hidden bg-color1 text-white"
+            on:click={openInscribirModal}
+            aria-label="Inscribir estudiante"
         >
-            <path
-                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-            ></path>
-        </svg>
-        <span class="text">Inscribir</span>
-        <span class="circle"></span>
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="arr-1"
-            viewBox="0 0 24 24"
-        >
-            <path
-                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-            ></path>
-        </svg>
+            <iconify-icon icon="mdi:plus" width="26" height="26"></iconify-icon>
         </button>
     </div>
 </div>
@@ -1165,11 +1249,11 @@
                     on:click={() => createSection()}
                     class="text-xs px-4 text-gray-400 hover:text-gray-700 py-2"
                 >
-                <iconify-icon
+                    <iconify-icon
                         class="text-lg relative top-1"
                         icon="ic:baseline-plus"
                     ></iconify-icon>
-                    Crear sección
+                    <span class="hidden md:inline-block">Crear sección</span>
                 </button>
             {/if}
 
@@ -1258,7 +1342,11 @@
 </Table>
 
 {#if showImportResult}
-    <ImportResultModal bind:show={showImportResult} summary={importSummary} importType="student" />
+    <ImportResultModal
+        bind:show={showImportResult}
+        summary={importSummary}
+        importType="student"
+    />
 {/if}
 
 <style>

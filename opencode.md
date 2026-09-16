@@ -463,3 +463,22 @@ esources/js/components/ (Windows case-insensitive lo toleraba; Linux no). Correg
 - **`UserController@index`**: Pasa `failedImportsCount` (profesores) al frontend.
 - **Notas**: Tanto estudiantes como profesores comparten la misma tabla `failed_imports` con columna `import_type`.
 - **Verificado**: php -l OK en StudentController/StudentService/routes; php artisan migrate OK; table `failed_imports` tiene columnas (id, row_number, data, error_message, timestamps); route:list muestra las 4 rutas; yarn build OK; vendor/bin/phpunit OK (2 tests).
+
+---
+
+## Sesión 2026-09-16 — FABs móviles y unificación de títulos de página
+
+### Objetivo
+- Botones flotantes (FAB) con ícono `mdi:plus` (sin texto) en esquina inferior derecha, solo visibles en móvil (<640px), en las páginas del Dashboard.
+- Unificar todos los títulos de página al estilo `<h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden">` (visibles solo en móvil; en escritorio el header del layout ya muestra el nombre de página).
+
+### FABs (sesión anterior, ya verificado)
+- Aplicados a Matricula, Pagos, Personal, Profesores, Materias, EvaluationPlanCreateModal (trigger) y MisPlanes. Patrón: botón escritorio dentro de `<div class="hidden sm:flex">` (o `sm:block` en Pagos) + FAB `class="fixed-bottom-mobile fab sm:hidden bg-color1 text-white"` fuera del wrapper (helpers `fixed-bottom-mobile`/`.fab` en `resources/css/app.css:506-546`).
+
+### Títulos aplicados en esta sesión
+- **Unificados a `text-xl md:text-2xl font-bold text-color1 sm:hidden`**: `Materias.svelte`, `MisPlanes.svelte`, `PlanesEvaluacion.svelte`, `MisEstudiantes.svelte`, `MiHorario.svelte`, `HorarioHijo.svelte`, `MateriasHijo.svelte` (h3→h2), `MisHijos.svelte` (h3→h2), `Perfil.svelte` (h3→h2), `ImportacionesFallidas.svelte` (h1→h2).
+- **Agregados donde no existían** (mismo estilo + `mb-3`): `Index.svelte` ("Panel de control"), `Matricula.svelte`, `Pagos.svelte`, `EstadosDeCuenta.svelte`, `Personal.svelte`, `Profesores.svelte`, `MisPagos.svelte`, `Configuracion.svelte`, `Horarios.svelte`.
+- **Alineación escritorio**: con el h2 oculto en desktop, los botones de acción quedaban a la izquierda; se añadió `sm:ml-auto` al wrapper del botón en `Materias` y `MisPlanes`, y al wrapper del trigger en `EvaluationPlanCreateModal.svelte` (afecta solo a `PlanesEvaluacion`, que es el único con trigger visible; `MisPlanes` usa `renderTriggerButton={false}`).
+- **No tocados (a propósito)**: `addPaymentMethod.svelte` (vacío), `MetodosDePago/Crear|Editar.svelte` (formas standalone con su propio h2 interno), `DetalleEstudiante.svelte` (parámetro dinámico, no es página de módulo), `Matricula2.svelte` (componente alterno no renderizado), `Pagos.svelte` slots `<h2>` de modales (no títulos).
+- **Verificación UI real**: build `corepack yarn run build` OK (revertir `package.json` tras build, corepack añade `packageManager`). Comprobado en navegador a 390px y 1280px: admin PlanesEvaluacion/Index/Horarios y profesor MisPlanes → h2 block/none, FAB flex/none, wrapper hidden none/flex + `ml` auto ✓.
+- **Responsive fila de temas en `EvaluationPlanCreateModal.svelte`**: la fila de tema pasó de `md:grid grid-cols-[5px_1.2fr_1.2fr_1fr_70px_63px_140px_32px]` (solo grid desde md) a `grid grid-cols-2 ... md:grid-cols-[...igual]` + `w-full md:w-auto` en el `<input type="date">`. Debajo de md cada tema se muestra en 2 columnas ("1. Tema" lado a lado, Tipo/Descripción, %/Pts, Fecha/Quitar); en md+ las 8 columnas quedan exactamente igual (verificado: `5px 103px 177px 86px 70px 63px 140px 32px` a 1280px, 2×~100.8px a 320px).

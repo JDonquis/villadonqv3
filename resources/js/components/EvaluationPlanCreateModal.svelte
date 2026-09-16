@@ -454,32 +454,42 @@
 </script>
 
 {#if renderTriggerButton}
+    <div class="hidden sm:flex sm:ml-auto">
+        <button
+            class="animated-button w-fitcontent flex items-center justify-center gap-3"
+            on:click={open}
+        >
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="arr-2"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                ></path>
+            </svg>
+            <iconify-icon icon="line-md:plus" class="text" width="20" height="20"
+            ></iconify-icon>
+            <span class="text">Nuevo plan</span>
+            <span class="circle"></span>
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="arr-1"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                ></path>
+            </svg>
+        </button>
+    </div>
     <button
-        class="animated-button w-fitcontent flex items-center justify-center gap-3"
+        type="button"
+        class="fixed-bottom-mobile fab sm:hidden bg-color1 text-white"
         on:click={open}
+        aria-label="Nuevo plan"
     >
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="arr-2"
-            viewBox="0 0 24 24"
-        >
-            <path
-                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-            ></path>
-        </svg>
-        <iconify-icon icon="line-md:plus" class="text" width="20" height="20"
-        ></iconify-icon>
-        <span class="text">Nuevo plan</span>
-        <span class="circle"></span>
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="arr-1"
-            viewBox="0 0 24 24"
-        >
-            <path
-                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-            ></path>
-        </svg>
+        <iconify-icon icon="mdi:plus" width="26" height="26"></iconify-icon>
     </button>
 {/if}
 
@@ -490,9 +500,9 @@
                 ? "Nuevo plan de evaluación"
                 : "Editar plan de evaluación"}
         </h3>
-        <div class="grid grid-cols-12 gap-x-6">
-            <div class="col-span-4 sticky top-10">
-                <div class="grid grid-cols-4 gap-x-4">
+        <div class="md:grid grid-cols-12 gap-x-6">
+            <div class="col-span-4 md:sticky top-10">
+                <div class="md:grid grid-cols-4 gap-x-4">
                     {#if !isTeacher}
                         <Input
                             type="select"
@@ -684,7 +694,7 @@
                         <div class="space-y-2">
                             {#each unit.topics as topic, topicIndex}
                                 <div
-                                    class="grid grid-cols-[5px_1.2fr_1.2fr_1fr_70px_63px_140px_32px] gap-2 items-start"
+                                    class="grid grid-cols-2 gap-2 items-start md:grid-cols-[5px_1.2fr_1.2fr_1fr_70px_63px_140px_32px]"
                                 >
                                     <span
                                         class="text-xs font-semibold text-gray-500 pt-2"
@@ -775,7 +785,7 @@
                                     >
                                         <input
                                             type="date"
-                                            class="rounded-md border border-gray-300 px-2 py-2 text-sm"
+                                            class="rounded-md border border-gray-300 px-2 py-2 text-sm w-full md:w-auto"
                                             class:border-red={showDateErrors &&
                                                 topicMissingDate(topic)}
                                             bind:value={

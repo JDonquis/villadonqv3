@@ -65,6 +65,7 @@
     let showModal = false;
     let selectedRow = { status: false, id: 0 };
     let editingUser = null;
+    let showMobileActions = false;
 
     document.addEventListener("keydown", ({ key }) => {
         if (key === "Escape") {
@@ -73,6 +74,23 @@
             showModal = false;
         }
     });
+
+    function openNuevoPersonal() {
+        if (!$page.props.auth.is_admin) {
+            displayAlert({
+                type: "error",
+                message: "No tienes permisos para crear personal",
+            });
+            return;
+        }
+        if (submitStatus === "Editar") {
+            $form.reset();
+            editingUser = null;
+            selectedRow = { status: false, data: {} };
+        }
+        submitStatus = "Crear";
+        showModal = true;
+    }
 
     function loadUserData(user) {
         $form.reset();
@@ -227,6 +245,9 @@
 </svelte:head>
 <section class=" min-h-screen">
     <Alert />
+    <h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden mb-3">
+        Personal
+    </h2>
     <div class=" mx-auto">
         <div class="flex justify-end items-center gap-3 mb-3">
             <input
@@ -236,14 +257,39 @@
                 bind:this={importFileInput}
                 on:change={handleImportFile}
             />
-            <button type="button" class="toolbar-secondary opacity-50 hover:opacity-100" on:click={() => importFileInput?.click()}>
-                <iconify-icon icon="material-symbols:upload" width="20" height="20" />
-                Importar
-            </button>
-            <a href="/dashboard/personal/plantilla" class="toolbar-secondary opacity-50 hover:opacity-100">
-                <iconify-icon icon="material-symbols:download " width="20" height="20" />
-                Descargar plantilla
-            </a>
+            <!-- Desktop: show buttons -->
+            <div class="hidden md:flex items-center gap-3">
+                <button type="button" class="toolbar-secondary opacity-50 hover:opacity-100" on:click={() => importFileInput?.click()}>
+                    <iconify-icon icon="material-symbols:upload" width="20" height="20" />
+                    Importar
+                </button>
+                <a href="/dashboard/personal/plantilla" class="toolbar-secondary opacity-50 hover:opacity-100">
+                    <iconify-icon icon="material-symbols:download " width="20" height="20" />
+                    Descargar plantilla
+                </a>
+            </div>
+            <!-- Mobile: small button opens modal with actions -->
+            <div class="md:hidden">
+                <button class="toolbar-secondary p-2" on:click={() => (showMobileActions = true)} aria-label="Más acciones">
+                     <iconify-icon
+                            icon="material-symbols:upload"
+                            width="20"
+                            height="20"
+                        />
+                </button>
+                <Modal bind:showModal={showMobileActions} classes={"w-72"}>
+                    <div class="flex flex-col gap-3 p-2">
+                        <button type="button" class="toolbar-secondary" on:click={() => { importFileInput?.click(); showMobileActions = false; }}>
+                            <iconify-icon icon="material-symbols:upload" width="20" height="20" />
+                            <span class="ml-2">Importar</span>
+                        </button>
+                        <a href="/dashboard/personal/plantilla" class="toolbar-secondary" on:click={() => (showMobileActions = false)}>
+                            <iconify-icon icon="material-symbols:download " width="20" height="20" />
+                            <span class="ml-2">Descargar plantilla</span>
+                        </a>
+                    </div>
+                </Modal>
+            </div>
             {#if $page.props.failedImportsCount > 0}
                 <a
                     href="/dashboard/importaciones-fallidas-profesores"
@@ -254,46 +300,38 @@
                     {$page.props.failedImportsCount} error{$page.props.failedImportsCount !== 1 ? 'es' : ''}
                 </a>
             {/if}
+            <div class="hidden sm:flex">
+                <button class="animated-button w-fitcontent" on:click={openNuevoPersonal}>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="arr-2"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                        ></path>
+                    </svg>
+                    <span class="text">Nuevo personal</span>
+                    <span class="circle"></span>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="arr-1"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                        ></path>
+                    </svg>
+                </button>
+            </div>
             <button
-            class="animated-button w-fitcontent"
-            on:click={(e) => {
-                if (!$page.props.auth.is_admin) {
-                    displayAlert({
-                        type: "error",
-                        message: "No tienes permisos para crear personal",
-                    });
-                    return;
-                }
-                if (submitStatus === "Editar") {
-                    $form.reset();
-                    editingUser = null;
-                    selectedRow = { status: false, data: {} };
-                }
-                submitStatus = "Crear";
-                showModal = true;
-            }}
-        >
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="arr-2"
-                viewBox="0 0 24 24"
+                type="button"
+                class="fixed-bottom-mobile fab sm:hidden bg-color1 text-white"
+                on:click={openNuevoPersonal}
+                aria-label="Nuevo personal"
             >
-                <path
-                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                ></path>
-            </svg>
-            <span class="text">Nuevo personal</span>
-            <span class="circle"></span>
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="arr-1"
-                viewBox="0 0 24 24"
-            >
-                <path
-                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                ></path>
-            </svg></button
-        >
+                <iconify-icon icon="mdi:plus" width="26" height="26"></iconify-icon>
+            </button>
         </div>
         <!-- List -->
 

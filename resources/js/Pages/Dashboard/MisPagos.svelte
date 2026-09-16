@@ -314,6 +314,10 @@
     <title>Mis Pagos</title>
 </svelte:head>
 
+<h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden mb-3">
+    Mis Pagos
+</h2>
+
 <div class="   ">
     {#if data.students.length === 0}
         <p class="text-gray-400 text-sm">No tienes hijos inscritos.</p>

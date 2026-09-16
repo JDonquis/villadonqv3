@@ -9,7 +9,7 @@
     let isDropdownOpen = false;
 </script>
 
-<div class="flex gap-5 md:gap-10 max-h-fit">
+<div class="flex  flex-col md:flex-row gap-5 gap-y-0 md:gap-x-10 max-h-fit">
     {#each Object.entries(filtersOptions) as [filterKey, filterOption] (filterKey)}
         <article class="md:flex  mt-3">
             <h4

@@ -61,7 +61,7 @@
 
 <div class="w-full">
     <div class="flex flex-col gap-2 mb-4">
-        <h2 class="text-xl font-semibold text-gray-800">Mi Horario</h2>
+        <h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden">Mi Horario</h2>
         <p class="text-sm text-gray-500">
             Clases que impartes ({totalClasses} en total).
         </p>

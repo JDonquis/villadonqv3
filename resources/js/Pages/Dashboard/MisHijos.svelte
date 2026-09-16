@@ -25,7 +25,7 @@
 </svelte:head>
 
 <div class="w-full max-w-[1400px] mx-auto space-y-6">
-    <h3 class="text-2xl font-bold text-color1">Mis Hijos</h3>
+    <h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden">Mis Hijos</h2>
 
     {#if students.length === 0}
         <div

@@ -64,9 +64,9 @@
 
 <div class="w-full">
     <div class="flex flex-col gap-2 mb-4">
-        <h2 class="text-xl font-semibold text-gray-800">
-            Horario de {data.student.name} {data.student.last_name}
-        </h2>
+<h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden">
+        Horario de {data.student.name} {data.student.last_name}
+    </h2>
         <p class="text-sm text-gray-500">
             C.I {data.student.ci} · {data.student.course} · Sección
             {data.student.section}

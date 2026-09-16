@@ -110,7 +110,9 @@
 </script>
 
 <div class="p-6">
-    <h1 class="text-2xl font-bold text-gray-800 mb-6">Importaciones con errores</h1>
+    <h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden mb-6">
+    Importaciones con errores
+</h2>
 
     {#if data.failedImports.length > 0}
         <div class="flex gap-2 mb-4">

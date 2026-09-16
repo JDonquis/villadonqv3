@@ -166,20 +166,8 @@
     <div class=" md:flex md:items-center md:justify-between">
         {#if allowFilters}
             <div class="flex gap-2 rounded-lg overflow-hidden md:gap-7">
-                <div
-                    class={`inline-flex overflow-hidden  ${allowFilters ? "  divide-x divide-gray-100" : ""}  rtl:flex-row-reverse" : ""}`}
-                >
-                    <!-- <button
-                    on:click={(e) => {
-                        filterClientData["status"] = "";
-                        handleFilters();
-                    }}
-                    class="px-5 py-2 text-xs font-medium text-gray-600 transition-colors duration-200 sm:text-sm bg-gray-200 hover:bg-gray-100"
-                    class:bg-gray-200={filterClientData["status"] == "" ||
-                        !filterClientData["status"]}
-                >
-                    Todos
-                </button> -->
+                <!-- Desktop: buttons -->
+                <div class={`hidden md:inline-flex overflow-hidden ${allowFilters ? " divide-x divide-gray-100" : ""}`}>
                     {#each Object.entries(filtersOptions) as [filterKey, filterOption]}
                         {#each filterOption as filter, i}
                             <button
@@ -198,6 +186,42 @@
                         {/each}
                     {/each}
                 </div>
+
+                <!-- Mobile: convert filters to selects -->
+                <div class="md:hidden flex flex-col gap-2 w-fit">
+                    {#each Object.entries(filtersOptions) as [filterKey, filterOption]}
+                        <div>
+                            <select
+                                class="mt-1 block w-full rounded-md border px-3 py-2"
+                                on:change={(e) => {
+                                    const el = e.target;
+                                    if (Array.isArray(filterClientData[filterKey])) {
+                                        // multi-select: gather selected options
+                                        const values = Array.from(el.selectedOptions).map((o) => o.value);
+                                        filterClientData[filterKey] = values;
+                                    } else {
+                                        filterClientData[filterKey] = el.value;
+                                    }
+                                    handleFilters();
+                                }}
+                            >
+                                {#each filterOption as filter, i}
+                                    <option
+                                        value={filter.id}
+                                        selected={
+                                            Array.isArray(filterClientData[filterKey])
+                                                ? (filterClientData[filterKey] || []).map(String).includes(String(filter.id))
+                                                : (serverSideData.filters[filterKey] == filter.id) || (i == 0 && !filterClientData[filterKey])
+                                        }
+                                    >
+                                        {filter.name}
+                                    </option>
+                                {/each}
+                            </select>
+                        </div>
+                    {/each}
+                </div>
+
                 <slot name="filterBox"></slot>
             </div>
         {/if}

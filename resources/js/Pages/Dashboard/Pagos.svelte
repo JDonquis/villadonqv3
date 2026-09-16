@@ -51,6 +51,15 @@
     let selectedRow = { status: false, data: null };
     let submitStatus = "Registrar";
 
+    function openRegistrarPago() {
+        showModal = true;
+        searchInputRef.focus();
+        if (submitStatus === "Solo lectura") {
+            $form.reset();
+            submitStatus = "Registrar";
+        }
+    }
+
     let concepts = [...(data?.concepts ?? [])];
     let showConceptModal = false;
     let editingConceptId = null;
@@ -485,6 +494,8 @@
 
 <Alert />
 
+<h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden mb-3">Pagos</h2>
+
 <Modal bind:showModal classes="w-11/12">
     <h2 slot="header" class="text-sm text-center">REGISTRO DE PAGO</h2>
 
@@ -492,7 +503,7 @@
         id="a-form"
         on:submit={handleSubmit}
         action=""
-        class="w-full grid md:grid-cols-12 md:gap-x-5 px-3 pl-2"
+        class="w-full md:grid md:grid-cols-12 md:gap-x-5 px-0 md:px-3 pl-2"
     >
         <div class="col-span-8 relative mx-auto text-left w-full">
             <!-- <Input
@@ -523,7 +534,7 @@
                 </span>
                 <input
                     type="search"
-                    placeholder="Buscar Estudiante"
+                    placeholder="Buscar Estudiante / representante"
                     class={`block w-full rounded-xl py-1.5 pr-5 text-gray-700 -full   md:w-56  placeholder-gray-400/70 pl-11 rtl:pr-11 rtl:pl-5 focus:border-blue-400 focus:ring-blue-300 focus:outline-none focus:ring focus:ring-opacity-40`}
                     bind:this={searchInputRef}
                     on:input={(e) => {
@@ -538,7 +549,7 @@
             <table
                 id="students-search-table"
                 bind:this={searchTableRef}
-                class={`${isSearchTableOpen ? "block bg-gray-200 z-50" : "hidden"} p-6 w-full absolute font-semibold rounded-md top-12 max-h-[370px] min-h-[300px] overflow-y-scroll z-50 shadow-xl [&_*]:px-4 [&_*]:py-2 [&_*]:text-left  text-sm  mt-5`}
+                class={`${isSearchTableOpen ? "block bg-gray-200 z-50" : "hidden"} p-2 md:p-6 w-full absolute font-semibold rounded-md top-12 max-h-[370px] min-h-[300px] overflow-y-scroll z-50 shadow-xl [&_*]:px-4 [&_*]:py-2 [&_*]:text-left  text-sm  mt-5`}
             >
                 <thead class="">
                     <tr>
@@ -628,7 +639,7 @@
                         <tr
                             class={` w-full [&_td]:px-2 [&_td*]:py-2 text-sm cursor-pointer  border-gray-500`}
                         >
-                            <td class="min-w-[300px]">
+                            <td class="md:min-w-[300px]">
                                 <div class="flex items-center mb-1">
                                     <span>
                                         {student.name}
@@ -769,7 +780,7 @@
                             </td>
                         </tr>
                         <tr class=" ">
-                            <td colspan="7" class="px-3 pb-10">
+                            <td colspan="7" class="md:px-3 pb-10 max-w-[350px] md:max-w-[900px]">
                                 {#if !isConceptPayment && submitStatus !== "Solo lectura"}
                                     <BalanceBar
                                         balances={student.balances.map((b) => ({
@@ -792,7 +803,7 @@
             </table>
         </div>
 
-        <div class="col-span-4 w-full grid md:grid-cols-2 md:gap-x-5">
+        <div class="col-span-4 w-full md:grid md:grid-cols-2 md:gap-x-5">
             <div class="col-span-2 w-full">
                 <Input
                     type="select"
@@ -1021,7 +1032,6 @@
                 error={$conceptForm.errors?.price}
             />
             <div class="flex justify-end gap-5 mt-4">
-               
                 <button
                     type="button"
                     class="animated-button w-full mt-2 flex items-center justify-center gap-3 text-xs"
@@ -1043,7 +1053,9 @@
                         height="18"
                     />
                     <span class="text">
-                        {editingConceptId ? "Guardar cambios" : "Guardar concepto"}
+                        {editingConceptId
+                            ? "Guardar cambios"
+                            : "Guardar concepto"}
                     </span>
                     <span class="circle"></span>
                     <svg
@@ -1096,44 +1108,50 @@
         {/if}
         <div class=" items-center gap-5 ml-auto mb-3">
             <p class="text-sm text-gray-500">
-                1$ el {formatFechaCorta(dateOfDolarPrice)} = {#if dolarPrice}{dolarPrice}{:else}<iconify-icon
+                1$ <span class="hidden md:inline"
+                    >el {formatFechaCorta(dateOfDolarPrice)}</span
+                >
+                = {#if dolarPrice}{dolarPrice}{:else}<iconify-icon
                         icon="line-md:loading-loop"
                         width="24"
                         height="24"
                     ></iconify-icon>{/if} Bs
             </p>
+            <div class="hidden sm:block">
+                <button
+                    class="animated-button ml-auto w-fitcontent"
+                    on:click={openRegistrarPago}
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="arr-2"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                        ></path>
+                    </svg>
+                    <span class="text">Registrar pago</span>
+                    <span class="circle"></span>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="arr-1"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                        ></path>
+                    </svg>
+                </button>
+            </div>
             <button
-                class="animated-button ml-auto w-fitcontent"
-                on:click={(e) => {
-                    e.preventDefault();
-                    showModal = true;
-                    searchInputRef.focus();
-                    if (submitStatus === "Solo lectura") {
-                        $form.reset();
-                        submitStatus = "Registrar";
-                    }
-                }}
+                type="button"
+                class="fixed-bottom-mobile fab sm:hidden bg-color1 text-white"
+                on:click={openRegistrarPago}
+                aria-label="Registrar pago"
             >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="arr-2"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                    ></path>
-                </svg>
-                <span class="text">Registrar pago</span>
-                <span class="circle"></span>
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="arr-1"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                    ></path>
-                </svg>
+                <iconify-icon icon="mdi:plus" width="26" height="26"
+                ></iconify-icon>
             </button>
         </div>
     </div>

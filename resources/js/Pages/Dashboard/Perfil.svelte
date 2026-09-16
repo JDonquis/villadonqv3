@@ -91,7 +91,7 @@
 <Alert />
 
 <div class="w-full bg-white shadow-lg p-6 rounded-md max-w-[1000px] flex flex-col gap-6">
-    <h3 class="text-lg font-bold text-gray-800 tracking-tight">Mi Perfil</h3>
+    <h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden">Mi Perfil</h2>
 
     <div class="flex items-center gap-6">
         {#if photoPreview}

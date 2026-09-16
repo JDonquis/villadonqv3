@@ -366,6 +366,9 @@
     <title>Configuración</title>
 </svelte:head>
 <section class="bg-background">
+    <h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden mb-3">
+        Configuración
+    </h2>
     <div class="py-5"></div>
 
     <!-- <h2 class="font-bold text-xl">Configuración del perfil</h2>

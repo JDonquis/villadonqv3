@@ -175,21 +175,31 @@
 <Alert />
 
 <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
-    <h2 class="text-2xl font-bold text-color1">Mis Planes de Evaluación</h2>
+    <h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden">Mis Planes de Evaluación</h2>
+    <div class="hidden sm:flex sm:ml-auto">
+        <button
+            class="animated-button w-fitcontent"
+            on:click={(e) => {
+                e.preventDefault();
+                planModal?.open();
+            }}
+        >
+            <span class="text">Nuevo plan</span>
+            <span class="circle"></span>
+        </button>
+    </div>
     <button
-        class="animated-button w-fitcontent"
-        on:click={(e) => {
-            e.preventDefault();
-            planModal?.open();
-        }}
+        type="button"
+        class="fixed-bottom-mobile fab sm:hidden bg-color1 text-white"
+        on:click={() => planModal?.open()}
+        aria-label="Nuevo plan"
     >
-        <span class="text">Nuevo plan</span>
-        <span class="circle"></span>
+        <iconify-icon icon="mdi:plus" width="26" height="26"></iconify-icon>
     </button>
 </div>
 
 <div
-    class="flex flex-wrap gap-3 mb-4 bg-white border border-gray-200 rounded-lg p-3"
+    class="flex flex-col md:flex-row flex-wrap gap-3 mb-4 bg-white border border-gray-200 rounded-lg p-3"
 >
     <div class="flex items-center gap-2">
         <label class="text-sm font-semibold text-gray-600"

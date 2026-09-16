@@ -450,11 +450,11 @@
 <Alert />
 
 <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
-    <h2 class="text-2xl font-bold text-color1">Mis Estudiantes</h2>
+    <h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden">Mis Estudiantes</h2>
 </div>
 
 <div
-    class="bg-white border border-gray-200 rounded-lg p-4 mb-4 flex flex-wrap items-center gap-5 md:gap-6"
+    class="bg-white border border-gray-200 rounded-lg p-4 mb-4 flex flex-col md:flex-row flex-wrap md:items-center gap-5 md:gap-6"
 >
     <div class="flex flex-col md:flex-row md:items-center gap-2">
         <label class="text-sm font-semibold text-gray-600">
@@ -471,7 +471,7 @@
         </select>
     </div>
 
-    <div class="flex flex-col md:flex-row items-center gap-2">
+    <div class="flex flex-col md:flex-row md:items-center gap-2">
         <label class="text-sm font-semibold text-gray-600">
             Momento escolar
         </label>

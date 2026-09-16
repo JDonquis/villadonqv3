@@ -67,6 +67,13 @@
         }
     }
 
+    function openNuevaMateria() {
+        $form.reset();
+        submitStatus = "Crear";
+        editingMatterId = null;
+        showModal = true;
+    }
+
     function fillFormToEdit() {
         const matter = selectedRow.data;
         editingMatterId = matter.id;
@@ -105,38 +112,42 @@
 <Alert />
 
 <div class="flex justify-between items-center mb-3">
-    <h2 class="text-2xl font-bold text-color1">Materias</h2>
+    <h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden">Materias</h2>
+    <div class="hidden sm:flex sm:ml-auto">
+        <button
+            class="animated-button w-fitcontent min-w-[250px] flex items-center justify-center gap-3"
+            on:click={openNuevaMateria}
+        >
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="arr-2"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                ></path>
+            </svg>
+            <iconify-icon icon="line-md:plus" class="text" width="20" height="20"></iconify-icon>
+            <span class="text">Nueva materia</span>
+            <span class="circle"></span>
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="arr-1"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                ></path>
+            </svg>
+        </button>
+    </div>
     <button
-        class="animated-button w-fitcontent min-w-[250px] flex items-center justify-center gap-3"
-        on:click={(e) => {
-            e.preventDefault();
-            $form.reset();
-            submitStatus = "Crear";
-            editingMatterId = null;
-            showModal = true;
-        }}
+        type="button"
+        class="fixed-bottom-mobile fab sm:hidden bg-color1 text-white"
+        on:click={openNuevaMateria}
+        aria-label="Nueva materia"
     >
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="arr-2"
-            viewBox="0 0 24 24"
-        >
-            <path
-                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-            ></path>
-        </svg>
-        <iconify-icon icon="line-md:plus" class="text" width="20" height="20"></iconify-icon>
-        <span class="text">Nueva materia</span>
-        <span class="circle"></span>
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="arr-1"
-            viewBox="0 0 24 24"
-        >
-            <path
-                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-            ></path>
-        </svg>
+        <iconify-icon icon="mdi:plus" width="26" height="26"></iconify-icon>
     </button>
 </div>
 

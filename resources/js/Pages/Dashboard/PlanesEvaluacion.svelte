@@ -291,7 +291,7 @@
 <Alert />
 
 <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
-    <h2 class="text-2xl font-bold text-color1">Planes de Evaluación</h2>
+    <h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden">Planes de Evaluación</h2>
     <EvaluationPlanCreateModal
         {data}
         isUserATeacher={false}

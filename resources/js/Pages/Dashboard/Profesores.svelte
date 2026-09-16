@@ -61,6 +61,14 @@
     let selectedRow = { status: false, data: null };
     let editingTeacherId = null;
     let submitStatus = "Crear";
+    let showMobileActions = false;
+
+    function openNuevoProfesor() {
+        $form.reset();
+        submitStatus = "Crear";
+        editingTeacherId = null;
+        showModal = true;
+    }
 
     document.addEventListener("keydown", ({ key }) => {
         if (key === "Escape") {
@@ -203,6 +211,10 @@
 
 <Alert />
 
+<h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden mb-3">
+    Profesores
+</h2>
+
 <div class="flex justify-between items-center gap-3 mb-3 flex-wrap">
     <Search />
     <div class="flex justify-end items-center gap-3 ml-auto">
@@ -213,38 +225,67 @@
             bind:this={importFileInput}
             on:change={handleImportFile}
         />
+        <!-- Desktop: show buttons -->
+        <div class="hidden md:flex items-center gap-3">
+            <button
+                type="button"
+                class="toolbar-secondary opacity-50 hover:opacity-100"
+                on:click={() => importFileInput?.click()}
+            >
+                <iconify-icon
+                    icon="material-symbols:upload"
+                    width="20"
+                    height="20"
+                />
+                Importar
+            </button>
+            <a href="/dashboard/profesores/plantilla" class="toolbar-secondary opacity-50 hover:opacity-100">
+                <iconify-icon
+                    icon="material-symbols:download"
+                    width="20"
+                    height="20"
+                />
+                Descargar plantilla
+            </a>
+        </div>
+        <!-- Mobile: small button opens modal with actions -->
+        <div class="md:hidden">
+            <button class="toolbar-secondary p-2" on:click={() => (showMobileActions = true)} aria-label="Más acciones">
+                 <iconify-icon
+                            icon="material-symbols:upload"
+                            width="20"
+                            height="20"
+                        />
+            </button>
+            <Modal bind:showModal={showMobileActions} classes={"w-72"}>
+                <div class="flex flex-col gap-3 p-2">
+                    <button type="button" class="toolbar-secondary" on:click={() => { importFileInput?.click(); showMobileActions = false; }}>
+                        <iconify-icon icon="material-symbols:upload" width="20" height="20" />
+                        <span class="ml-2">Importar</span>
+                    </button>
+                    <a href="/dashboard/profesores/plantilla" class="toolbar-secondary" on:click={() => (showMobileActions = false)}>
+                        <iconify-icon icon="material-symbols:download" width="20" height="20" />
+                        <span class="ml-2">Descargar plantilla</span>
+                    </a>
+                </div>
+            </Modal>
+        </div>
+        <div class="hidden sm:flex">
+            <button
+                class="animated-button w-fitcontent"
+                on:click={openNuevoProfesor}
+            >
+                <span class="text">Nuevo profesor</span>
+                <span class="circle"></span>
+            </button>
+        </div>
         <button
             type="button"
-            class="toolbar-secondary opacity-50 hover:opacity-100"
-            on:click={() => importFileInput?.click()}
+            class="fixed-bottom-mobile fab sm:hidden bg-color1 text-white"
+            on:click={openNuevoProfesor}
+            aria-label="Nuevo profesor"
         >
-            <iconify-icon
-                icon="material-symbols:upload"
-                width="20"
-                height="20"
-            />
-            Importar
-        </button>
-        <a href="/dashboard/profesores/plantilla" class="toolbar-secondary opacity-50 hover:opacity-100">
-            <iconify-icon
-                icon="material-symbols:download"
-                width="20"
-                height="20"
-            />
-            Descargar plantilla
-        </a>
-        <button
-            class="animated-button w-fitcontent"
-            on:click={(e) => {
-                e.preventDefault();
-                $form.reset();
-                submitStatus = "Crear";
-                editingTeacherId = null;
-                showModal = true;
-            }}
-        >
-            <span class="text">Nuevo profesor</span>
-            <span class="circle"></span>
+            <iconify-icon icon="mdi:plus" width="26" height="26"></iconify-icon>
         </button>
     </div>
 </div>

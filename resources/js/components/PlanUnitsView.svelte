@@ -6,13 +6,13 @@
     console.log("PlanUnitsView plan:", showTeacher, plan);
 </script>
 
-<div class="px-5 py-2 md:min-w-[760px]">
-    <p class="text-sm text-gray-500">
+<div class="md:px-5 py-2 md:min-w-[760px]">
+    <p class="text-xs md:text-sm text-gray-500">
         {plan.school_lapse_label}
         <!-- prosefor -->
     </p>
     {#if showTeacher}
-        <b class="text-sm text-gray-500"
+        <b class="text-xs md:text-sm text-gray-500"
             ><iconify-icon
                 class="text-lg text-gray-500 mr-1"
                 icon="mdi:account-tie"
@@ -20,7 +20,7 @@
         >
     {/if}
 
-    <h3 class="text-xl font-bold text-color1 mb-1">
+    <h3 class="text-lg md:text-xl font-bold text-color1 mb-1">
         <div>
             <b class="text-gray-700">
                 {plan.matter_name} ·
@@ -40,11 +40,11 @@
     <div class="space-y-4">
         {#each units as unit, unitIndex}
             <div class="rounded-lg bg-gray-50 p-3 md:p-4">
-                <div class="text-sm font-bold text-color1 mb-2">
+                <div class="text-xs md:text-sm font-bold text-color1 mb-2">
                     Unidad {unit.unit_number || unitIndex + 1}{#if unit.name}: {unit.name}{/if}
                 </div>
                 {#if Array.isArray(unit.topics) && unit.topics.length}
-                    <table class="w-full text-sm">
+                    <table class="w-full text-xs md:text-sm">
                         <thead>
                             <tr
                                 class="text-left text-xs font-semibold text-gray-500"
@@ -90,17 +90,17 @@
                         </tbody>
                     </table>
                 {:else}
-                    <p class="text-sm text-gray-500">Sin temas.</p>
+                    <p class="text-xs md:text-sm text-gray-500">Sin temas.</p>
                 {/if}
             </div>
         {/each}
         <div class="md:p-4 p-3 bg-gray-50 rounded-lg">
-            <p class="text-sm font-bold text-color1">Puntos de rasgos: {plan.rasgos_points}</p>
+            <p class="text-xs md:text-sm font-bold text-color1">Puntos de rasgos: {plan.rasgos_points}</p>
         </div>
     </div>
 
 
-    <div class="text-sm font-semibold text-gray-700 mt-3 text-right">
+    <div class="text-xs md:text-sm font-semibold text-gray-700 mt-3 text-right">
         Total: {plan.items_total}%
         {#if plan.rasgos_points}
             + {plan.rasgos_points * 5}% (rasgos {plan.rasgos_points} pts)
@@ -114,7 +114,7 @@
 
     {#if plan.status === "rejected" && plan.admin_note}
         <div
-            class="mt-4 bg-red/5 border border-red/20 text-red px-4 py-3 rounded-md text-sm"
+            class="mt-4 bg-red/5 border border-red/20 text-red px-4 py-3 rounded-md text-xs md:text-sm"
         >
             <span class="font-semibold">Motivo del rechazo: </span>
             {plan.admin_note}

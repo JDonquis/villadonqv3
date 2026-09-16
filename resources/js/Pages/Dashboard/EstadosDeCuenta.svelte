@@ -137,6 +137,10 @@ Si ya realizó el pago, por favor ignore este mensaje o envíenos el comprobante
     <title>Estados de Cuenta</title>
 </svelte:head>
 
+<h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden mb-3">
+    Estados de Cuenta
+</h2>
+
 <Search placeholder="Buscar estudiante..." class="mb-4" />
 
 {#if data.total_debt}
@@ -184,7 +188,7 @@ Si ya realizó el pago, por favor ignore este mensaje o envíenos el comprobante
     <thead slot="thead">
         <tr>
             <th>Estudiante</th>
-            <th>Balance</th>
+            <th class="hidden md:table-cell">Balance</th>
             <th>Rep Legal</th>
         </tr>
     </thead>
@@ -251,8 +255,24 @@ Si ya realizó el pago, por favor ignore este mensaje o envíenos el comprobante
 
                  
                     </div>
+                    <!-- Mobile: show balance under student -->
+                    <div class="mt-2 md:hidden min-w-[300px]">
+                        <BalanceBar
+                            id={`balance-bar-${student.id}`}
+                            balances={student.balances.map((b) => ({
+                                ...b,
+                                ...b.months,
+                            }))}
+                            classes="py-0 px-0"
+                            is_exempt={student.is_exempt
+                                ? student.exemption_percentage
+                                : false}
+                            dayOfPayment={config.day_of_monthly_payment}
+                            gracePeriod={config.grace_period}
+                        />
+                    </div>
                 </td>
-                <td>
+                <td class="hidden md:table-cell min-w-[500px]">
                     <BalanceBar
                         id={`balance-bar-${student.id}`}
                         balances={student.balances.map((b) => ({

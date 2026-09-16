@@ -232,6 +232,10 @@
     <title>Dashboard</title>
 </svelte:head>
 
+<h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden mb-3">
+    Panel de control
+</h2>
+
 <div
     class="w-full bg-white shadow-lg p-6 rounded-md max-w-[1200px] flex flex-col gap-4"
 >

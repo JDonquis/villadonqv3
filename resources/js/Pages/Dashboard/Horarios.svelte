@@ -322,6 +322,9 @@
 </script>
 
 <div class="w-full">
+    <h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden mb-3">
+        Horarios
+    </h2>
     {#if viewMode === "grid"}
         <div
             class="flex flex-wrap items-center gap-4 border border-gray-200 bg-gray-50 rounded-xl p-4"

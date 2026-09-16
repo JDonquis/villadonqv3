@@ -64,7 +64,9 @@
 
 <div class="w-full max-w-[1400px] mx-auto space-y-6 p-2">
     <div>
-        <h3 class="text-2xl font-bold text-color1">Materias del Estudiante</h3>
+        <h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden">
+    Materias del Estudiante
+</h2>
         <p class="text-sm text-gray-500">
             {student.name} {student.last_name} · C.I {student.ci} · {student.course}
             · Sección {student.section}
