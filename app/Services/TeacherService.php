@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Enums\UserTypeEnum;
+use App\Models\FailedImport;
 use App\Models\Matter;
 use App\Models\User;
 use App\Support\ErrorTranslator;
+use Illuminate\Support\Facades\Log;
 
 class TeacherService
 {
@@ -94,6 +96,17 @@ class TeacherService
                 $this->createTeacherFromRow($raw);
                 $summary['created']++;
             } catch (\Exception $e) {
+                $mappedData = $this->mapRowData($raw);
+                try {
+                    FailedImport::create([
+                        'import_type' => 'teacher',
+                        'row_number' => $rowNumber,
+                        'data' => $mappedData,
+                        'error_message' => ErrorTranslator::translate($e),
+                    ]);
+                } catch (\Exception $inner) {
+                    Log::error('Failed to store failed import: '.$inner->getMessage());
+                }
                 $summary['errors'][] = [
                     'row' => $rowNumber,
                     'message' => ErrorTranslator::translate($e),
@@ -104,13 +117,24 @@ class TeacherService
         return $summary;
     }
 
-    private function createTeacherFromRow(array $raw): void
+    private function mapRowData(array $raw): array
     {
         $data = [];
         foreach (self::TEACHER_IMPORT_MAP as $header => $field) {
             $data[$field] = $raw[$this->normalizeHeader($header)] ?? '';
         }
 
+        return $data;
+    }
+
+    private function createTeacherFromRow(array $raw): void
+    {
+        $data = $this->mapRowData($raw);
+        $this->createTeacherFromMappedData($data);
+    }
+
+    private function createTeacherFromMappedData(array $data): void
+    {
         $required = [
             'ci' => 'la cédula',
             'name' => 'el nombre',
@@ -127,8 +151,30 @@ class TeacherService
             throw new \Exception("El correo '{$data['email']}' no es válido.");
         }
 
-        if (User::where('ci', $data['ci'])->exists()) {
-            throw new \Exception("La cédula {$data['ci']} ya está registrada.");
+        $existingUser = User::where('ci', $data['ci'])->first();
+
+        if ($existingUser) {
+            $matterIds = [];
+            $matters = array_values(array_filter(array_map('trim', preg_split('/[,;]/', $data['matters'])), fn ($m) => $m !== ''));
+            foreach ($matters as $matterName) {
+                $matter = Matter::whereRaw('LOWER(name) = ?', [mb_strtolower($matterName)])->first();
+                if (! $matter) {
+                    throw new \Exception("La materia '{$matterName}' no existe.");
+                }
+                $matterIds[] = $matter->id;
+            }
+
+            $this->updateTeacher($existingUser, [
+                'ci' => $data['ci'],
+                'name' => $data['name'],
+                'last_name' => $data['last_name'],
+                'email' => $data['email'],
+                'phone_number' => $data['phone_number'] !== '' ? $data['phone_number'] : null,
+                'address' => $data['address'] !== '' ? $data['address'] : null,
+                'matters' => $matterIds,
+            ]);
+
+            return;
         }
 
         if (User::where('email', $data['email'])->exists()) {
@@ -155,6 +201,16 @@ class TeacherService
             'password' => bcrypt($data['ci']),
             'matters' => $matterIds,
         ]);
+    }
+
+    public function retryImport(int $failedImportId): void
+    {
+        $failedImport = FailedImport::findOrFail($failedImportId);
+        $data = $failedImport->data;
+
+        $this->createTeacherFromMappedData($data);
+
+        $failedImport->delete();
     }
 
     private function normalizeHeader($header): string

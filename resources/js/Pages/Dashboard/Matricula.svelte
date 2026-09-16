@@ -1258,7 +1258,7 @@
 </Table>
 
 {#if showImportResult}
-    <ImportResultModal bind:show={showImportResult} summary={importSummary} />
+    <ImportResultModal bind:show={showImportResult} summary={importSummary} importType="student" />
 {/if}
 
 <style>

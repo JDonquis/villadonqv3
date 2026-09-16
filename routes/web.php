@@ -20,6 +20,7 @@ use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentGradeController;
 use App\Http\Controllers\StudentImportFailedController;
 use App\Http\Controllers\TeacherController;
+use App\Http\Controllers\TeacherImportFailedController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -55,6 +56,11 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::put('/dashboard/personal/{id}', [UserController::class, 'update'])->name('personal.update');
     Route::delete('/dashboard/personal/{id}', [UserController::class, 'destroy'])->name('personal.destroy');
     Route::post('/dashboard/personal/{id}/reenviar-correo', [UserController::class, 'resendSetupEmail'])->name('personal.resend-email');
+
+    Route::get('/dashboard/importaciones-fallidas-profesores', [TeacherImportFailedController::class, 'index']);
+    Route::put('/dashboard/importaciones-fallidas-profesores/{id}', [TeacherImportFailedController::class, 'update']);
+    Route::post('/dashboard/importaciones-fallidas-profesores/{id}/reintentar', [TeacherImportFailedController::class, 'retry']);
+    Route::delete('/dashboard/importaciones-fallidas-profesores/{id}', [TeacherImportFailedController::class, 'destroy']);
 
     Route::get('/dashboard/matricula', [StudentController::class, 'index']);
     Route::get('/dashboard/matricula/plantilla', [StudentController::class, 'downloadTemplate']);

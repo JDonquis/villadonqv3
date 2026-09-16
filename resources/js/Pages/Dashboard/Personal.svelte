@@ -244,6 +244,16 @@
                 <iconify-icon icon="material-symbols:download " width="20" height="20" />
                 Descargar plantilla
             </a>
+            {#if $page.props.failedImportsCount > 0}
+                <a
+                    href="/dashboard/importaciones-fallidas-profesores"
+                    class="toolbar-secondary"
+                    style="background-color: #16a34a; color: white;"
+                >
+                    <iconify-icon icon="material-symbols:error-outline" width="20" height="20" />
+                    {$page.props.failedImportsCount} error{$page.props.failedImportsCount !== 1 ? 'es' : ''}
+                </a>
+            {/if}
             <button
             class="animated-button w-fitcontent"
             on:click={(e) => {
@@ -443,7 +453,7 @@
 </Modal>
 
 {#if showImportResult}
-    <ImportResultModal bind:show={showImportResult} summary={importSummary} />
+    <ImportResultModal bind:show={showImportResult} summary={importSummary} importType="teacher" />
 {/if}
 
 <style>

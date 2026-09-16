@@ -3,19 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\FailedImport;
-use App\Services\StudentService;
+use App\Services\TeacherService;
 use App\Support\ErrorTranslator;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
-class StudentImportFailedController extends Controller
+class TeacherImportFailedController extends Controller
 {
-    private StudentService $studentService;
+    private TeacherService $teacherService;
 
     public function __construct()
     {
-        $this->studentService = new StudentService;
+        $this->teacherService = new TeacherService;
     }
 
     public function index(Request $request)
@@ -24,7 +24,7 @@ class StudentImportFailedController extends Controller
 
         return inertia('Dashboard/ImportacionesFallidas', [
             'data' => [
-                'importType' => 'student',
+                'importType' => 'teacher',
                 'failedImports' => $failedImports->map(function ($fi) {
                     return [
                         'id' => $fi->id,
@@ -46,31 +46,13 @@ class StudentImportFailedController extends Controller
         $failedImport = FailedImport::findOrFail($id);
 
         $validated = $request->validate([
-            'student_name' => 'sometimes|string|max:255',
-            'student_last_name' => 'sometimes|string|max:255',
-            'student_ci' => 'sometimes|string|max:20',
-            'student_date_birth' => 'sometimes|nullable|date',
-            'rep_name' => 'sometimes|string|max:255',
-            'rep_last_name' => 'sometimes|string|max:255',
-            'rep_ci' => 'sometimes|string|max:20',
-            'rep_email' => 'sometimes|nullable|email',
-            'rep_phone_number' => 'sometimes|nullable|string',
-            'student_email' => 'sometimes|nullable|email',
-            'student_phone_number' => 'sometimes|nullable|string',
-            'student_sex' => 'sometimes|nullable|in:Masculino,Femenino',
-            'student_previous_school' => 'sometimes|nullable|string',
-            'course_name' => 'sometimes|nullable|string',
-            'section_name' => 'sometimes|nullable|string',
-            'is_exempt' => 'sometimes|boolean',
-            'exemption_percentage' => 'sometimes|nullable|integer|min:1|max:100',
-            'exemption_observations' => 'sometimes|nullable|string',
-            'rep_profession' => 'sometimes|nullable|string',
-            'rep_workplace' => 'sometimes|nullable|string',
-            'rep_relationship' => 'sometimes|nullable|string',
-            'second_rep_name' => 'sometimes|nullable|string',
-            'second_rep_last_name' => 'sometimes|nullable|string',
-            'second_rep_ci' => 'sometimes|nullable|string',
-            'second_rep_relationship' => 'sometimes|nullable|string',
+            'ci' => 'sometimes|string|max:20',
+            'name' => 'sometimes|string|max:255',
+            'last_name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|nullable|email',
+            'phone_number' => 'sometimes|nullable|string',
+            'address' => 'sometimes|nullable|string',
+            'matters' => 'sometimes|nullable|string',
         ]);
 
         $data = $failedImport->data;
@@ -88,11 +70,11 @@ class StudentImportFailedController extends Controller
     public function retry($id)
     {
         try {
-            $this->studentService->retryImport($id);
+            $this->teacherService->retryImport($id);
 
             return response()->json(['success' => true]);
         } catch (Exception $e) {
-            Log::error('Error al reintentar importación fallida ID '.$id.': '.$e->getMessage());
+            Log::error('Error al reintentar importación de profesor ID '.$id.': '.$e->getMessage());
 
             return response()->json(['success' => false, 'error' => ErrorTranslator::translate($e)], 422);
         }

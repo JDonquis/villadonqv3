@@ -3,8 +3,10 @@
 
     export let show;
     export let summary = { created: 0, errors: [] };
+    export let importType = 'student';
 
     let showDetails = false;
+    const linkPath = importType === 'teacher' ? '/dashboard/importaciones-fallidas-profesores' : '/dashboard/importaciones-fallidas';
 
     const hasErrors = () => Array.isArray(summary?.errors) && summary.errors.length > 0;
 </script>
@@ -82,7 +84,7 @@
 
         {#if hasErrors()}
             <a
-                href="/dashboard/importaciones-fallidas"
+                href={linkPath}
                 class="toolbar-secondary mx-auto text-center"
             >
                 Ver {summary.errors.length} registro(s) con error para editar

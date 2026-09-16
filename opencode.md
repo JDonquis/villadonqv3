@@ -454,6 +454,12 @@ esources/js/components/ (Windows case-insensitive lo toleraba; Linux no). Correg
    - `resources/js/components/ImportResultModal.svelte`: enlace "Ver N registro(s) con error para editar" → `/dashboard/importaciones-fallidas`.
    - **`StudentService::createStudentFromMappedData`**: `rep_email` es campo requerido. Si el CI del estudiante ya existe (cualquier status), se actualiza en lugar de crear (status 0 → reactiva a 1, status 1 → actualiza datos). Si está graduado, lanza error. Esto permite re-importar estudiantes eliminados o actualizar los datos de los existentes.
    - **`StudentService::resolveRepresentative`**: cuando el email ya existe, busca el `Representative` asociado y lo reutiliza en vez de tirar error (permite re-intento correcto cuando un import previo creó el representante pero falló en crear el estudiante).
-- **Frontend**: `Matricula.svelte` muestra un botón naranja "N errores" en el toolbar cuando hay `failed_imports` (enlaza a `/dashboard/importaciones-fallidas`). El conteo viene del controller via `data.data.failedImportsCount`.
-- **Notas**: solo para estudiantes (Matrícula). Los imports de profesores/personales no tienen esta funcionalidad aún.
+- **Frontend**: `Matricula.svelte` muestra un botón naranja "N errores" en el toolbar cuando hay `failed_imports` (enlaza a `/dashboard/importaciones-fallidas`). El conteo viene del controller via `data.failedImportsCount`.
+- **`ImportacionesFallidas.svelte`**: Página unificada con filtro por tipo (Todos/Estudiantes/Profesores). Detecta el tipo de importación basado en la estructura de los datos (`student_name` → estudiante, `ci` → profesor). Los enlaces de API se adaptan al tipo detectado.
+- **`TeacherService`**: Refactored con `mapRowData`, `createTeacherFromMappedData`, `importTeachers` almacena fallos en `FailedImport` (con `import_type = 'teacher'`), `retryImport` reintentando la creación/actualización. Maneja upsert cuando el CI ya existe.
+- **`TeacherImportFailedController`**: Nuevo controlador para importaciones fallidas de profesores (index/update/retry/destroy).
+- **`Personal.svelte`**: Botón verde "N errores" en toolbar cuando hay importaciones fallidas de profesores (enlaza a `/dashboard/importaciones-fallidas-profesores`).
+- **`ImportResultModal.svelte`**: Acepta prop `importType` ('student' o 'teacher') para enlazar a la página correcta.
+- **`UserController@index`**: Pasa `failedImportsCount` (profesores) al frontend.
+- **Notas**: Tanto estudiantes como profesores comparten la misma tabla `failed_imports` con columna `import_type`.
 - **Verificado**: php -l OK en StudentController/StudentService/routes; php artisan migrate OK; table `failed_imports` tiene columnas (id, row_number, data, error_message, timestamps); route:list muestra las 4 rutas; yarn build OK; vendor/bin/phpunit OK (2 tests).

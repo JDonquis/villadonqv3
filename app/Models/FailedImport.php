@@ -10,6 +10,7 @@ class FailedImport extends Model
     use HasFactory;
 
     protected $fillable = [
+        'import_type',
         'row_number',
         'data',
         'error_message',
@@ -17,5 +18,6 @@ class FailedImport extends Model
 
     protected $casts = [
         'data' => 'array',
+        'import_type' => 'string',
     ];
 }

@@ -35,6 +35,7 @@ class UserController extends Controller
             'filters' => [
                 'search' => $request->input('search') ?? null,
             ],
+            'failedImportsCount' => FailedImport::where('import_type', 'teacher')->count(),
         ]);
     }
 
