@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
@@ -33,7 +34,6 @@ class AuthController extends Controller
     {
         $dataUser = ['email' => $request->email, 'password' => trim($request->password)];
         Log::info('Login attempt for user: '.$request->email);
-        Log::info('password '.$request->password);
         if (! $this->loginService->tryLoginOrFail($dataUser)) {
             return redirect('/')->withErrors(['data' => 'Datos incorrectos, intente nuevamente']);
         }
@@ -45,13 +45,7 @@ class AuthController extends Controller
         $permissionsArray = $this->userService->getPermissions($user->id);
         $permissionsWithFormat = $this->userService->formatToPermissions($permissionsArray);
 
-        $redirectTo = match ($user->type_user_id) {
-            UserTypeEnum::Representative->value => '/dashboard/mis-hijos',
-            UserTypeEnum::Teacher->value => '/dashboard/mis-planes',
-            default => '/dashboard',
-        };
-
-        return Inertia::location($redirectTo);
+        return Inertia::location($this->roleRedirect($user));
     }
 
     public function logout(Request $request)
@@ -59,6 +53,49 @@ class AuthController extends Controller
         Auth::logout();
 
         return redirect()->route('login');
+    }
+
+    public function redirectToGoogle()
+    {
+        return Socialite::driver('google')->redirect();
+    }
+
+    public function handleGoogleCallback()
+    {
+        try {
+            $googleUser = Socialite::driver('google')->user();
+        } catch (\Throwable $e) {
+            Log::error('Google login callback error: '.$e->getMessage());
+
+            return redirect('/')->withErrors(['data' => 'No se pudo iniciar sesión con Google. Intenta nuevamente.']);
+        }
+
+        $user = User::where('email', mb_strtolower($googleUser->getEmail()))->first();
+
+        if (! $user) {
+            return redirect('/')->withErrors(['data' => 'No existe una cuenta registrada con este correo. Contacta al administrador.']);
+        }
+
+        if (! $user->provider) {
+            $user->provider = 'google';
+            $user->provider_id = $googleUser->getId();
+            $user->save();
+        }
+
+        Auth::login($user);
+
+        $this->loginService->generateToken($user->toArray());
+
+        return Inertia::location($this->roleRedirect($user));
+    }
+
+    private function roleRedirect(User $user)
+    {
+        return match ($user->type_user_id) {
+            UserTypeEnum::Representative->value => '/dashboard/mis-hijos',
+            UserTypeEnum::Teacher->value => '/dashboard/mis-planes',
+            default => '/dashboard',
+        };
     }
 
     public function changePassword(Request $request)

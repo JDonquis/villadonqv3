@@ -45,6 +45,9 @@ Route::post('/olvidar-contrasena', [AuthController::class, 'requestResetPassword
 Route::get('/establecer-contrasena', [AuthController::class, 'showSetupPassword']);
 Route::post('/establecer-contrasena', [AuthController::class, 'setupPassword']);
 
+Route::get('/login/google', [AuthController::class, 'redirectToGoogle'])->middleware('guest');
+Route::get('/login/google/callback', [AuthController::class, 'handleGoogleCallback'])->middleware('guest');
+
 Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::get('/dashboard', [AppController::class, 'dashboard'])->name('dashboard');
     Route::get('/dashboard/graficos/annual-vs-monthly-flow/{schoolLapse?}', [AppController::class, 'annualVsMonthlyFlow']);
