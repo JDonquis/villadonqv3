@@ -83,34 +83,38 @@ class StudentService
 
     public function getStudentsPerCourse($request)
     {
-        $courseId = $request->input('course_id') ?? 1;
-        $sectionId = $request->input('section_id') ?? 1;
+        $search = trim((string) $request->input('search'));
         $graduate = $request->boolean('graduate');
 
         $query = Student::query();
 
-        if ($graduate) {
+        if ($search !== '') {
+            // Búsqueda global: ignora año/sección/graduados, solo estudiantes activos.
+            $query->where('status', '!=', 0)
+                ->where(function ($q) use ($search) {
+                    $q->where('search', 'like', '%'.$search.'%')
+                        ->orWhere('ci', 'like', '%'.$search.'%')
+                        ->orWhere('name', 'like', '%'.$search.'%')
+                        ->orWhere('last_name', 'like', '%'.$search.'%')
+                        ->orWhereRaw("CONCAT(name, ' ', last_name) LIKE ?", ['%'.$search.'%'])
+                        ->orWhereHas('representative.user', function ($q2) use ($search) {
+                            $q2->where('name', 'like', '%'.$search.'%')
+                                ->orWhere('last_name', 'like', '%'.$search.'%')
+                                ->orWhere('ci', 'like', '%'.$search.'%')
+                                ->orWhere('email', 'like', '%'.$search.'%');
+                        });
+                });
+        } elseif ($graduate) {
             $query->where('graduate', 1)->where('status', 0);
         } else {
+            $courseId = $request->input('course_id') ?? 1;
+            $sectionId = $request->input('section_id') ?? 1;
             $query->where('status', '!=', 0)
                 ->where('course_id', $courseId)
                 ->where('section_id', $sectionId);
         }
 
         $students = $query
-            ->when($request->input('search'), function ($query, $search) {
-                $query->where('search', 'like', '%'.$search.'%');
-                $query->orWhere('ci', 'like', '%'.$search.'%')
-                    ->orWhere('name', 'like', '%'.$search.'%')
-                    ->orWhere('last_name', 'like', '%'.$search.'%')
-                    ->orWhereRaw("CONCAT(name, ' ', last_name) LIKE ?", ['%'.$search.'%']);
-                $query->orWhereHas('representative.user', function ($q) use ($search) {
-                    $q->where('name', 'like', '%'.$search.'%')
-                        ->orWhere('last_name', 'like', '%'.$search.'%')
-                        ->orWhere('ci', 'like', '%'.$search.'%')
-                        ->orWhere('email', 'like', '%'.$search.'%');
-                });
-            })
             ->with('representative.user', 'course', 'section')
             ->get();
 

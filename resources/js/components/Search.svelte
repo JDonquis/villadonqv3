@@ -36,7 +36,7 @@
         );
     }, 300);
 
-    let showModal = false;
+    export let showModal = false;
     export let filtersOptions = false;
     export let allowSearch = true;
     export let inlineFilters = false;
@@ -139,7 +139,6 @@
                         class="absolute bg-color1 h-2 w-2 -full right-1 top-0"
                     ></div>
                 {/if}
-                <span> Filtros </span>
                 <iconify-icon icon="mage:filter" width="24" height="24"
                 ></iconify-icon>
             </button>
@@ -161,7 +160,7 @@
 {/if}
 
 {#if !inlineFilters}
-<Modal bind:showModal classes={"max-w-[960px] h-full"} showCancelButton={false}>
+<Modal bind:showModal classes={"w-full md:max-w-[960px] h-full"} showCancelButton={false}>
     <p slot="header" class="opacity-60">Filtros de busqueda</p>
     <FilterControls
         {filtersOptions}

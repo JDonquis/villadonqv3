@@ -45,6 +45,8 @@
         ? "graduated"
         : (data.filters?.course_id || "1").toString();
 
+    $: isSearching = !!(data?.filters?.search && data.filters.search.trim());
+
     $: sectionsOfThisYear =
         data.course_sections?.data?.[`course_${data.filters.course_id}`];
 
@@ -1039,24 +1041,39 @@
 </Modal>
 
 <div class="flex  justify-between items-center">
-    <div class="w-56 mb-3">
-        <Input
-            id="filterYear"
-            type="select"
-            value={selectedCourseId}
-            on:change={(e) => {
-                console.log("Cambiando año a:", e.target.value);
-                changeYear(e.target.value);
-            }}
-        >
-            {#each data.courses as course}
-                <option class="bg-gray-50" value={course.id.toString()}
-                    >{courseLabel(course)}</option
-                >
-            {/each}
-            <option class="bg-gray-50" value="graduated">Graduados</option>
-        </Input>
-    </div>
+    {#if isSearching}
+        <div class="w-56 mb-3">
+            <div
+                class="flex items-center gap-2 w-fit rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-amber-700 text-sm font-medium"
+            >
+                <iconify-icon
+                    icon="mdi:magnify"
+                    width="18"
+                    height="18"
+                ></iconify-icon>
+                Buscando en todos los años y secciones
+            </div>
+        </div>
+    {:else}
+        <div class="w-56 mb-3">
+            <Input
+                id="filterYear"
+                type="select"
+                value={selectedCourseId}
+                on:change={(e) => {
+                    console.log("Cambiando año a:", e.target.value);
+                    changeYear(e.target.value);
+                }}
+            >
+                {#each data.courses as course}
+                    <option class="bg-gray-50" value={course.id.toString()}
+                        >{courseLabel(course)}</option
+                    >
+                {/each}
+                <option class="bg-gray-50" value="graduated">Graduados</option>
+            </Input>
+        </div>
+    {/if}
     <div class="flex flex-col md:flex-row items-center gap-3 relative ">
         <input
             type="file"
@@ -1237,7 +1254,7 @@
         },
     ]}
     serverSideData={{ filters: data.filters }}
-    filtersOptions={data.filters.graduate
+    filtersOptions={isSearching || data.filters.graduate
         ? {}
         : { section_id: sectionsOfThisYear }}
     pagination={false}
@@ -1277,6 +1294,9 @@
             <th>C.I</th>
             <th>Sexo</th>
             <th>Edad</th>
+            {#if isSearching}
+                <th>Año-Sección</th>
+            {/if}
             <th>Rep Legal</th>
             <th>Tel rep legal</th>
         </tr>
@@ -1334,6 +1354,13 @@
                 </td>
                 <td>{row.student_sex}</td>
                 <td>{row.student_age}</td>
+                {#if isSearching}
+                    <td>
+                        <span class="text-sm">
+                            {row.course_name} - {row.section_name}
+                        </span>
+                    </td>
+                {/if}
                 <td>{row.rep_name} {row.rep_last_name}</td>
                 <td>{row.rep_phone_number}</td>
             </SelectableRow>

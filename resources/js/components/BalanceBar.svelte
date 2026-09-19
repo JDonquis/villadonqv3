@@ -104,6 +104,30 @@
         ago: "august",
     };
 
+    const shortLabels = {
+        sep: "Se",
+        oct: "Oc",
+        nov: "No",
+        dic: "Di",
+        ene: "En",
+        feb: "Fe",
+        mar: "Ma",
+        abr: "Ab",
+        may: "My",
+        jun: "Jn",
+        jul: "Jl",
+        ago: "Ag",
+    };
+
+    let isNarrow = false;
+    if (typeof window !== "undefined") {
+        const narrowQuery = window.matchMedia("(max-width: 500px)");
+        isNarrow = narrowQuery.matches;
+        narrowQuery.addEventListener("change", (e) => {
+            isNarrow = e.matches;
+        });
+    }
+
     export let balances;
     export let amountToPay = 0;
     export let classes = "";
@@ -147,8 +171,6 @@
         school_lapse_index: 0,
         month: firstUnpaidMonth, // Si no hay deudas, cae al primer mes por defecto
     };
-
-    console.log({ firstUnpaidMonth }, balances[0]);
 
     // $: console.log(firstUnpaidMonth);
     let payingBalances = [{}];
@@ -210,8 +232,6 @@
         return { endMonthIndex, endYearIndex, partialToPay };
     }
 
-    $: console.log({ payingBalances }, { endPointToPay });
-
     function showBalancePaymentsTooltip(event, payments) {
         if (!payments || payments.length === 0) {
             tooltipVisible = false;
@@ -241,9 +261,8 @@
     $: endPointToPay = getLastPaymentMonth(amountToPay);
 </script>
 
-<div {id} class={`bg-white md:p-4 rounded-lg  ${classes}`}>
+<div {id} class={`bg-white  rounded-lg  ${classes}`}>
     {#each balances as balance, indexYear}
-       
         <div class="flex gap-4 items-center mt-2 mb-2">
             <!-- <button>
                 <iconify-icon
@@ -267,13 +286,16 @@
                         {balance.total_debt}
                     </p>
                     {#if dolarRate > 0}
-                        <p class="font-semibold ml-2">ó </p>
-                                <p class="font-bold bg-red/10 text-black px-1 rounded-sm">
-                                    <span class="font-bold text-gray-600">Bs</span> {formatBsInput(convertUsdToBs(balance.total_debt, dolarRate))}
-                                </p>
+                        <p class="font-semibold ml-2">ó</p>
+                        <p
+                            class="font-bold bg-red/10 text-black px-1 rounded-sm"
+                        >
+                            <span class="font-bold text-gray-600">Bs</span>
+                            {formatBsInput(
+                                convertUsdToBs(balance.total_debt, dolarRate),
+                            )}
+                        </p>
                     {/if}
-                {:else}
-                    <p class="">0</p>
                 {/if}
                 {#if is_exempt}
                     <div
@@ -313,7 +335,8 @@
                             : null}
                     on:mouseleave={scheduleTooltipHide}
                 >
-                    <span> Inscr. </span>
+                    <span class="hidden md:block"> Inscr. </span>
+                    <span class=" md:hidden">Ins.</span>
 
                     <p class="text-black">
                         {Math.abs(balance.inscription) > 0
@@ -353,7 +376,9 @@
                             on:mouseleave={scheduleTooltipHide}
                         >
                             <div class="z-40 text-[9px] md:text-xs">
-                                {spanishLabel}
+                                {isNarrow
+                                    ? shortLabels[spanishLabel]
+                                    : spanishLabel}
                             </div>
                             <p class="text-black text-[9px] md:text-xs">
                                 {#if balance[month + "_status"] == "debt" || balance[month + "_status"] == "partially_paid"}

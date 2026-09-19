@@ -14,6 +14,7 @@
     import SelectableRow from "../../components/SelectableRow.svelte";
     import { onMount, onDestroy } from "svelte";
     import { page } from "@inertiajs/svelte";
+    import PaymentCard from "../../components/PaymentCard.svelte";
 
     export let data = { students: { data: [] }, accounts: { data: [] } };
     export let config = {
@@ -25,6 +26,8 @@
     let isSearchTableOpen = false;
     let searchInputRef;
     let searchTableRef;
+    let showMobileFilters = false;
+    let isMobileView = false;
     const currentDate = new Date();
     let dolarPrice = 0; // Inicializamos en 0
 
@@ -49,11 +52,13 @@
     let showTotalIncome = false;
     $: showModalFormEdit = false;
     let selectedRow = { status: false, data: null };
+    let currentPayment = null;
     let submitStatus = "Registrar";
 
     function openRegistrarPago() {
         showModal = true;
         searchInputRef.focus();
+        currentPayment = null;
         if (submitStatus === "Solo lectura") {
             $form.reset();
             submitStatus = "Registrar";
@@ -90,6 +95,67 @@
             )
             .toFixed(2);
         $form.total_in_bs = ($form.total_in_dolars * dolarPrice).toFixed(2);
+    }
+
+    $: showPerStudentAmounts =
+    $form.students.length > 1 || submitStatus === "Solo lectura";
+    
+    function syncSingleStudentTotals(type, value) {
+        console.log($form.students);
+        if ($form.students.length > 1) return;
+        
+        const studentIndex = 0;
+        const student = $form.students[studentIndex];
+
+        if (type === "usd") {
+            if (value === "" || value == null) {
+                $form.total_in_dolars = "";
+                $form.total_in_bs = "";
+                $form.students[studentIndex] = {
+                    ...student,
+                    amount_in_dolars: "",
+                    amount_in_bs: "",
+                };
+                return;
+            }
+
+            const numericValue = parseFloat(value) || 0;
+            const usdTotal = String(numericValue);
+            const bsTotal =
+                dolarPrice > 0
+                    ? (numericValue * dolarPrice).toFixed(2)
+                    : "0.00";
+
+            $form.total_in_dolars = usdTotal;
+            $form.total_in_bs = bsTotal;
+            $form.students[studentIndex] = {
+                ...student,
+                amount_in_dolars: usdTotal,
+                amount_in_bs: bsTotal,
+            };
+            return;
+        }
+
+        if (type === "bs") {
+        console.log("syncSingleStudentTotals called with:", { type, value, dolarPrice });
+
+            const numericValue = parseBsInput(value);
+            const bsTotal = numericValue.toFixed(2);
+            const usdTotal =
+                dolarPrice > 0
+                    ? (numericValue / dolarPrice).toFixed(2)
+                    : "0.00";
+
+            console.log("Calculated totals:", { bsTotal, usdTotal });
+
+            $form.total_in_bs = bsTotal;
+            $form.total_in_dolars = usdTotal;
+            $form.students[studentIndex] = {
+                ...student,
+                amount_in_dolars: usdTotal,
+                amount_in_bs: bsTotal,
+            };
+        }
     }
 
     const openCreateConcept = () => {
@@ -200,6 +266,26 @@
             month: "short", // 'ago.'
         }).format(date);
     }
+
+    function formatFechaHumana(dateString) {
+        if (!dateString) return "";
+        const date = new Date(`${dateString}T00:00:00`);
+        return new Intl.DateTimeFormat("es-VE", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+        }).format(date); // "21 de agosto de 2025"
+    }
+
+    // Agrupación reactiva de pagos por fecha (respeta paginación server-side)
+    $: paymentsByDate = Object.entries(
+        (data?.payments?.data || []).reduce((acc, p) => {
+            const key = p.raw_date || p.date;
+            acc[key] = acc[key] || [];
+            acc[key].push(p);
+            return acc;
+        }, {}),
+    ).sort(([a], [b]) => b.localeCompare(a)); // más recientes primero
     // ==========================================
     // 🌐 NUEVA FUNCIÓN PARA BUSCAR TASA POR FECHA
     // ==========================================
@@ -273,7 +359,7 @@
     }
 
     // Modificamos la función de conversión para que use el dolarPrice dinámico
-    $: $form.total_in_dolars, exchange();
+    // $: $form.total_in_dolars, exchange();
 
     function exchange() {
         if (dolarPrice > 0 && $form.total_in_dolars) {
@@ -292,7 +378,13 @@
         const integerPart = digits.slice(0, -2) || "0";
         const decimalPart = digits.slice(-2).padStart(2, "0");
 
+        console.log({ value, raw, digits, integerPart, decimalPart });
+        console.log(
+            "Formatted BS:",
+            `${Number(integerPart).toLocaleString("de-DE")},${decimalPart}`,
+        );
         return `${Number(integerPart).toLocaleString("de-DE")},${decimalPart}`;
+
     }
 
     function parseBsInput(value) {
@@ -363,16 +455,26 @@
         }
     }
 
+    function updateViewportState() {
+        isMobileView = window.innerWidth < 768;
+        if (!isMobileView) {
+            showMobileFilters = true;
+        }
+    }
+
     // Agregar y remover el event listener
     onMount(() => {
+        updateViewportState();
+        window.addEventListener("resize", updateViewportState);
         document.addEventListener("mousedown", handleClickOutside);
     });
     onDestroy(() => {
+        window.removeEventListener("resize", updateViewportState);
         document.removeEventListener("mousedown", handleClickOutside);
     });
 
-    function handleDelete(id) {
-        if (selectedRow.data?.status == 0) {
+    function handleDelete(id, payment = null) {
+        if ((payment || selectedRow.data)?.status == 0) {
             displayAlert({
                 type: "error",
                 message: "Este pago ya ha sido eliminado",
@@ -392,6 +494,8 @@
                     message: "Pago eliminado correctamente",
                 });
                 selectedRow = { status: false, data: null };
+                currentPayment = null;
+                showModal = false;
             },
         });
     }
@@ -419,11 +523,11 @@
         }
     }
 
-    async function fillFormToEdit() {
+    async function fillFormToEdit(payment = null) {
         showModal = true;
         submitStatus = "Solo lectura";
-        const selectedData = selectedRow.data;
-        console.log({ selectedData });
+        const selectedData = payment || selectedRow.data;
+        currentPayment = selectedData;
 
         // const studentsWithBalances = await Promise.all(
         //     selectedData.students.map(async (s) => {
@@ -485,7 +589,7 @@
         }
     };
 
-    $: console.log($form);
+    // $: console.log($form);
 </script>
 
 <svelte:head>
@@ -496,16 +600,45 @@
 
 <h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden mb-3">Pagos</h2>
 
-<Modal bind:showModal classes="w-11/12">
+<Modal bind:showModal classes="w-full md:w-11/12">
     <h2 slot="header" class="text-sm text-center">REGISTRO DE PAGO</h2>
 
     <form
         id="a-form"
         on:submit={handleSubmit}
         action=""
-        class="w-full md:grid md:grid-cols-12 md:gap-x-5 px-0 md:px-3 pl-2"
+        class="w-full md:grid md:grid-cols-12 md:gap-x-5 px-0 md:px-3 md:pl-2"
     >
-        <div class="col-span-8 relative mx-auto text-left w-full">
+        <div class="relative w-full md:col-span-4 md:col-start-9 md:row-start-1">
+            <Input
+                type="select"
+                label={"Concepto de pago"}
+                bind:value={$form.payment_concept_id}
+                error={$form.errors?.payment_concept_id}
+                readonly={submitStatus === "Solo lectura"}
+                on:change={applyConceptToStudents}
+            >
+                <option value="">Mensualidad / Inscripciones</option>
+                {#each concepts as concept}
+                    <option value={concept.id}>
+                        {concept.name}
+                        {#if concept.price != null && Number(concept.price) > 0}
+                            - ${concept.price}
+                        {/if}
+                    </option>
+                {/each}
+            </Input>
+            {#if submitStatus !== "Solo lectura"}
+                <button
+                    type="button"
+                    class="absolute right-0 top-0 md:top-5 text-xs font-semibold text-color2 bg-gray-200 hover:text-color1 hover:shadow-md px-1.5 py-0.5 rounded-md"
+                    on:click={openCreateConcept}
+                >
+                    + Crear concepto
+                </button>
+            {/if}
+        </div>
+        <div class="col-span-8 md:col-start-1 md:row-start-1 relative mx-auto text-left w-full">
             <!-- <Input
                 type="text"
                 required={true}
@@ -514,7 +647,7 @@
                 error={$form.errors?.name}
             /> -->
             <div
-                class="w-fit z-50 lg right-20 md:right-64 flex items-center rounded-xl bg-gray-50 border border-gray-400"
+                class="w-fit mt-4 md:mt-0 z-50 lg right-20 md:right-64 flex items-center rounded-xl bg-gray-50 border border-gray-400"
             >
                 <span class="absolute">
                     <svg
@@ -621,11 +754,167 @@
                 </tbody>
             </table>
 
+            <div class="md:hidden">
+                {#each $form.students as student, i}
+                    <div class="border-b shadow">
+                        <div class="flex   justify-between items-center mb-1 mt-3">
+                            <span>
+                                {student.name}
+                                {student.last_name}
+                            </span>
+                            <button
+                                    type="button"
+                                    class="h-full hover:bg-paper ml-1"
+                                    on:click={() => {
+                                        // Eliminar el estudiante del arreglo
+                                        $form.students = $form.students.filter(
+                                            (s) => s.id !== student.id,
+                                        );
+                                    }}
+                                >
+                                    <iconify-icon icon="line-md:close"
+                                    ></iconify-icon>
+                                </button>
+                        </div>
+                        <span
+                            class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
+                        >
+                            {#if student.document_type}
+                                <span class="uppercase"
+                                    >{student.document_type}-</span
+                                >
+                            {/if}
+                            {student.ci}
+                        </span>
+
+                        <!-- Separador opcional o punto -->
+                        <span class="text-gray-300">•</span>
+
+                        <!-- Curso y Sección -->
+                        <span
+                            class="text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200/40 text-xs"
+                        >
+                            {student.course_name}-{student.section_name}
+                        </span>
+
+                        {#if !isConceptPayment && submitStatus !== "Solo lectura"}
+                            <BalanceBar
+                                balances={student.balances.map((b) => ({
+                                    ...b,
+                                    ...b.months,
+                                }))}
+                                amountToPay={student.amount_in_dolars}
+                                is_exempt={student.is_exempt
+                                    ? student.exemption_percentage
+                                    : false}
+                                dayOfPayment={config.day_of_monthly_payment}
+                                gracePeriod={config.grace_period}
+                                dolarRate={dolarPrice}
+                            />
+                        {/if}
+                    </div>
+
+                    {#if showPerStudentAmounts}
+                    <div class="grid grid-cols-2 gap-3 mt-3 mb-2">
+                        <div class="flex flex-col items-start col-span-1">
+                            <b class="pr-1 text-xs">$. USD</b>
+                            <input
+                                type="number"
+                                min="0"
+                                placeholder="Dólares"
+                                step="0.01"
+                                class="w-full py-1 px-1 md:py-2 md:px-2 border-gray-300 rounded-md border focus:outline-0"
+                                data-student-amount="usd"
+                                value={student.amount_in_dolars || ""}
+                                readonly={submitStatus === "Solo lectura"}
+                                on:input={(e) => {
+                                    $form.students[i] = {
+                                        ...$form.students[i],
+                                        amount_in_dolars: e.target.value,
+                                        amount_in_bs: (
+                                            e.target.value * dolarPrice
+                                        ).toFixed(2),
+                                    };
+                                    $form.total_in_dolars = $form.students
+                                        .reduce(
+                                            (total, s) =>
+                                                total +
+                                                (parseFloat(
+                                                    s.amount_in_dolars,
+                                                ) || 0),
+                                            0,
+                                        )
+                                        .toFixed(2);
+                                    $form.total_in_bs = (
+                                        $form.total_in_dolars * dolarPrice
+                                    ).toFixed(2);
+                                }}
+                            />
+                        </div>
+                        <div class="flex flex-col items-start">
+                            <b class="pr-1 text-xs">Bs. VES</b>
+                            <input
+                                type="text"
+                                inputmode="numeric"
+                                min="0"
+                                step="0.01"
+                                class="w-full border py-1 px-1 md:py-2 md:px-2 border-gray-300 rounded-md focus:outline-"
+                                data-student-amount="bs"
+                                value={formatBsInput(
+                                    student.amount_in_bs || "",
+                                )}
+                                placeholder="Bolívares"
+                                readonly={submitStatus === "Solo lectura"}
+                                on:focus={(e) => {
+                                    if (e.target.value !== "") {
+                                        e.target.select();
+                                    }
+                                }}
+                                on:input={(e) => {
+                                    const numericBs = parseBsInput(
+                                        e.target.value,
+                                    );
+                                    const bsValue = numericBs.toFixed(2);
+                                    const usdValue =
+                                        dolarPrice > 0
+                                            ? (numericBs / dolarPrice).toFixed(
+                                                  2,
+                                              )
+                                            : "0.00";
+
+                                    $form.students[i] = {
+                                        ...$form.students[i],
+                                        amount_in_bs: bsValue,
+                                        amount_in_dolars: usdValue,
+                                    };
+                                    $form.total_in_bs = $form.students
+                                        .reduce(
+                                            (total, s) =>
+                                                total +
+                                                (parseFloat(s.amount_in_bs) ||
+                                                    0),
+                                            0,
+                                        )
+                                        .toFixed(2);
+                                    $form.total_in_dolars = (
+                                        $form.total_in_bs / dolarPrice
+                                    ).toFixed(2);
+                                }}
+                            />
+                        </div>
+                    </div>
+                    {/if}
+                {/each}
+            </div>
+        </div>
+        <div class="hidden md:block md:col-span-8 md:col-start-1 md:row-start-2 w-full">
             <table
                 id="selected_student"
-                class={`${$form.students.length > 0 ? "block" : "hidden"}   w-full font-semibold relative    text-sm overflow-hidden mt-5`}
+                class={`${$form.students.length > 0 ? "md:block" : "hidden"} hidden  w-full font-semibold relative    text-sm overflow-hidden mt-5`}
             >
-                <thead class="[&_*]:px-4 [&_*]:py-2 [&_*]:text-left">
+                <thead
+                    class="[&_*]:px-2 md:[&_*]:px-4 [&_*]:py-2 [&_*]:text-left"
+                >
                     <tr>
                         <th></th>
                         <th></th>
@@ -667,6 +956,7 @@
                                     {student.course_name}-{student.section_name}
                                 </span>
                             </td>
+                            {#if showPerStudentAmounts}
                             <td>
                                 <div class="flex flex-col items-start">
                                     <b class="pr-1 text-xs">$. USD</b>
@@ -676,6 +966,7 @@
                                         placeholder="Dólares"
                                         step="0.01"
                                         class="w-20 py-2 px-2 border-gray-400 rounded-md border focus:outline-0"
+                                        data-student-amount="usd"
                                         value={student.amount_in_dolars || ""}
                                         readonly={submitStatus ===
                                             "Solo lectura"}
@@ -716,6 +1007,7 @@
                                         min="0"
                                         step="0.01"
                                         class="w-24 border py-2 px-2 border-gray-400 rounded-md focus:outline-"
+                                        data-student-amount="bs"
                                         value={formatBsInput(
                                             student.amount_in_bs || "",
                                         )}
@@ -762,6 +1054,7 @@
                                     />
                                 </div>
                             </td>
+                            {/if}
 
                             <td class="max-w-[70px]">
                                 <button
@@ -780,7 +1073,10 @@
                             </td>
                         </tr>
                         <tr class=" ">
-                            <td colspan="7" class="md:px-3 pb-10 max-w-[350px] md:max-w-[900px]">
+                            <td
+                                colspan="7"
+                                class="md:px-3 pb-10 max-w-[350px] md:max-w-[900px]"
+                            >
                                 {#if !isConceptPayment && submitStatus !== "Solo lectura"}
                                     <BalanceBar
                                         balances={student.balances.map((b) => ({
@@ -803,53 +1099,26 @@
             </table>
         </div>
 
-        <div class="col-span-4 w-full md:grid md:grid-cols-2 md:gap-x-5">
-            <div class="col-span-2 w-full">
-                <Input
-                    type="select"
-                    label={"Concepto de pago"}
-                    bind:value={$form.payment_concept_id}
-                    error={$form.errors?.payment_concept_id}
-                    readonly={submitStatus === "Solo lectura"}
-                    on:change={applyConceptToStudents}
-                >
-                    <option value="">Mensualidad / Inscripciones</option>
-                    {#each concepts as concept}
-                        <option value={concept.id}>
-                            {concept.name}
-                            {#if concept.price != null && Number(concept.price) > 0}
-                                - ${concept.price}
-                            {/if}
-                        </option>
-                    {/each}
-                </Input>
-                {#if submitStatus !== "Solo lectura"}
-                    <button
-                        type="button"
-                        class="text-xs font-semibold text-color2 bg-gray-200 hover:text-color1 hover:shadow-md mt-1 px-1 py-0.5 rounded-md"
-                        on:click={openCreateConcept}
-                    >
-                        + Crear concepto
-                    </button>
-                {/if}
-            </div>
+        <div class="w-full md:col-span-4 md:col-start-9 md:row-start-2 grid grid-cols-2 gap-x-3 md:gap-x-5">
             <Input
                 type="date"
                 required={true}
-                label={"Fecha de la transacción"}
+                label={"F. de la transacción"}
                 bind:value={$form.date}
                 error={$form.errors?.date}
                 max={currentDateString}
                 readonly={submitStatus === "Solo lectura"}
+                classes={"col-span-1"}
             />
             <Input
                 type="date"
                 required={true}
-                label={"Fecha de reporte"}
+                label={"F. de reporte"}
                 bind:value={$form.reported_date}
                 error={$form.errors?.reported_date}
                 max={currentDateString}
                 readonly={submitStatus === "Solo lectura"}
+                classes={"col-span-1"}
             />
             <Input
                 type="select"
@@ -858,6 +1127,7 @@
                 error={$form.errors?.account_payment_id}
                 required={true}
                 readonly={submitStatus === "Solo lectura"}
+                classes={"col-span-2 "}
             >
                 {#each data.accounts.data as account}
                     <option
@@ -872,21 +1142,73 @@
                 {/each}
             </Input>
 
-            <Input
-                type="number"
-                label={"Total en Dólares ($)"}
-                required={true}
-                readonly={true}
-                bind:value={$form.total_in_dolars}
-                error={$form.errors?.total_in_dolars}
-            />
-            <Input
-                type="number"
-                label={"Total en Bolívares (Bs)"}
-                readonly={true}
-                bind:value={$form.total_in_bs}
-                error={$form.errors?.total_in_bs}
-            />
+            {#if showPerStudentAmounts}
+                <Input
+                    type="hidden"
+                    label={"Total en Dólares ($)"}
+                    required={true}
+                    readonly={true}
+                    bind:value={$form.total_in_dolars}
+                    error={$form.errors?.total_in_dolars}
+                />
+
+                <Input
+                    type="hidden"
+                    label={"Total en Bolívares (Bs)"}
+                    readonly={true}
+                    bind:value={$form.total_in_bs}
+                    error={$form.errors?.total_in_bs}
+                />
+                <div class="col-span-1">
+                    <span class="block font-medium text-sm">
+                        Total en USD:
+                    </span>
+                    <span class="text-gray-500"> $ </span>
+                    <b>{$form.total_in_dolars}</b>
+                </div>
+                <div class="col-span-1">
+                    <span class="block font-medium text-sm">
+                        Total en VES:
+                    </span>
+                    <span class="text-gray-500"> Bs </span>
+                    <b>{formatBsInput($form.total_in_bs)}</b>
+                </div>
+            {:else if $form.students.length > 0}
+                <Input
+                    type="number"
+                    label={"Total en Dólares ($)"}
+                    required={true}
+                    min="0"
+                    step="0.01"
+                    value={$form.total_in_dolars || ""}
+                    error={$form.errors?.total_in_dolars}
+                    classes={"col-span-1"}
+                    on:focus={(e) => {
+                        if (e.target.value !== "") {
+                            e.target.select();
+                        }
+                    }}
+                    on:input={(e) =>
+                        syncSingleStudentTotals("usd", e.target.value)}
+                />
+
+                <Input
+                    type="text"
+                    label={"Total en Bolívares (Bs)"}
+                    min="0"
+                    step="0.01"
+                    value={formatBsInput($form.total_in_bs)}
+                    error={$form.errors?.total_in_bs}
+                    classes={"col-span-1"}
+                    on:focus={(e) => {
+                        if (e.target.value !== "") {
+                            e.target.select();
+                        }
+                    }}
+                    on:input={(e) =>
+                        syncSingleStudentTotals("bs", e.target.value)}
+                />
+            {/if}
             <Input
                 type="number"
                 label={"Referencia"}
@@ -894,6 +1216,7 @@
                 bind:value={$form.reference}
                 error={$form.errors?.reference}
                 readonly={submitStatus === "Solo lectura"}
+                classes={"col-span-2"}
             />
             <Input
                 type="textarea"
@@ -942,6 +1265,27 @@
                             d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
                         ></path>
                     </svg>
+                </button>
+            </div>
+        {/if}
+
+        {#if submitStatus === "Solo lectura" && $page.props.auth.is_admin}
+            <div class="flex justify-end col-span-12 mt-7">
+                <button
+                    type="button"
+                    class="flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-red text-white text-sm font-semibold hover:bg-red/90 transition-colors"
+                    on:click={() =>
+                        handleDelete(
+                            currentPayment?.id || $form.id,
+                            currentPayment,
+                        )}
+                >
+                    <iconify-icon
+                        icon="material-symbols:delete-outline"
+                        width="20"
+                        height="20"
+                    ></iconify-icon>
+                    Eliminar pago
                 </button>
             </div>
         {/if}
@@ -1077,7 +1421,9 @@
     <div class="flex justify-between items-end gap-3 w-full">
         {#if data.total_income}
             <div class=" flex items-center max-w-fit gap-2">
-                <span class="font-semibold">Total ingresos:</span>
+                <span class="font-semibold text-xs md:text-base"
+                    >Total ingresos:</span
+                >
                 {#if showTotalIncome}
                     <b
                         class={`text-sm bg-white shadow-sm px-2 text-green transition-all duration-200`}
@@ -1106,6 +1452,7 @@
                 </button>
             </div>
         {/if}
+
         <div class=" items-center gap-5 ml-auto mb-3">
             <p class="text-sm text-gray-500">
                 1$ <span class="hidden md:inline"
@@ -1158,7 +1505,8 @@
 
     <div class="flex-1 min-w-0">
         <Search
-            inlineFilters
+            bind:showModal={showMobileFilters}
+            inlineFilters={!isMobileView}
             filtersOptions={{
                 payment_concept_id: {
                     type: "select",
@@ -1202,7 +1550,42 @@
     </div>
 </div>
 
+<!-- MÓVIL (< 640px): Cards agrupadas por fecha -->
+<div class="sm:hidden space-y-4">
+    {#if paymentsByDate.length === 0}
+        <div class="text-center py-8 text-gray-500 bg-white rounded-xl">
+            No hay datos
+        </div>
+    {:else}
+        {#each paymentsByDate as [date, payments]}
+            <section class=" rounded-xl shadow-sm overflow-hidden">
+                <header class="px-4 py-3 flex items-center justify-between">
+                    <span class="font-semibold text-color1 text-sm"
+                        >{formatFechaHumana(date)}</span
+                    >
+                    <span class="text-sm text-gray-500"
+                        >{payments.length} pago{payments.length > 1
+                            ? "s"
+                            : ""}</span
+                    >
+                </header>
+                <div class="">
+                    {#each payments as payment}
+                        <PaymentCard
+                            {payment}
+                            onSelect={() => fillFormToEdit(payment)}
+                            {dolarPrice}
+                        />
+                    {/each}
+                </div>
+            </section>
+        {/each}
+    {/if}
+</div>
+
+<!-- ESCRITORIO (≥ 640px): Tabla existente -->
 <Table
+    classes="hidden sm:block"
     {selectedRow}
     allowFilters={false}
     serverSideData={data?.payments}
@@ -1254,7 +1637,7 @@
                         e.detail.data ? { ...row } : { ...emptyDataForm },
                     );
                 }}
-                classes={`${row.status === 0 ? "bg-red text-gray-400 bg-opacity-10 opacity-70" : ""} `}
+                classes={`${row.status === 0 ? "bg-red text-gray-400 bg-opacity-20 opacity-70" : ""} `}
             >
                 <td>
                     <span class="text-xs">

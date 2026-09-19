@@ -482,3 +482,132 @@ esources/js/components/ (Windows case-insensitive lo toleraba; Linux no). Correg
 - **No tocados (a propósito)**: `addPaymentMethod.svelte` (vacío), `MetodosDePago/Crear|Editar.svelte` (formas standalone con su propio h2 interno), `DetalleEstudiante.svelte` (parámetro dinámico, no es página de módulo), `Matricula2.svelte` (componente alterno no renderizado), `Pagos.svelte` slots `<h2>` de modales (no títulos).
 - **Verificación UI real**: build `corepack yarn run build` OK (revertir `package.json` tras build, corepack añade `packageManager`). Comprobado en navegador a 390px y 1280px: admin PlanesEvaluacion/Index/Horarios y profesor MisPlanes → h2 block/none, FAB flex/none, wrapper hidden none/flex + `ml` auto ✓.
 - **Responsive fila de temas en `EvaluationPlanCreateModal.svelte`**: la fila de tema pasó de `md:grid grid-cols-[5px_1.2fr_1.2fr_1fr_70px_63px_140px_32px]` (solo grid desde md) a `grid grid-cols-2 ... md:grid-cols-[...igual]` + `w-full md:w-auto` en el `<input type="date">`. Debajo de md cada tema se muestra en 2 columnas ("1. Tema" lado a lado, Tipo/Descripción, %/Pts, Fecha/Quitar); en md+ las 8 columnas quedan exactamente igual (verificado: `5px 103px 177px 86px 70px 63px 140px 32px` a 1280px, 2×~100.8px a 320px).
+
+---
+
+## Sesión 2026-09-19 — Tarjetas móviles en Pagos (agrupadas por fecha)
+
+### Objetivo
+- En la página **Pagos**, reemplazar la tabla por **tarjetas agrupadas por fecha de transacción** en móvil (<640px), manteniendo la tabla original en escritorio. Misma paginación server-side, estado "No hay datos", fecha legible para humanos, alcance solo Pagos (carrito más adelante), tarjeta sin expandir.
+
+### Cambios
+- **`resources/js/components/PaymentCard.svelte`** (NUEVO): tarjeta colapsada reutilizable con badge de concepto, método con punto de color, totales USD/Bs, referencia copiable, contador de estudiantes, botón "Eliminar pago" (solo admin), estilo atenuado + badge para `status === 0` (eliminado), accesible (Enter/Space abre detalles). Emite `onSelect(payment)` (click/keyboard) y `onDelete(payment)`.
+- **`resources/js/Pages/Dashboard/Pagos.svelte`**:
+  - Import `PaymentCard`; `formatFechaHumana(raw)` → `Intl.DateTimeFormat('es-VE')` ("12 de septiembre de 2026").
+  - `paymentsByDate`: agrupa pagos de la página actual por `p.raw_date || p.date`, orden descendente; cada grupo muestra fecha + contador ("1 pago"/"N pagos") y "No hay datos" si vacío.
+  - Sección móvil `<div class="sm:hidden space-y-4">` con las tarjetas (~L1226-1253); la `<Table>` pasó a `classes="hidden sm:block"`.
+  - `fillFormToEdit(payment = null)`: ahora acepta el pago directamente (antes leía solo `selectedRow.data`, que las tarjetas nunca setean → el modal de solo lectura abría vacío). Con argumento usa el pago; sin argumento (click en la tabla) sigue usando `selectedRow.data`.
+
+### Gotchas (verificados en UI real)
+- **Svelte 4 NO mezcla `class="..."` en el root de un componente cuyo root usa `class={dinámico}`** (el `<section class={`w-full ${classes}`}>` de `Table.svelte` solo recibió `w-full s-...`, se perdió `hidden sm:block`, y la tabla era visible a 390px). Solución: usar la prop dedicada `classes` que ya concatena al root (`w-full hidden sm:block`).
+- `stores/alertStore` NO exporta `copyToClipboard` (solo `displayAlert`); `PaymentCard` define su propio `copyToClipboard` con `navigator.clipboard` (patrón ya usado en Pagos:420 / MisPagos:289 / EstadosDeCuenta:26).
+- El overlay de los `<dialog>` de `Modal.svelte` (opacity-0 pero en DOM) bloquea los clics de la herramienta sobre elementos de abajo → clics programáticos con `dispatchEvent` sobre el elemento.
+
+### Verificación (build `corepack yarn run build` OK + revertir `package.json`)
+- **390px**: `section.w-full` → `w-full hidden sm:block`, `display:none`; sección móvil `display:block` con grupos ["12 de septiembre de 2026","8 de septiembre de 2026","31 de agosto de 2026"] y 3 tarjetas; búsqueda "zzznadaexistente" → "No hay datos"; click en tarjeta → modal REGISTRO DE PAGO en solo lectura poblado (Fecha 2026-09-12, Ref 555001, $5.00, método Efectivo - Dolares disabled); botón "Eliminar pago" → confirm nativo (dismiss, sin mutación).
+- **1422px**: tabla `display:block` con 3 filas; sección móvil `display:none`.
+
+### Ajuste posterior (misma sesión): eliminar pago desde el modal
+- **`PaymentCard.svelte`**: eliminado el botón "Eliminar pago" de la tarjeta (y las props `onDelete`/`isAdmin`).
+- **`Pagos.svelte`**: botón rojo "Eliminar pago" (icono `material-symbols:delete-outline` + `bg-red text-white`, `justify-end`) al pie del modal de solo lectura, visible solo con `submitStatus === "Solo lectura" && $page.props.auth.is_admin` (~L985-1003). Llama `handleDelete(currentPayment?.id || $form.id, currentPayment)`.
+- `let currentPayment = null`: se setea en `fillFormToEdit(selectedData)` y se resetea en `openRegistrarPago` (evita que el botón rojo aparezca al registrar un pago nuevo) y tras eliminar.
+- `handleDelete(id, payment = null)`: la validación "ya eliminado" usa `(payment || selectedRow.data)?.status`; `onSuccess` ahora además cierra el modal (`showModal = false`).
+- Verificado a 390px: tarjeta sin botón de eliminar; al abrir el modal de solo lectura aparece el botón rojo; click → confirm nativo (dismiss sin mutación, 3 pagos intactos). A 1422px: tabla intacta (3 filas), sección móvil oculta.
+
+---
+
+## Sesión 2026-09-19 — Matrícula: búsqueda global explícita y columna Año-Sección
+
+### Objetivo
+Al buscar en Matrícula, el backend devolvía estudiantes de **cualquier año/sección** (bug de precedencia SQL) pero los filtros de año/sección seguían visibles y seleccionados → confusión. Se pidió: durante una búsqueda, ocultar los filtros de año y sección, mostrar un indicador de "búsqueda en todos", y agregar una columna "Año-Sección" con el curso real de cada resultado. Decisión del usuario: búsqueda global **solo activos** (`status != 0`, sin graduados); columna **tras "Edad"**.
+
+### Causa raíz (backend)
+- `StudentService::getStudentsPerCourse()` (`app/Services/StudentService.php`): las `orWhere` de la búsqueda estaban **fuera de un closure**, así que por precedencia SQL (`AND` > `OR`) los `course_id`/`section_id` solo acotaban la primera rama (`search LIKE`); el resto (ci/name/last_name/CONCAT/representante) escapaba y traía estudiantes de todos los años.
+
+### Cambios
+- **`app/Services/StudentService.php` — `getStudentsPerCourse()`**: reescrito en 3 modos explícitos:
+  1. Con `search` → global: `where('status','!=',0)` + todas las ramas LIKE (incl. representante) **agrupadas en `where(function($q){...})`**; ignora `course_id`/`section_id`/`graduate`.
+  2. `graduate` → `graduate=1, status=0` (como antes).
+  3. Sin search → `status, course_id, section_id` (como antes).
+- **`resources/js/Pages/Dashboard/Matricula.svelte`**:
+  - `$: isSearching = !!(data?.filters?.search && data.filters.search.trim());`
+  - Filtro de año (`:1044-1076`): si `isSearching` se reemplaza por chip ámbar "Buscando en todos los años y secciones" (icono `mdi:magnify`); si no, `<select>` de años normal.
+  - Filtro de sección: `filtersOptions={isSearching || data.filters.graduate ? {} : { section_id: sectionsOfThisYear }}` → desaparece en desktop y móvil durante la búsqueda.
+  - Columna "Año-Sección" (solo `isSearching`): `<th>` tras "Edad" + `<td>{row.course_name} - {row.section_name}</td>` (los datos ya venían en `StudentResource`).
+  - `extraSearchParams` se mantiene → al limpiar la búsqueda los filtros vuelven al estado previo (URL conserva `course_id`/`section_id`).
+
+### Notas / gotchas
+- El componente `Input.svelte` **ignora la prop `id`** (usa `id={label}` y `for="nombre"` hardcodeado). El selector `#filterYear` **no existe** en el DOM real.
+- Con `graduate=1` + búsqueda, el backend ahora ignora `graduate` y devuelve activos globales (coherente con "solo activos").
+
+### Verificación (build `corepack yarn run build` OK + revertir `package.json`, `php -l` OK)
+- **Sin búsqueda** (1280px): `<select>` de años con options (quotas), botones de sección A/B/C, headers sin Año-Sección.
+- **`?search=Perez`**: URL conserva `course_id=1&section_id=1&graduate=false` pero 6 resultados de **distintos** cursos (5to Año A/B, 2do Grado A, 3er Grado A...); select de años oculto, botones de sección desaparecen, chip "Buscando en todos los años y secciones" visible, columna Año-Sección con "5to Año - A" etc.
+- **Limpiar búsqueda**: URL `search=` → `<select>` de años vuelve, secciones A/B/C vuelven, columna desaparece, 1 fila (5to Año A).
+- **Móvil (~390px)**: igual — select de años oculto, chip visible, columna presente.
+
+---
+
+## Sesión 2026-09-19 — Pagos: modo "un estudiante" con totales editables (estilo MisPagos)
+
+### Objetivo
+En el modal de Pagos, replicar el patrón de MisPagos en el bloque móvil `<div class="md:hidden">` (y tabla desktop): con **un solo estudiante** ocultar los inputs USD/Bs por persona y dejar **solo los totales, editables**; con **varios estudiantes** mantener los inputs por persona y los totales de solo lectura, y si el usuario hace click en un total (readonly), **enfocar el input individual correspondiente que esté vacío**.
+
+### Cambios
+- **`resources/js/components/Input.svelte`**: agregado `on:click` al forwarding del `<input>` (antes solo `on:change`/`on:input`/`on:focus`) — el resto de usos no se ve afectado.
+- **`resources/js/Pages/Dashboard/Pagos.svelte`**:
+  - Reactivos: `showPerStudentAmounts = $form.students.length > 1 || submitStatus === "Solo lectura"` y `totalReadonly = $form.students.length > 1 || submitStatus === "Solo lectura"` (en el modal de solo lectura se **siguen** mostrando los inputs por estudiante, readonly, para no perder detalle; solo el flujo de edición los oculta).
+  - `syncSingleStudentTotals(type, value)` (clon de MisPagos): con exactamente 1 estudiante, editar el total USD escribe el monto del estudiante 0 y recalcula Bs (y viceversa); vaciar el campo limpia todo.
+  - `focusEmptyStudentAmount(type)`: con `length > 1` y no solo lectura, busca `input[data-student-amount="usd|bs"]` **visible** (`offsetParent !== null`) y vacío, y le da focus.
+  - Bloque móvil: grid por estudiante envuelto en `{#if showPerStudentAmounts}`; los inputs USD/Bs (móvil **y** desktop) llevan `data-student-amount="usd|bs"`.
+  - Tabla desktop `#selected_student`: las 2 celdas de monto envueltas en `{#if showPerStudentAmounts}` (en modo 1 estudiante la fila muestra nombre+remove+BalanceBar sin inputs).
+  - Totales: `bind:value` reemplazado por `value={...}` + `on:input` → `syncSingleStudentTotals`; `readonly={totalReadonly}`; `on:focus` select-all cuando hay texto; `on:click` → `focusEmptyStudentAmount("usd"|"bs")`.
+
+### Notas
+- `data-student-amount` usado en vez de `id` (los mismos inputs se renderizan en móvil y desktop → los `id` se duplicarían); el helper filtra por visibilidad con `offsetParent`.
+- `TextField`/`Input.svelte` NO es un `<dialog open>` real: `Modal.svelte` mantiene el `<dialog>` en DOM con clase opacity-0 (`.open` falso) — las consultas deben usar `getClientRects()`/`offsetParent`, no `dialog.open`.
+- El botón "Registrar pago" del navbar desktop y el FAB móvil (`aria-label="Registrar pago"`, `fixed-bottom-mobile fab sm:hidden`, `offsetParent === null` por position:fixed) son dos elementos distintos.
+
+### Verificación (build `corepack yarn run build` OK + revertir `package.json`)
+- **Desktop 1280px | 1 estudiante (María Rodríguez)**: `input[data-student-amount]` = 0 en el DOM (ocultos); totales `readonly=false`; escribir USD 33,5 → Bs auto "28426.28" (tasa 848,55); escribir "170000" en Bs → Bs 1.700,00 → USD 2,00 (sync correcto, `parseBsInput`). Al pasar a 2 estudiantes los valores se conservan (10 → 8.485,46).
+- **Desktop | 2 estudiantes (María+Juanito)**: 2 inputs USD + 2 Bs visibles y editables; totales `readonly=true`; click en total USD → focus en input USD vacío; click en total Bs → focus en input Bs vacío.
+- **Móvil 390px | 1 estudiante**: sin grid por estudiante; totales editables; escribir total USD 10 → Bs 8485.46.
+- **Móvil | 2 estudiantes**: grid por estudiante visible (4 inputs: María "10"/"8.485,46", Juanito vacíos); totales `readonly`; click total USD/Bs → enfoca el input individual vacío.
+
+### Pruebas manuales para dejar pendientes
+- Registrar pago real con 1 estudiante (total editable) y con 2 estudiantes (montos por persona) para confirmar el POST del formulario con los nuevos `value`+`on:input` (antes `bind:value`).
+
+### Ajuste posterior (misma sesión): Concepto de pago antes que el buscador en móvil
+- En móvil el orden del modal era: buscador → concepto. Se pidió que en teléfonos el **Concepto de pago** esté **antes** del buscador.
+- El `<div>` del concepto vivía dentro del bloque `col-span-4` (columna derecha), que en DOM iba después del bloque de búsqueda (`col-span-8`). Se **extrajo del `col-span-4`** y se colocó como **primer hijo del `<form>`**; en md se fuerza la posición original con `md:col-span-4 md:col-start-9 md:row-start-1` (concepto), `md:col-start-1 md:row-start-1` (buscador) y `md:col-start-9 md:row-start-2` (resto de campos, conservan `grid grid-cols-2`).
+- **Gotcha**: el grid auto-placement (sparse) coloca los items en orden de DOM; al mover el concepto primero, el buscador (sin `col-start`) saltaba a **row2** pese a quedar hueco en row1 (cursor no retrocede). Solución: `md:row-start-*` explícitos.
+- Verificado: móvil 390px → Concepto (y178) antes que Buscar (y281); desktop 1280px → buscador izq (y78), concepto der arriba (y78, ancho 360), fechas der abajo (y192) — sin cambios visuales respecto al comportamiento previo.
+
+### Ajuste posterior 2 (misma sesión): "+ Crear concepto" a la derecha del label
+- Se pidió el botón "+ Crear concepto" en la **fila del label** "Concepto de pago", alineado a la derecha (extremo opuesto).
+- Solución contenida en `Pagos.svelte` (sin tocar `Input.svelte`): el wrapper del concepto pasó a `relative` y el botón usa `absolute right-0 top-3 md:top-5` (coincide con el `mt-3 md:mt-5` del label de `Input`), manteniendo `{#if submitStatus !== "Solo lectura"}`. Se quitó el `mt-1` original y se ajustó a `px-1.5 py-0.5`.
+- Verificado: móvil 390px → label (x20, top149) y botón (x262, top155, right=370, extremo derecho); desktop 1280px → label (top159-176) y botón (top156-176, right=1335= borde del wrapper de 404px de ancho), select justo debajo (top180) sin solapamiento.
+
+### Ajuste posterior 3 (misma sesión): abreviaturas de meses en BalanceBar para pantallas <500px
+- Pedido del usuario: en `BalanceBar.svelte`, en pantallas menores a 500px usar abreviaturas `En Fe Ma Ab My Jn Jl Ag Se Oc No Di` sin afectar funcionalidad.
+- Implementado 100% en el componente (sin prop extra): mapa `shortLabels` (`sep:"Se"`, `oct:"Oc"`, `nov:"No"`, `dic:"Di"`, `ene:"En"`, `feb:"Fe"`, `mar:"Ma"`, `abr:"Ab"`, `may:"My"`, `jun:"Jn"`, `jul:"Jl"`, `ago:"Ag"`) + `isNarrow` con `window.matchMedia("(max-width: 500px)")` escuchando `change` (reactivo). El label del mes usa `{isNarrow ? shortLabels[spanishLabel] : spanishLabel}`.
+- Verificado: móvil 390px → la grilla muestra `Se Oc No Di En Fe Ma Ab My Jn Jl Ag`; desktop 1280px → sin cambios (muestra las claves `sep`/`oct`… capitalizadas vía CSS, como antes). `getLastPaymentMonth`/tooltips/colores intactos.
+
+### Ajuste posterior 4 (misma sesión): inputs de dinero en Pagos con formato de MisPagos (Bs con puntos/comas, escritura derecha→izquierda)
+- Pedido: unificar los inputs de dinero de `Pagos.svelte` con los de `MisPagos` (sobre todo Bolívares: separador de miles `.` y decimales `,`, y que los dígitos se vayan ubicando de derecha a izquierda).
+- Los inputs por estudiante (móvil y tabla) ya usaban `formatBsInput`/`parseBsInput`. Faltaba el **Total en Bolívares** (1 estudiante): era `type="number"` con valor crudo. Cambiado a `type="text"` + `value={formatBsInput($form.total_in_bs)}` (idéntico a `MisPagos.svelte:731-748`), manteniendo `on:input→syncSingleStudentTotals("bs")`, `on:focus` select-all y `on:click→focusEmptyStudentAmount`. El Total en Dólares sigue `type="number"` como en MisPagos.
+- Verificado en el navegador (registro de pago, 1 estudiante): USD "5" → Bs "4.242,73" (punto+comma ✓); Bs "170000" → parsea 1700,00; display inicial "0,00". El reactive `$: $form.total_in_dolars, exchange()` (`Pagos.svelte:379`, igual en `MisPagos.svelte:124`) recalcula `total_in_bs = usd×tasa`, por lo que al teclear Bs el valor mostrado converge al redondeo en USD (p.ej. teclear "170000" → muestra "1.697,09" = 2,00×848,5458) — comportamiento compartido con MisPagos (USD es la fuente canónica), se dejó en paridad.
+
+### Ajuste posterior 5 (misma sesión): totales de Pagos = estructura completa de MisPagos (multi-estudiante y solo lectura)
+- Tras el ajuste 4 el usuario pidió copiar la **estructura de bloques de totales** de `MisPagos.svelte` tal cual: `{#if showPerStudentAmounts}` → `<Input type="hidden">` para `total_in_dolars`/`total_in_bs` + dos `<div class="col-span-1">` de solo lectura con `<span class="block font-medium text-sm">Total en USD:</span>` (valor `$ {formatBsInput(total_usd)}`) y `Total en VES:` (valor `Bs {formatBsInput(total_bs)}`); `{:else}` → USD `type="number"` editable + Bs `type="text" value={formatBsInput($form.total_in_bs)}` editable (sin los párrafos).
+- En `Pagos.svelte` `showPerStudentAmounts = $form.students.length > 1 || submitStatus === "Solo lectura"`. Se **eliminaron** el reactive `totalReadonly` y la función `focusEmptyStudentAmount` (quedaron sin uso tras el cambio; el `on:click` de los inputs sin valor se cubre con select-all del `on:focus`). `syncSingleStudentTotals` sigue igual.
+- Verificado en el navegador: **1 estudiante** → USD/Bs editables (Bs texto con "0,00"); **2 estudiantes** (María + Juanito, ambos con balances) → desaparecen los 2 inputs editables, aparecen los párrafos `Total en USD: $ 0.00` y `Total en VES: Bs 0,00` (`formatBsInput` aplicado), y quedan visibles los 4 inputs por estudiante `[data-student-amount]`. Build OK.
+- **Gotcha detectado (bug pre-existente, ajeno a este cambio)**: al agregar como 2º estudiante uno con `balances: []` (p.ej. Fioriela antonieta, que no tiene state de cuenta) el clic en la fila NO lo añade y la UI se queda en 1 estudiante — el render del `BalanceBar` con `balances` vacío hace `balances[0].status` → TypeError y Svelte revierte la actualización del componente (en la UI de búsqueda el `#students-search-table` puede quedar con `hidden` aun teniendo filas). No se toca aquí; en pruebas de multi-estudiante usar siempre estudiantes con balances.
+
+### Ajuste posterior 6 (misma sesión): hueco enorme entre "Concepto de pago" y el resto del bloque derecho (desktop)
+- Pedido del usuario: en desktop, al seleccionar un estudiante en el modal de registro quedaba un espacio muy grande entre el select "Concepto de pago" y los inputs de abajo (F. de la transacción), sin afectar el layout móvil. Medido antes: select terminaba en y141 y F. de la transacción arrancaba en y461 (**~320px de hueco**).
+- Causa: el `<form>` es `md:grid grid-cols-12`; el buscador vive en un bloque `md:col-start-1 md:row-start-1` y dentro de ÉL estaba la tabla desktop `#selected_student` (con el `BalanceBar`, ~330px de alto). Como la altura de una fila de grid es compartida por todas las columnas, la fila 1 se estiraba al alto de la tabla y el `md:row-start-2` del bloque derecho (Concepto está en `row-start-1`, resto de campos en `row-start-2`) quedaba empujado muy abajo.
+- Solución en `Pagos.svelte` (solo desktop): se cerró el bloque del buscador justo después de las tarjetas móviles (`md:hidden`) y la tabla `#selected_student` se envolvió en un div propio **direct child del form** con `hidden md:block md:col-span-8 md:col-start-1 md:row-start-2 w-full` (la tabla conserva sus clases `hidden`/`md:block` según `$form.students.length` y `mt-5`). Con esto la fila 1 queda corta (buscador+concepto) y la fila 2 es la tabla (izq) en paralelo con el bloque derecho de campos; si la tabla es más alta, el sobrante cae DEBAJO de Observaciones, nunca entre concepto y F. de la transacción.
+- **Móvil intacto**: fuera de `md:` el form es bloque y el nuevo wrapper tiene `hidden`, por lo que el flujo Concepto → Buscar → tarjetas → campos no cambia.
+- Verificado: desktop 1280px → hueco concepto→F. de la transacción **23px** (antes 320px; la tabla está en fila 2 izq); móvil 390px → Concepto y89 → Buscar y143 → tarjeta María y193 → F. transacción y322, wrapper desktop `display:none`. Build OK.
+- **Nota**: durante la edición un `</div>` de más rompió el parse de Svelte (`attempted to close an element that was not open`) — el cierre original del bloque de búsqueda (tras `</table>`) pasaba a ser el del nuevo wrapper, así que hubo que quitar el extra.

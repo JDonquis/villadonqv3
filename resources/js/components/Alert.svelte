@@ -8,10 +8,10 @@
 </script>
 
 <div
-    class={`fixed top-4 left-1/2 transform -translate-x-1/2 duration-150 rounded-lg overflow-hidden  max-w-[430px] ${
+    class={`fixed top-4 left-1/2 transform -translate-x-1/2 duration-150 rounded-lg overflow-hidden min-w-[300px]  max-w-[430px] ${
         clasesByTypeAlert[$alertInfo.type]
     } ${$alertInfo.isOpen ? "opacity-100 px-4 py-2 translate-y-0" : "opacity-0 pointer-events-none translate-y-[-100%]"}`}
     style="z-index: 100000;"
 >
-    <b>{$alertInfo.message}</b>
+    <b class="text-xs md:text-base">{ $alertInfo.message }</b>
 </div>

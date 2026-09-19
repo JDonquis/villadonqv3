@@ -73,6 +73,7 @@
                 on:change
                 on:input
                 on:focus
+                on:click
                 bind:this={inputEl}
             />
         {/if}
@@ -92,7 +93,7 @@
     textarea,
     select {
         width: 100%;
-        padding: 8px 12px;
+        padding: 7px 10px;
         border-radius: 6px;
         font-family: inherit;
         border: 1px solid #ccc;

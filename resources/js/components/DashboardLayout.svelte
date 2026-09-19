@@ -27,7 +27,7 @@
         >
             <main
                 style={mainWidth}
-                class={`mx-auto  main_dashboard   relative px-1 md:px-10 duration-100 pb-10 pt-3`}
+                class={`mx-auto  main_dashboard   relative px-2 md:px-10 duration-100 pb-10 pt-3`}
             >
                 <slot />
             </main>
