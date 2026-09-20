@@ -1,10 +1,19 @@
 <script>
-    // import { page } from "$app/stores";
-
-    // $: url = $page.route.id
-    // console.log(url)
     import { toggleMenu } from "../stores/navStatus.js";
-    import { inertia, page } from "@inertiajs/svelte";
+    import { inertia, page, router } from "@inertiajs/svelte";
+
+    function getInertiaOptions(href) {
+        if (href === "/dashboard/pagos") {
+            return {
+                onmousedown: () => {
+                    if (window.matchMedia("(hover: hover)").matches) {
+                        router.prefetch(href);
+                    }
+                }
+            };
+        }
+        return { prefetch: true };
+    }
 
     const adminNavPages = [
         {
@@ -146,10 +155,11 @@
             <li>
                 <a
                     href={navPage.href}
-                    use:inertia
+                    use:inertia={getInertiaOptions(navPage.href)}
                     class="hover:text-yellow z-10 rounded-md flex md:gap-2 items-center p-2"
                     class:active={$page.url.startsWith(navPage.href)}
-                    ><iconify-icon
+                >
+                    <iconify-icon
                         class="text-xl "
                         icon={navPage.icon}
                     /><span class="label_link hidden md:block"
