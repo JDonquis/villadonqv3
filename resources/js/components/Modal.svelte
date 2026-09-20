@@ -3,10 +3,31 @@
 
 	export let showModal; // boolean
 	export let classes = "";
+	export let keyShortcut = null;
+	export let onKeyShortcut = null;
 
 	function handleKeydown(event) {
 		if (event.key === "Escape" && showModal) {
 			showModal = false;
+			return;
+		}
+		if (!keyShortcut || showModal) return;
+		if (event.key.toLowerCase() !== keyShortcut.toLowerCase()) return;
+		if (event.altKey || event.ctrlKey || event.metaKey) return;
+		const target = event.target;
+		if (
+			target &&
+			(target.tagName === "INPUT" ||
+				target.tagName === "TEXTAREA" ||
+				target.tagName === "SELECT" ||
+				target.isContentEditable)
+		)
+			return;
+		event.preventDefault();
+		if (onKeyShortcut) {
+			onKeyShortcut();
+		} else {
+			showModal = true;
 		}
 	}
 

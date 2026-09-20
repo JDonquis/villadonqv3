@@ -179,6 +179,7 @@
     <div class="hidden sm:flex sm:ml-auto">
         <button
             class="animated-button w-fitcontent"
+            title="Aprieta la tecla N"
             on:click={(e) => {
                 e.preventDefault();
                 planModal?.open();
@@ -191,6 +192,7 @@
     <button
         type="button"
         class="fixed-bottom-mobile fab sm:hidden bg-color1 text-white"
+        title="Aprieta la tecla N"
         on:click={() => planModal?.open()}
         aria-label="Nuevo plan"
     >
@@ -338,6 +340,7 @@
 <EvaluationPlanCreateModal
     {data}
     mode="teacher"
+    keyShortcut="n"
     renderTriggerButton={false}
     bind:this={planModal}
     on:saved={() => (selectedRow = { status: false, data: null })}

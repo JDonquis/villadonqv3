@@ -96,6 +96,19 @@
         }
     });
 
+    function openInscribir() {
+        if (submitStatus === "Editar") {
+            $form.reset();
+            submitStatus = "Crear";
+            editingStudentId = null;
+            selectedRow = { status: false, data: null };
+        } else {
+            $form.section_id = +data.filters.section_id;
+            $form.course_id = +data.filters.course_id;
+        }
+        showModal = true;
+    }
+
     function handleSubmit(event) {
         event.preventDefault();
         if (submitStatus === "Crear") {
@@ -370,7 +383,12 @@
     </button>
 </Modal>
 
-<Modal bind:showModal classes={"w-fit"}>
+<Modal
+    bind:showModal
+    keyShortcut="n"
+    onKeyShortcut={openInscribir}
+    classes={"w-fit"}
+>
     <form
         id="a-form"
         on:submit={handleSubmit}
@@ -767,20 +785,8 @@
     </div>
     <button
         class="btn inline-block"
-        on:click={(e) => {
-            e.preventDefault();
-            if (submitStatus === "Editar") {
-                $form.reset();
-                submitStatus = "Crear";
-                editingStudentId = null;
-                selectedRow = { status: false, data: null };
-            } else {
-                $form.section_id = +data.filters.section_id;
-                $form.course_id = +data.filters.course_id;
-            }
-
-            showModal = true;
-        }}>Inscribir</button
+        title="Aprieta la tecla N"
+        on:click={openInscribir}>Inscribir</button
     >
 </div>
 

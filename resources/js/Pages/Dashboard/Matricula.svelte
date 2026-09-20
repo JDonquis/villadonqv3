@@ -621,7 +621,12 @@
     </button>
 </Modal>
 
-<Modal bind:showModal classes={"w-fit"}>
+<Modal
+    bind:showModal
+    keyShortcut="n"
+    onKeyShortcut={openInscribirModal}
+    classes={"w-fit"}
+>
     {#if deletedStudentGraduate}
         <div
             class="mx-7 mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm font-medium"
@@ -1172,6 +1177,7 @@
         <div class="hidden sm:flex">
             <button
                 class="animated-button w-fitcontent"
+                title="Aprieta la tecla N"
                 on:click={openInscribirModal}
             >
                 <svg
@@ -1199,6 +1205,7 @@
         <button
             type="button"
             class="fixed-bottom-mobile fab sm:hidden bg-color1 text-white"
+            title="Aprieta la tecla N"
             on:click={openInscribirModal}
             aria-label="Inscribir estudiante"
         >

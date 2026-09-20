@@ -273,6 +273,7 @@
         <div class="hidden sm:flex">
             <button
                 class="animated-button w-fitcontent"
+                title="Aprieta la tecla N"
                 on:click={openNuevoProfesor}
             >
                 <span class="text">Nuevo profesor</span>
@@ -282,6 +283,7 @@
         <button
             type="button"
             class="fixed-bottom-mobile fab sm:hidden bg-color1 text-white"
+            title="Aprieta la tecla N"
             on:click={openNuevoProfesor}
             aria-label="Nuevo profesor"
         >
@@ -356,7 +358,12 @@
     </tbody>
 </Table>
 
-<Modal bind:showModal classes={"w-fit"}>
+<Modal
+    bind:showModal
+    keyShortcut="n"
+    onKeyShortcut={openNuevoProfesor}
+    classes={"w-fit"}
+>
     <form
         id="p-form"
         on:submit={handleSubmit}

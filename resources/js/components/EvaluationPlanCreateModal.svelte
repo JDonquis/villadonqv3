@@ -9,6 +9,7 @@
     export let isUserATeacher = false;
     export let mode = "admin"; // "admin" | "teacher"
     export let renderTriggerButton = true;
+    export let keyShortcut = null;
     // When editing (teacher mode) the parent passes the plan to prefill.
     export let editingPlan = null;
 
@@ -493,7 +494,12 @@
     </button>
 {/if}
 
-<Modal bind:showModal={showFormModal} classes={"w-full"}>
+<Modal
+    bind:showModal={showFormModal}
+    {keyShortcut}
+    onKeyShortcut={open}
+    classes={"w-full"}
+>
     <form on:submit={submit} id="admin-plan-form" class=" pt-2 px-5">
         <h3 class="text-lg font-bold text-color1 mb-3">
             {submitStatus === "Crear"

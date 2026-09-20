@@ -301,7 +301,7 @@
                 </a>
             {/if}
             <div class="hidden sm:flex">
-                <button class="animated-button w-fitcontent" on:click={openNuevoPersonal}>
+                <button class="animated-button w-fitcontent" title="Aprieta la tecla N" on:click={openNuevoPersonal}>
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         class="arr-2"
@@ -327,6 +327,7 @@
             <button
                 type="button"
                 class="fixed-bottom-mobile fab sm:hidden bg-color1 text-white"
+                title="Aprieta la tecla N"
                 on:click={openNuevoPersonal}
                 aria-label="Nuevo personal"
             >
@@ -408,7 +409,12 @@
     </div>
 </section>
 
-<Modal bind:showModal modalClasses={"max-w-[560px]"}>
+<Modal
+    bind:showModal
+    keyShortcut="n"
+    onKeyShortcut={openNuevoPersonal}
+    modalClasses={"max-w-[560px]"}
+>
     <form
         id="a-form"
         on:submit={handleSubmit}

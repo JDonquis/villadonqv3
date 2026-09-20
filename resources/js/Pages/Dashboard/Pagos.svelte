@@ -600,7 +600,12 @@
 
 <h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden mb-3">Pagos</h2>
 
-<Modal bind:showModal classes="w-full md:w-11/12">
+<Modal
+    bind:showModal
+    keyShortcut="n"
+    onKeyShortcut={openRegistrarPago}
+    classes="w-full md:w-11/12"
+>
     <h2 slot="header" class="text-sm text-center">REGISTRO DE PAGO</h2>
 
     <form
@@ -1467,6 +1472,7 @@
             <div class="hidden sm:block">
                 <button
                     class="animated-button ml-auto w-fitcontent"
+                    title="Aprieta la tecla N"
                     on:click={openRegistrarPago}
                 >
                     <svg
@@ -1494,6 +1500,7 @@
             <button
                 type="button"
                 class="fixed-bottom-mobile fab sm:hidden bg-color1 text-white"
+                title="Aprieta la tecla N"
                 on:click={openRegistrarPago}
                 aria-label="Registrar pago"
             >

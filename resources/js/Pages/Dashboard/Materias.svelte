@@ -116,6 +116,7 @@
     <div class="hidden sm:flex sm:ml-auto">
         <button
             class="animated-button w-fitcontent min-w-[250px] flex items-center justify-center gap-3"
+            title="Aprieta la tecla N"
             on:click={openNuevaMateria}
         >
             <svg
@@ -144,6 +145,7 @@
     <button
         type="button"
         class="fixed-bottom-mobile fab sm:hidden bg-color1 text-white"
+        title="Aprieta la tecla N"
         on:click={openNuevaMateria}
         aria-label="Nueva materia"
     >
@@ -186,7 +188,12 @@
     </tbody>
 </Table>
 
-<Modal bind:showModal classes={"w-96"}>
+<Modal
+    bind:showModal
+    keyShortcut="n"
+    onKeyShortcut={openNuevaMateria}
+    classes={"w-96"}
+>
     <form
         id="m-form"
         on:submit={handleSubmit}
