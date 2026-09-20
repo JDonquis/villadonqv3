@@ -124,6 +124,7 @@
     let showPaymentOptions = false;
 
     let accordionState = {
+        payments: true,
         quotas: false,
         lapses: false,
         plans: false,
@@ -594,7 +595,7 @@
     {/if} -->
 
     <!-- <hr class=" border-gray-300" /> -->
-    <div class="flex gap-10">
+    <div class="md:flex gap-10">
         <div>
             <form
                 class="Configuracion_tarifas my-10 mb-4 py-3 min-w-[310px] max-w-[330px]"
@@ -749,177 +750,188 @@
             </form>
         </div>
 
-        <section class="my-10">
-            <header class="flex justify-between items-center mb-6">
-                <h2 class="font-bold text-xl ">Métodos de pago</h2>
-                <div class="relative z-30">
-                    <button
-                        on:click={() =>
-                            (showPaymentOptions = !showPaymentOptions)}
-                        class="animated-button flex items-center justify-center gap-2"
-                        use:clickOutside={() => {
-                            showPaymentOptions = false;
-                        }}
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="arr-2"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                            ></path>
-                        </svg>
-                        <iconify-icon icon="line-md:plus" class="text"></iconify-icon>
-                        <span class="text">Nuevo Método</span>
-                        <span class="circle"></span>
-                        <iconify-icon icon="mingcute:down-line" class="text"></iconify-icon>
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="arr-1"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                            ></path>
-                        </svg>
-                    </button>
-                    {#if showPaymentOptions}
-                        <div
-                            class="payment_options slideIn absolute top-14 w-full bg-gray-100 text-dark shadow-xl p-1"
-                        >
-                            <ul class="flex flex-col gap-1">
-                                {#each data.methods as method}
-                                    <li>
-                                        <a
-                                            class={`hover:bg-${ColorsPayMethods()[method.name]} hover:font-bold hover:text-gray-100 duration-100  border-l-4 border-${ColorsPayMethods()[method.name]} `}
-                                            use:inertia
-                                            href={`/dashboard/configuracion/crear-cuenta/${method.id}`}
-                                        >
-                                            {method.name}</a
-                                        >
-                                    </li>
-                                {/each}
-                                <!-- <li>
-                                <a
-                                    class={` hover:bg-binance hover:font-bold hover:text-gray-100 duration-100  border-l-4 border-${ColorsPayMethods()[method.name]} `}
-                                    use:inertia
-                                    href={`/dashboard/configuracion/crear-cuenta/${method.id}`}
-                                >
-                                    {method.name}</a
-                                >
-                            </li> -->
-                            </ul>
-                        </div>
-                    {/if}
+        <div class="my-10 w-full md:px-2">
+            <button
+                type="button"
+                class="accordion-trigger w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-color1"
+                on:click={() => (accordionState.payments = !accordionState.payments)}
+            >
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <h2 class="font-bold text-xl">Métodos de pago</h2>
+                    </div>
+                    <iconify-icon
+                        icon={accordionState.payments ? "mdi:chevron-up" : "mdi:chevron-down"}
+                        class="text-2xl text-gray-600"
+                    ></iconify-icon>
                 </div>
-            </header>
-            <div class="flex flex-wrap gap-4">
-                {#each data.accounts.data as payMethod}
-                    <article
-                        id={`account-${payMethod.id}`}
-                        class={`border-3 rounded-md group duration-200 relative medium-shadow bg-white w-fit pb-5 pt-3 md:px-8 pl-9`}
-                    >
-                        <div
-                            class={`h-full bg-${ColorsPayMethods()[payMethod.payment_method_name]} w-5 absolute left-0 top-0`}
-                        ></div>
-                        <header class="flex justify-between gap-2">
-                            <h3 class={` font-semibold text-xl`}>
-                                {payMethod.payment_method_name}
-                            </h3>
-                            <div
-                                class="butons group-hover:flex hidden gap-1 text-gray-500"
-                            >
-                                <a
-                                    href={`/dashboard/configuracion/editar-cuenta/${payMethod.id}`}
-                                    class="hover:bg-yellow cursor-pointer text-xl hover:border-2 border-black hover:text-black hover:small-shadow px-4 py-1"
-                                    title="Editar"
-                                    use:inertia
-                                >
-                                    <iconify-icon
-                                        class="relative -bottom-1"
-                                        icon="ic:outline-edit"
-                                    ></iconify-icon>
-                                </a>
+            </button>
 
-                                <button
-                                    on:click={() => deleteAccount(payMethod.id)}
-                                    class="hover:bg-red bg-opacity-10 cursor-pointer text-xl hover:border-2 border-black hover:text-black hover:small-shadow px-4 py-1"
-                                    title="Eliminar"
+            {#if accordionState.payments}
+                <div class="mt-4">
+                    <header class="md:flex justify-between items-center mb-6">
+                        <div></div>
+                        <div class="relative z-30">
+                            <button
+                                on:click={() =>
+                                    (showPaymentOptions = !showPaymentOptions)}
+                                class="animated-button flex items-center justify-center gap-2"
+                                use:clickOutside={() => {
+                                    showPaymentOptions = false;
+                                }}
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="arr-2"
+                                    viewBox="0 0 24 24"
                                 >
-                                    <iconify-icon
-                                        class="text-xl relative top-1"
-                                        icon="ph:trash"
-                                    ></iconify-icon>
-                                </button>
-                            </div>
-                        </header>
-                        <div
-                            class="flex text-black justify-items-start gap-4 md:gap-6 py-2"
-                        >
-                            {#if payMethod?.cash_currency}
-                                <div>
-                                    <h4 class="text-gray-500">
-                                        Tipo de moneda:
-                                    </h4>
-                                    <p>{payMethod.cash_currency}</p>
-                                </div>
-                            {/if}
-                            {#if payMethod?.bank}
-                                <div>
-                                    <h4 class="text-gray-500">Banco:</h4>
-                                    <p>{payMethod.bank}</p>
-                                </div>
-                            {/if}
-                            {#if payMethod?.phone_number}
-                                <div>
-                                    <h4 class="text-gray-500">Teléfono:</h4>
-                                    <p>{payMethod.phone_number}</p>
-                                </div>
-                            {/if}
-                            {#if payMethod?.ci}
-                                <div>
-                                    <h4 class="text-gray-500">Cédula:</h4>
-                                    <p>{payMethod.ci}</p>
-                                </div>
-                            {/if}
-                            {#if payMethod?.person_name}
-                                <div>
-                                    <h4 class="text-gray-500">Titular:</h4>
-                                    <p>{payMethod.person_name}</p>
-                                </div>
-                            {/if}
-                            {#if payMethod?.account_number}
-                                <div>
-                                    <h4 class="text-gray-500">N° de cuenta:</h4>
-                                    <p>{payMethod.account_number}</p>
-                                </div>
-                            {/if}
-                            {#if payMethod?.email}
-                                <div>
-                                    <h4 class="text-gray-500">Correo:</h4>
-                                    <p>{payMethod.email}</p>
-                                </div>
-                            {/if}
-                            {#if payMethod?.username}
-                                <div>
-                                    <h4 class="text-gray-500">
-                                        Nombre de usuario:
-                                    </h4>
-                                    <p>{payMethod.username}</p>
-                                </div>
-                            {/if}
-                            {#if payMethod?.comision}
-                                <div>
-                                    <h4 class="text-gray-500">Comisión:</h4>
-                                    <p>{payMethod.comision} %</p>
+                                    <path
+                                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                                    ></path>
+                                </svg>
+                                <iconify-icon icon="line-md:plus" class="text"></iconify-icon>
+                                <span class="text">Nuevo Método</span>
+                                <span class="circle"></span>
+                                <iconify-icon icon="mingcute:down-line" class="text"></iconify-icon>
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="arr-1"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                                    ></path>
+                                </svg>
+                            </button>
+                            {#if showPaymentOptions}
+                                <div
+                                    class="payment_options slideIn absolute top-14 w-full bg-gray-100 text-dark shadow-xl p-1"
+                                >
+                                    <ul class="flex flex-col gap-1">
+                                        {#each data.methods as method}
+                                            <li>
+                                                <a
+                                                    class={`hover:bg-${ColorsPayMethods()[method.name]} hover:font-bold hover:text-gray-100 duration-100  border-l-4 border-${ColorsPayMethods()[method.name]} `}
+                                                    use:inertia
+                                                    href={`/dashboard/configuracion/crear-cuenta/${method.id}`}
+                                                >
+                                                    {method.name}</a
+                                                >
+                                            </li>
+                                        {/each}
+                                    </ul>
                                 </div>
                             {/if}
                         </div>
-                    </article>
-                {/each}
-            </div>
-        </section>
+                    </header>
+                    <div class="flex flex-wrap gap-4">
+                        {#each data.accounts.data as payMethod}
+                            <article
+                                id={`account-${payMethod.id}`}
+                                class={`border-3 rounded-md group duration-200 relative medium-shadow bg-white w-fit pb-3 md:pb-5 pt-3  px-4 md:px-8 pl-6 md:pl-9`}
+                            >
+                                <div
+                                    class={`h-full bg-${ColorsPayMethods()[payMethod.payment_method_name]} w-3 md:w-5 absolute left-0 top-0`}
+                                ></div>
+                                <header class="flex justify-between gap-2">
+                                    <h3 class={` font-semibold text-lg md:text-xl mt-0`}>
+                                        {payMethod.payment_method_name}
+                                    </h3>
+                                    <div
+                                        class="butons group-hover:flex hidden gap-1 text-gray-500"
+                                    >
+                                        <a
+                                            href={`/dashboard/configuracion/editar-cuenta/${payMethod.id}`}
+                                            class="hover:bg-yellow cursor-pointer text-xl hover:border-2 border-black hover:text-black hover:small-shadow px-4 py-1"
+                                            title="Editar"
+                                            use:inertia
+                                        >
+                                            <iconify-icon
+                                                class="relative -bottom-1"
+                                                icon="ic:outline-edit"
+                                            ></iconify-icon>
+                                        </a>
+
+                                        <button
+                                            on:click={() => deleteAccount(payMethod.id)}
+                                            class="hover:bg-red bg-opacity-10 cursor-pointer text-xl hover:border-2 border-black hover:text-black hover:small-shadow px-4 py-1"
+                                            title="Eliminar"
+                                        >
+                                            <iconify-icon
+                                                class="text-xl relative top-1"
+                                                icon="ph:trash"
+                                            ></iconify-icon>
+                                        </button>
+                                    </div>
+                                </header>
+                                <div
+                                    class="md:flex text-black justify-items-start gap-4 md:gap-6 py-2"
+                                >
+                                    {#if payMethod?.cash_currency}
+                                        <div>
+                                            <h4 class="text-gray-500">
+                                                Tipo de moneda:
+                                            </h4>
+                                            <p>{payMethod.cash_currency}</p>
+                                        </div>
+                                    {/if}
+                                    {#if payMethod?.bank}
+                                        <div>
+                                            <h4 class="text-gray-500">Banco:</h4>
+                                            <p>{payMethod.bank}</p>
+                                        </div>
+                                    {/if}
+                                    {#if payMethod?.phone_number}
+                                        <div>
+                                            <h4 class="text-gray-500">Teléfono:</h4>
+                                            <p>{payMethod.phone_number}</p>
+                                        </div>
+                                    {/if}
+                                    {#if payMethod?.ci}
+                                        <div>
+                                            <h4 class="text-gray-500">Cédula:</h4>
+                                            <p>{payMethod.ci}</p>
+                                        </div>
+                                    {/if}
+                                    {#if payMethod?.person_name}
+                                        <div>
+                                            <h4 class="text-gray-500">Titular:</h4>
+                                            <p>{payMethod.person_name}</p>
+                                        </div>
+                                    {/if}
+                                    {#if payMethod?.account_number}
+                                        <div>
+                                            <h4 class="text-gray-500">N° de cuenta:</h4>
+                                            <p>{payMethod.account_number}</p>
+                                        </div>
+                                    {/if}
+                                    {#if payMethod?.email}
+                                        <div>
+                                            <h4 class="text-gray-500">Correo:</h4>
+                                            <p>{payMethod.email}</p>
+                                        </div>
+                                    {/if}
+                                    {#if payMethod?.username}
+                                        <div>
+                                            <h4 class="text-gray-500">
+                                                Nombre de usuario:
+                                            </h4>
+                                            <p>{payMethod.username}</p>
+                                        </div>
+                                    {/if}
+                                    {#if payMethod?.comision}
+                                        <div>
+                                            <h4 class="text-gray-500">Comisión:</h4>
+                                            <p>{payMethod.comision} %</p>
+                                        </div>
+                                    {/if}
+                                </div>
+                            </article>
+                        {/each}
+                    </div>
+                </div>
+            {/if}
+        </div>
     </div>
 
     <div class="my-10 w-full md:px-2">
