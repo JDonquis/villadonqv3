@@ -194,7 +194,7 @@ Si ya realizó el pago, por favor ignore este mensaje o envíenos el comprobante
     </thead>
     <tbody slot="tbody">
         {#each tableData.data as student}
-            <tr>
+            <tr style="content-visibility: auto; contain-intrinsic-size: 0 350px;">
                 <td class=" space-y-2">
                     <div class="flex items-center gap-2">
 
@@ -255,10 +255,10 @@ Si ya realizó el pago, por favor ignore este mensaje o envíenos el comprobante
 
                  
                     </div>
-                    <!-- Mobile: show balance under student -->
+                    <!-- Mobile BalanceBar: shown under student info -->
                     <div class="mt-2 md:hidden min-w-[300px]">
                         <BalanceBar
-                            id={`balance-bar-${student.id}`}
+                            id={`balance-bar-${student.id}-mobile`}
                             balances={student.balances.map((b) => ({
                                 ...b,
                                 ...b.months,
@@ -272,9 +272,10 @@ Si ya realizó el pago, por favor ignore este mensaje o envíenos el comprobante
                         />
                     </div>
                 </td>
+                <!-- Desktop BalanceBar: shown in dedicated column -->
                 <td class="hidden md:table-cell min-w-[500px]">
                     <BalanceBar
-                        id={`balance-bar-${student.id}`}
+                        id={`balance-bar-${student.id}-desktop`}
                         balances={student.balances.map((b) => ({
                             ...b,
                             ...b.months,
@@ -284,7 +285,7 @@ Si ya realizó el pago, por favor ignore este mensaje o envíenos el comprobante
                             ? student.exemption_percentage
                             : false}
                         dayOfPayment={config.day_of_monthly_payment}
-                        gracePeriod={config.grace_period}
+                            gracePeriod={config.grace_period}
                     />
                 </td>
                 <td class="group"

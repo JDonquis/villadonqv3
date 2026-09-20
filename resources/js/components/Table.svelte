@@ -135,7 +135,7 @@
             }
         });
 
-        router.get(`${$page.url.split("?")[0]}`, params, {
+router.get(`${$page.url.split("?")[0]}`, params, {
             preserveState: true,
             replace: true,
         });

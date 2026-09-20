@@ -55,6 +55,13 @@
     let currentPayment = null;
     let submitStatus = "Registrar";
 
+    function applyLastPaymentMethod() {
+        const savedPaymentMethod = localStorage.getItem("lastPaymentMethod");
+        if (savedPaymentMethod) {
+            $form.account_payment_id = +savedPaymentMethod;
+        }
+    }
+
     function openRegistrarPago() {
         showModal = true;
         searchInputRef.focus();
@@ -63,6 +70,11 @@
             $form.reset();
             submitStatus = "Registrar";
         }
+        applyLastPaymentMethod();
+    }
+
+    function savePaymentMethod(methodId) {
+        localStorage.setItem('lastPaymentMethod', methodId);
     }
 
     let concepts = [...(data?.concepts ?? [])];
@@ -1158,6 +1170,7 @@ on:input={(e) => {
                 required={true}
                 readonly={submitStatus === "Solo lectura"}
                 classes={"col-span-2 "}
+                on:change={(e) => savePaymentMethod(e.target.value)}
             >
                 {#each data.accounts.data as account}
                     <option

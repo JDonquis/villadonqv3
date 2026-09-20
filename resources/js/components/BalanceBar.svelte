@@ -1,226 +1,117 @@
-<script>
-    // let balances = [
-    //     {
-    //         id: 48,
-    //         student_id: 49,
-    //         status: "pending",
-    //         inscription: 0,
-    //         inscription_status: "paid",
-    //         // Meses iniciales y mediados del periodo (Pagados/Sin deuda)
-    //         september: 0,
-    //         september_status: "paid",
-    //         october: 0,
-    //         october_status: "paid",
-    //         november: 0,
-    //         november_status: "paid",
-    //         december: 0,
-    //         december_status: "paid",
-    //         january: 0,
-    //         january_status: "paid",
-    //         february: 0,
-    //         february_status: "paid",
-    //         march: 0,
-    //         march_status: "paid",
-    //         april: 0,
-    //         april_status: "paid",
-    //         may: 0,
-    //         may_status: "paid",
-    //         // ÚLTIMOS 3 MESES DEL PERIODO (Según orden escolar: Sep -> Ago)
-    //         june: -50,
-    //         june_status: "debt",
-    //         july: -50,
-    //         july_status: "debt",
-    //         august: -50,
-    //         august_status: "debt",
-    //         school_lapse_id: 1,
-    //         created_at: "2026-05-01T03:44:12.000000Z",
-    //         updated_at: "2026-05-01T03:44:12.000000Z",
-    //         school_lapse: {
-    //             id: 1,
-    //             start: "2024-09-01",
-    //             end: "2025-08-31",
-    //             status: 1,
-    //             created_at: "2026-05-01 03:44:08",
-    //             updated_at: "2026-05-01 03:44:08",
-    //         },
-    //     },
+<script context="module">
+    // 1. Static memory optimization: Defined once for all component instances
+    const MONTH_KEYS = [
+        { key: "sep", name: "september", label: "Se" },
+        { key: "oct", name: "october", label: "Oc" },
+        { key: "nov", name: "november", label: "No" },
+        { key: "dic", name: "december", label: "Di" },
+        { key: "ene", name: "january", label: "En" },
+        { key: "feb", name: "february", label: "Fe" },
+        { key: "mar", name: "march", label: "Ma" },
+        { key: "abr", name: "april", label: "Ab" },
+        { key: "may", name: "may", label: "My" },
+        { key: "jun", name: "june", label: "Jn" },
+        { key: "jul", name: "july", label: "Jl" },
+        { key: "ago", name: "august", label: "Ag" },
+    ];
 
-    //     {
-    //         id: 49,
-    //         student_id: 49,
-    //         status: "pending",
-    //         inscription: -50,
-    //         inscription_status: "pending",
-    //         january: -50,
-    //         january_status: "pending",
-    //         february: -50,
-    //         february_status: "pending",
-    //         march: -50,
-    //         march_status: "pending",
-    //         april: -50,
-    //         april_status: "pending",
-    //         may: -50,
-    //         may_status: "pending",
-    //         june: -50,
-    //         june_status: "pending",
-    //         july: -50,
-    //         july_status: "pending",
-    //         august: -50,
-    //         august_status: "pending",
-    //         september: -50,
-    //         september_status: "debt",
-    //         october: -50,
-    //         october_status: "debt",
-    //         november: -50,
-    //         november_status: "debt",
-    //         december: -50,
-    //         december_status: "debt",
-    //         school_lapse_id: 1,
-    //         created_at: "2026-05-01T03:44:12.000000Z",
-    //         updated_at: "2026-05-01T03:44:12.000000Z",
-    //         school_lapse: {
-    //             id: 2,
-    //             start: "2026-09-01",
-    //             end: "2027-08-31",
-    //             status: 1,
-    //             created_at: "2026-05-01 03:44:08",
-    //             updated_at: "2026-05-01 03:44:08",
-    //         },
-    //     },
-    // ];
-
-    const months = {
-        sep: "september",
-        oct: "october",
-        nov: "november",
-        dic: "december",
-        ene: "january",
-        feb: "february",
-        mar: "march",
-        abr: "april",
-        may: "may",
-        jun: "june",
-        jul: "july",
-        ago: "august",
-    };
-
-    const shortLabels = {
-        sep: "Se",
-        oct: "Oc",
-        nov: "No",
-        dic: "Di",
-        ene: "En",
-        feb: "Fe",
-        mar: "Ma",
-        abr: "Ab",
-        may: "My",
-        jun: "Jn",
-        jul: "Jl",
-        ago: "Ag",
-    };
-
-    let isNarrow = false;
-    if (typeof window !== "undefined") {
-        const narrowQuery = window.matchMedia("(max-width: 500px)");
-        isNarrow = narrowQuery.matches;
-        narrowQuery.addEventListener("change", (e) => {
-            isNarrow = e.matches;
-        });
+    function hasMonthPayment(balance, month) {
+        const payments = balance?.balance_payments;
+        if (!payments) return false;
+        if (Array.isArray(payments)) {
+            return payments.some((payment) => payment.month === month);
+        }
+        return Array.isArray(payments[month]) && payments[month].length > 0;
     }
+</script>
 
-    export let balances;
+<script>
+    import { convertUsdToBs } from "../utils/dolarApi";
+    import { formatBsInput } from "../utils/formatters";
+
+    // Component Props
+    export let balances = [];
     export let amountToPay = 0;
     export let classes = "";
     export let is_exempt = false;
-    export let dayOfPayment = 0;
-    export let gracePeriod = 0;
+    export let dolarRate = 0;
+    export let id = "";
+
+    // Tooltip State
     let tooltipVisible = false;
     let tooltipPayments = [];
     let tooltipStyle = "";
     let tooltipHideTimeout;
 
-    // $: console.log("Balances actualizados:", balances);
+    // 2. Reactively compute firstUnpaidMonth only when balances change
+    $: firstUnpaidMonth = (() => {
+        if (!balances?.[0]) return 0;
+        const isPending = balances[0].status === "pending";
+        const foundIndex = MONTH_KEYS.findIndex(({ name }) => {
+            const status = balances[0]?.[`${name}_status`];
+            return isPending
+                ? status === "pending"
+                : status === "debt" || status === "partially_paid";
+        });
+        return foundIndex < 0 ? 0 : foundIndex;
+    })();
 
-    // Indica si el balance tiene algún abono registrado para ese mes.
-    // En Estados de Cuenta `balance_payments` viene agrupado por mes (objeto);
-    // en MisPagos viene como arreglo plano.
-    function hasMonthPayment(balance, month) {
-        const payments = balance.balance_payments;
-        if (!payments) return false;
-
-        if (Array.isArray(payments)) {
-            return payments.some((payment) => payment.month === month);
-        }
-
-        return Array.isArray(payments[month]) && payments[month].length > 0;
-    }
-
-    export let id = "";
-    const firstUnpaidMonth =
-        balances[0].status != "pending"
-            ? Object.entries(months).findIndex(([spanisMonth, monthName]) => {
-                  const status = balances[0]?.[`${monthName}_status`];
-                  return status === "debt" || status === "partially_paid";
-              })
-            : Object.entries(months).findIndex(([spanisMonth, monthName]) => {
-                  const status = balances[0]?.[`${monthName}_status`];
-                  return status == "pending";
-              });
-
-    let startPointToPay = {
+    $: startPointToPay = {
         school_lapse_index: 0,
-        month: firstUnpaidMonth, // Si no hay deudas, cae al primer mes por defecto
+        month: firstUnpaidMonth,
     };
 
-    // $: console.log(firstUnpaidMonth);
-    let payingBalances = [{}];
+    let payingBalances = [];
 
-    let endPointToPay = {};
-    import { convertUsdToBs } from "../utils/dolarApi";
-    import { formatBsInput } from "../utils/formatters";
-    export let dolarRate = 0;
+    // 3. Optimized payment calculation function with zero-amount early exit
+    function calculatePaymentDistribution(amount) {
+        if (!balances?.length || amount <= 0) {
+            payingBalances = [];
+            return { endMonthIndex: 0, endYearIndex: 0, partialToPay: 0 };
+        }
 
-    function getLastPaymentMonth(amountToPay) {
-        let lastPaymentMonth = null;
-        let endMonthIndex = firstUnpaidMonth;
+        let remaining = amount;
+        let endMonthIndex = startPointToPay.month;
         let endYearIndex = startPointToPay.school_lapse_index;
         let partialToPay = 0;
-        let startMonth = firstUnpaidMonth;
-        const arrMonthsEnglish = Object.values(months);
-        payingBalances = new Array(balances.length).fill({});
+        let startMonth = startPointToPay.month;
 
-        while (amountToPay > 0) {
-            if (endYearIndex > balances.length - 1) {
-                break;
-            }
+        const localPayingBalances = new Array(balances.length);
+
+        while (remaining > 0 && endYearIndex < balances.length) {
+            const currentBalanceObj = balances[endYearIndex];
+            if (!currentBalanceObj) break;
 
             if (
-                !payingBalances[endYearIndex]?.balanceInscription &&
-                balances[endYearIndex]?.inscription < 0
+                !localPayingBalances[endYearIndex]?.balanceInscription &&
+                currentBalanceObj.inscription < 0
             ) {
-                payingBalances[endYearIndex].balanceInscription = amountToPay;
-                amountToPay -= Math.abs(balances[endYearIndex].inscription);
-            }
-            if (amountToPay <= 0) {
-                break;
-            }
-            const balance = Math.abs(
-                balances[endYearIndex][arrMonthsEnglish[endMonthIndex]],
-            );
-
-            if (amountToPay < balance) {
-                partialToPay = amountToPay;
+                localPayingBalances[endYearIndex] = {
+                    ...localPayingBalances[endYearIndex],
+                    balanceInscription: remaining,
+                };
+                remaining -= Math.abs(currentBalanceObj.inscription);
             }
 
-            amountToPay -= balance;
+            if (remaining <= 0) break;
 
-            payingBalances[endYearIndex] = {
-                ...payingBalances[endYearIndex],
+            const monthProp = MONTH_KEYS[endMonthIndex].name;
+            const monthBalance = Math.abs(currentBalanceObj[monthProp] || 0);
+
+            if (remaining < monthBalance) {
+                partialToPay = remaining;
+            }
+
+            remaining -= monthBalance;
+
+            localPayingBalances[endYearIndex] = {
+                ...localPayingBalances[endYearIndex],
                 startMonth,
                 endMonthIndex,
                 endYearIndex,
             };
-            if (endMonthIndex == 11) {
+
+            if (endMonthIndex === 11) {
                 endYearIndex++;
                 endMonthIndex = 0;
                 startMonth = 0;
@@ -228,19 +119,23 @@
                 endMonthIndex++;
             }
         }
-        endPointToPay = { endMonthIndex, endYearIndex, partialToPay };
+
+        payingBalances = localPayingBalances;
         return { endMonthIndex, endYearIndex, partialToPay };
     }
 
+    $: endPointToPay = amountToPay > 0 
+  ? calculatePaymentDistribution(amountToPay) 
+  : { endMonthIndex: 0, endYearIndex: 0, partialToPay: 0 };
+
+    // Tooltip event handlers
     function showBalancePaymentsTooltip(event, payments) {
         if (!payments || payments.length === 0) {
             tooltipVisible = false;
             return;
         }
-
         clearTimeout(tooltipHideTimeout);
         tooltipPayments = payments;
-        // console.log(tooltipPayments)
         const rect = event.currentTarget.getBoundingClientRect();
         tooltipStyle = `position: fixed; top: ${rect.bottom}px; left: ${rect.left + rect.width / 2}px; transform: translateX(-50%); z-index: 9999;`;
         tooltipVisible = true;
@@ -252,26 +147,11 @@
             tooltipVisible = false;
         }, 150);
     }
-
-    function hideBalancePaymentsTooltip() {
-        tooltipVisible = false;
-    }
-
-    // Reactive statement: run getLastPaymentMonth whenever amountToPay changes
-    $: endPointToPay = getLastPaymentMonth(amountToPay);
 </script>
 
-<div {id} class={`bg-white  rounded-lg  ${classes}`}>
+<div {id} class="bg-white rounded-lg {classes}">
     {#each balances as balance, indexYear}
         <div class="flex gap-4 items-center mt-2 mb-2">
-            <!-- <button>
-                <iconify-icon
-                    class="rotate-180 relative top-1"
-                    icon="grommet-icons:form-next"
-                    width="24"
-                    height="24"
-                ></iconify-icon>
-            </button> -->
             <p class="text-xs font-bold text-gray-500">
                 {balance.school_lapse?.start.slice(0, 4)}
                 <span class="text-gray-400">•</span>
@@ -287,126 +167,125 @@
                     </p>
                     {#if dolarRate > 0}
                         <p class="font-semibold ml-2">ó</p>
-                        <p
-                            class="font-bold bg-red/10 text-black px-1 rounded-sm"
-                        >
+                        <p class="font-bold bg-red/10 text-black px-1 rounded-sm">
                             <span class="font-bold text-gray-600">Bs</span>
-                            {formatBsInput(
-                                convertUsdToBs(balance.total_debt, dolarRate),
-                            )}
+                            {formatBsInput(convertUsdToBs(balance.total_debt, dolarRate))}
                         </p>
                     {/if}
                 {/if}
                 {#if is_exempt}
-                    <div
-                        class="flex ml-2 items-center gap-2 text-xs mb-2 font-bold bg-purple w-fit px-2 py-1"
-                    >
+                    <div class="flex ml-2 items-center gap-2 text-xs mb-2 font-bold bg-purple w-fit px-2 py-1">
                         <p>Exonerado: {is_exempt}%</p>
-                        <iconify-icon icon="mdi:shield-check" class="" />
+                        <iconify-icon icon="mdi:shield-check" />
                     </div>
                 {/if}
             </div>
-            <!-- <button>
-                <iconify-icon
-                    class="relative top-1"
-                    icon="grommet-icons:form-next"
-                    width="24"
-                    height="24"
-                ></iconify-icon>
-            </button> -->
         </div>
 
         {#if is_exempt < 100}
-            <div
-                class="grid p-0 grid-cols-12 rounded-2xl overflow-hidden border-2 border-gray-200"
-            >
+            <div class="grid p-0 grid-cols-12 rounded-2xl overflow-hidden border-2 border-gray-200">
+                <!-- Inscription Cell -->
                 <!-- svelte-ignore a11y-no-static-element-interactions -->
                 <div
-                    class={` hover:brightness-125   relative col-span-1 z-10  text-[9px] md:text-xs text-gray-700  p-1 capitalize  text-center font-bold
-                 ${balance.inscription_status === "pending" || balance.inscription_status === "debt" ? "bg-red/70" : ""}
-            ${balance.inscription_status === "paid" ? "bg-green/50" : ""}
-            ${balance.inscription_status === "partially_paid" ? "bg-yellow/70" : ""}`}
-                    on:mouseenter={(e) =>
-                        balance.balance_payments.inscription
-                            ? showBalancePaymentsTooltip(
-                                  e,
-                                  balance.balance_payments.inscription,
-                              )
-                            : null}
+                    class="hover:brightness-125 relative col-span-1 z-10 text-[9px] md:text-xs text-gray-700 p-1 capitalize text-center font-bold
+                    {balance.inscription_status === 'pending' || balance.inscription_status === 'debt' ? 'bg-red/70' : ''}
+                    {balance.inscription_status === 'paid' ? 'bg-green/50' : ''}
+                    {balance.inscription_status === 'partially_paid' ? 'bg-yellow/70' : ''}"
+                    on:mouseenter={(e) => balance.balance_payments?.inscription && showBalancePaymentsTooltip(e, balance.balance_payments.inscription)}
                     on:mouseleave={scheduleTooltipHide}
                 >
-                    <span class="hidden md:block"> Inscr. </span>
-                    <span class=" md:hidden">Ins.</span>
+                    <span class="hidden md:block">Inscr.</span>
+                    <span class="md:hidden">Ins.</span>
 
                     <p class="text-black">
-                        {Math.abs(balance.inscription) > 0
-                            ? "$" + Math.abs(balance.inscription)
-                            : ""}
+                        {#if Math.abs(balance.inscription) > 0}
+                            <span class="hidden md:inline">$</span>{Math.abs(balance.inscription)}
+                        {/if}
                     </p>
 
-                    <div
-                        class={`absolute top-0.5 left-0  h-[95%] z-40 ${payingBalances[indexYear]?.balanceInscription > 0 ? "bg-purple/30 border-y-4 border-black/50 border" : ""}`}
-                        style={payingBalances[indexYear]?.balanceInscription > 0
-                            ? `max-width: 100%; width: ${(payingBalances[indexYear]?.balanceInscription / Math.abs(balance.inscription)) * 100}%`
-                            : ""}
-                    ></div>
-                </div>
-                <div class="col-span-11 grid grid-cols-12">
-                    {#each Object.entries(months) as [spanishLabel, month], indexMonth}
-                        <!-- svelte-ignore a11y-no-static-element-interactions -->
+                    <!-- Render payment overlay only if amountToPay is positive -->
+                    {#if amountToPay > 0 && payingBalances[indexYear]?.balanceInscription > 0}
                         <div
-                            class={`group/month hover:brightness-110  hover:shadow-2xl hover:border-x border-black/10 relative col-span-1 text-xs capitalize text-center font-bold p-1 text-gray-700
-            ${balance[month + "_status"] === "debt" ? "bg-red/70" : ""}
-            ${balance[month + "_status"] === "paid" ? "bg-green/50" : ""}
-            ${balance[month + "_status"] === "partially_paid" ? "bg-yellow/70" : ""}
-            ${balance[month + "_status"] === "pending" && hasMonthPayment(balance, month) ? "bg-blue" : ""}
-            ${!balance[month + "_status"] ? "bg-gray-50 " : ""}
-        `}
-                            title={balance[month + "_status"] == "pending"
-                                ? "Pendiente de pago: $" +
-                                  Math.abs(balance[month])
-                                : ""}
-                            on:mouseenter={(e) =>
-                                balance.balance_payments?.[month]
-                                    ? showBalancePaymentsTooltip(
-                                          e,
-                                          balance.balance_payments[month],
-                                      )
-                                    : null}
-                            on:mouseleave={scheduleTooltipHide}
-                        >
-                            <div class="z-40 text-[9px] md:text-xs">
-                                {isNarrow
-                                    ? shortLabels[spanishLabel]
-                                    : spanishLabel}
-                            </div>
-                            <p class="text-black text-[9px] md:text-xs">
-                                {#if balance[month + "_status"] == "debt" || balance[month + "_status"] == "partially_paid"}
-                                    ${Math.abs(balance[month])}
-                                {/if}
-                            </p>
+                            class="absolute top-0.5 left-0 h-[95%] z-40 bg-purple/30 border-y-4 border-black/50 border"
+                            style="max-width: 100%; width: {(payingBalances[indexYear].balanceInscription / Math.abs(balance.inscription)) * 100}%"
+                        ></div>
+                    {/if}
+                </div>
 
-                            <!-- El resto de tu div de progreso (months_to_pay) se queda exactamente igual -->
+                <!-- Months Grid -->
+                <div class="col-span-11 grid grid-cols-12">
+                    {#if amountToPay > 0}
+                        {#each MONTH_KEYS as { key, name, label }, indexMonth}
+                            <!-- svelte-ignore a11y-no-static-element-interactions -->
                             <div
-                                class={`text-xs months_to_pay absolute top-0.5 left-0 w-full text-black h-[95%] z-40
-            ${indexMonth === startPointToPay.month && startPointToPay.school_lapse_index == +indexYear && amountToPay > Math.abs(balance[month]) ? "border-l-4 border-black/50" : ""}
-            ${indexMonth === endPointToPay.endMonthIndex - 1 && endPointToPay.endYearIndex == +indexYear && amountToPay > 0 ? "border-r-4 border-black/50" : ""}
-            ${startPointToPay.school_lapse_index <= indexYear && payingBalances[indexYear]?.startMonth <= indexMonth && indexMonth <= payingBalances[indexYear]?.endMonthIndex ? "bg-purple/30 border-y-4 border-black/50" : ""}`}
-                                style={((indexMonth ==
-                                    endPointToPay.endMonthIndex - 1 &&
-                                    endPointToPay.endYearIndex == +indexYear) ||
-                                    indexMonth == 11) &&
-                                endPointToPay.partialToPay > 0
-                                    ? `width: ${(endPointToPay.partialToPay / Math.abs(balance[month])) * 100}%`
-                                    : ""}
-                            ></div>
-                        </div>
-                    {/each}
+                                class="group/month hover:brightness-110 hover:shadow-2xl hover:border-x border-black/10 relative col-span-1 text-xs capitalize text-center font-bold p-1 text-gray-700
+                                {balance[name + '_status'] === 'debt' ? 'bg-red/70' : ''}
+                                {balance[name + '_status'] === 'paid' ? 'bg-green/50' : ''}
+                                {balance[name + '_status'] === 'partially_paid' ? 'bg-yellow/70' : ''}
+                                {balance[name + '_status'] === 'pending' && hasMonthPayment(balance, name) ? 'bg-blue/60' : ''}
+                                {!balance[name + '_status'] ? 'bg-gray-50' : ''}"
+                                title={balance[name + '_status'] === 'pending' ? 'Pendiente de pago: $' + Math.abs(balance[name]) : ''}
+                                on:mouseenter={(e) => balance.balance_payments?.[name] && showBalancePaymentsTooltip(e, balance.balance_payments[name])}
+                                on:mouseleave={scheduleTooltipHide}
+                            >
+                                <!-- 4. CSS Media Queries取代 window.matchMedia JavaScript event listener -->
+                                <div class="z-40 text-[9px] md:text-xs">
+                                    <span class="hidden sm:inline">{key}</span>
+                                    <span class="sm:hidden">{label}</span>
+                                </div>
+
+                                <p class="text-black text-[9px] md:text-xs">
+                                    {#if balance[name + '_status'] === 'debt' || balance[name + '_status'] === 'partially_paid'}
+                                        ${Math.abs(balance[name])}
+                                    {/if}
+                                </p>
+
+                                <!-- 5. Conditioned DOM Node: Completely unmounted on student list / read-only views -->
+                                <div
+                                    class="text-xs months_to_pay absolute top-0.5 left-0 w-full text-black h-[95%] z-40
+                                    {indexMonth === startPointToPay.month && startPointToPay.school_lapse_index === indexYear && amountToPay > Math.abs(balance[name]) ? 'border-l-4 border-black/50' : ''}
+                                    {indexMonth === endPointToPay.endMonthIndex - 1 && endPointToPay.endYearIndex === indexYear && amountToPay > 0 ? 'border-r-4 border-black/50' : ''}
+                                    {startPointToPay.school_lapse_index <= indexYear && payingBalances[indexYear]?.startMonth <= indexMonth && indexMonth <= payingBalances[indexYear]?.endMonthIndex ? 'bg-purple/30 border-y-4 border-black/50' : ''}"
+                                    style={((indexMonth === endPointToPay.endMonthIndex - 1 && endPointToPay.endYearIndex === indexYear) || indexMonth === 11) && endPointToPay.partialToPay > 0
+                                        ? `width: ${(endPointToPay.partialToPay / Math.abs(balance[name])) * 100}%`
+                                        : ''}
+                                ></div>
+                            </div>
+                        {/each}
+                    {:else}
+                        {#each MONTH_KEYS as { key, name, label }, indexMonth}
+                            <!-- svelte-ignore a11y-no-static-element-interactions -->
+                            <div
+                                class="group/month hover:brightness-110 hover:shadow-2xl hover:border-x border-black/10 relative col-span-1 text-xs capitalize text-center font-bold p-1 text-gray-700
+                                {balance[name + '_status'] === 'debt' ? 'bg-red/70' : ''}
+                                {balance[name + '_status'] === 'paid' ? 'bg-green/50' : ''}
+                                {balance[name + '_status'] === 'partially_paid' ? 'bg-yellow/70' : ''}
+                                {balance[name + '_status'] === 'pending' && hasMonthPayment(balance, name) ? 'bg-blue/60' : ''}
+                                {!balance[name + '_status'] ? 'bg-gray-50' : ''}"
+                                title={balance[name + '_status'] === 'pending' ? 'Pendiente de pago: $' + Math.abs(balance[name]) : ''}
+                                on:mouseenter={(e) => balance.balance_payments?.[name] && showBalancePaymentsTooltip(e, balance.balance_payments[name])}
+                                on:mouseleave={scheduleTooltipHide}
+                            >
+                                <!-- 4. CSS Media Queries取代 window.matchMedia JavaScript event listener -->
+                                <div class="z-40 text-[9px] md:text-xs">
+                                    <span class="hidden sm:inline">{key}</span>
+                                    <span class="sm:hidden">{label}</span>
+                                </div>
+
+                                <p class="text-black text-[9px] md:text-xs">
+                                    {#if balance[name + '_status'] === 'debt' || balance[name + '_status'] === 'partially_paid'}
+                                        ${Math.abs(balance[name])}
+                                    {/if}
+                                </p>
+                            </div>
+                        {/each}
+                    {/if}
                 </div>
             </div>
         {/if}
     {/each}
 
+    <!-- Shared Tooltip Portal -->
     {#if tooltipVisible}
         <!-- svelte-ignore a11y-no-static-element-interactions -->
         <div
@@ -422,14 +301,10 @@
                 class="text-dark absolute -top-2 z-10 inset-x-0 mx-auto w-max"
             />
             {#each tooltipPayments as payment}
-                <div
-                    class="flex flex-col gap-0.5 items-center mb-2 p-1 relative"
-                >
+                <div class="flex flex-col gap-0.5 items-center mb-2 p-1 relative">
                     <p class="text-xs">{payment.payment.date}</p>
                     <div class="flex items-center gap-1">
-                        <p class="text-sm">
-                            Total: ${payment.payment.total_in_dolars}
-                        </p>
+                        <p class="text-sm">Total: ${payment.payment.total_in_dolars}</p>
                         <p class="text-xs">Ref: {payment.payment.reference}</p>
                     </div>
                     <p class="text-sm font-bold">Abonado: ${payment.amount}</p>
