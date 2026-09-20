@@ -152,11 +152,13 @@
 <div {id} class="bg-white rounded-lg {classes}">
     {#each balances as balance, indexYear}
         <div class="flex gap-4 items-center mt-2 mb-2">
-            <p class="text-xs font-bold text-gray-500">
-                {balance.school_lapse?.start.slice(0, 4)}
-                <span class="text-gray-400">•</span>
-                {balance.school_lapse?.end.slice(0, 4)}
-            </p>
+            {#if !balance.school_lapse?.status || balances.length > 1}
+                <p class="text-xs font-bold text-gray-500">
+                    {balance.school_lapse?.start.slice(0, 4)}
+                    <span class="text-gray-400">•</span>
+                    {balance.school_lapse?.end.slice(0, 4)}
+                </p>
+            {/if}
 
             <div class="flex items-center gap-1 text-xs">
                 {#if balance.total_debt > 0}

@@ -109,6 +109,45 @@
         $form.total_in_bs = ($form.total_in_dolars * dolarPrice).toFixed(2);
     }
 
+    function getStudentDebtInDollars(student) {
+        const explicitDebt = Number(student?.total_debt ?? 0);
+        if (Number.isFinite(explicitDebt) && explicitDebt > 0) {
+            return explicitDebt.toFixed(2);
+        }
+
+        const balances = Array.isArray(student?.balances) ? student.balances : [];
+        const totalDebt = balances.reduce((sum, balance) => {
+            const value = Number(balance?.total_debt ?? balance?.current_debt ?? 0);
+            return sum + (Number.isFinite(value) ? value : 0);
+        }, 0);
+
+        return totalDebt > 0 ? totalDebt.toFixed(2) : "0.00";
+    }
+
+    async function focusBolivaresTarget() {
+        await tick();
+
+        const totalInput = document.getElementById("payment-total-bs");
+        if ($form.students.length === 1) {
+            if (totalInput) {
+                totalInput.focus();
+                totalInput.select();
+            }
+            return;
+        }
+
+        const lastStudent = $form.students[$form.students.length - 1];
+        const targetId = lastStudent
+            ? `student-bs-${lastStudent.id ?? $form.students.length - 1}`
+            : "";
+        const studentInput = targetId ? document.getElementById(targetId) : null;
+
+        if (studentInput) {
+            studentInput.focus();
+            studentInput.select();
+        }
+    }
+
     $: showPerStudentAmounts =
     $form.students.length > 1 || submitStatus === "Solo lectura";
     
@@ -633,9 +672,9 @@
     bind:showModal
     keyShortcut="n"
     onKeyShortcut={openRegistrarPago}
-    classes="w-full md:w-11/12"
+    classes="w-full h-full md:h-auto md:w-11/12"
 >
-    <h2 slot="header" class="text-sm text-center">REGISTRO DE PAGO</h2>
+    <h2 slot="header" class="text-sm text-center ">REGISTRO DE PAGO</h2>
 
     <form
         id="a-form"
@@ -681,7 +720,7 @@
                 error={$form.errors?.name}
             /> -->
             <div
-                class="w-fit mt-4 md:mt-0 z-50 lg right-20 md:right-64 flex items-center rounded-xl bg-gray-50 border border-gray-400"
+                class="w-fit mx-auto md:mx-none mt-4 md:mt-0 z-50 lg right-20 md:right-64 flex items-center rounded-xl bg-gray-50 border border-gray-400"
             >
                 <span class="absolute">
                     <svg
@@ -702,10 +741,13 @@
                 <input
                     type="search"
                     placeholder="Buscar Estudiante / representante"
-                    class={`block w-full rounded-xl py-1.5 pr-5 text-gray-700 -full   md:w-56  placeholder-gray-400/70 pl-11 rtl:pr-11 rtl:pl-5 focus:border-blue-400 focus:ring-blue-300 focus:outline-none focus:ring focus:ring-opacity-40`}
+                    class={`block  w-full rounded-xl py-1.5 pr-5 text-gray-700 -full   md:w-56  placeholder-gray-400/70 pl-11 rtl:pr-11 rtl:pl-5 focus:border-blue-400 focus:ring-blue-300 focus:outline-none focus:ring focus:ring-opacity-40`}
                     bind:this={searchInputRef}
                     on:input={(e) => {
                         search_student(e.target.value);
+                    }}
+                    on:focus={(e) => {
+                        e.target.select();
                     }}
                     on:click={(e) => {
                         e.stopPropagation();
@@ -730,13 +772,18 @@
                     {#each searched_students as student}
                         <tr
                             class={`text-xs rounded-xl overflow-hidden py-1 hover:bg-black/10  [&_*]:px-4 [&_*]:py-2 cursor-pointer bg-white bg-opacity-10 border-gray-500`}
-                            on:click={() => {
+                            on:click={async () => {
                                 // Verificar si el estudiante ya está en el arreglo
                                 if (
                                     !$form.students.some(
                                         (s) => s.id === student.id,
                                     )
                                 ) {
+                                    const defaultDebt = getStudentDebtInDollars(student);
+                                    const defaultBs = dolarPrice > 0
+                                        ? (Number(defaultDebt) * dolarPrice).toFixed(2)
+                                        : "0.00";
+
                                     $form.students = [
                                         ...$form.students,
                                         {
@@ -757,11 +804,26 @@
                                                     .last_name,
                                             balances: student.balances,
                                             is_exempt: student.is_exempt,
+                                            total_debt: defaultDebt,
+                                            amount_in_dolars: defaultDebt,
+                                            amount_in_bs: defaultBs,
                                         },
                                     ];
+
+                                    $form.total_in_dolars = $form.students
+                                        .reduce(
+                                            (total, s) => total + (parseFloat(s.amount_in_dolars) || 0),
+                                            0,
+                                        )
+                                        .toFixed(2);
+                                    $form.total_in_bs = (
+                                        Number($form.total_in_dolars) * dolarPrice
+                                    ).toFixed(2);
+
                                     applyConceptToStudents();
                                 }
                                 isSearchTableOpen = false;
+                                await focusBolivaresTarget();
                             }}
                         >
                             <td class="rounded-l-lg"
@@ -790,7 +852,7 @@
 
             <div class="md:hidden">
                 {#each $form.students as student, i}
-                    <div class="border-b shadow">
+                    <div class="bg-gray-50">
                         <div class="flex   justify-between items-center mb-1 mt-3">
                             <span>
                                 {student.name}
@@ -826,7 +888,7 @@
 
                         <!-- Curso y Sección -->
                         <span
-                            class="text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200/40 text-xs"
+                            class="text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded  border-gray-200/40 text-xs"
                         >
                             {student.course_name}-{student.section_name}
                         </span>
@@ -904,6 +966,7 @@
                                         e.target.select();
                                     }
                                 }}
+                                id={`student-bs-${student.id ?? i}`}
                                 on:input={(e) => {
                                     const el = e.target;
                                     const rawValue = el.value;
@@ -1045,6 +1108,7 @@
                                         inputmode="numeric"
                                         min="0"
                                         step="0.01"
+                                        id={`student-bs-${student.id ?? i}`}
                                         class="w-24 border py-2 px-2 border-gray-400 rounded-md focus:outline-"
                                         data-student-amount="bs"
                                         value={formatBsInput(
@@ -1141,7 +1205,7 @@ on:input={(e) => {
             </table>
         </div>
 
-        <div class="w-full md:col-span-4 md:col-start-9 md:row-start-2 grid grid-cols-2 gap-x-3 md:gap-x-5">
+        <div class={`w-full md:col-span-4 md:col-start-9 md:row-start-2 grid grid-cols-2 gap-x-3 md:gap-x-5 ${$form.students.length > 0 ? "block" : "hidden"} md:grid`}>
             <Input
                 type="date"
                 required={true}
@@ -1236,6 +1300,7 @@ on:input={(e) => {
                 />
 
                 <Input
+                    id="payment-total-bs"
                     type="text"
                     label={"Total en Bolívares (Bs)"}
                     min="0"
@@ -1286,7 +1351,7 @@ on:input={(e) => {
             <div class="flex justify-end col-span-12">
                 <button
                     type="submit"
-                    class="animated-button max-w-[430px] mt-7 flex items-center justify-center gap-3"
+                    class={` max-w-[430px] mt-7  items-center justify-center gap-3 ${!$form.students.length > 0 ? 'hidden  ' : 'flex animated-button'} `}
                     disabled={$form.processing}
                 >
                     <svg
@@ -1548,7 +1613,7 @@ on:input={(e) => {
             </div>
             <button
                 type="button"
-                class="fixed-bottom-mobile fab sm:hidden bg-color1 text-white"
+                class={` fixed-bottom-mobile fab sm:hidden bg-color1 text-white`}
                 title="Aprieta la tecla N"
                 on:click={openRegistrarPago}
                 aria-label="Registrar pago"
@@ -1607,7 +1672,7 @@ on:input={(e) => {
 </div>
 
 <!-- MÓVIL (< 640px): Cards agrupadas por fecha -->
-<div class="sm:hidden space-y-4">
+<div class="sm:hidden space-y-4 mb-10">
     {#if paymentsByDate.length === 0}
         <div class="text-center py-8 text-gray-500 bg-white rounded-xl">
             No hay datos
@@ -1625,7 +1690,7 @@ on:input={(e) => {
                             : ""}</span
                     >
                 </header>
-                <div class="">
+                <div class="space-y-3">
                     {#each payments as payment}
                         <PaymentCard
                             {payment}

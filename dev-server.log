@@ -374,3 +374,1271 @@ See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
    |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 53 |      }
    |  ^^^^^[39m
+[2m15:45:23[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m15:51:14[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/Input.svelte, /resources/css/app.css?direct[22m
+[2m15:51:17[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+15:51:17 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Input.svelte:11:15 Input has unused export property 'theme'. If it is for external reference only, please consider using `export const theme`
+15:51:17 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Input.svelte:164:4 Unused CSS selector "select.nb-input"
+15:51:18 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Input.svelte:11:15 Input has unused export property 'theme'. If it is for external reference only, please consider using `export const theme`
+15:51:18 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Input.svelte:164:4 Unused CSS selector "select.nb-input"
+[2m15:51:37[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m15:54:40[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+15:59:44 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Input.svelte:11:15 Input has unused export property 'theme'. If it is for external reference only, please consider using `export const theme`
+15:59:44 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Input.svelte:164:4 Unused CSS selector "select.nb-input"
+[2m16:01:31[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+16:01:33 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Input.svelte:11:15 Input has unused export property 'theme'. If it is for external reference only, please consider using `export const theme`
+16:01:33 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Input.svelte:164:4 Unused CSS selector "select.nb-input"
+[2m16:09:20[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m16:18:54[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+16:41:19 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Input.svelte:11:15 Input has unused export property 'theme'. If it is for external reference only, please consider using `export const theme`
+16:41:19 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Input.svelte:164:4 Unused CSS selector "select.nb-input"
+[2m16:51:13[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct, /resources/js/Pages/Dashboard/Pagos.svelte?svelte&type=style&lang.css[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+16:51:15 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Input.svelte:11:15 Input has unused export property 'theme'. If it is for external reference only, please consider using `export const theme`
+16:51:15 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Input.svelte:164:4 Unused CSS selector "select.nb-input"
+[2m17:05:52[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:06:17[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:06:25[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:08:57[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:08:59[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:09:02[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:09:05[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:09:06 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/Pagos.svelte:750:24 'e' is not defined
+[2m17:09:09[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:09:09[22m [31m[1m[vite][22m[39m [31mInternal server error: C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/Pagos.svelte:751:20 Unexpected token[39m
+  Plugin: [35mvite-plugin-svelte[39m
+  File: [36mC:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/Pagos.svelte[39m:751:20
+[33m   749 |                      on:focus={(e) => {
+   750 |                          e.
+   751 |                      }}
+                              ^
+   752 |                      on:click={(e) => {
+   753 |                          e.stopPropagation();[39m
+[2m17:09:09[22m [31m[1m[vite][22m[39m [31mInternal server error: C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/Pagos.svelte:751:20 Unexpected token[39m
+  Plugin: [35mvite-plugin-svelte[39m
+  File: [36mC:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/Pagos.svelte[39m:751:20
+[33m   749 |                      on:focus={(e) => {
+   750 |                          e.
+   751 |                      }}
+                              ^
+   752 |                      on:click={(e) => {
+   753 |                          e.stopPropagation();[39m
+[2m17:09:13[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct, /resources/js/Pages/Dashboard/Pagos.svelte?svelte&type=style&lang.css[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:09:34[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:09:36[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:09:39[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:09:43[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:09:45[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:10:35[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct, /resources/js/Pages/Dashboard/Pagos.svelte?svelte&type=style&lang.css[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:10:43[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct, /resources/js/Pages/Dashboard/Pagos.svelte?svelte&type=style&lang.css[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:10:48[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:11:01[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:11:09[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:11:11[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:11:13[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:11:36[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:11:37[22m [31m[1m[vite][22m[39m [31mInternal server error: C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/Pagos.svelte:1618:26 Unexpected token[39m
+  Plugin: [35mvite-plugin-svelte[39m
+  File: [36mC:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/Pagos.svelte[39m:1618:26
+[33m   1616 |              <button
+   1617 |                  type="button"
+   1618 |                  class={`${} fixed-bottom-mobile fab sm:hidden bg-color1 text-white`}
+                                     ^
+   1619 |                  title="Aprieta la tecla N"
+   1620 |                  on:click={openRegistrarPago}[39m
+[2m17:11:39[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct, /resources/js/Pages/Dashboard/Pagos.svelte?svelte&type=style&lang.css[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:11:41[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:12:20[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:12:38[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct, /resources/js/Pages/Dashboard/Pagos.svelte?svelte&type=style&lang.css[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:13:05[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct, /resources/js/Pages/Dashboard/Pagos.svelte?svelte&type=style&lang.css[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:13:13[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:13:21[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:13:23[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:13:40[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:13:44[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:14:13[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:14:19[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:14:21[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:14:45[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct, /resources/js/Pages/Dashboard/Pagos.svelte?svelte&type=style&lang.css[22m
+[2m17:14:47[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct, /resources/js/Pages/Dashboard/Pagos.svelte?svelte&type=style&lang.css[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:15:09[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:17:18[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:19:50[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/BalanceBar.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:24:37[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/BalanceBar.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:25:09[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:25:15[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:25:20[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:27:41[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:27:54[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:28:37[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:29:06[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:29:11[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:29:13[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:29:18[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:29:20[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:29:23[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:30:55[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/BalanceBar.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:32:49[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/BalanceBar.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:33:39[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:34:34[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:42:29 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Input.svelte:11:15 Input has unused export property 'theme'. If it is for external reference only, please consider using `export const theme`
+17:42:29 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Input.svelte:164:4 Unused CSS selector "select.nb-input"
+[2m17:42:37[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:42:38 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Input.svelte:11:15 Input has unused export property 'theme'. If it is for external reference only, please consider using `export const theme`
+17:42:38 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/Input.svelte:164:4 Unused CSS selector "select.nb-input"
+[2m17:43:59[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:44:10[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:44:14[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:44:19[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:44:54[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:49:07[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:51:02[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:51:03 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details.
+17:51:03 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: <span> with click handler must have an ARIA role
+17:51:03 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:7:15 PaymentCard has unused export property 'dolarPrice'. If it is for external reference only, please consider using `export const dolarPrice`
+[2m17:51:09[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:51:09 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details.
+17:51:09 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: <span> with click handler must have an ARIA role
+17:51:09 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:7:15 PaymentCard has unused export property 'dolarPrice'. If it is for external reference only, please consider using `export const dolarPrice`
+[2m17:51:11[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:51:11 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details.
+17:51:11 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: <span> with click handler must have an ARIA role
+17:51:11 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:7:15 PaymentCard has unused export property 'dolarPrice'. If it is for external reference only, please consider using `export const dolarPrice`
+[2m17:54:15[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:54:15 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details.
+17:54:15 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: <span> with click handler must have an ARIA role
+17:54:15 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:7:15 PaymentCard has unused export property 'dolarPrice'. If it is for external reference only, please consider using `export const dolarPrice`
+[2m17:54:26[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:54:26 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details.
+17:54:26 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: <span> with click handler must have an ARIA role
+17:54:26 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:7:15 PaymentCard has unused export property 'dolarPrice'. If it is for external reference only, please consider using `export const dolarPrice`
+[2m17:54:29[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:54:29 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details.
+17:54:29 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: <span> with click handler must have an ARIA role
+17:54:29 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:7:15 PaymentCard has unused export property 'dolarPrice'. If it is for external reference only, please consider using `export const dolarPrice`
+[2m17:54:39[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:54:39 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details.
+17:54:39 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: <span> with click handler must have an ARIA role
+17:54:39 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:7:15 PaymentCard has unused export property 'dolarPrice'. If it is for external reference only, please consider using `export const dolarPrice`
+[2m17:54:59[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:54:59 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details.
+17:54:59 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: <span> with click handler must have an ARIA role
+17:54:59 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:7:15 PaymentCard has unused export property 'dolarPrice'. If it is for external reference only, please consider using `export const dolarPrice`
+[2m17:55:02[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:55:02 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details.
+17:55:02 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: <span> with click handler must have an ARIA role
+17:55:02 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:7:15 PaymentCard has unused export property 'dolarPrice'. If it is for external reference only, please consider using `export const dolarPrice`
+[2m17:55:06[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:55:06 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details.
+17:55:06 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: <span> with click handler must have an ARIA role
+17:55:06 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:7:15 PaymentCard has unused export property 'dolarPrice'. If it is for external reference only, please consider using `export const dolarPrice`
+[2m17:55:13[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:55:14 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details.
+17:55:14 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: <span> with click handler must have an ARIA role
+17:55:14 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:7:15 PaymentCard has unused export property 'dolarPrice'. If it is for external reference only, please consider using `export const dolarPrice`
+[2m17:56:20[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:56:20 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details.
+17:56:20 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: <span> with click handler must have an ARIA role
+17:56:20 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:7:15 PaymentCard has unused export property 'dolarPrice'. If it is for external reference only, please consider using `export const dolarPrice`
+[2m17:56:22[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:56:22 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details.
+17:56:22 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: <span> with click handler must have an ARIA role
+17:56:22 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:7:15 PaymentCard has unused export property 'dolarPrice'. If it is for external reference only, please consider using `export const dolarPrice`
+[2m17:56:35[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:56:36 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details.
+17:56:36 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: <span> with click handler must have an ARIA role
+17:56:36 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:7:15 PaymentCard has unused export property 'dolarPrice'. If it is for external reference only, please consider using `export const dolarPrice`
+[2m17:56:38[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:56:39 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details.
+17:56:39 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: <span> with click handler must have an ARIA role
+17:56:39 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:7:15 PaymentCard has unused export property 'dolarPrice'. If it is for external reference only, please consider using `export const dolarPrice`
+[2m17:56:45[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:56:45 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details.
+17:56:45 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:119:16 A11y: <span> with click handler must have an ARIA role
+17:56:45 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:7:15 PaymentCard has unused export property 'dolarPrice'. If it is for external reference only, please consider using `export const dolarPrice`
+[2m17:57:58[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:57:58 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:7:15 PaymentCard has unused export property 'dolarPrice'. If it is for external reference only, please consider using `export const dolarPrice`
+[2m17:58:03[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:58:04 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:105:16 A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details.
+17:58:04 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:105:16 A11y: <span> with click handler must have an ARIA role
+17:58:04 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:7:15 PaymentCard has unused export property 'dolarPrice'. If it is for external reference only, please consider using `export const dolarPrice`
+[2m17:58:30[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+17:58:30 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:132:20 A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details.
+17:58:30 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:132:20 A11y: <span> with click handler must have an ARIA role
+17:58:30 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:7:15 PaymentCard has unused export property 'dolarPrice'. If it is for external reference only, please consider using `export const dolarPrice`
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+[2m17:58:38[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:58:38 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:132:20 A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details.
+17:58:38 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:132:20 A11y: <span> with click handler must have an ARIA role
+17:58:38 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:7:15 PaymentCard has unused export property 'dolarPrice'. If it is for external reference only, please consider using `export const dolarPrice`
+[2m17:58:40[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+[2m17:58:40[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:58:40 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:132:20 A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details.
+17:58:40 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:132:20 A11y: <span> with click handler must have an ARIA role
+17:58:40 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:7:15 PaymentCard has unused export property 'dolarPrice'. If it is for external reference only, please consider using `export const dolarPrice`
+[2m17:59:32[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:59:32 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:132:20 A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details.
+17:59:32 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:132:20 A11y: <span> with click handler must have an ARIA role
+17:59:32 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:7:15 PaymentCard has unused export property 'dolarPrice'. If it is for external reference only, please consider using `export const dolarPrice`
+[2m17:59:37[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:59:38 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:132:20 A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details.
+17:59:38 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:132:20 A11y: <span> with click handler must have an ARIA role
+17:59:38 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:7:15 PaymentCard has unused export property 'dolarPrice'. If it is for external reference only, please consider using `export const dolarPrice`
+[2m17:59:51[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/PaymentCard.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+49 |           display only a plus icon. Keep existing iconify plus icons; for
+50 |           buttons that don't have a plus icon, add a '+' via ::after. */
+51 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |      }
+   |  ^^^^^[39m
+17:59:52 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:132:20 A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details.
+17:59:52 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:132:20 A11y: <span> with click handler must have an ARIA role
+17:59:52 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/PaymentCard.svelte:7:15 PaymentCard has unused export property 'dolarPrice'. If it is for external reference only, please consider using `export const dolarPrice`

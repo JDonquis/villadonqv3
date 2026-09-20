@@ -2,6 +2,7 @@
 <script>
     export let value = "";
     export let label = "";
+    export let id = "";
     export let required = "";
     export let placeholder = "";
     export let type = "text";
@@ -38,7 +39,7 @@
         {#if type === "textarea"}
             <textarea
                 bind:value
-                id={label}
+                id={id || label}
                 rows="1"
                 class="form__field "
                 on:change
@@ -48,7 +49,7 @@
             ></textarea>
         {:else if type === "select"}
             <select
-                id={label}
+                id={id || label}
                 bind:value
                 {required}
                 class="form__field bg-white"
@@ -63,7 +64,7 @@
             <input
                 bind:value
                 {...{ type }}
-                id={label}
+                id={id || label}
                 {name}
                 class="form__field "
                 {required}

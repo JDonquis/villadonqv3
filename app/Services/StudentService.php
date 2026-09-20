@@ -827,9 +827,7 @@ class StudentService
                     'course',
                     'section',
                     'balances' => function ($query) {
-                        // Traemos los que tengan status específicos O el más reciente
-                        $query->with('schoolLapse')
-                            ->oldest(); // Ordenar por fecha de creación (el más antiguo primero)
+                        $query->with('schoolLapse')->oldest();
                     },
                 ])
                 ->get()
@@ -837,6 +835,16 @@ class StudentService
                     if ($student->balances->isEmpty()) {
                         $student->setRelation('balances', $student->balances()->latest()->take(1)->get());
                     }
+
+                    $student->setRelation('balances', $student->balances->map(function ($balance) {
+                        $balance->total_debt = method_exists($balance, 'currentDebt')
+                            ? $balance->currentDebt()
+                            : ($balance->total_debt ?? 0);
+
+                        return $balance;
+                    }));
+
+                    $student->total_debt = $student->balances->sum('total_debt');
 
                     return $student;
                 });
@@ -850,9 +858,7 @@ class StudentService
                 'course',
                 'section',
                 'balances' => function ($query) {
-                    // Traemos los que tengan status específicos O el más reciente
-                    $query->with('schoolLapse')
-                        ->oldest(); // Ordenar por fecha de creación (el más antiguo primero)
+                    $query->with('schoolLapse')->oldest();
                 },
             ])
             ->where(function ($query) use ($search) {
@@ -874,6 +880,16 @@ class StudentService
                 if ($student->balances->isEmpty()) {
                     $student->setRelation('balances', $student->balances()->latest()->take(1)->get());
                 }
+
+                $student->setRelation('balances', $student->balances->map(function ($balance) {
+                    $balance->total_debt = method_exists($balance, 'currentDebt')
+                        ? $balance->currentDebt()
+                        : ($balance->total_debt ?? 0);
+
+                    return $balance;
+                }));
+
+                $student->total_debt = $student->balances->sum('total_debt');
 
                 return $student;
             });
