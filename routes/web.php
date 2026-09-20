@@ -51,6 +51,9 @@ Route::get('/login/google/callback', [AuthController::class, 'handleGoogleCallba
 Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::get('/dashboard', [AppController::class, 'dashboard'])->name('dashboard');
     Route::get('/dashboard/graficos/annual-vs-monthly-flow/{schoolLapse?}', [AppController::class, 'annualVsMonthlyFlow']);
+    Route::get('/dashboard/graficos/debt-by-course/{schoolLapse?}', [AppController::class, 'debtByCourse']);
+    Route::get('/dashboard/graficos/collection-rate-trend/{years?}', [AppController::class, 'collectionRateTrend']);
+    Route::get('/dashboard/graficos/top-debtors/{limit?}/{schoolLapse?}', [AppController::class, 'topDebtors']);
 
     Route::get('/dashboard/personal', [UserController::class, 'index'])->name('personal.index');
     Route::get('/dashboard/personal/plantilla', [UserController::class, 'downloadTemplate']);

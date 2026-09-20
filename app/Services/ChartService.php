@@ -4,7 +4,10 @@ namespace App\Services;
 
 use App\Models\BalancePayment;
 use App\Models\BalanceStudent;
+use App\Models\Course;
+use App\Models\Payment;
 use App\Models\SchoolLapse;
+use App\Models\Student;
 use Carbon\Carbon;
 
 class ChartService
@@ -23,6 +26,164 @@ class ChartService
         'july',
         'august',
     ];
+
+    public function debtByCourse($schoolLapse)
+    {
+        if (!$schoolLapse instanceof SchoolLapse) {
+            $lapse = SchoolLapse::find($schoolLapse);
+        } else {
+            $lapse = $schoolLapse;
+        }
+
+        if (!$lapse) {
+            $lapse = SchoolLapse::where('status', 1)->first();
+        }
+
+        if (!$lapse) {
+            return ['labels' => [], 'data' => []];
+        }
+
+        $courses = Course::orderBy('id')->get();
+        $labels = [];
+        $inscriptionData = [];
+        $monthlyData = [];
+
+        foreach ($courses as $course) {
+            $labels[] = $course->name;
+
+            $balanceSum = BalanceStudent::where('school_lapse_id', $lapse->id)
+                ->whereHas('student', function ($q) use ($course) {
+                    $q->where('course_id', $course->id)
+                      ->where('status', '!=', 0);
+                })
+                ->selectRaw("
+                    SUM(inscription) as sum_inscription,
+                    SUM(september) as sum_september,
+                    SUM(october) as sum_october,
+                    SUM(november) as sum_november,
+                    SUM(december) as sum_december,
+                    SUM(january) as sum_january,
+                    SUM(february) as sum_february,
+                    SUM(march) as sum_march,
+                    SUM(april) as sum_april,
+                    SUM(may) as sum_may,
+                    SUM(june) as sum_june,
+                    SUM(july) as sum_july,
+                    SUM(august) as sum_august
+                ")
+                ->first();
+
+            $inscriptionDebt = abs((float) ($balanceSum->sum_inscription ?? 0));
+            $monthlyDebt = 0;
+            foreach (self::MONTHS as $month) {
+                $monthlyDebt += abs((float) ($balanceSum->{"sum_$month"} ?? 0));
+            }
+
+            $inscriptionData[] = round($inscriptionDebt, 2);
+            $monthlyData[] = round($monthlyDebt, 2);
+        }
+
+        return [
+            'labels' => $labels,
+            'inscription' => $inscriptionData,
+            'monthly' => $monthlyData,
+        ];
+    }
+
+    public function collectionRateTrend($years = 5)
+    {
+        $lapses = SchoolLapse::orderBy('start', 'desc')
+            ->limit($years)
+            ->get()
+            ->reverse();
+
+        if ($lapses->isEmpty()) {
+            return ['labels' => [], 'rates' => []];
+        }
+
+        $config = \App\Models\MainConfig::first();
+        $monthlyPrice = (float) ($config->monthly_payment ?? 0);
+
+        $labels = [];
+        $rates = [];
+
+        foreach ($lapses as $lapse) {
+            $labels[] = $lapse->start . ' - ' . $lapse->end;
+
+            // Expected = sum of each active student's effective monthly price from their balance
+            $expected = BalanceStudent::whereHas('student', function ($q) {
+                $q->where('status', '!=', 0);
+            })
+                ->where('school_lapse_id', $lapse->id)
+                ->with('student')
+                ->get()
+                ->sum(function ($balance) use ($monthlyPrice) {
+                    $student = $balance->student;
+                    if (!$student) {
+                        return 0;
+                    }
+                    $multiplier = $student->is_exempt
+                        ? (1 - (($student->exemption_percentage ?? 0) / 100))
+                        : 1;
+                    return $monthlyPrice * $multiplier;
+                });
+
+            // Total collected in this lapse (all moments)
+            $collected = Payment::where('status', '!=', 0)
+                ->whereHas('balancePayments.balanceStudent', function ($q) use ($lapse) {
+                    $q->where('school_lapse_id', $lapse->id);
+                })
+                ->sum('total_in_dolars');
+
+            $rate = $expected > 0 ? round(($collected / $expected) * 100, 1) : 0.0;
+            $rates[] = $rate;
+        }
+
+        return ['labels' => $labels, 'rates' => $rates];
+    }
+
+    public function topDebtors($limit = 10, $schoolLapse = null)
+    {
+        if (!$schoolLapse instanceof SchoolLapse) {
+            $lapse = SchoolLapse::find($schoolLapse);
+        } else {
+            $lapse = $schoolLapse;
+        }
+
+        if (!$lapse) {
+            $lapse = SchoolLapse::where('status', 1)->first();
+        }
+
+        if (!$lapse) {
+            return [];
+        }
+
+        $balances = BalanceStudent::where('school_lapse_id', $lapse->id)
+            ->whereHas('student', function ($q) {
+                $q->where('status', '!=', 0);
+            })
+            ->with('student.course', 'student.section')
+            ->get()
+            ->map(function ($balance) {
+                $debt = $balance->currentDebt();
+                if ($debt >= 0) return null;
+
+                return [
+                    'name' => $balance->student->name . ' ' . $balance->student->last_name,
+                    'ci' => $balance->student->ci,
+                    'course' => $balance->student->course?->name ?? 'N/A',
+                    'section' => $balance->student->section?->name ?? 'N/A',
+                    'debt' => abs($debt),
+                ];
+            })
+            ->filter()
+            ->sortByDesc('debt')
+            ->take($limit)
+            ->values()
+            ->toArray();
+
+        return $balances;
+    }
 
     public function annualVsMonthlyFlow($schoolLapse)
     {

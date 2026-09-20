@@ -3,10 +3,15 @@
     import * as echarts from "echarts";
     import Input from "../../components/Input.svelte";
     import axios from "axios";
+    import KpiCard from "../../components/KpiCard.svelte";
+    import DebtByCourseChart from "../../components/charts/DebtByCourseChart.svelte";
+    import CollectionRateTrendChart from "../../components/charts/CollectionRateTrendChart.svelte";
+    import TopDebtorsChart from "../../components/charts/TopDebtorsChart.svelte";
     export let schoolLapses;
     export let schoolCharges = [];
     export let totalSchoolCharges = 0;
     export let schoolChargesByLapse = [];
+    export let kpiData = {};
 
     function formatCurrency(value) {
         return "$" + Number(value || 0).toLocaleString("en-US", {
@@ -14,6 +19,14 @@
             maximumFractionDigits: 2,
         });
     }
+
+    $: totalStudents = kpiData.total_students?.toLocaleString() || "0";
+    $: totalRepresentatives = kpiData.total_representatives?.toLocaleString() || "0";
+    $: totalOutstandingDebt = kpiData.total_outstanding_debt?.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) || "0.00";
+    $: studentsAtRisk = kpiData.students_at_risk?.toLocaleString() || "0";
+    $: collectionRate = (kpiData.collection_rate?.toFixed(1) || "0") + "%";
+    $: thisMonthIncome = kpiData.this_month_income?.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) || "0.00";
+    $: pendingPayments = kpiData.pending_payments?.toLocaleString() || "0";
 
     let annual_vs_monthly_flow_year_id;
     let chartContainer;
@@ -236,8 +249,54 @@
     Panel de control
 </h2>
 
+<!-- KPI Cards Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" role="region" aria-label="Indicadores clave">
+    <KpiCard
+        label="Total Estudiantes"
+        value={totalStudents}
+        icon="mdi:account-multiple"
+        color="blue"
+    />
+    <KpiCard
+        label="Representantes legales"
+        value={totalRepresentatives}
+        icon="mdi:account-group"
+        color="green"
+    />
+    <KpiCard
+        label="Deuda Pendiente"
+        value="$" + totalOutstandingDebt
+        icon="mdi:alert-circle"
+        color="red"
+    />
+    <KpiCard
+        label="Estudiantes en Riesgo"
+        value={studentsAtRisk}
+        icon="mdi:shield-alert"
+        color="orange"
+    />
+    <KpiCard
+        label="Tasa Cobranza Mes"
+        value={collectionRate}
+        icon="mdi:chart-line"
+        color="purple"
+    />
+    <KpiCard
+        label="Ingresos Este Mes"
+        value="$" + thisMonthIncome
+        icon="mdi:cash-multiple"
+        color="teal"
+    />
+    <KpiCard
+        label="Pagos Pendientes"
+        value={pendingPayments}
+        icon="mdi:clock-alert"
+        color="amber"
+    />
+</div>
+
 <div
-    class="w-full bg-white shadow-lg p-6 rounded-md max-w-[1200px] flex flex-col gap-4"
+    class="w-full neumorphism shadow-lg p-6 rounded-md max-w-[1200px] flex flex-col gap-4"
 >
     <div>
         <div class="flex gap-10 items-start">
@@ -270,6 +329,15 @@
     </div>
 
     <div bind:this={chartContainer} class="w-full h-[400px]"></div>
+
+    <!-- Additional Charts Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        <DebtByCourseChart schoolLapseId={annual_vs_monthly_flow_year_id} />
+        <CollectionRateTrendChart years={5} />
+    </div>
+    <div class="mt-6">
+        <TopDebtorsChart schoolLapseId={annual_vs_monthly_flow_year_id} limit={10} />
+    </div>
 
     <!-- <div class="mt-6 border-t border-gray-200 pt-6 flex flex-col gap-4">
         <div class="flex items-center justify-between">

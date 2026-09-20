@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\SchoolLapse;
 use App\Services\ChartService;
+use App\Services\DashboardService;
 use App\Services\SchoolChargeService;
 use Inertia\Response;
 
@@ -19,12 +20,15 @@ class AppController
         $schoolLapse = SchoolLapse::get();
 
         $schoolChargeService = new SchoolChargeService;
+        $dashboardService = new DashboardService;
+        $kpiData = $dashboardService->getKpiData();
 
         return inertia('Dashboard/Index', [
             'schoolLapses' => $schoolLapse,
             'schoolCharges' => $schoolChargeService->summary(),
             'totalSchoolCharges' => $schoolChargeService->totalAccumulated(),
             'schoolChargesByLapse' => $schoolChargeService->byLapse(),
+            'kpiData' => $kpiData,
         ]);
     }
 
@@ -41,6 +45,42 @@ class AppController
         $data = $chartService->annualVsMonthlyFlow($schoolLapse);
 
         return response()->json(['data' => $data, 'schoolLapseID' => $schoolLapse->id]);
+    }
+
+    public function debtByCourse($schoolLapse = null)
+    {
+        if (! $schoolLapse) {
+            $schoolLapse = SchoolLapse::where('status', 1)->first();
+        } else {
+            $schoolLapse = SchoolLapse::where('id', $schoolLapse)->first();
+        }
+
+        $chartService = new ChartService;
+        $data = $chartService->debtByCourse($schoolLapse);
+
+        return response()->json(['data' => $data, 'schoolLapseID' => $schoolLapse?->id]);
+    }
+
+    public function collectionRateTrend($years = 5)
+    {
+        $chartService = new ChartService;
+        $data = $chartService->collectionRateTrend($years);
+
+        return response()->json(['data' => $data]);
+    }
+
+    public function topDebtors($limit = 10, $schoolLapse = null)
+    {
+        if (! $schoolLapse) {
+            $schoolLapse = SchoolLapse::where('status', 1)->first();
+        } else {
+            $schoolLapse = SchoolLapse::where('id', $schoolLapse)->first();
+        }
+
+        $chartService = new ChartService;
+        $data = $chartService->topDebtors($limit, $schoolLapse);
+
+        return response()->json(['data' => $data, 'schoolLapseID' => $schoolLapse?->id]);
     }
 
     public function maquinas(): Response
