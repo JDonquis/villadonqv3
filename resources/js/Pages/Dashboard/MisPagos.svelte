@@ -156,6 +156,23 @@
         return Number(`${integerPart}.${decimalPart}`);
     }
 
+    function restoreBsCaret(el, formattedValue, digitsBeforeCaret, wasAtEnd) {
+        let pos = formattedValue.length;
+        if (!wasAtEnd) {
+            pos = 0;
+            let count = 0;
+            while (pos < formattedValue.length && count < digitsBeforeCaret) {
+                if (/\d/.test(formattedValue[pos])) count++;
+                pos++;
+            }
+        }
+        tick().then(() => {
+            if (document.activeElement === el) {
+                el.setSelectionRange(pos, pos);
+            }
+        });
+    }
+
     function syncSingleStudentTotals(type, value) {
         if (!data?.students || data.students.length !== 1) return;
 
@@ -454,17 +471,18 @@
                                             )}
                                             placeholder="Bolívares"
                                             on:input={(e) => {
-                                                const numericBs = parseBsInput(
-                                                    e.target.value,
-                                                );
-                                                const bsValue =
-                                                    numericBs.toFixed(2);
+                                                const el = e.target;
+                                                const rawValue = el.value;
+                                                const start = el.selectionStart;
+                                                const end = el.selectionEnd;
+                                                const wasAtEnd = start === end && start === rawValue.length;
+                                                const digitsBeforeCaret = (rawValue.slice(0, start).match(/\d/g) || []).length;
+
+                                                const numericBs = parseBsInput(rawValue);
+                                                const bsValue = numericBs.toFixed(2);
                                                 const usdValue =
                                                     dolarPrice > 0
-                                                        ? (
-                                                              numericBs /
-                                                              dolarPrice
-                                                          ).toFixed(2)
+                                                        ? (numericBs / dolarPrice).toFixed(2)
                                                         : "0.00";
 
                                                 $form.students[i] = {
@@ -472,21 +490,20 @@
                                                     amount_in_bs: bsValue,
                                                     amount_in_dolars: usdValue,
                                                 };
-                                                $form.total_in_bs =
-                                                    $form.students
-                                                        .reduce(
-                                                            (total, s) =>
-                                                                total +
-                                                                (parseFloat(
-                                                                    s.amount_in_bs,
-                                                                ) || 0),
-                                                            0,
-                                                        )
-                                                        .toFixed(2);
+                                                $form.total_in_bs = $form.students
+                                                    .reduce(
+                                                        (total, s) =>
+                                                            total +
+                                                            (parseFloat(s.amount_in_bs) || 0),
+                                                        0,
+                                                    )
+                                                    .toFixed(2);
                                                 $form.total_in_dolars = (
-                                                    $form.total_in_bs /
-                                                    dolarPrice
+                                                    $form.total_in_bs / dolarPrice
                                                 ).toFixed(2);
+
+                                                const formattedValue = formatBsInput(bsValue);
+                                                restoreBsCaret(el, formattedValue, digitsBeforeCaret, wasAtEnd);
                                             }}
                                         />
                                     </div>
@@ -735,11 +752,19 @@
                                 step="0.01"
                                 value={formatBsInput($form.total_in_bs)}
                                 error={$form.errors?.total_in_bs}
-                                on:input={(e) =>
-                                    syncSingleStudentTotals(
-                                        "bs",
-                                        e.target.value,
-                                    )}
+                                on:input={(e) => {
+                                    const el = e.target;
+                                    const rawValue = el.value;
+                                    const start = el.selectionStart;
+                                    const end = el.selectionEnd;
+                                    const wasAtEnd = start === end && start === rawValue.length;
+                                    const digitsBeforeCaret = (rawValue.slice(0, start).match(/\d/g) || []).length;
+
+                                    syncSingleStudentTotals("bs", rawValue);
+
+                                    const formattedValue = formatBsInput($form.total_in_bs);
+                                    restoreBsCaret(el, formattedValue, digitsBeforeCaret, wasAtEnd);
+                                }}
                                 on:focus={(e) => {
                                     if (e.target.value !== "") {
                                         e.target.select();
