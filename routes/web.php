@@ -66,6 +66,7 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::get('/dashboard/importaciones-fallidas-profesores', [TeacherImportFailedController::class, 'index']);
     Route::put('/dashboard/importaciones-fallidas-profesores/{id}', [TeacherImportFailedController::class, 'update']);
     Route::post('/dashboard/importaciones-fallidas-profesores/{id}/reintentar', [TeacherImportFailedController::class, 'retry']);
+    Route::delete('/dashboard/importaciones-fallidas-profesores/eliminar-todas', [TeacherImportFailedController::class, 'destroyAll']);
     Route::delete('/dashboard/importaciones-fallidas-profesores/{id}', [TeacherImportFailedController::class, 'destroy']);
 
     Route::get('/dashboard/matricula', [StudentController::class, 'index']);
@@ -88,6 +89,7 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::get('/dashboard/importaciones-fallidas', [StudentImportFailedController::class, 'index']);
     Route::put('/dashboard/importaciones-fallidas/{id}', [StudentImportFailedController::class, 'update']);
     Route::post('/dashboard/importaciones-fallidas/{id}/reintentar', [StudentImportFailedController::class, 'retry']);
+    Route::delete('/dashboard/importaciones-fallidas/eliminar-todas', [StudentImportFailedController::class, 'destroyAll']);
     Route::delete('/dashboard/importaciones-fallidas/{id}', [StudentImportFailedController::class, 'destroy']);
 
     Route::post('/dashboard/secciones', [SectionController::class, 'store']);

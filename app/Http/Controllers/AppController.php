@@ -6,13 +6,17 @@ use App\Models\SchoolLapse;
 use App\Services\ChartService;
 use App\Services\DashboardService;
 use App\Services\SchoolChargeService;
+use App\Support\HomeRoute;
 use Inertia\Response;
+use Illuminate\Http\RedirectResponse;
 
 class AppController
 {
-    public function index(): Response
+    public function index(): Response|RedirectResponse
     {
-        return inertia('Index');
+        $user = auth()->user();
+
+        return $user ? redirect(HomeRoute::forUser($user)) : inertia('Index');
     }
 
     public function dashboard(): Response

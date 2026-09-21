@@ -512,6 +512,17 @@ progress::-webkit-progress-value {
     color: #ffffff;
 }
 
+.toolbar-secondary.danger {
+    border-color: #ef676a;
+    color: #ffffff;
+    background-color: #ef676a;
+}
+
+.toolbar-secondary.danger:hover {
+    background-color: #b91c1c;
+    color: #ffffff;
+}
+
 /* Fixed action buttons for mobile: use this class on buttons that
      should stay fixed at the bottom of the viewport on small screens. */
 @media (max-width: 640px) {

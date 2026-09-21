@@ -180,6 +180,7 @@ class StudentService
             } catch (\Exception $e) {
                 $mappedData = $this->mapRowData($raw);
                 FailedImport::create([
+                    'import_type' => 'student',
                     'row_number' => $rowNumber,
                     'data' => $mappedData,
                     'error_message' => ErrorTranslator::translate($e),

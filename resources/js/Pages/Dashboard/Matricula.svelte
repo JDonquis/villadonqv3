@@ -1088,7 +1088,7 @@
             on:change={handleImportFile}
         />
         <!-- Desktop: show buttons -->
-        <div class="hidden flex-col md:flex-row items-center gap-3">
+        <div class="hidden md:flex md:flex-row items-center gap-3">
             <button
                 type="button"
                 class="toolbar-secondary opacity-50 hover:opacity-100"
@@ -1177,6 +1177,7 @@
         <div class="hidden sm:flex">
             <button
                 class="animated-button w-fitcontent"
+                style="margin-top: 0"
                 title="Aprieta la tecla N"
                 on:click={openInscribirModal}
             >

@@ -87,4 +87,23 @@ class TeacherImportFailedController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    public function destroyAll(Request $request)
+    {
+        $type = $request->input('type', 'all');
+
+        $query = FailedImport::query();
+        if ($type === 'teacher') {
+            $query->where('import_type', 'teacher');
+        } elseif ($type === 'student') {
+            $query->where(function ($q) {
+                $q->where('import_type', 'student')->orWhereNull('import_type');
+            });
+        }
+
+        $count = $query->count();
+        $query->delete();
+
+        return response()->json(['success' => true, 'deleted' => $count]);
+    }
 }

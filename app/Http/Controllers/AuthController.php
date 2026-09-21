@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\UserTypeEnum;
 use App\Http\Requests\ForgotPasswordRequest;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\SetupPasswordRequest;
@@ -11,6 +10,7 @@ use App\Models\User;
 use App\Services\LoginService;
 use App\Services\UserService;
 use App\Support\ErrorTranslator;
+use App\Support\HomeRoute;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -91,11 +91,7 @@ class AuthController extends Controller
 
     private function roleRedirect(User $user)
     {
-        return match ($user->type_user_id) {
-            UserTypeEnum::Representative->value => '/dashboard/mis-hijos',
-            UserTypeEnum::Teacher->value => '/dashboard/mis-planes',
-            default => '/dashboard',
-        };
+        return HomeRoute::forUser($user);
     }
 
     public function changePassword(Request $request)
