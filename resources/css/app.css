@@ -41,8 +41,16 @@
 .neumorphism {
     background: #f0f3f3;
     box-shadow:
-        20px 20px 60px #cccfcf,
+        15px 15px 60px #cccfcf,
         -15px -15px 60px #ffffff;
+}
+
+@media (max-width: 640px) {
+    .neumorphism {
+        box-shadow:
+            6px 6px 18px #cccfcf,
+            -6px -6px 18px #ffffff;
+    }
 }
 .main_and_footer_container {
     /* On mobile, hide the textual label inside fixed action buttons and

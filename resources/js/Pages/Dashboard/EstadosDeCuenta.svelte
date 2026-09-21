@@ -201,7 +201,7 @@ Si ya realizó el pago, por favor ignore este mensaje o envíenos el comprobante
                         <div class="flex flex-col gap-1 text-sm">
                                 <!-- Línea Superior: Nombre completo del estudiante -->
                                 <div
-                                    class="font-semibold text-gray-800 capitalize leading-snug"
+                                    class="font-semibold text-gray-800 capitalize leading-snug max-w-[220px] sm:max-w-[260px] md:max-w-[320px] truncate"
                                 >
                                     {student.name}
                                     {student.last_name}

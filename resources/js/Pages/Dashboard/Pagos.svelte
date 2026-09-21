@@ -74,7 +74,7 @@
     }
 
     function savePaymentMethod(methodId) {
-        localStorage.setItem('lastPaymentMethod', methodId);
+        localStorage.setItem("lastPaymentMethod", methodId);
     }
 
     let concepts = [...(data?.concepts ?? [])];
@@ -115,9 +115,13 @@
             return explicitDebt.toFixed(2);
         }
 
-        const balances = Array.isArray(student?.balances) ? student.balances : [];
+        const balances = Array.isArray(student?.balances)
+            ? student.balances
+            : [];
         const totalDebt = balances.reduce((sum, balance) => {
-            const value = Number(balance?.total_debt ?? balance?.current_debt ?? 0);
+            const value = Number(
+                balance?.total_debt ?? balance?.current_debt ?? 0,
+            );
             return sum + (Number.isFinite(value) ? value : 0);
         }, 0);
 
@@ -140,7 +144,9 @@
         const targetId = lastStudent
             ? `student-bs-${lastStudent.id ?? $form.students.length - 1}`
             : "";
-        const studentInput = targetId ? document.getElementById(targetId) : null;
+        const studentInput = targetId
+            ? document.getElementById(targetId)
+            : null;
 
         if (studentInput) {
             studentInput.focus();
@@ -149,12 +155,12 @@
     }
 
     $: showPerStudentAmounts =
-    $form.students.length > 1 || submitStatus === "Solo lectura";
-    
+        $form.students.length > 1 || submitStatus === "Solo lectura";
+
     function syncSingleStudentTotals(type, value) {
         console.log($form.students);
         if ($form.students.length > 1) return;
-        
+
         const studentIndex = 0;
         const student = $form.students[studentIndex];
 
@@ -188,7 +194,11 @@
         }
 
         if (type === "bs") {
-        console.log("syncSingleStudentTotals called with:", { type, value, dolarPrice });
+            console.log("syncSingleStudentTotals called with:", {
+                type,
+                value,
+                dolarPrice,
+            });
 
             const numericValue = parseBsInput(value);
             const bsTotal = numericValue.toFixed(2);
@@ -435,7 +445,6 @@
             `${Number(integerPart).toLocaleString("de-DE")},${decimalPart}`,
         );
         return `${Number(integerPart).toLocaleString("de-DE")},${decimalPart}`;
-
     }
 
     function parseBsInput(value) {
@@ -674,15 +683,17 @@
     onKeyShortcut={openRegistrarPago}
     classes="w-full h-full md:h-auto md:w-11/12"
 >
-    <h2 slot="header" class="text-sm text-center ">REGISTRO DE PAGO</h2>
+    <h2 slot="header" class="text-sm text-center">REGISTRO DE PAGO</h2>
 
     <form
         id="a-form"
         on:submit={handleSubmit}
         action=""
-        class="w-full md:grid md:grid-cols-12 md:gap-x-5 px-0 md:px-3 md:pl-2"
+        class="w-full md:grid md:grid-cols-12 md:gap-x-5 lg:gap-x-10 px-0 md:px-3 md:pl-2"
     >
-        <div class="relative w-full md:col-span-4 md:col-start-9 md:row-start-1">
+        <div
+            class="relative w-full md:col-span-4 md:col-start-9 md:row-start-"
+        >
             <Input
                 type="select"
                 label={"Concepto de pago"}
@@ -711,7 +722,9 @@
                 </button>
             {/if}
         </div>
-        <div class="col-span-8 md:col-start-1 md:row-start-1 relative mx-auto text-left w-full">
+        <div
+            class="col-span-8 md:col-start-1 md:row-start- md:-top-12 relative mx-auto md:mx-0 text-left w-full"
+        >
             <!-- <Input
                 type="text"
                 required={true}
@@ -720,7 +733,7 @@
                 error={$form.errors?.name}
             /> -->
             <div
-                class="w-fit mx-auto md:mx-none mt-4 md:mt-0 z-50 lg right-20 md:right-64 flex items-center rounded-xl bg-gray-50 border border-gray-400"
+                class="w-fit mx-auto md:mx-0 mt-4 md:mt-0 z-50 lg right-20 md:right-64 flex items-center rounded-xl bg-gray-50 border border-gray-400"
             >
                 <span class="absolute">
                     <svg
@@ -741,7 +754,7 @@
                 <input
                     type="search"
                     placeholder="Buscar Estudiante / representante"
-                    class={`block  w-full rounded-xl py-1.5 pr-5 text-gray-700 -full   md:w-56  placeholder-gray-400/70 pl-11 rtl:pr-11 rtl:pl-5 focus:border-blue-400 focus:ring-blue-300 focus:outline-none focus:ring focus:ring-opacity-40`}
+                    class={`block  w-full rounded-xl py-1.5 pr-5 text-gray-700 -full   md:w-56 lg:w-96 placeholder-gray-400/70 pl-11 rtl:pr-11 rtl:pl-5 focus:border-blue-400 focus:ring-blue-300 focus:outline-none focus:ring focus:ring-opacity-40`}
                     bind:this={searchInputRef}
                     on:input={(e) => {
                         search_student(e.target.value);
@@ -779,10 +792,15 @@
                                         (s) => s.id === student.id,
                                     )
                                 ) {
-                                    const defaultDebt = getStudentDebtInDollars(student);
-                                    const defaultBs = dolarPrice > 0
-                                        ? (Number(defaultDebt) * dolarPrice).toFixed(2)
-                                        : "0.00";
+                                    const defaultDebt =
+                                        getStudentDebtInDollars(student);
+                                    const defaultBs =
+                                        dolarPrice > 0
+                                            ? (
+                                                  Number(defaultDebt) *
+                                                  dolarPrice
+                                              ).toFixed(2)
+                                            : "0.00";
 
                                     $form.students = [
                                         ...$form.students,
@@ -812,12 +830,17 @@
 
                                     $form.total_in_dolars = $form.students
                                         .reduce(
-                                            (total, s) => total + (parseFloat(s.amount_in_dolars) || 0),
+                                            (total, s) =>
+                                                total +
+                                                (parseFloat(
+                                                    s.amount_in_dolars,
+                                                ) || 0),
                                             0,
                                         )
                                         .toFixed(2);
                                     $form.total_in_bs = (
-                                        Number($form.total_in_dolars) * dolarPrice
+                                        Number($form.total_in_dolars) *
+                                        dolarPrice
                                     ).toFixed(2);
 
                                     applyConceptToStudents();
@@ -850,48 +873,58 @@
                 </tbody>
             </table>
 
-            <div class="md:hidden">
+            <div class="mt-2 md:mt-4 space-y-3">
                 {#each $form.students as student, i}
-                    <div class="bg-gray-50">
-                        <div class="flex   justify-between items-center mb-1 mt-3">
-                            <span>
-                                {student.name}
-                                {student.last_name}
+                    <div class="neumorphism md:p-3 lg:mx-2 rounded-lg">
+                        <div
+                            class="flex justify-between items-center mb-1 mt-3"
+                        >
+                            <span class="flex flex-col md:flex-row">
+                                <span>
+                                    {student.name}
+                                    {student.last_name}
+
+                                </span>
+
+                                <div>
+
+                                    <span
+                                        class="bg-gray-200 md:ml-2 text-gray-700 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
+                                    >
+                                        {#if student.document_type}
+                                            <span class="uppercase"
+                                                >{student.document_type}-</span
+                                            >
+                                        {/if}
+                                        {student.ci}
+                                    </span>
+    
+                                    <!-- Separador opcional o punto -->
+                                    <span class="text-gray-300">•</span>
+    
+                                    <!-- Curso y Sección -->
+                                    <span
+                                        class="text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border-gray-200/40 text-xs"
+                                    >
+                                        {student.course_name}-{student.section_name}
+                                    </span>
+                                </div>
                             </span>
+
                             <button
-                                    type="button"
-                                    class="h-full hover:bg-paper ml-1"
-                                    on:click={() => {
-                                        // Eliminar el estudiante del arreglo
-                                        $form.students = $form.students.filter(
-                                            (s) => s.id !== student.id,
-                                        );
-                                    }}
-                                >
-                                    <iconify-icon icon="line-md:close"
-                                    ></iconify-icon>
-                                </button>
+                                type="button"
+                                class="h-full hover:bg-paper ml-1"
+                                on:click={() => {
+                                    // Eliminar el estudiante del arreglo
+                                    $form.students = $form.students.filter(
+                                        (s) => s.id !== student.id,
+                                    );
+                                }}
+                            >
+                                <iconify-icon icon="line-md:close"
+                                ></iconify-icon>
+                            </button>
                         </div>
-                        <span
-                            class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
-                        >
-                            {#if student.document_type}
-                                <span class="uppercase"
-                                    >{student.document_type}-</span
-                                >
-                            {/if}
-                            {student.ci}
-                        </span>
-
-                        <!-- Separador opcional o punto -->
-                        <span class="text-gray-300">•</span>
-
-                        <!-- Curso y Sección -->
-                        <span
-                            class="text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded  border-gray-200/40 text-xs"
-                        >
-                            {student.course_name}-{student.section_name}
-                        </span>
 
                         {#if !isConceptPayment && submitStatus !== "Solo lectura"}
                             <BalanceBar
@@ -908,166 +941,19 @@
                                 dolarRate={dolarPrice}
                             />
                         {/if}
-                    </div>
 
-                    {#if showPerStudentAmounts}
-                    <div class="grid grid-cols-2 gap-3 mt-3 mb-2">
-                        <div class="flex flex-col items-start col-span-1">
-                            <b class="pr-1 text-xs">$. USD</b>
-                            <input
-                                type="number"
-                                min="0"
-                                placeholder="Dólares"
-                                step="0.01"
-                                class="w-full py-1 px-1 md:py-2 md:px-2 border-gray-300 rounded-md border focus:outline-0"
-                                data-student-amount="usd"
-                                value={student.amount_in_dolars || ""}
-                                readonly={submitStatus === "Solo lectura"}
-                                on:input={(e) => {
-                                    $form.students[i] = {
-                                        ...$form.students[i],
-                                        amount_in_dolars: e.target.value,
-                                        amount_in_bs: (
-                                            e.target.value * dolarPrice
-                                        ).toFixed(2),
-                                    };
-                                    $form.total_in_dolars = $form.students
-                                        .reduce(
-                                            (total, s) =>
-                                                total +
-                                                (parseFloat(
-                                                    s.amount_in_dolars,
-                                                ) || 0),
-                                            0,
-                                        )
-                                        .toFixed(2);
-                                    $form.total_in_bs = (
-                                        $form.total_in_dolars * dolarPrice
-                                    ).toFixed(2);
-                                }}
-                            />
-                        </div>
-                        <div class="flex flex-col items-start">
-                            <b class="pr-1 text-xs">Bs. VES</b>
-                            <input
-                                type="text"
-                                inputmode="numeric"
-                                min="0"
-                                step="0.01"
-                                class="w-full border py-1 px-1 md:py-2 md:px-2 border-gray-300 rounded-md focus:outline-"
-                                data-student-amount="bs"
-                                value={formatBsInput(
-                                    student.amount_in_bs || "",
-                                )}
-                                placeholder="Bolívares"
-                                readonly={submitStatus === "Solo lectura"}
-                                on:focus={(e) => {
-                                    if (e.target.value !== "") {
-                                        e.target.select();
-                                    }
-                                }}
-                                id={`student-bs-${student.id ?? i}`}
-                                on:input={(e) => {
-                                    const el = e.target;
-                                    const rawValue = el.value;
-                                    const start = el.selectionStart;
-                                    const end = el.selectionEnd;
-                                    const wasAtEnd = start === end && start === rawValue.length;
-                                    const digitsBeforeCaret = (rawValue.slice(0, start).match(/\d/g) || []).length;
-
-                                    const numericBs = parseBsInput(rawValue);
-                                    const bsValue = numericBs.toFixed(2);
-                                    const usdValue =
-                                        dolarPrice > 0
-                                            ? (numericBs / dolarPrice).toFixed(2)
-                                            : "0.00";
-
-                                    $form.students[i] = {
-                                        ...$form.students[i],
-                                        amount_in_bs: bsValue,
-                                        amount_in_dolars: usdValue,
-                                    };
-                                    $form.total_in_bs = $form.students
-                                        .reduce(
-                                            (total, s) =>
-                                                total +
-                                                (parseFloat(s.amount_in_bs) || 0),
-                                            0,
-                                        )
-                                        .toFixed(2);
-                                    $form.total_in_dolars = (
-                                        $form.total_in_bs / dolarPrice
-                                    ).toFixed(2);
-
-                                    const formattedValue = formatBsInput(bsValue);
-                                    restoreBsCaret(el, formattedValue, digitsBeforeCaret, wasAtEnd);
-                                }}
-                            />
-                        </div>
-                    </div>
-                    {/if}
-                {/each}
-            </div>
-        </div>
-        <div class="hidden md:block md:col-span-8 md:col-start-1 md:row-start-2 w-full">
-            <table
-                id="selected_student"
-                class={`${$form.students.length > 0 ? "md:block" : "hidden"} hidden  w-full font-semibold relative    text-sm overflow-hidden mt-5`}
-            >
-                <thead
-                    class="[&_*]:px-2 md:[&_*]:px-4 [&_*]:py-2 [&_*]:text-left"
-                >
-                    <tr>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {#each $form.students as student, i}
-                        <tr
-                            class={` w-full [&_td]:px-2 [&_td*]:py-2 text-sm cursor-pointer  border-gray-500`}
-                        >
-                            <td class="md:min-w-[300px]">
-                                <div class="flex items-center mb-1">
-                                    <span>
-                                        {student.name}
-                                        {student.last_name}
-                                    </span>
-                                </div>
-                                <span
-                                    class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
+                        {#if showPerStudentAmounts}
+                            <div class="grid grid-cols-2 gap-3 mt-3 mb-2">
+                                <div
+                                    class="flex flex-col items-start col-span-1"
                                 >
-                                    {#if student.document_type}
-                                        <span class="uppercase"
-                                            >{student.document_type}-</span
-                                        >
-                                    {/if}
-                                    {student.ci}
-                                </span>
-
-                                <!-- Separador opcional o punto -->
-                                <span class="text-gray-300">•</span>
-
-                                <!-- Curso y Sección -->
-                                <span
-                                    class="text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200/40 text-xs"
-                                >
-                                    {student.course_name}-{student.section_name}
-                                </span>
-                            </td>
-                            {#if showPerStudentAmounts}
-                            <td>
-                                <div class="flex flex-col items-start">
                                     <b class="pr-1 text-xs">$. USD</b>
                                     <input
                                         type="number"
                                         min="0"
                                         placeholder="Dólares"
                                         step="0.01"
-                                        class="w-20 py-2 px-2 border-gray-400 rounded-md border focus:outline-0"
+                                        class="w-full py-1 px-1 md:py-2 md:px-2 border-gray-300 rounded-md border focus:outline-0"
                                         data-student-amount="usd"
                                         value={student.amount_in_dolars || ""}
                                         readonly={submitStatus ===
@@ -1099,8 +985,6 @@
                                         }}
                                     />
                                 </div>
-                            </td>
-                            <td>
                                 <div class="flex flex-col items-start">
                                     <b class="pr-1 text-xs">Bs. VES</b>
                                     <input
@@ -1108,8 +992,7 @@
                                         inputmode="numeric"
                                         min="0"
                                         step="0.01"
-                                        id={`student-bs-${student.id ?? i}`}
-                                        class="w-24 border py-2 px-2 border-gray-400 rounded-md focus:outline-"
+                                        class="w-full border py-1 px-1 md:py-2 md:px-2 border-gray-300 rounded-md focus:outline-"
                                         data-student-amount="bs"
                                         value={formatBsInput(
                                             student.amount_in_bs || "",
@@ -1122,19 +1005,30 @@
                                                 e.target.select();
                                             }
                                         }}
-on:input={(e) => {
+                                        id={`student-bs-${student.id ?? i}`}
+                                        on:input={(e) => {
                                             const el = e.target;
                                             const rawValue = el.value;
                                             const start = el.selectionStart;
                                             const end = el.selectionEnd;
-                                            const wasAtEnd = start === end && start === rawValue.length;
-                                            const digitsBeforeCaret = (rawValue.slice(0, start).match(/\d/g) || []).length;
+                                            const wasAtEnd =
+                                                start === end &&
+                                                start === rawValue.length;
+                                            const digitsBeforeCaret = (
+                                                rawValue
+                                                    .slice(0, start)
+                                                    .match(/\d/g) || []
+                                            ).length;
 
-                                            const numericBs = parseBsInput(rawValue);
-                                            const bsValue = numericBs.toFixed(2);
+                                            const numericBs =
+                                                parseBsInput(rawValue);
+                                            const bsValue =
+                                                numericBs.toFixed(2);
                                             const usdValue =
                                                 dolarPrice > 0
-                                                    ? (numericBs / dolarPrice).toFixed(2)
+                                                    ? (
+                                                          numericBs / dolarPrice
+                                                      ).toFixed(2)
                                                     : "0.00";
 
                                             $form.students[i] = {
@@ -1146,7 +1040,9 @@ on:input={(e) => {
                                                 .reduce(
                                                     (total, s) =>
                                                         total +
-                                                        (parseFloat(s.amount_in_bs) || 0),
+                                                        (parseFloat(
+                                                            s.amount_in_bs,
+                                                        ) || 0),
                                                     0,
                                                 )
                                                 .toFixed(2);
@@ -1154,20 +1050,204 @@ on:input={(e) => {
                                                 $form.total_in_bs / dolarPrice
                                             ).toFixed(2);
 
-                                            const formattedValue = formatBsInput(bsValue);
-                                            restoreBsCaret(el, formattedValue, digitsBeforeCaret, wasAtEnd);
+                                            const formattedValue =
+                                                formatBsInput(bsValue);
+                                            restoreBsCaret(
+                                                el,
+                                                formattedValue,
+                                                digitsBeforeCaret,
+                                                wasAtEnd,
+                                            );
                                         }}
                                     />
                                 </div>
+                            </div>
+                        {/if}
+                    </div>
+                {/each}
+            </div>
+        </div>
+        <!-- <div
+            class="hidden md:block md:col-span-8 md:col-start-1 md:row-start-2 w-full"
+        >
+            <table
+                id="selected_student"
+                class={`${$form.students.length > 0 ? "md:block" : "hidden"} hidden  w-full font-semibold relative    text-sm  mt-1 p-2`}
+            >
+                <thead
+                    class="[&_*]:px-2 md:[&_*]:px-4 [&_*]:py-2 [&_*]:text-left"
+                >
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody class="neumorphism p-2 rounded-lg m-2">
+                    {#each $form.students as student, i}
+                        <tr
+                            class={` w-full [&_td]:px-2 [&_td*]:py-2 text-sm cursor-pointer  border-gray-500`}
+                        >
+                            <td class="md:min-w-[300px]">
+                                <div class="flex items-center mb-1">
+                                    <span>
+                                        {student.name}
+                                        {student.last_name}
+                                    </span>
+                                </div>
+                                <span
+                                    class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
+                                >
+                                    {#if student.document_type}
+                                        <span class="uppercase"
+                                            >{student.document_type}-</span
+                                        >
+                                    {/if}
+                                    {student.ci}
+                                </span>
+
+                                <span class="text-gray-300">•</span>
+
+                                <span
+                                    class="text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200/40 text-xs"
+                                >
+                                    {student.course_name}-{student.section_name}
+                                </span>
                             </td>
+                            {#if showPerStudentAmounts}
+                                <td>
+                                    <div class="flex flex-col items-start">
+                                        <b class="pr-1 text-xs">$. USD</b>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            placeholder="Dólares"
+                                            step="0.01"
+                                            class="w-20 py-2 px-2 border-gray-400 rounded-md border focus:outline-0"
+                                            data-student-amount="usd"
+                                            value={student.amount_in_dolars ||
+                                                ""}
+                                            readonly={submitStatus ===
+                                                "Solo lectura"}
+                                            on:input={(e) => {
+                                                $form.students[i] = {
+                                                    ...$form.students[i],
+                                                    amount_in_dolars:
+                                                        e.target.value,
+                                                    amount_in_bs: (
+                                                        e.target.value *
+                                                        dolarPrice
+                                                    ).toFixed(2),
+                                                };
+                                                $form.total_in_dolars =
+                                                    $form.students
+                                                        .reduce(
+                                                            (total, s) =>
+                                                                total +
+                                                                (parseFloat(
+                                                                    s.amount_in_dolars,
+                                                                ) || 0),
+                                                            0,
+                                                        )
+                                                        .toFixed(2);
+                                                $form.total_in_bs = (
+                                                    $form.total_in_dolars *
+                                                    dolarPrice
+                                                ).toFixed(2);
+                                            }}
+                                        />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="flex flex-col items-start">
+                                        <b class="pr-1 text-xs">Bs. VES</b>
+                                        <input
+                                            type="text"
+                                            inputmode="numeric"
+                                            min="0"
+                                            step="0.01"
+                                            id={`student-bs-${student.id ?? i}`}
+                                            class="w-24 border py-2 px-2 border-gray-400 rounded-md focus:outline-"
+                                            data-student-amount="bs"
+                                            value={formatBsInput(
+                                                student.amount_in_bs || "",
+                                            )}
+                                            placeholder="Bolívares"
+                                            readonly={submitStatus ===
+                                                "Solo lectura"}
+                                            on:focus={(e) => {
+                                                if (e.target.value !== "") {
+                                                    e.target.select();
+                                                }
+                                            }}
+                                            on:input={(e) => {
+                                                const el = e.target;
+                                                const rawValue = el.value;
+                                                const start = el.selectionStart;
+                                                const end = el.selectionEnd;
+                                                const wasAtEnd =
+                                                    start === end &&
+                                                    start === rawValue.length;
+                                                const digitsBeforeCaret = (
+                                                    rawValue
+                                                        .slice(0, start)
+                                                        .match(/\d/g) || []
+                                                ).length;
+
+                                                const numericBs =
+                                                    parseBsInput(rawValue);
+                                                const bsValue =
+                                                    numericBs.toFixed(2);
+                                                const usdValue =
+                                                    dolarPrice > 0
+                                                        ? (
+                                                              numericBs /
+                                                              dolarPrice
+                                                          ).toFixed(2)
+                                                        : "0.00";
+
+                                                $form.students[i] = {
+                                                    ...$form.students[i],
+                                                    amount_in_bs: bsValue,
+                                                    amount_in_dolars: usdValue,
+                                                };
+                                                $form.total_in_bs =
+                                                    $form.students
+                                                        .reduce(
+                                                            (total, s) =>
+                                                                total +
+                                                                (parseFloat(
+                                                                    s.amount_in_bs,
+                                                                ) || 0),
+                                                            0,
+                                                        )
+                                                        .toFixed(2);
+                                                $form.total_in_dolars = (
+                                                    $form.total_in_bs /
+                                                    dolarPrice
+                                                ).toFixed(2);
+
+                                                const formattedValue =
+                                                    formatBsInput(bsValue);
+                                                restoreBsCaret(
+                                                    el,
+                                                    formattedValue,
+                                                    digitsBeforeCaret,
+                                                    wasAtEnd,
+                                                );
+                                            }}
+                                        />
+                                    </div>
+                                </td>
                             {/if}
 
-                            <td class="max-w-[70px]">
+                            <td class="max-w-[70px] bg-gray-200">
                                 <button
                                     type="button"
                                     class="h-full hover:bg-paper ml-1"
                                     on:click={() => {
-                                        // Eliminar el estudiante del arreglo
                                         $form.students = $form.students.filter(
                                             (s) => s.id !== student.id,
                                         );
@@ -1203,9 +1283,11 @@ on:input={(e) => {
                     {/each}
                 </tbody>
             </table>
-        </div>
+        </div> -->
 
-        <div class={`w-full md:col-span-4 md:col-start-9 md:row-start-2 grid grid-cols-2 gap-x-3 md:gap-x-5 ${$form.students.length > 0 ? "block" : "hidden"} md:grid`}>
+        <div
+            class={`w-full md:col-span-4 md:col-start-9 md:row-start-0 grid grid-cols-2 gap-x-3 md:gap-x-5 ${$form.students.length > 0 ? "block" : "hidden"} md:grid`}
+        >
             <Input
                 type="date"
                 required={true}
@@ -1318,13 +1400,21 @@ on:input={(e) => {
                         const rawValue = el.value;
                         const start = el.selectionStart;
                         const end = el.selectionEnd;
-                        const wasAtEnd = start === end && start === rawValue.length;
-                        const digitsBeforeCaret = (rawValue.slice(0, start).match(/\d/g) || []).length;
+                        const wasAtEnd =
+                            start === end && start === rawValue.length;
+                        const digitsBeforeCaret = (
+                            rawValue.slice(0, start).match(/\d/g) || []
+                        ).length;
 
                         syncSingleStudentTotals("bs", rawValue);
 
                         const formattedValue = formatBsInput($form.total_in_bs);
-                        restoreBsCaret(el, formattedValue, digitsBeforeCaret, wasAtEnd);
+                        restoreBsCaret(
+                            el,
+                            formattedValue,
+                            digitsBeforeCaret,
+                            wasAtEnd,
+                        );
                     }}
                 />
             {/if}
@@ -1351,7 +1441,7 @@ on:input={(e) => {
             <div class="flex justify-end col-span-12">
                 <button
                     type="submit"
-                    class={` max-w-[430px] mt-7  items-center justify-center gap-3 ${!$form.students.length > 0 ? 'hidden  ' : 'flex animated-button'} `}
+                    class={` max-w-[430px] mt-7  items-center justify-center gap-3 ${!$form.students.length > 0 ? "hidden  " : "flex animated-button"} `}
                     disabled={$form.processing}
                 >
                     <svg

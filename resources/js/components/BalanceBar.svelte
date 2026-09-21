@@ -149,7 +149,7 @@
     }
 </script>
 
-<div {id} class="bg-white rounded-lg {classes}">
+<div {id} class=" rounded-lg {classes}">
     {#each balances as balance, indexYear}
         <div class="flex gap-4 items-center mt-2 mb-2">
             {#if !balance.school_lapse?.status || balances.length > 1}
@@ -208,7 +208,7 @@
                     <!-- Render payment overlay only if amountToPay is positive -->
                     {#if amountToPay > 0 && payingBalances[indexYear]?.balanceInscription > 0}
                         <div
-                            class="absolute top-0.5 left-0 h-[95%] z-40 bg-purple/30 border-y-4 border-black/50 border"
+                            class="absolute top-[1.2px] left-[1px] border-x-4 h-[95%] z-40 bg-purple/30 border-y-4 rounded-l-xl border-black/50 border"
                             style="max-width: 100%; width: {(payingBalances[indexYear].balanceInscription / Math.abs(balance.inscription)) * 100}%"
                         ></div>
                     {/if}
@@ -245,13 +245,16 @@
                                 <!-- 5. Conditioned DOM Node: Completely unmounted on student list / read-only views -->
                                 <div
                                     class="text-xs months_to_pay absolute top-0.5 left-0 w-full text-black h-[95%] z-40
-                                    {indexMonth === startPointToPay.month && startPointToPay.school_lapse_index === indexYear && amountToPay > Math.abs(balance[name]) ? 'border-l-4 border-black/50' : ''}
-                                    {indexMonth === endPointToPay.endMonthIndex - 1 && endPointToPay.endYearIndex === indexYear && amountToPay > 0 ? 'border-r-4 border-black/50' : ''}
-                                    {startPointToPay.school_lapse_index <= indexYear && payingBalances[indexYear]?.startMonth <= indexMonth && indexMonth <= payingBalances[indexYear]?.endMonthIndex ? 'bg-purple/30 border-y-4 border-black/50' : ''}"
+                                    {indexMonth === startPointToPay.month && startPointToPay.school_lapse_index === indexYear  ? 'border-l-2 md:border-l-4 border-black/50' : ''}
+                                    {indexMonth === endPointToPay.endMonthIndex - 1 && endPointToPay.endYearIndex === indexYear && amountToPay > 0 ? 'border-r-2 md:border-r-4 border-black/50' : ''}
+                                    {startPointToPay.school_lapse_index <= indexYear && payingBalances[indexYear]?.startMonth <= indexMonth && indexMonth <= payingBalances[indexYear]?.endMonthIndex ? 'bg-purple/30 top-[1.2px] border-y-2  md:border-y-4 border-black/50' : ''}
+                                    {indexMonth === 11 && startPointToPay.school_lapse_index <= indexYear && payingBalances[indexYear]?.startMonth <= indexMonth && indexMonth <= payingBalances[indexYear]?.endMonthIndex ? 'rounded-r-3xl' : ''}"
                                     style={((indexMonth === endPointToPay.endMonthIndex - 1 && endPointToPay.endYearIndex === indexYear) || indexMonth === 11) && endPointToPay.partialToPay > 0
                                         ? `width: ${(endPointToPay.partialToPay / Math.abs(balance[name])) * 100}%`
                                         : ''}
-                                ></div>
+                                >
+                                
+                                </div>
                             </div>
                         {/each}
                     {:else}
