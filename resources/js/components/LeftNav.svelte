@@ -5,7 +5,8 @@
     function getInertiaOptions(href) {
         if (href === "/dashboard/pagos") {
             return {
-                onmousedown: () => router.prefetch(href),
+                prefetch: true,
+                cacheFor: 30000,
             };
         }
         return { prefetch: true };

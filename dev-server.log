@@ -3984,3 +3984,219 @@ See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
 61 |      }
    |  ^^^^^[39m
 [2m0:10:44[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+[2m0:12:24[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/BalanceBar.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+[2m0:12:27[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/BalanceBar.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+[2m0:13:13[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/BalanceBar.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+[2m0:17:26[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/BalanceBar.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+[2m0:17:29[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/BalanceBar.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+[2m0:17:34[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/BalanceBar.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+[2m0:17:37[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/BalanceBar.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+[2m0:17:40[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/BalanceBar.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+[2m0:17:44[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/BalanceBar.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+[2m0:17:53[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/BalanceBar.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+[2m0:17:57[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/BalanceBar.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+[2m0:18:32[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/BalanceBar.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+[2m0:18:33[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/BalanceBar.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+[2m0:24:39[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/LeftNav.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+0:24:39 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/components/LeftNav.svelte:145:33 'getInertiaOptions' is not defined
+[2m0:24:54[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/LeftNav.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+[2m0:25:00[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/LeftNav.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+[2m0:25:04[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/components/LeftNav.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
