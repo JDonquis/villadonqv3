@@ -92,7 +92,7 @@
     });
 </script>
 
-<div class="bg-white rounded-xl border p-5 shadow-sm">
+<div class="bg-white rounded-xl border p-5 shadow-sm neumorphism">
     <h3 class="text-lg font-bold text-gray-800 mb-4">Tendencia Tasa de Cobranza (Últimos {years} años)</h3>
     <div bind:this={chartContainer} class="w-full h-[350px]"></div>
 </div>

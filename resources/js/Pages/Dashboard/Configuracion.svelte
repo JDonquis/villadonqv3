@@ -6,6 +6,7 @@
 
     import Alert from "../../components/Alert.svelte";
     import Input from "../../components/Input.svelte";
+    import GoogleMapsPicker from "../../components/GoogleMapsPicker.svelte";
     import { displayAlert } from "../../stores/alertStore";
     import axios from "axios";
     export let data;
@@ -13,12 +14,17 @@
     console.log({ data });
 
     const institution = useForm({
-        name: "Jesús el Nazareno",
-        active_students: "400",
-        promotions: "33",
-        years: "34",
-        slogan: "Formando mentes brillantes para un mañana prometedor",
-        courses: [1, 2, 3],
+        name: data.institution?.name ?? "",
+        code: data.institution?.code ?? "",
+        municipality: data.institution?.municipality ?? "",
+        federal_entity: data.institution?.federal_entity ?? "",
+        cdcee: data.institution?.cdcee ?? "",
+        director_name: data.institution?.director_name ?? "",
+        director_ci: data.institution?.director_ci ?? "",
+        phone_number: data.institution?.phone_number ?? "",
+        address: data.institution?.address ?? "",
+        latitude: data.institution?.latitude ?? "",
+        longitude: data.institution?.longitude ?? "",
     });
     // function resizeInput(event) {
     //     event.target.style.width = event.target.value.length + "ch";
@@ -62,6 +68,46 @@
             },
             onError: (errors) => {
                 $prices.processing = false;
+                if (errors.data) {
+                    displayAlert({ type: "error", message: errors.data });
+                }
+            },
+        });
+    }
+
+    function saveInstitution(e) {
+        e.preventDefault();
+
+        if (!confirm("¿Está seguro de guardar los datos del plantel?")) return;
+
+        const formData = {
+            name: $institution.name,
+            code: $institution.code,
+            municipality: $institution.municipality,
+            federal_entity: $institution.federal_entity,
+            cdcee: $institution.cdcee,
+            director_name: $institution.director_name,
+            director_ci: $institution.director_ci,
+            phone_number: $institution.phone_number,
+            address: $institution.address,
+            latitude: $institution.latitude,
+            longitude: $institution.longitude,
+        };
+
+        $institution.processing = true;
+        $institution.defaults();
+
+        router.put("/dashboard/configuracion/institucion", formData, {
+            preserveScroll: true,
+            onSuccess: () => {
+                $institution.processing = false;
+                displayAlert({
+                    type: "success",
+                    message: "Datos del plantel guardados",
+                });
+            },
+            onError: (errors) => {
+                $institution.processing = false;
                 if (errors.data) {
                     displayAlert({ type: "error", message: errors.data });
                 }
@@ -124,6 +170,7 @@
     let showPaymentOptions = false;
 
     let accordionState = {
+        institution: true,
         payments: true,
         quotas: false,
         lapses: false,
@@ -372,229 +419,167 @@
     </h2>
     <div class="py-5"></div>
 
-    <!-- <h2 class="font-bold text-xl">Configuración del perfil</h2>
-
-    <form
-        class="bg-background px-1 mx-4 md:py-9 md:pb-12 md:grid justify-between grid-flow-col md:gap-x-10 lg:gap-x-24 items-center relative"
-    >
-        <div class="md:min-w-[600px] max-w-[690px]">
-            <span class="md:text-5xl text-color1 font-bold">
-                Colegio
-                <br />
-                <input
-                    class="md:text-5xl bg-transparent"
-                    type="text"
-                    bind:value={$institution.name}
-                    style={`width:${$institution.name.length - 3}ch`}
-                />
-            </span>
-            <textarea
-                class="block w-full bg-transparent md:text-xl"
-                type="text"
-                bind:value={$institution.slogan}
-            />
-
-            <div class="flex justify-between mt-4 md:mt-14 text-color1">
-                <div>
-                    <label
-                        class="flex items-center gap-2 mb-2 lg:mb-3 cursor-pointer"
-                    >
-                        <input
-                            type="checkbox"
-                            bind:group={$institution.courses}
-                            value={1}
-                            class="hidden"
-                        />
-
-                        {#if $institution.courses.includes(1)}
-                            <div
-                                class="bg-color1 w-6 md:w-8 aspect-square -full overflow-hidden flex items-center justify-center"
-                            >
-                                <iconify-icon
-                                    class="text-color4 text-4xl"
-                                    icon="pajamas:check-xs"
-                                ></iconify-icon>
-                            </div>
-                            <b>Prescolar</b>
-                        {:else}
-                            <div
-                                class="bg-gray-400 w-6 md:w-8 aspect-square -full overflow-hidden flex items-center justify-center"
-                            >
-                                <iconify-icon
-                                    icon="octicon:no-entry-16"
-                                    class="text-gray-300"
-                                ></iconify-icon>
-                            </div>
-                            <b class="text-gray-400">Prescolar</b>
-                        {/if}
-                    </label>
-                    <ul class="grid grid-cols-2 gap-x-3">
-                        <li>1er nivel</li>
-                        <li>2do nivel</li>
-                        <li>3er nivel</li>
-                    </ul>
-                </div>
-                <div>
-                    <label
-                        class="flex items-center gap-2 mb-2 lg:mb-3 cursor-pointer"
-                    >
-                        <input
-                            type="checkbox"
-                            bind:group={$institution.courses}
-                            value={2}
-                            class="hidden"
-                        />
-                        {#if $institution.courses.includes(2)}
-                            <div
-                                class="bg-color1 w-6 md:w-8 aspect-square -full overflow-hidden flex items-center justify-center"
-                            >
-                                <iconify-icon
-                                    class="text-color4 text-4xl"
-                                    icon="pajamas:check-xs"
-                                ></iconify-icon>
-                            </div>
-                            <b>Primaria</b>
-                        {:else}
-                            <div
-                                class="bg-gray-400 w-6 md:w-8 aspect-square -full overflow-hidden flex items-center justify-center"
-                            >
-                                <iconify-icon
-                                    icon="octicon:no-entry-16"
-                                    class="text-gray-300"
-                                ></iconify-icon>
-                            </div>
-                            <b class="text-gray-400">Primaria</b>
-                        {/if}
-                    </label>
-                    <ul class="grid grid-cols-2 gap-x-3">
-                        <li>1er grado</li>
-                        <li>2do grado</li>
-                        <li>3er grado</li>
-                        <li>4to grado</li>
-                        <li>5to grado</li>
-                        <li>6to grado</li>
-                    </ul>
-                </div>
-                <div>
-                    <label
-                        class="flex items-center gap-2 mb-2 lg:mb-3 cursor-pointer"
-                    >
-                        <input
-                            type="checkbox"
-                            bind:group={$institution.courses}
-                            value={3}
-                            class="hidden"
-                        />
-
-                        {#if $institution.courses.includes(3)}
-                            <div
-                                class="bg-color1 w-6 md:w-8 aspect-square -full overflow-hidden flex items-center justify-center"
-                            >
-                                <iconify-icon
-                                    class="text-color4 text-4xl"
-                                    icon="pajamas:check-xs"
-                                ></iconify-icon>
-                            </div>
-                            <b>Secundaria</b>
-                        {:else}
-                            <div
-                                class="bg-gray-400 w-6 md:w-8 aspect-square -full overflow-hidden flex items-center justify-center"
-                            >
-                                <iconify-icon
-                                    icon="octicon:no-entry-16"
-                                    class="text-gray-300"
-                                ></iconify-icon>
-                            </div>
-                            <b class="text-gray-400">Secundaria</b>
-                        {/if}
-                    </label>
-                    <ul class="grid grid-cols-2 gap-x-3">
-                        <li>1er año</li>
-                        <li>2do año</li>
-                        <li>3er año</li>
-                        <li>4to año</li>
-                        <li>5to año</li>
-                    </ul>
-                </div>
-            </div>
-
-            <div
-                class="flex justify-between w-full mt-4 md:mt-16 md:gap-10 text-color1"
-            >
-                <div class="flex divide-x divide-dark">
-                    <input
-                        class="px-1 text-4xl bg-transparent"
-                        bind:value={$institution.years}
-                        style={`width:${$institution.years.length}ch`}
-                    />
-                    <p class="pl-3 col-span-2 leading-5 font-semibold">
-                        AÑOS DE
-                        <br />
-                        FORMACIÓN
-                    </p>
-                </div>
-
-                <div class="flex divide-x divide-dark">
-                    <input
-                        class="px-1 text-4xl bg-transparent"
-                        bind:value={$institution.promotions}
-                        style={`width:${$institution.promotions.length + 0.5}ch`}
-                    />
-                    <p class="pl-3 col-span-2 leading-5 font-semibold">
-                        PROMOCIONES
-                        <br />
-                        GRADUADAS
-                    </p>
-                </div>
-
-                <div class="flex divide-x divide-dark">
-                    <input
-                        class="px-1 text-4xl bg-transparent"
-                        bind:value={$institution.active_students}
-                        style={`width:${$institution.active_students.length + 0.5}ch`}
-                    />
-                    <p class="pl-3 col-span-2 leading-5 font-semibold">
-                        ESTUDIANTES
-                        <br />
-                        ACTIVOS
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <label
-            class="pl-5 relative pr-2 max-w-[500px] flex items-center justify-center -full big_picture_label cursor-pointer"
-        >
-            <img
-                class="absolute w-full"
-                src="https://cdn.discordapp.com/attachments/1238903237218930802/1244452251028688906/Iconos.png?ex=6655d2b9&is=66548139&hm=13ffaaa80051f10b14f4ac464ba1edc1a2b82a9546f069c85de0dfde2da6309a&"
-                alt=""
-            />
-
-            <img
-                class="-full aspect-square border-4 object-cover border-color1 bg-blend-overlay hover:bg-blend-darken"
-                src="http://127.0.0.1:8000/storage/institution/institution.jpeg"
-                alt=""
-            />
-
-            <iconify-icon
-                icon="line-md:edit"
-                class="text-dark text-6xl bg-white bg-opacity-40 p-20 md:p-32 xl:p-48 hidden absolute -full mx-auto"
-            ></iconify-icon>
-            <input type="file" name="" id="" class="hidden" />
-        </label>
-    </form>
-    {#if $institution.isDirty}
+    <!-- Acerca del Plantel Educativo -->
+    <div class="my-10 w-full md:px-2">
         <button
-            class="shadow-xl slideIn flex items-center justify-center mb-3 ml-auto py-4 w-64 bg-color1 gap-3 text-color4"
+            type="button"
+            class="accordion-trigger w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-color1"
+            on:click={() => (accordionState.institution = !accordionState.institution)}
         >
-            <span> GUARDAR PERFIL </span>
-            <iconify-icon icon="material-symbols:save" class="text-3xl"
-            ></iconify-icon>
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <h2 class="font-bold text-xl">Acerca del Plantel Educativo</h2>
+                    <p class="text-sm text-gray-600 mt-1">
+                        Información general, ubicación y datos del director
+                    </p>
+                </div>
+                <iconify-icon
+                    icon={accordionState.institution ? "mdi:chevron-up" : "mdi:chevron-down"}
+                    class="text-2xl text-gray-600"
+                ></iconify-icon>
+            </div>
         </button>
-    {/if} -->
 
-    <!-- <hr class=" border-gray-300" /> -->
+        {#if accordionState.institution}
+            <div class="mt-4">
+                <form class="bg-white rounded-lg shadow-sm p-6" on:submit={saveInstitution}>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                        <Input
+                            label="Código del plantel"
+                            type="text"
+                            bind:value={$institution.code}
+                            maxlength="20"
+                            placeholder="Ej: 12345"
+                        />
+                        <Input
+                            label="CDCEE"
+                            type="text"
+                            bind:value={$institution.cdcee}
+                            maxlength="20"
+                            placeholder="Código CDCEE"
+                        />
+                        <Input
+                            label="Nombre del plantel"
+                            type="text"
+                            bind:value={$institution.name}
+                            maxlength="100"
+                            class="md:col-span-2 lg:col-span-3"
+                            placeholder="Nombre oficial del plantel"
+                        />
+                        <Input
+                            label="Director(a)"
+                            type="text"
+                            bind:value={$institution.director_name}
+                            maxlength="100"
+                            placeholder="Nombre completo del director/a"
+                        />
+                        <Input
+                            label="Cédula del Director(a)"
+                            type="text"
+                            bind:value={$institution.director_ci}
+                            maxlength="20"
+                            placeholder="Cédula de identidad"
+                        />
+                        <Input
+                            label="Teléfono"
+                            type="tel"
+                            bind:value={$institution.phone_number}
+                            maxlength="11"
+                            placeholder="Ej: 02125551234"
+                        />
+                        <Input
+                            label="Municipio"
+                            type="text"
+                            bind:value={$institution.municipality}
+                            maxlength="100"
+                            placeholder="Ej: Libertador"
+                        />
+                        <Input
+                            label="Entidad Federal"
+                            type="text"
+                            bind:value={$institution.federal_entity}
+                            maxlength="100"
+                            placeholder="Ej: Distrito Capital"
+                        />
+                        <Input
+                            label="Dirección"
+                            type="text"
+                            bind:value={$institution.address}
+                            maxlength="255"
+                            class="md:col-span-2 lg:col-span-3"
+                            placeholder="Dirección completa del plantel"
+                        />
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Ubicación en el mapa (clic para seleccionar coordenadas)
+                        </label>
+                        <GoogleMapsPicker
+                            latitude={$institution.latitude}
+                            longitude={$institution.longitude}
+                            onSelect={(lat, lng) => {
+                                $institution.latitude = lat;
+                                $institution.longitude = lng;
+                            }}
+                        />
+                        <div class="mt-3 grid grid-cols-2 gap-4 text-sm">
+                            <div class="bg-gray-50 rounded-lg p-3">
+                                <span class="text-gray-500">Latitud:</span>
+                                <span class="font-mono text-gray-800 ml-2">{$institution.latitude || "—"}</span>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-3">
+                                <span class="text-gray-500">Longitud:</span>
+                                <span class="font-mono text-gray-800 ml-2">{$institution.longitude || "—"}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        {#if $institution.isDirty}
+                            <button
+                                type="submit"
+                                class="animated-button flex items-center justify-center gap-3"
+                                disabled={$institution.processing}
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="arr-2"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                                    ></path>
+                                </svg>
+                                {#if $institution.processing}
+                                    <span class="text">Cargando...</span>
+                                {:else}
+                                    <iconify-icon
+                                        icon="material-symbols:save"
+                                        class="text"
+                                        width="20"
+                                        height="20"
+                                    />
+                                    <span class="text">Guardar datos del plantel</span>
+                                {/if}
+                                <span class="circle"></span>
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="arr-1"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                                    ></path>
+                                </svg>
+                            </button>
+                        {/if}
+                    </div>
+                </form>
+            </div>
+        {/if}
+    </div>
+
     <div class="md:flex gap-10">
         <div>
             <form
