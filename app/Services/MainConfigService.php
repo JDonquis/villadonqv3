@@ -55,6 +55,28 @@ class MainConfigService
         return $this->mainConfigModel->first();
     }
 
+    public function getInstitutionData()
+    {
+        return [
+            'name' => $this->mainConfigModel->name,
+            'code' => $this->mainConfigModel->code,
+            'municipality' => $this->mainConfigModel->municipality,
+            'federal_entity' => $this->mainConfigModel->federal_entity,
+            'cdcee' => $this->mainConfigModel->cdcee,
+            'director_name' => $this->mainConfigModel->director_name,
+            'director_ci' => $this->mainConfigModel->director_ci,
+            'phone_number' => $this->mainConfigModel->phone_number,
+            'address' => $this->mainConfigModel->address,
+            'latitude' => $this->mainConfigModel->latitude,
+            'longitude' => $this->mainConfigModel->longitude,
+        ];
+    }
+
+    public function updateInstitutionData($data)
+    {
+        $this->mainConfigModel->update($data);
+    }
+
     public function getPrices()
     {
         return [

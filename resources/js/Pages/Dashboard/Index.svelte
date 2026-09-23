@@ -296,7 +296,7 @@
 </div>
 
 <div
-    class="w-full neumorphism shadow-lg p-6 rounded-md max-w-[1200px] flex flex-col gap-4"
+    class="w-full    p-6 rounded-md max-w-[1200px] flex flex-col gap-4"
 >
     <div>
         <div class="flex gap-10 items-start">
@@ -328,16 +328,7 @@
         </div>
     </div>
 
-    <div bind:this={chartContainer} class="w-full h-[400px]"></div>
-
-    <!-- Additional Charts Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        <DebtByCourseChart schoolLapseId={annual_vs_monthly_flow_year_id} />
-        <CollectionRateTrendChart years={5} />
-    </div>
-    <div class="mt-6">
-        <TopDebtorsChart schoolLapseId={annual_vs_monthly_flow_year_id} limit={10} />
-    </div>
+    
 
     <!-- <div class="mt-6 border-t border-gray-200 pt-6 flex flex-col gap-4">
         <div class="flex items-center justify-between">
@@ -401,3 +392,14 @@
         </div>
     </div> -->
 </div>
+
+<div bind:this={chartContainer} class="w-full h-[400px] neumorphism rounded-lg"></div>
+
+    <!-- Additional Charts Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6  ">
+        <DebtByCourseChart schoolLapseId={annual_vs_monthly_flow_year_id} />
+        <CollectionRateTrendChart years={5} />
+    </div>
+    <div class="mt-6 ">
+        <TopDebtorsChart schoolLapseId={annual_vs_monthly_flow_year_id} limit={10} />
+    </div>

@@ -31,6 +31,7 @@ class MainConfigController extends Controller
         $methods = $this->mainConfigService->getMethods();
         $accounts = $this->mainConfigService->getAccounts();
         $prices = $this->mainConfigService->getPrices();
+        $institution = $this->mainConfigService->getInstitutionData();
         $schoolLapse = SchoolLapse::where('status', 1)->first();
         $quotas = (new QuotaService)->quotasForPeriod($schoolLapse?->id);
         $lapses = $schoolLapse ? (new LapseService)->forPeriod($schoolLapse) : [];
@@ -46,11 +47,42 @@ class MainConfigController extends Controller
                     'quotas' => $quotas,
                     'lapses' => $lapses,
                     'courses' => Course::orderBy('id')->get(['id', 'name', 'plan_de_estudio_code']),
+                    'institution' => $institution,
                 ],
 
             ]
 
         );
+    }
+
+    public function updateInstitutionData(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['nullable', 'string', 'max:100'],
+            'code' => ['nullable', 'string', 'max:20'],
+            'municipality' => ['nullable', 'string', 'max:100'],
+            'federal_entity' => ['nullable', 'string', 'max:100'],
+            'cdcee' => ['nullable', 'string', 'max:20'],
+            'director_name' => ['nullable', 'string', 'max:100'],
+            'director_ci' => ['nullable', 'string', 'max:20'],
+            'phone_number' => ['nullable', 'string', 'max:11'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+        ]);
+
+        try {
+            $this->mainConfigService->updateInstitutionData($validated);
+
+            return back()->with([
+                'status' => true,
+                'message' => 'Datos del plantel guardados correctamente.',
+            ]);
+        } catch (Exception $e) {
+            Log::error('Error al guardar datos del plantel: ' . $e->getMessage());
+
+            return back()->withErrors(['message' => $e->getMessage()]);
+        }
     }
 
     public function updateMoments(Request $request)
