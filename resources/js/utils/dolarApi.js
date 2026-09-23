@@ -13,7 +13,7 @@ export async function getDolarRateByDate(targetDate, maxAttempts = 15) {
 
             const response = await axios.get(url);
 
-            const rate = response.data.promedio;
+            const rate = response.data.promedio.toFixed(2);
             return { rate, dateFound: currentDateStr };
         } catch (error) {
             if (error.response && error.response.status === 404) {
