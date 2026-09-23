@@ -8,6 +8,7 @@ use App\Http\Resources\AccountPaymentCollection;
 use App\Models\AccountPayment;
 use App\Models\MainConfig;
 use App\Models\PaymentMethod;
+use Illuminate\Support\Facades\Artisan;
 
 class MainConfigService
 {
@@ -74,10 +75,16 @@ class MainConfigService
     public function updatePaymentConfig($data)
     {
         $oldPrice = $this->mainConfigModel->monthly_payment;
+        $oldDayOfPayment = $this->mainConfigModel->day_of_monthly_payment;
+        $oldGracePeriod = $this->mainConfigModel->grace_period;
         $this->mainConfigModel->update($data);
 
         if ($data['monthly_payment'] != $oldPrice) {
             event(new UpdateMonthlyPaymentEvent($this->mainConfigModel->monthly_payment));
+        }
+
+        if ($data['day_of_monthly_payment'] != $oldDayOfPayment || $data['grace_period'] != $oldGracePeriod) {
+            Artisan::call('balance:recalculate-status');
         }
     }
 
