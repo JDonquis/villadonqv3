@@ -110,6 +110,14 @@ class PaymentService
         // Obtener usuario
         $userId = Auth::id() ?? 1;
 
+        $exchangeRate = isset($data['exchange_rate']) && $data['exchange_rate'] !== ''
+            ? (float) $data['exchange_rate']
+            : (
+                (! empty($data['total_in_dolars']) && (float) $data['total_in_dolars'] > 0 && ! empty($data['total_in_bs']))
+                    ? ((float) $data['total_in_bs'] / (float) $data['total_in_dolars'])
+                    : null
+            );
+
         // Crear pago
         $payment = Payment::create([
             'user_id' => $userId,
@@ -118,6 +126,7 @@ class PaymentService
             'date' => $data['date'],
             'total_in_dolars' => $data['total_in_dolars'],
             'total_in_bs' => $data['total_in_bs'],
+            'exchange_rate' => $exchangeRate,
             'reference' => $data['reference'] ?? null,
             'status' => 1,
             'observations' => $data['observations'] ?? null,

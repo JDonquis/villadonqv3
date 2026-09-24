@@ -163,6 +163,12 @@ Route::middleware(['auth', 'role:teacher'])->group(function () {
     Route::post('/dashboard/mis-estudiantes/guardar-notas', [StudentGradeController::class, 'saveGrades']);
     Route::post('/dashboard/mis-estudiantes/publicar-notas', [StudentGradeController::class, 'publishGrades']);
 
+    // Attendance routes
+    Route::get('/dashboard/mis-estudiantes/asistencia/{planId}', [StudentGradeController::class, 'attendanceMatrix']);
+    Route::post('/dashboard/mis-estudiantes/asistencia/session', [StudentGradeController::class, 'createAttendanceSession']);
+    Route::delete('/dashboard/mis-estudiantes/asistencia/session/{sessionId}', [StudentGradeController::class, 'deleteAttendanceSession']);
+    Route::post('/dashboard/mis-estudiantes/asistencia/save', [StudentGradeController::class, 'saveAttendance']);
+
     Route::get('/dashboard/mi-horario', [MyScheduleController::class, 'index']);
 });
 

@@ -469,7 +469,11 @@
                     d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
                 ></path>
             </svg>
-            <iconify-icon icon="line-md:plus" class="text" width="20" height="20"
+            <iconify-icon
+                icon="line-md:plus"
+                class="text"
+                width="20"
+                height="20"
             ></iconify-icon>
             <span class="text">Nuevo plan</span>
             <span class="circle"></span>
@@ -498,119 +502,165 @@
     bind:showModal={showFormModal}
     {keyShortcut}
     onKeyShortcut={open}
-    classes={"w-full"}
+    classes="w-full "
 >
-    <form on:submit={submit} id="admin-plan-form" class=" pt-2 px-5">
-        <h3 class="text-lg font-bold text-color1 mb-3">
-            {submitStatus === "Crear"
-                ? "Nuevo plan de evaluación"
-                : "Editar plan de evaluación"}
-        </h3>
-        <div class="md:grid grid-cols-12 gap-x-6">
-            <div class="col-span-4 md:sticky top-10">
-                <div class="md:grid grid-cols-4 gap-x-4">
-                    {#if !isTeacher}
+    <!-- Contenedor Principal con estilo SaaS Moderno -->
+    <form
+        on:submit={submit}
+        id="admin-plan-form"
+        class="p-6 bg-slate-50/60 rounded-xl space-y-6"
+    >
+        <!-- Header del Modal -->
+        <div
+            class="flex items-center justify-between pb-4 border-b border-slate-200"
+        >
+            <div>
+               
+                <h3 class="text-xl font-bold text-slate-900 mt-1">
+                    {submitStatus === "Crear"
+                        ? "Nuevo plan de evaluación"
+                        : "Editar plan de evaluación"}
+                </h3>
+            </div>
+            <div class="text-xs text-slate-400 font-medium">
+                Ponderación base: 20 pts (100%)
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <!-- COLUMNA IZQUIERDA: Parámetros del Curso & Balance -->
+            <div class="lg:col-span-4 space-y-5 lg:sticky lg:top-4">
+                <!-- Tarjeta 1: Parámetros Generales -->
+                <div
+                    class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4"
+                >
+                    <div
+                        class="flex items-center gap-2 pb-2 border-b border-slate-100"
+                    >
+                        <svg
+                            class="w-4 h-4 text-colorbg-color1"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                            />
+                        </svg>
+                        <h4
+                            class="text-xs font-bold uppercase tracking-wider text-slate-700"
+                        >
+                            Parámetros del Curso
+                        </h4>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-3 mt-0 mb-0">
+                        {#if !isTeacher}
+                            <Input
+                                type="select"
+                                label="Profesor"
+                                bind:value={$form.teacher_id}
+                                error={$form.errors?.teacher_id}
+                                required={true}
+                                classes="col-span-2"
+                            >
+                                <option value="">Seleccione...</option>
+                                {#each data.teachers || [] as teacher}
+                                    <option value={teacher.id}
+                                        >{teacher.name}</option
+                                    >
+                                {/each}
+                            </Input>
+                        {/if}
+
                         <Input
                             type="select"
-                            label="Profesor"
-                            bind:value={$form.teacher_id}
-                            error={$form.errors?.teacher_id}
+                            label="Materia"
+                            bind:value={$form.matter_id}
+                            error={$form.errors?.matter_id}
                             required={true}
                             classes="col-span-2"
                         >
                             <option value="">Seleccione...</option>
-                            {#each data.teachers || [] as teacher}
-                                <option value={teacher.id}
-                                    >{teacher.name}</option
+                            {#each availableMatters as matter}
+                                <option value={matter.id}>{matter.name}</option>
+                            {/each}
+                        </Input>
+
+                        <Input
+                            type="select"
+                            label="Período escolar"
+                            bind:value={$form.school_lapse_id}
+                            error={$form.errors?.school_lapse_id}
+                            required={true}
+                            classes="col-span-1"
+                        >
+                            {#each data.school_lapses || [] as lapse}
+                                <option value={lapse.id}>{lapse.label}</option>
+                            {/each}
+                        </Input>
+
+                        <Input
+                            type="select"
+                            label="Momento escolar"
+                            bind:value={$form.lapse_id}
+                            error={$form.errors?.lapse_id}
+                            required={true}
+                            classes="col-span-1"
+                        >
+                            {#each moments as moment}
+                                <option value={moment.id}>{moment.label}</option
                                 >
                             {/each}
                         </Input>
-                    {/if}
-                    <Input
-                        type="select"
-                        label="Materia"
-                        bind:value={$form.matter_id}
-                        error={$form.errors?.matter_id}
-                        required={true}
-                        classes="col-span-2"
-                    >
-                        <option value="">Seleccione...</option>
-                        {#each availableMatters as matter}
-                            <option value={matter.id}>{matter.name}</option>
-                        {/each}
-                    </Input>
-                    <Input
-                        type="select"
-                        label="Período escolar"
-                        bind:value={$form.school_lapse_id}
-                        error={$form.errors?.school_lapse_id}
-                        required={true}
-                        classes="col-span-2"
-                    >
-                        {#each data.school_lapses || [] as lapse}
-                            <option value={lapse.id}>{lapse.label}</option>
-                        {/each}
-                    </Input>
-                    <Input
-                        type="select"
-                        label="Momento escolar"
-                        bind:value={$form.lapse_id}
-                        error={$form.errors?.lapse_id}
-                        required={true}
-                        classes="col-span-2"
-                    >
-                        {#each moments as moment}
-                            <option value={moment.id}>{moment.label}</option>
-                        {/each}
-                    </Input>
-                    <Input
-                        type="select"
-                        label="Año"
-                        bind:value={$form.course_id}
-                        error={$form.errors?.course_id}
-                        required={true}
-                        classes="col-span-2"
-                        on:change={() => ($form.section_id = [])}
-                    >
-                        <option value="">Seleccione...</option>
-                        {#each data.courses || [] as course}
-                            <option value={course.id}>{course.name}</option>
-                        {/each}
-                    </Input>
 
-                    <div class="mb-4 col-span-2">
-                        <label
-                            class="block text-sm font-semibold text-gray-600 mb-1 mt-7"
-                            >Secciones</label
+                        <Input
+                            type="select"
+                            label="Año / Grado"
+                            bind:value={$form.course_id}
+                            error={$form.errors?.course_id}
+                            required={true}
+                            classes="col-span-2"
+                            on:change={() => ($form.section_id = [])}
                         >
-                        <div class="flex flex-wrap gap-3">
-                            {#if courseSectionsCount === 0}
-                                <p class="text-xs text-gray-500">
-                                    Seleccione un año para ver sus secciones.
-                                </p>
-                            {/if}
-                            {#each courseSections as section}
-                                <label class="flex items-center gap-1 text-sm">
-                                    <input
-                                        type="checkbox"
-                                        disabled={(
-                                            $form.section_id || []
-                                        ).includes("all")}
-                                        checked={($form.section_id || [])
-                                            .map(String)
-                                            .includes(String(section.id))}
-                                        on:change={() =>
-                                            toggleSection(section.id)}
-                                    />
-                                    {section.name}
-                                </label>
+                            <option value="">Seleccione...</option>
+                            {#each data.courses || [] as course}
+                                <option value={course.id}>{course.name}</option>
                             {/each}
-                            {#if courseSectionsCount > 0}
+                        </Input>
+                    </div>
+
+                    <!-- Selector de Secciones Estilizado -->
+                    <div class="pt-1">
+                        <label
+                            class="block text-xs font-semibold text-slate-700 mb-2"
+                        >
+                            Secciones asignadas <span class="text-rose-500"
+                                >*</span
+                            >
+                        </label>
+                        {#if courseSectionsCount === 0}
+                            <div
+                                class="text-xs text-slate-400 bg-slate-50 border border-dashed border-slate-200 rounded-lg p-3 text-center"
+                            >
+                                Seleccione un año para cargar las secciones
+                                disponibles.
+                            </div>
+                        {:else}
+                            <div class="flex flex-wrap gap-2">
                                 <label
-                                    class="flex items-center w-full gap-1 -mt-1 text-sm font-semibold"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border cursor-pointer transition-colors {(
+                                        $form.section_id || []
+                                    ).includes('all')
+                                        ? 'bg-color4/30 border-indigo-300 text-colorbg-color2 font-semibold'
+                                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}"
                                 >
                                     <input
                                         type="checkbox"
+                                        class="rounded text-colorbg-color1 focus:ring-color1 w-3.5 h-3.5"
                                         checked={(
                                             $form.section_id || []
                                         ).includes("all")}
@@ -619,369 +669,623 @@
                                                 event.currentTarget.checked,
                                             )}
                                     />
-                                    Todas las secciones
+                                    Todas
                                 </label>
-                            {/if}
-                        </div>
-                        {#if $form.errors?.section_id}<p
-                                class="text-xs text-red mt-1"
-                            >
+
+                                {#each courseSections as section}
+                                    <label
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border cursor-pointer transition-colors {(
+                                            $form.section_id || []
+                                        )
+                                            .map(String)
+                                            .includes(String(section.id))
+                                            ? 'bg-color4/30 border-indigo-200 text-colorbg-color2'
+                                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'} {(
+                                            $form.section_id || []
+                                        ).includes('all')
+                                            ? 'opacity-60 cursor-not-allowed'
+                                            : ''}"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            class="rounded text-colorbg-color1 focus:ring-color1 w-3.5 h-3.5"
+                                            disabled={(
+                                                $form.section_id || []
+                                            ).includes("all")}
+                                            checked={($form.section_id || [])
+                                                .map(String)
+                                                .includes(String(section.id))}
+                                            on:change={() =>
+                                                toggleSection(section.id)}
+                                        />
+                                        {section.name}
+                                    </label>
+                                {/each}
+                            </div>
+                        {/if}
+                        {#if $form.errors?.section_id}
+                            <p class="text-xs text-rose-500 mt-1.5 font-medium">
                                 {$form.errors.section_id}
-                            </p>{/if}
+                            </p>
+                        {/if}
                     </div>
 
                     <Input
-                        label="Descripción"
+                        label="Descripción general / Objetivos"
                         bind:value={$form.description}
                         error={$form.errors?.description}
-                        classes="col-span-4"
+                        classes="col-span-2"
+                        placeholder="Especifique el enfoque curricular, pautas o normativas de recuperación..."
                     />
                 </div>
-            </div>
-            <div class="col-span-8 space-y-4  overflow-y-auto pr-2">
-                <div class="flex flex-wrap items-end gap-x-6 gap-y-2 mt-3 mb-2">
-                    <div class="flex flex-col gap-1">
-                        <label
-                            class="text-xs md:text-sm font-semibold text-gray-700"
+
+                <!-- Tarjeta 2: Balance, Ponderación y Rasgos -->
+                <div
+                    class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4"
+                >
+                    <div
+                        class="flex items-center justify-between pb-2 border-b border-slate-100"
+                    >
+                        <h4
+                            class="text-xs font-bold uppercase tracking-wider text-slate-700"
                         >
-                            Puntos de rasgos
-                        </label>
-                        <select
-                            class="rounded-md border border-gray-300 px-3 py-2 text-sm bg-white"
-                            bind:value={$form.rasgos_points}
+                            Balance y Rasgos
+                        </h4>
+                        <span
+                            class="text-xs font-bold px-2.5 py-0.5 rounded-full {totalIsValid
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : 'bg-amber-100 text-amber-700'}"
                         >
-                            {#each Array.from({ length: 11 }, (_, i) => i) as n}
-                                <option value={n}>{n}</option>
-                            {/each}
-                        </select>
-                        <p class="text-[11px] text-gray-500">
-                            Conducta/puntualidad. 1 punto = 5%.
-                        </p>
+                            {planTotalPct}% del total
+                        </span>
+                    </div>
+
+                    <!-- Barra de progreso visual -->
+                    <div>
+                        <div
+                            class="flex justify-between text-xs font-semibold text-slate-600 mb-1.5"
+                        >
+                            <span>Total acumulado</span>
+                            <span
+                                class={totalIsValid
+                                    ? "text-emerald-600 font-bold"
+                                    : "text-slate-800"}
+                                >{planTotalPct}% / 100%</span
+                            >
+                        </div>
+                        <div
+                            class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden flex"
+                        >
+                            <div
+                                class="bg-color2 transition-all duration-300"
+                                style="width: {Math.min(evalTotalPct, 100)}%"
+                                title="Evaluaciones: {evalTotalPct}%"
+                            ></div>
+                            <div
+                                class="bg-emerald-500 transition-all duration-300"
+                                style="width: {Math.min(
+                                    rasgosPct,
+                                    100 - evalTotalPct,
+                                )}%"
+                                title="Rasgos: {rasgosPct}%"
+                            ></div>
+                        </div>
+                        <div
+                            class="flex items-center gap-4 mt-2 text-[11px] text-slate-500"
+                        >
+                            <span class="flex items-center gap-1.5">
+                                <span
+                                    class="w-2 h-2 rounded-full bg-color2 inline-block"
+                                ></span>
+                                Eval: {evalTotalPct}%
+                            </span>
+                            <span class="flex items-center gap-1.5">
+                                <span
+                                    class="w-2 h-2 rounded-full bg-emerald-500 inline-block"
+                                ></span>
+                                Rasgos: {rasgosPct}%
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Selector de Puntos de Rasgos -->
+                    <div class="pt-2 border-t border-slate-100">
+                        <div class="flex items-center justify-between gap-2">
+                            <div>
+                                <label
+                                    class="block text-xs font-semibold text-slate-700"
+                                >
+                                    Puntos de rasgos
+                                </label>
+                                <p class="text-[11px] text-slate-400">
+                                    Conducta / puntualidad (1 pt = 5%)
+                                </p>
+                            </div>
+                            <select
+                                class="rounded-lg border border-slate-200 px-3 py-1.5 text-sm bg-slate-50 font-semibold text-slate-700 focus:bg-white focus:ring-2 focus:ring-color1/20 focus:border-color1 outline-none"
+                                bind:value={$form.rasgos_points}
+                            >
+                                {#each Array.from({ length: 11 }, (_, i) => i) as n}
+                                    <option value={n}>{n} pts ({n * 5}%)</option
+                                    >
+                                {/each}
+                            </select>
+                        </div>
                         {#if $form.errors?.rasgos_points}
-                            <p class="text-red text-xs font-semibold">
+                            <p class="text-rose-500 text-xs font-semibold mt-1">
                                 {$form.errors.rasgos_points}
                             </p>
                         {/if}
                     </div>
 
-                    <div
-                        class="rounded-md px-4 py-2 text-sm font-semibold {totalIsValid
-                            ? 'bg-green-50 text-green-700 border border-green-200'
-                            : 'bg-red/10 text-red border border-red/30'}"
-                    >
-                        Total: {evalTotalPct}% (evaluaciones)
-                        {rasgosPct > 0 ? ` + ${rasgosPct}% (rasgos)` : ""} =
-                        {planTotalPct}%
-                        {#if !totalIsValid}
-                            <span class="block text-xs font-normal mt-0.5"
-                                >Debe sumar 100% (evaluaciones + rasgos).</span
+                    <!-- Estado / Alerta de Validación -->
+                    {#if totalIsValid}
+                        <div
+                            class="flex items-center gap-2 text-xs font-medium text-emerald-700 bg-emerald-50/80 border border-emerald-200 p-2.5 rounded-xl"
+                        >
+                            <svg
+                                class="w-4 h-4 text-emerald-600 shrink-0"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
                             >
-                        {/if}
-                    </div>
+                                <path
+                                    fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                    clip-rule="evenodd"
+                                />
+                            </svg>
+                            <span
+                                >Distribución completa. Cumple con la normativa
+                                académica.</span
+                            >
+                        </div>
+                    {:else}
+                        <div
+                            class="flex items-start gap-2 text-xs font-medium text-amber-800 bg-amber-50 border border-amber-200 p-2.5 rounded-xl"
+                        >
+                            <svg
+                                class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                            >
+                                <path
+                                    fill-rule="evenodd"
+                                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                    clip-rule="evenodd"
+                                />
+                            </svg>
+                            <div>
+                                <span
+                                    >La suma actual es de <b>{planTotalPct}%</b
+                                    >. Debe ser exactamente <b>100%</b> (faltan {100 -
+                                        planTotalPct}%).</span
+                                >
+                            </div>
+                        </div>
+                    {/if}
                 </div>
+            </div>
+
+            <!-- COLUMNA DERECHA: Constructor de Unidades y Evaluaciones -->
+            <div class="lg:col-span-8 space-y-6">
                 {#each $form.units as unit, unitIndex}
-                    <div class="rounded-lg shadow bg-gray-50 p-3 md:p-5">
-                        <div class="flex gap-2 items-center mb-3">
-                            <span class="text-xs font-semibold text-gray-500">
-                                Unidad {unitIndex + 1}
-                            </span>
-                            <input
-                                class="rounded-md border border-gray-300 px-3 py-2 text-sm flex-1"
-                                placeholder="Nombre de la unidad"
-                                bind:value={$form.units[unitIndex].name}
-                            />
+                    <div
+                        class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden"
+                    >
+                        <!-- Header de Unidad -->
+                        <div
+                            class="bg-slate-50/70 px-5 py-3.5 border-b border-slate-200/80 flex flex-wrap items-center gap-3 justify-between"
+                        >
+                            <div
+                                class="flex items-center gap-3 flex-1 min-w-[240px]"
+                            >
+                                <span
+                                    class="bg-color2 text-white text-xs font-bold px-2.5 py-1 rounded-lg"
+                                >
+                                    U{unitIndex + 1}
+                                </span>
+                                <input
+                                    class="bg-transparent font-semibold text-slate-800 text-sm md:text-base placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-color1/20 focus:border-indigo-400 border border-transparent rounded-lg px-2.5 py-1 transition-all w-full max-w-md outline-none"
+                                    placeholder="Nombre de la unidad (ej. Geometría Analítica)"
+                                    bind:value={$form.units[unitIndex].name}
+                                />
+                            </div>
                             <button
                                 type="button"
-                                class="text-sm hover:text-red text-gray-500"
+                                class="text-xs font-medium text-slate-400 hover:text-rose-600 transition-colors flex items-center gap-1"
                                 on:click={() => removeUnit(unitIndex)}
-                                >Quitar unidad</button
                             >
-                        </div>
-                        <div class="space-y-2">
-                            {#each unit.topics as topic, topicIndex}
-                                <div
-                                    class="grid grid-cols-2 gap-2 items-start md:grid-cols-[5px_1.2fr_1.2fr_1fr_70px_63px_140px_32px]"
+                                <svg
+                                    class="w-3.5 h-3.5"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
                                 >
-                                    <span
-                                        class="text-xs font-semibold text-gray-500 pt-2"
-                                    >
-                                        {topicIndex + 1}.
-                                    </span>
-                                    <textarea
-                                        class="rounded-md border border-gray-300 px-3 py-2 text-sm min-h-[40px] h-[40px] resize-y"
-                                        placeholder="Tema"
-                                        bind:value={
-                                            $form.units[unitIndex].topics[
-                                                topicIndex
-                                            ].name
-                                        }
-                                    ></textarea>
-                                    <input
-                                        class="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                                        placeholder="Tipo de prueba"
-                                        bind:value={
-                                            $form.units[unitIndex].topics[
-                                                topicIndex
-                                            ].assessment_type
-                                        }
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                                     />
-                                    <textarea
-                                        class="rounded-md border border-gray-300 px-3 py-2 text-sm min-h-[40px] h-[40px] resize-y"
-                                        placeholder="Descripción"
-                                        bind:value={
-                                            $form.units[unitIndex].topics[
-                                                topicIndex
-                                            ].description
-                                        }
-                                    ></textarea>
-                                    <div
-                                        class="flex w-[70px] mr-2 items-center relative"
-                                    >
-                                        <input
-                                            type="number"
-                                            min="0.01"
-                                            max="100"
-                                            step="0.01"
-                                            placeholder="%"
-                                            class="rounded-md border w-[70px] border-gray-300 px-3 py-2 text-sm"
-                                            value={topic.percentage}
-                                            on:input={(event) =>
-                                                updatePercentage(
-                                                    unitIndex,
-                                                    topicIndex,
-                                                    event.currentTarget.value,
-                                                )}
-                                        />
-                                        {#if topic.percentage > 0}
-                                            <b
-                                                class="text-xs absolute top-2.5 right-1 p-1 px-2 text-gray-600 bg-white z-10"
-                                                >%</b
-                                            >
-                                        {/if}
-                                    </div>
-                                    <div
-                                        class="flex w-[63px] items-center relative"
-                                    >
-                                        {#if topic.points > 0}
-                                            <b
-                                                class="text-xs absolute top-2.5 right-1 p-1 px-1 text-gray-600 bg-white z-10"
-                                                >Pts</b
-                                            >
-                                        {/if}
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            step="0.01"
-                                            placeholder="Pts"
-                                            class="rounded-md border w-[63px] border-gray-300 px-2 py-2 text-sm"
-                                            value={topic.points}
-                                            on:input={(event) =>
-                                                updatePoints(
-                                                    unitIndex,
-                                                    topicIndex,
-                                                    event.currentTarget.value,
-                                                )}
-                                        />
-                                    </div>
-                                    <!-- svelte-ignore a11y-no-static-element-interactions -->
-                                    <!-- svelte-ignore a11y-click-events-have-key-events -->
-                                    <div
-                                        class="relative"
-                                        on:click|stopPropagation
-                                    >
-                                        <input
-                                            type="date"
-                                            class="rounded-md border border-gray-300 px-2 py-2 text-sm w-full md:w-auto"
-                                            class:border-red={showDateErrors &&
-                                                topicMissingDate(topic)}
-                                            bind:value={
-                                                $form.units[unitIndex].topics[
-                                                    topicIndex
-                                                ].scheduled_date
-                                            }
-                                            on:click={(event) =>
-                                                openCalendar(
-                                                    event.currentTarget,
-                                                )}
-                                            on:focus={(event) => {
-                                                openCalendar(
-                                                    event.currentTarget,
-                                                );
-                                                toggleTooltip(
-                                                    `${unitIndex}-${topicIndex}`,
-                                                );
-                                            }}
-                                            on:blur={() => toggleTooltip(null)}
-                                            title="Clic para abrir el calendario"
-                                        />
-                                        {#if openTooltip === `${unitIndex}-${topicIndex}` && allowedWeekdays?.length}
-                                            <div
-                                                class="right-36 absolute bg-white bottom-full z-30 mb-2 w-60 rounded-lg border border-amber-300 bg-amber-50 p-2.5 text-xs font-medium text-amber-700 shadow-lg"
-                                            >
-                                                Para esta materia
-                                                {allowedSectionsPhrase()}
-                                                das clases los días
-                                                <b
-                                                    >{describeAllowedDays(
-                                                        allowedWeekdays,
-                                                    )}.</b
-                                                >
-                                            </div>
-                                        {/if}
-                                    </div>
-                                    <button
-                                        type="button"
-                                        class="hover:text-red text-gray-500 pt-2"
-                                        title="Quitar tema"
-                                        on:click={() =>
-                                            removeTopic(unitIndex, topicIndex)}
-                                        ><iconify-icon
-                                            icon="mdi:close-circle-outline"
-                                            width="22"
-                                            height="22"
-                                        ></iconify-icon></button
-                                    >
-                                </div>
-                            {/each}
+                                </svg>
+                                Quitar unidad
+                            </button>
                         </div>
-                        <button
-                            type="button"
-                            class="mt-3 text-xs px-3 py-1.5 bg-gray-200 hover:shadow-lg hover:font-semibold text-gray-700 rounded-md"
-                            on:click={() => addTopic(unitIndex)}
-                            >+ Agregar tema</button
-                        >
+
+                        <!-- Data Grid / Cabecera de Temas -->
+                        <div class="p-4 sm:p-5 space-y-3">
+                            <div
+                                class="hidden md:grid md:grid-cols-[1.2fr_1fr_1.3fr_75px_70px_135px_36px] gap-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 px-2"
+                            >
+                                <span>Tema / Contenido</span>
+                                <span>Tipo de prueba</span>
+                                <span>Criterios / Descripción</span>
+                                <span class="text-center">%</span>
+                                <span class="text-center">Pts</span>
+                                <span>Fecha</span>
+                                <span></span>
+                            </div>
+
+                            <!-- Filas de Evaluación -->
+                            <div class="space-y-3">
+                                {#each unit.topics as topic, topicIndex}
+                                    <div
+                                        class="grid grid-cols-1 md:grid-cols-[1.2fr_1fr_1.3fr_75px_70px_135px_36px] gap-2.5 items-center rounded-xl hover:border-slate-300 hover:bg-slate-50/40 transition-all bg-white"
+                                    >
+                                        <!-- Nombre del Tema -->
+                                        <div>
+                                            <label
+                                                class="block md:hidden text-[11px] font-bold text-slate-500 mb-1"
+                                                >Tema #{topicIndex + 1}</label
+                                            >
+                                            <input
+                                                type="text"
+                                                class="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:border-color1 focus:ring-2 focus:ring-color1/20 outline-none"
+                                                placeholder="Nombre del tema..."
+                                                bind:value={
+                                                    $form.units[unitIndex]
+                                                        .topics[topicIndex].name
+                                                }
+                                            />
+                                        </div>
+
+                                        <!-- Tipo de prueba -->
+                                        <div>
+                                            <label
+                                                class="block md:hidden text-[11px] font-bold text-slate-500 mb-1"
+                                                >Tipo de prueba</label
+                                            >
+                                            <input
+                                                class="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:border-color1 focus:ring-2 focus:ring-color1/20 outline-none"
+                                                placeholder="Ej. Taller, Examen..."
+                                                bind:value={
+                                                    $form.units[unitIndex]
+                                                        .topics[topicIndex]
+                                                        .assessment_type
+                                                }
+                                            />
+                                        </div>
+
+                                        <!-- Descripción -->
+                                        <div>
+                                            <label
+                                                class="block md:hidden text-[11px] font-bold text-slate-500 mb-1"
+                                                >Descripción</label
+                                            >
+                                            <input
+                                                class="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:border-color1 focus:ring-2 focus:ring-color1/20 outline-none"
+                                                placeholder="Criterios o rúbrica..."
+                                                bind:value={
+                                                    $form.units[unitIndex]
+                                                        .topics[topicIndex]
+                                                        .description
+                                                }
+                                            />
+                                        </div>
+
+                                        <!-- Porcentaje (%) -->
+                                        <div class="relative">
+                                            <label
+                                                class="block md:hidden text-[11px] font-bold text-slate-500 mb-1"
+                                                >Ponderación (%)</label
+                                            >
+                                            <input
+                                                type="number"
+                                                min="0.01"
+                                                max="100"
+                                                step="0.01"
+                                                placeholder="%"
+                                                class="w-full text-right pr-6 rounded-lg border border-slate-200 px-2 py-2 text-xs font-semibold text-slate-800 focus:border-color1 focus:ring-2 focus:ring-color1/20 outline-none"
+                                                value={topic.percentage}
+                                                on:input={(event) =>
+                                                    updatePercentage(
+                                                        unitIndex,
+                                                        topicIndex,
+                                                        event.currentTarget
+                                                            .value,
+                                                    )}
+                                            />
+                                            <span
+                                                class="absolute right-2 top-2 text-[10px] font-bold text-slate-400 pointer-events-none"
+                                                >%</span
+                                            >
+                                        </div>
+
+                                        <!-- Puntos (Pts) -->
+                                        <div class="relative">
+                                            <label
+                                                class="block md:hidden text-[11px] font-bold text-slate-500 mb-1"
+                                                >Puntos (Pts)</label
+                                            >
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                placeholder="Pts"
+                                                class="w-full text-right pr-7 rounded-lg border border-slate-200 px-2 py-2 text-xs font-semibold text-slate-800 focus:border-color1 focus:ring-2 focus:ring-color1/20 outline-none"
+                                                value={topic.points}
+                                                on:input={(event) =>
+                                                    updatePoints(
+                                                        unitIndex,
+                                                        topicIndex,
+                                                        event.currentTarget
+                                                            .value,
+                                                    )}
+                                            />
+                                            <span
+                                                class="absolute right-2 top-2 text-[10px] font-bold text-slate-400 pointer-events-none"
+                                                >Pts</span
+                                            >
+                                        </div>
+
+                                        <!-- Fecha Programada con Tooltip -->
+                                        <!-- svelte-ignore a11y-no-static-element-interactions -->
+                                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                                        <div
+                                            class="relative"
+                                            on:click|stopPropagation
+                                        >
+                                            <label
+                                                class="block md:hidden text-[11px] font-bold text-slate-500 mb-1"
+                                                >Fecha de entrega</label
+                                            >
+                                            <input
+                                                type="date"
+                                                class="w-full rounded-lg border border-slate-200 px-2 py-2 text-xs text-slate-700 focus:border-color1 focus:ring-2 focus:ring-color1/20 outline-none transition-colors"
+                                                class:border-rose-400={showDateErrors &&
+                                                    topicMissingDate(topic)}
+                                                bind:value={
+                                                    $form.units[unitIndex]
+                                                        .topics[topicIndex]
+                                                        .scheduled_date
+                                                }
+                                                on:click={(event) =>
+                                                    openCalendar(
+                                                        event.currentTarget,
+                                                    )}
+                                                on:focus={(event) => {
+                                                    openCalendar(
+                                                        event.currentTarget,
+                                                    );
+                                                    toggleTooltip(
+                                                        `${unitIndex}-${topicIndex}`,
+                                                    );
+                                                }}
+                                                on:blur={() =>
+                                                    toggleTooltip(null)}
+                                                title="Clic para abrir el calendario"
+                                            />
+                                            {#if openTooltip === `${unitIndex}-${topicIndex}` && allowedWeekdays?.length}
+                                                <div
+                                                    class="absolute right-0 bottom-full z-30 mb-2 w-64 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-medium text-amber-800 shadow-xl"
+                                                >
+                                                    Para esta materia {allowedSectionsPhrase()}
+                                                    das clases los días
+                                                    <b
+                                                        >{describeAllowedDays(
+                                                            allowedWeekdays,
+                                                        )}.</b
+                                                    >
+                                                </div>
+                                            {/if}
+                                        </div>
+
+                                        <!-- Acción Borrar Fila -->
+                                        <div class="flex justify-end">
+                                            <button
+                                                type="button"
+                                                class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                                                title="Quitar tema"
+                                                on:click={() =>
+                                                    removeTopic(
+                                                        unitIndex,
+                                                        topicIndex,
+                                                    )}
+                                            >
+                                                <svg
+                                                    class="w-4 h-4"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                    />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                {/each}
+                            </div>
+
+                            <!-- Botón Agregar Tema dentro de la Unidad -->
+                            <button
+                                type="button"
+                                class="w-full py-2.5 mt-2 border border-dashed border-slate-300 hover:border-color4 hover:bg-color4/10 text-slate-600 hover:text-colorbg-color2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all"
+                                on:click={() => addTopic(unitIndex)}
+                            >
+                                <svg
+                                    class="w-3.5 h-3.5"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M12 4v16m8-8H4"
+                                    />
+                                </svg>
+                                Agregar tema / evaluación a Unidad {unitIndex +
+                                    1}
+                            </button>
+                        </div>
                     </div>
                 {/each}
+
+                <!-- Botón Agregar Nueva Unidad -->
                 <button
                     type="button"
-                    class="mt-3 text-xs px-3 py-1.5 bg-color1/20 hover:shadow-lg hover:font-semibold text-gray-700 rounded-md"
-                    on:click={addUnit}>+ Agregar unidad</button
+                    class="w-full py-3.5 border-2 border-dashed border-indigo-200 hover:border-color1 bg-white hover:bg-color4/30/30 text-colorbg-color1 rounded-2xl text-xs md:text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-sm"
+                    on:click={addUnit}
                 >
+                    <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                    </svg>
+                    + Agregar nueva unidad de aprendizaje
+                </button>
             </div>
         </div>
     </form>
+
+    <!-- FOOTER MODAL (Slot btn_footer) -->
     <svelte:fragment slot="btn_footer">
-        {#if isTeacher}
-            <div class="flex gap-3 items-center justify-end">
-                <button
-                    form="admin-plan-form"
-                    type="submit"
-                    class="animated-button min-w-[190px] flex items-center justify-center gap-3"
-                    disabled={$form.processing}
-                    on:click={() => ($form.status = "draft")}
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="arr-2"
-                        viewBox="0 0 24 24"
+        <div
+            class="w-full flex items-center justify-between pt-3 px-2 border-t border-slate-100"
+        >
+            <span class="text-xs text-slate-400 hidden sm:inline-block">
+                Los cambios se validan antes de enviar.
+            </span>
+            <div class="flex gap-3 items-center justify-end ml-auto">
+                {#if isTeacher}
+                    <!-- Botón Guardar Borrador -->
+                    <button
+                        form="admin-plan-form"
+                        type="submit"
+                        class="px-4 py-2.5 min-w-[290px] mt-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-semibold text-xs md:text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                        disabled={$form.processing}
+                        on:click={() => ($form.status = "draft")}
                     >
-                        <path
-                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                        ></path>
-                    </svg>
-                    {#if $form.processing}
-                        <span class="text">Cargando...</span>
-                    {:else}
-                        <iconify-icon
-                            icon="mdi:note-edit-outline"
-                            class="text"
-                            width="20"
-                            height="20"
-                        />
-                        <span class="text">Guardar borrador</span>
-                    {/if}
-                    <span class="circle"></span>
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="arr-1"
-                        viewBox="0 0 24 24"
+                        {#if $form.processing}
+                            <span>Cargando...</span>
+                        {:else}
+                            <iconify-icon
+                                icon="mdi:note-edit-outline"
+                                width="18"
+                                height="18"
+                            />
+                            <span>Guardar borrador</span>
+                        {/if}
+                    </button>
+
+                    <!-- Botón Enviar a Aprobación (CTA Primario) -->
+                    <button
+                        form="admin-plan-form"
+                        type="submit"
+                        class="animated-button min-w-[200px] flex items-center justify-center gap-3"
+                        disabled={$form.processing}
+                        on:click={() => ($form.status = "pending")}
                     >
-                        <path
-                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                        ></path>
-                    </svg>
-                </button>
-                <button
-                    form="admin-plan-form"
-                    type="submit"
-                    class="animated-button min-w-[200px] flex items-center justify-center gap-3"
-                    disabled={$form.processing}
-                    on:click={() => ($form.status = "pending")}
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="arr-2"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                        ></path>
-                    </svg>
-                    {#if $form.processing}
-                        <span class="text">Cargando...</span>
-                    {:else}
-                        <iconify-icon
-                            icon="material-symbols:send-rounded"
-                            class="text"
-                            width="22"
-                            height="22"
-                        />
-                        <span class="text"
-                            >{submitStatus === "Crear"
-                                ? "Enviar a aprobación"
-                                : "Guardar y enviar"}</span
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="arr-2"
+                            viewBox="0 0 24 24"
                         >
-                    {/if}
-                    <span class="circle"></span>
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="arr-1"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                        ></path>
-                    </svg>
-                </button>
-            </div>
-        {:else}
-            <button
-                form="admin-plan-form"
-                type="submit"
-                class="animated-button min-w-[200px] flex items-center justify-center gap-3"
-                disabled={$form.processing}
-            >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="arr-2"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                    ></path>
-                </svg>
-                {#if $form.processing}
-                    <span class="text">Cargando...</span>
+                            <path
+                                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                            ></path>
+                        </svg>
+                        {#if $form.processing}
+                            <span class="text">Cargando...</span>
+                        {:else}
+                            <iconify-icon
+                                icon="material-symbols:send-rounded"
+                                class="text"
+                                width="22"
+                                height="22"
+                            />
+                            <span class="text"
+                                >{submitStatus === "Crear"
+                                    ? "Enviar a aprobación"
+                                    : "Guardar y enviar"}</span
+                            >
+                        {/if}
+                        <span class="circle"></span>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="arr-1"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                            ></path>
+                        </svg>
+                    </button>
                 {:else}
-                    <iconify-icon
-                        icon="material-symbols:save-sharp"
-                        class="text"
-                        width="24"
-                        height="24"
-                    />
-                    <span class="text">Crear</span>
+                    <!-- Botón Admin Crear -->
+                    <button
+                        form="admin-plan-form"
+                        type="submit"
+                        class="animated-button min-w-[200px] flex items-center justify-center gap-3"
+                        disabled={$form.processing}
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="arr-2"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                            ></path>
+                        </svg>
+                        {#if $form.processing}
+                            <span class="text">Cargando...</span>
+                        {:else}
+                            <iconify-icon
+                                icon="material-symbols:save-sharp"
+                                class="text"
+                                width="24"
+                                height="24"
+                            />
+                            <span class="text">Crear</span>
+                        {/if}
+                        <span class="circle"></span>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="arr-1"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                            ></path>
+                        </svg>
+                    </button>
                 {/if}
-                <span class="circle"></span>
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="arr-1"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                    ></path>
-                </svg>
-            </button>
-        {/if}
+            </div>
+        </div>
     </svelte:fragment>
 </Modal>

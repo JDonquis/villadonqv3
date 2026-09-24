@@ -25,6 +25,7 @@
         address: data.institution?.address ?? "",
         latitude: data.institution?.latitude ?? "",
         longitude: data.institution?.longitude ?? "",
+        entity_shield: data.institution?.entity_shield ?? "",
     });
     // function resizeInput(event) {
     //     event.target.style.width = event.target.value.length + "ch";
@@ -33,6 +34,20 @@
     const prices = useForm({
         ...data.prices,
     });
+
+    let entityShieldPreview = "";
+
+    $: {
+        if ($institution.entity_shield instanceof File) {
+            entityShieldPreview = URL.createObjectURL($institution.entity_shield);
+        } else if (typeof $institution.entity_shield === "string" && $institution.entity_shield) {
+            entityShieldPreview = $institution.entity_shield.startsWith("http")
+                ? $institution.entity_shield
+                : `/storage/${$institution.entity_shield}`;
+        } else {
+            entityShieldPreview = "";
+        }
+    }
 
     function updatePrices(e) {
         e.preventDefault();
@@ -80,19 +95,21 @@
 
         if (!confirm("¿Está seguro de guardar los datos del plantel?")) return;
 
-        const formData = {
-            name: $institution.name,
-            code: $institution.code,
-            municipality: $institution.municipality,
-            federal_entity: $institution.federal_entity,
-            cdcee: $institution.cdcee,
-            director_name: $institution.director_name,
-            director_ci: $institution.director_ci,
-            phone_number: $institution.phone_number,
-            address: $institution.address,
-            latitude: $institution.latitude,
-            longitude: $institution.longitude,
-        };
+        const formData = new FormData();
+        formData.append('name', $institution.name);
+        formData.append('code', $institution.code);
+        formData.append('municipality', $institution.municipality);
+        formData.append('federal_entity', $institution.federal_entity);
+        formData.append('cdcee', $institution.cdcee);
+        formData.append('director_name', $institution.director_name);
+        formData.append('director_ci', $institution.director_ci);
+        formData.append('phone_number', $institution.phone_number);
+        formData.append('address', $institution.address);
+        formData.append('latitude', $institution.latitude);
+        formData.append('longitude', $institution.longitude);
+        if ($institution.entity_shield) {
+            formData.append('entity_shield', $institution.entity_shield);
+        }
 
         $institution.processing = true;
         $institution.defaults();
@@ -170,8 +187,8 @@
     let showPaymentOptions = false;
 
     let accordionState = {
-        institution: true,
-        payments: true,
+        institution: false,
+        pricingPayments: false,
         quotas: false,
         lapses: false,
         plans: false,
@@ -420,7 +437,7 @@
     <div class="py-5"></div>
 
     <!-- Acerca del Plantel Educativo -->
-    <div class="my-10 w-full md:px-2">
+    <div class="my-5  w-full md:px-2">
         <button
             type="button"
             class="accordion-trigger w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-color1"
@@ -509,6 +526,36 @@
                             class="md:col-span-2 lg:col-span-3"
                             placeholder="Dirección completa del plantel"
                         />
+                        <div class="md:col-span-2 lg:col-span-3">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Escudo de la entidad
+                            </label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                on:change={(e) => {
+                                    const file = e.target.files[0];
+                                    if (file) {
+                                        $institution.entity_shield = file;
+                                    }
+                                }}
+                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-color1 file:text-white hover:file:bg-color1/90"
+                            />
+                            {#if entityShieldPreview}
+                                <div class="mt-3 flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                                    <img
+                                        src={entityShieldPreview}
+                                        alt="Escudo del plantel"
+                                        class="h-20 w-20 object-contain rounded-lg border border-gray-200 bg-white"
+                                    />
+                                    <p class="text-sm text-gray-600">
+                                        {($institution.entity_shield instanceof File)
+                                            ? "Nueva imagen seleccionada"
+                                            : "Imagen actual guardada"}
+                                    </p>
+                                </div>
+                            {/if}
+                        </div>
                     </div>
 
                     <div class="mb-6">
@@ -580,346 +627,338 @@
         {/if}
     </div>
 
-    <div class="md:flex gap-10">
-        <div>
-            <form
-                class="Configuracion_tarifas my-10 mb-4 py-3 min-w-[310px] max-w-[330px]"
-                id="pricesForm"
-                on:submit={updatePrices}
-            >
-                <h2 class="font-bold text-xl mb-4">Tarifas</h2>
+    <div class="my-5  w-full md:px-2">
+        <button
+            type="button"
+            class="accordion-trigger w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-color1"
+            on:click={() => (accordionState.pricingPayments = !accordionState.pricingPayments)}
+        >
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <h2 class="font-bold text-xl">Tarifas y métodos de pago</h2>
+                </div>
+                <iconify-icon
+                    icon={accordionState.pricingPayments ? "mdi:chevron-up" : "mdi:chevron-down"}
+                    class="text-2xl text-gray-600"
+                ></iconify-icon>
+            </div>
+        </button>
 
-                <div class="w-full gap-10 pl-1">
-                    <Input
-                        label="Inscripción Preescolar ($)"
-                        type="number"
-                        required={true}
-                        bind:value={$prices.preescolar_inscription_price}
-                    />
-                    <Input
-                        label="Inscripción Primaria ($)"
-                        type="number"
-                        required={true}
-                        bind:value={$prices.primaria_inscription_price}
-                    />
-                    <Input
-                        label="Inscripción Secundaria ($)"
-                        type="number"
-                        required={true}
-                        bind:value={$prices.secundaria_inscription_price}
-                    />
-                    <Input
-                        label="Mensualidad ($)"
-                        type="number"
-                        required={true}
-                        bind:value={$prices.monthly_payment}
-                    />
-                    <div class="flex gap-2">
-                        <Input
-                            label="Mensualidad vence el "
-                            type="number"
-                            required={true}
-                            bind:value={$prices.day_of_monthly_payment}
-                            min={1}
-                            max={31}
-                        />
-                        <Input
-                            label="Prórroga de pago"
-                            type="number"
-                            bind:value={$prices.grace_period}
-                            min={0}
-                        />
-                    </div>
+        {#if accordionState.pricingPayments}
+            <div class="mt-4 md:flex gap-10">
+                <div>
+                    <form
+                        class="Configuracion_tarifas mb-4 py-3 min-w-[310px] max-w-[330px]"
+                        id="pricesForm"
+                        on:submit={updatePrices}
+                    >
+                        <h2 class="font-bold text-xl mb-4">Tarifas</h2>
 
-                    <Input
-                        label="Seguro de atención primaria (AME) ($)"
-                        type="number"
-                        required={true}
-                        bind:value={$prices.ame_price}
-                    />
-                    <div class="relative flex items-center">
-                        <Input
-                            label="Plan de inversión ($)"
-                            type="number"
-                            required={true}
-                            bind:value={$prices.investment_plan_price}
-                        />
-                        <div class="absolute right-0 top-6 group">
-                            <button
-                                type="button"
-                                tabindex="-1"
-                                class="ml-2 cursor-pointer relative"
-                            >
-                                <iconify-icon
-                                    icon="mdi:help-circle-outline"
-                                    class="text-lg text-gray-500 hover:text-color1"
+                        <div class="w-full gap-10 pl-1">
+                            <Input
+                                label="Inscripción Preescolar ($)"
+                                type="number"
+                                required={true}
+                                bind:value={$prices.preescolar_inscription_price}
+                            />
+                            <Input
+                                label="Inscripción Primaria ($)"
+                                type="number"
+                                required={true}
+                                bind:value={$prices.primaria_inscription_price}
+                            />
+                            <Input
+                                label="Inscripción Secundaria ($)"
+                                type="number"
+                                required={true}
+                                bind:value={$prices.secundaria_inscription_price}
+                            />
+                            <Input
+                                label="Mensualidad ($)"
+                                type="number"
+                                required={true}
+                                bind:value={$prices.monthly_payment}
+                            />
+                            <div class="flex gap-2">
+                                <Input
+                                    label="Mensualidad vence el "
+                                    type="number"
+                                    required={true}
+                                    bind:value={$prices.day_of_monthly_payment}
+                                    min={1}
+                                    max={31}
                                 />
-                                <span
-                                    class="absolute left-1/2 -translate-x-1/2 mt-2 w-64 p-2 rounded bg-black text-white text-xs opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 whitespace-pre-line"
-                                >
-                                    Este cobro se realiza en los meses de:
-                                    noviembre, marzo y junio.
-                                </span>
-                            </button>
-                        </div>
-                    </div>
+                                <Input
+                                    label="Prórroga de pago"
+                                    type="number"
+                                    bind:value={$prices.grace_period}
+                                    min={0}
+                                />
+                            </div>
 
-                    <!-- <Input
-                            label="Inscripción de regulares ($)"
-                            type="number"
-                            required={true}
-                            bind:value={$prices.regular_inscription_price}
-                        /> -->
-                    {#if $prices.isDirty}
-                        <button
-                            class="animated-button flex items-center justify-center gap-3 mb-2 mt-7 w-full"
-                            type="submit"
-                            form={"pricesForm"}
-                        >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="arr-2"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                                ></path>
-                            </svg>
-                            <iconify-icon
-                                icon="material-symbols:save"
-                                class="text"
-                                width="22"
-                                height="22"
-                            ></iconify-icon>
-                            <span class="text">Guardar tarifas</span>
-                            <span class="circle"></span>
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="arr-1"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                                ></path>
-                            </svg>
-                        </button>
-                    {/if}
-                </div>
-            </form>
-
-            <form class="periodo my-10 mb-4 py-3 min-w-[310px] max-w-[330px]">
-                <h2 class="font-bold text-xl mb-4">Periodo Escolar</h2>
-
-                <div class="w-full gap-10 pl-1">
-                    <p>{data.schoolLapse.start} / {data.schoolLapse.end}</p>
-
-                    <!-- <Input
-                            label="Inscripción de regulares ($)"
-                            type="number"
-                            required={true}
-                            bind:value={$prices.regular_inscription_price}
-                        /> -->
-                        <div class="bg-white overflow-hidden rounded-md mb-2 hover:shadow-lg mt-4">
-                            
-                            <button
-                                class="bg-green/50 flex items-center justify-between hover:bg-green hover:text-black  gap-3 py-3 px-4 shadow-sm font-semibold w-full"
-                                type="button"
-                                on:click={initiateNextCourse}
-                            >
-                                <span> Iniciar próximo periodo </span>
-                                <iconify-icon icon="carbon:next-outline" class="text-xl"
-                                ></iconify-icon>
-                            </button>
-                        </div>
-                </div>
-            </form>
-        </div>
-
-        <div class="my-10 w-full md:px-2">
-            <button
-                type="button"
-                class="accordion-trigger w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-color1"
-                on:click={() => (accordionState.payments = !accordionState.payments)}
-            >
-                <div class="flex items-center justify-between gap-3">
-                    <div>
-                        <h2 class="font-bold text-xl">Métodos de pago</h2>
-                    </div>
-                    <iconify-icon
-                        icon={accordionState.payments ? "mdi:chevron-up" : "mdi:chevron-down"}
-                        class="text-2xl text-gray-600"
-                    ></iconify-icon>
-                </div>
-            </button>
-
-            {#if accordionState.payments}
-                <div class="mt-4">
-                    <header class="md:flex justify-between items-center mb-6">
-                        <div></div>
-                        <div class="relative z-30">
-                            <button
-                                on:click={() =>
-                                    (showPaymentOptions = !showPaymentOptions)}
-                                class="animated-button flex items-center justify-center gap-2"
-                                use:clickOutside={() => {
-                                    showPaymentOptions = false;
-                                }}
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    class="arr-2"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                                    ></path>
-                                </svg>
-                                <iconify-icon icon="line-md:plus" class="text"></iconify-icon>
-                                <span class="text">Nuevo Método</span>
-                                <span class="circle"></span>
-                                <iconify-icon icon="mingcute:down-line" class="text"></iconify-icon>
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    class="arr-1"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                                    ></path>
-                                </svg>
-                            </button>
-                            {#if showPaymentOptions}
-                                <div
-                                    class="payment_options slideIn absolute top-14 w-full bg-gray-100 text-dark shadow-xl p-1"
-                                >
-                                    <ul class="flex flex-col gap-1">
-                                        {#each data.methods as method}
-                                            <li>
-                                                <a
-                                                    class={`hover:bg-${ColorsPayMethods()[method.name]} hover:font-bold hover:text-gray-100 duration-100  border-l-4 border-${ColorsPayMethods()[method.name]} `}
-                                                    use:inertia
-                                                    href={`/dashboard/configuracion/crear-cuenta/${method.id}`}
-                                                >
-                                                    {method.name}</a
-                                                >
-                                            </li>
-                                        {/each}
-                                    </ul>
+                            <Input
+                                label="Seguro de atención primaria (AME) ($)"
+                                type="number"
+                                required={true}
+                                bind:value={$prices.ame_price}
+                            />
+                            <div class="relative flex items-center">
+                                <Input
+                                    label="Plan de inversión ($)"
+                                    type="number"
+                                    required={true}
+                                    bind:value={$prices.investment_plan_price}
+                                />
+                                <div class="absolute right-0 top-6 group">
+                                    <button
+                                        type="button"
+                                        tabindex="-1"
+                                        class="ml-2 cursor-pointer relative"
+                                    >
+                                        <iconify-icon
+                                            icon="mdi:help-circle-outline"
+                                            class="text-lg text-gray-500 hover:text-color1"
+                                        />
+                                        <span
+                                            class="absolute left-1/2 -translate-x-1/2 mt-2 w-64 p-2 rounded bg-black text-white text-xs opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 whitespace-pre-line"
+                                        >
+                                            Este cobro se realiza en los meses de:
+                                            noviembre, marzo y junio.
+                                        </span>
+                                    </button>
                                 </div>
+                            </div>
+
+                            {#if $prices.isDirty}
+                                <button
+                                    class="animated-button flex items-center justify-center gap-3 mb-2 mt-7 w-full"
+                                    type="submit"
+                                    form={"pricesForm"}
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        class="arr-2"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                                        ></path>
+                                    </svg>
+                                    <iconify-icon
+                                        icon="material-symbols:save"
+                                        class="text"
+                                        width="22"
+                                        height="22"
+                                    ></iconify-icon>
+                                    <span class="text">Guardar tarifas</span>
+                                    <span class="circle"></span>
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        class="arr-1"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                                        ></path>
+                                    </svg>
+                                </button>
                             {/if}
                         </div>
-                    </header>
-                    <div class="flex flex-wrap gap-4">
-                        {#each data.accounts.data as payMethod}
-                            <article
-                                id={`account-${payMethod.id}`}
-                                class={`border-3 rounded-md group duration-200 relative medium-shadow bg-white w-fit pb-3 md:pb-5 pt-3  px-4 md:px-8 pl-6 md:pl-9`}
-                            >
-                                <div
-                                    class={`h-full bg-${ColorsPayMethods()[payMethod.payment_method_name]} w-3 md:w-5 absolute left-0 top-0`}
-                                ></div>
-                                <header class="flex justify-between gap-2">
-                                    <h3 class={` font-semibold text-lg md:text-xl mt-0`}>
-                                        {payMethod.payment_method_name}
-                                    </h3>
-                                    <div
-                                        class="butons group-hover:flex hidden gap-1 text-gray-500"
-                                    >
-                                        <a
-                                            href={`/dashboard/configuracion/editar-cuenta/${payMethod.id}`}
-                                            class="hover:bg-yellow cursor-pointer text-xl hover:border-2 border-black hover:text-black hover:small-shadow px-4 py-1"
-                                            title="Editar"
-                                            use:inertia
-                                        >
-                                            <iconify-icon
-                                                class="relative -bottom-1"
-                                                icon="ic:outline-edit"
-                                            ></iconify-icon>
-                                        </a>
+                    </form>
+                </div>
 
-                                        <button
-                                            on:click={() => deleteAccount(payMethod.id)}
-                                            class="hover:bg-red bg-opacity-10 cursor-pointer text-xl hover:border-2 border-black hover:text-black hover:small-shadow px-4 py-1"
-                                            title="Eliminar"
-                                        >
-                                            <iconify-icon
-                                                class="text-xl relative top-1"
-                                                icon="ph:trash"
-                                            ></iconify-icon>
-                                        </button>
-                                    </div>
-                                </header>
-                                <div
-                                    class="md:flex text-black justify-items-start gap-4 md:gap-6 py-2"
+                <div class="w-full">
+                    <div class="mb-4 py-3">
+                        <h2 class="font-bold text-xl mb-4">Métodos de pago</h2>
+                        <header class="md:flex justify-between items-center mb-6">
+                            <div></div>
+                            <div class="relative z-30">
+                                <button
+                                    on:click={() =>
+                                        (showPaymentOptions = !showPaymentOptions)}
+                                    class="animated-button flex items-center justify-center gap-2"
+                                    use:clickOutside={() => {
+                                        showPaymentOptions = false;
+                                    }}
                                 >
-                                    {#if payMethod?.cash_currency}
-                                        <div>
-                                            <h4 class="text-gray-500">
-                                                Tipo de moneda:
-                                            </h4>
-                                            <p>{payMethod.cash_currency}</p>
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        class="arr-2"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                                        ></path>
+                                    </svg>
+                                    <iconify-icon icon="line-md:plus" class="text"></iconify-icon>
+                                    <span class="text">Nuevo Método</span>
+                                    <span class="circle"></span>
+                                    <iconify-icon icon="mingcute:down-line" class="text"></iconify-icon>
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        class="arr-1"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                                        ></path>
+                                    </svg>
+                                </button>
+                                {#if showPaymentOptions}
+                                    <div
+                                        class="payment_options slideIn absolute top-14 w-full bg-gray-100 text-dark shadow-xl p-1"
+                                    >
+                                        <ul class="flex flex-col gap-1">
+                                            {#each data.methods as method}
+                                                <li>
+                                                    <a
+                                                        class={`hover:bg-${ColorsPayMethods()[method.name]} hover:font-bold hover:text-gray-100 duration-100  border-l-4 border-${ColorsPayMethods()[method.name]} `}
+                                                        use:inertia
+                                                        href={`/dashboard/configuracion/crear-cuenta/${method.id}`}
+                                                    >
+                                                        {method.name}</a
+                                                    >
+                                                </li>
+                                            {/each}
+                                        </ul>
+                                    </div>
+                                {/if}
+                            </div>
+                        </header>
+                        <div class="flex flex-wrap gap-4">
+                            {#each data.accounts.data as payMethod}
+                                <article
+                                    id={`account-${payMethod.id}`}
+                                    class={`border-3 rounded-md group duration-200 relative medium-shadow bg-white w-fit pb-3 md:pb-5 pt-3  px-4 md:px-8 pl-6 md:pl-9`}
+                                >
+                                    <div
+                                        class={`h-full bg-${ColorsPayMethods()[payMethod.payment_method_name]} w-3 md:w-5 absolute left-0 top-0`}
+                                    ></div>
+                                    <header class="flex justify-between gap-2">
+                                        <h3 class={` font-semibold text-lg md:text-xl mt-0`}>
+                                            {payMethod.payment_method_name}
+                                        </h3>
+                                        <div
+                                            class="butons group-hover:flex hidden gap-1 text-gray-500"
+                                        >
+                                            <a
+                                                href={`/dashboard/configuracion/editar-cuenta/${payMethod.id}`}
+                                                class="hover:bg-yellow cursor-pointer text-xl hover:border-2 border-black hover:text-black hover:small-shadow px-4 py-1"
+                                                title="Editar"
+                                                use:inertia
+                                            >
+                                                <iconify-icon
+                                                    class="relative -bottom-1"
+                                                    icon="ic:outline-edit"
+                                                ></iconify-icon>
+                                            </a>
+
+                                            <button
+                                                on:click={() => deleteAccount(payMethod.id)}
+                                                class="hover:bg-red bg-opacity-10 cursor-pointer text-xl hover:border-2 border-black hover:text-black hover:small-shadow px-4 py-1"
+                                                title="Eliminar"
+                                            >
+                                                <iconify-icon
+                                                    class="text-xl relative top-1"
+                                                    icon="ph:trash"
+                                                ></iconify-icon>
+                                            </button>
                                         </div>
-                                    {/if}
-                                    {#if payMethod?.bank}
-                                        <div>
-                                            <h4 class="text-gray-500">Banco:</h4>
-                                            <p>{payMethod.bank}</p>
-                                        </div>
-                                    {/if}
-                                    {#if payMethod?.phone_number}
-                                        <div>
-                                            <h4 class="text-gray-500">Teléfono:</h4>
-                                            <p>{payMethod.phone_number}</p>
-                                        </div>
-                                    {/if}
-                                    {#if payMethod?.ci}
-                                        <div>
-                                            <h4 class="text-gray-500">Cédula:</h4>
-                                            <p>{payMethod.ci}</p>
-                                        </div>
-                                    {/if}
-                                    {#if payMethod?.person_name}
-                                        <div>
-                                            <h4 class="text-gray-500">Titular:</h4>
-                                            <p>{payMethod.person_name}</p>
-                                        </div>
-                                    {/if}
-                                    {#if payMethod?.account_number}
-                                        <div>
-                                            <h4 class="text-gray-500">N° de cuenta:</h4>
-                                            <p>{payMethod.account_number}</p>
-                                        </div>
-                                    {/if}
-                                    {#if payMethod?.email}
-                                        <div>
-                                            <h4 class="text-gray-500">Correo:</h4>
-                                            <p>{payMethod.email}</p>
-                                        </div>
-                                    {/if}
-                                    {#if payMethod?.username}
-                                        <div>
-                                            <h4 class="text-gray-500">
-                                                Nombre de usuario:
-                                            </h4>
-                                            <p>{payMethod.username}</p>
-                                        </div>
-                                    {/if}
-                                    {#if payMethod?.comision}
-                                        <div>
-                                            <h4 class="text-gray-500">Comisión:</h4>
-                                            <p>{payMethod.comision} %</p>
-                                        </div>
-                                    {/if}
-                                </div>
-                            </article>
-                        {/each}
+                                    </header>
+                                    <div
+                                        class="md:flex text-black justify-items-start gap-4 md:gap-6 py-2"
+                                    >
+                                        {#if payMethod?.cash_currency}
+                                            <div>
+                                                <h4 class="text-gray-500">
+                                                    Tipo de moneda:
+                                                </h4>
+                                                <p>{payMethod.cash_currency}</p>
+                                            </div>
+                                        {/if}
+                                        {#if payMethod?.bank}
+                                            <div>
+                                                <h4 class="text-gray-500">Banco:</h4>
+                                                <p>{payMethod.bank}</p>
+                                            </div>
+                                        {/if}
+                                        {#if payMethod?.phone_number}
+                                            <div>
+                                                <h4 class="text-gray-500">Teléfono:</h4>
+                                                <p>{payMethod.phone_number}</p>
+                                            </div>
+                                        {/if}
+                                        {#if payMethod?.ci}
+                                            <div>
+                                                <h4 class="text-gray-500">Cédula:</h4>
+                                                <p>{payMethod.ci}</p>
+                                            </div>
+                                        {/if}
+                                        {#if payMethod?.person_name}
+                                            <div>
+                                                <h4 class="text-gray-500">Titular:</h4>
+                                                <p>{payMethod.person_name}</p>
+                                            </div>
+                                        {/if}
+                                        {#if payMethod?.account_number}
+                                            <div>
+                                                <h4 class="text-gray-500">N° de cuenta:</h4>
+                                                <p>{payMethod.account_number}</p>
+                                            </div>
+                                        {/if}
+                                        {#if payMethod?.email}
+                                            <div>
+                                                <h4 class="text-gray-500">Correo:</h4>
+                                                <p>{payMethod.email}</p>
+                                            </div>
+                                        {/if}
+                                        {#if payMethod?.username}
+                                            <div>
+                                                <h4 class="text-gray-500">
+                                                    Nombre de usuario:
+                                                </h4>
+                                                <p>{payMethod.username}</p>
+                                            </div>
+                                        {/if}
+                                        {#if payMethod?.comision}
+                                            <div>
+                                                <h4 class="text-gray-500">Comisión:</h4>
+                                                <p>{payMethod.comision} %</p>
+                                            </div>
+                                        {/if}
+                                    </div>
+                                </article>
+                            {/each}
+                        </div>
                     </div>
                 </div>
-            {/if}
-        </div>
+            </div>
+        {/if}
     </div>
 
-    <div class="my-10 w-full md:px-2">
+    <div class="my-5  w-full md:px-2">
+        <form class="periodo mb-4 py-3 min-w-[310px] max-w-[330px]">
+            <h2 class="font-bold text-xl mb-4">Periodo Escolar</h2>
+
+            <div class="w-full gap-10 pl-1">
+                <p>{data.schoolLapse.start} / {data.schoolLapse.end}</p>
+
+                <div class="bg-white overflow-hidden rounded-md mb-2 hover:shadow-lg mt-4">
+                    <button
+                        class="bg-green/50 flex items-center justify-between hover:bg-green hover:text-black  gap-3 py-3 px-4 shadow-sm font-semibold w-full"
+                        type="button"
+                        on:click={initiateNextCourse}
+                    >
+                        <span> Iniciar próximo periodo </span>
+                        <iconify-icon icon="carbon:next-outline" class="text-xl"
+                        ></iconify-icon>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="my-5  w-full md:px-2">
         <button
             type="button"
             class="accordion-trigger w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-color1"
@@ -1042,7 +1081,7 @@
         {/if}
     </div>
 
-    <div class="my-10 w-full md:px-2">
+    <div class="my-5  w-full md:px-2">
         <button
             type="button"
             class="accordion-trigger w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-color1"
@@ -1234,7 +1273,7 @@
         {/if}
     </div>
 
-    <div class="my-10 w-full md:px-2">
+    <div class="my-5  w-full md:px-2">
         <button
             type="button"
             class="accordion-trigger w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-color1"

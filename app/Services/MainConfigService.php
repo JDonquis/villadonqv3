@@ -69,6 +69,7 @@ class MainConfigService
             'address' => $this->mainConfigModel->address,
             'latitude' => $this->mainConfigModel->latitude,
             'longitude' => $this->mainConfigModel->longitude,
+            'entity_shield' => $this->mainConfigModel->entity_shield,
         ];
     }
 

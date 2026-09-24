@@ -41,6 +41,7 @@
         payment_concept_id: "",
         total_in_dolars: "1",
         total_in_bs: "",
+        exchange_rate: "",
         reference: "",
         observations: "",
     };
@@ -487,6 +488,9 @@
         event.preventDefault();
         $form.clearErrors();
 
+        const safeExchangeRate = Number(dolarPrice) > 0 ? Number(dolarPrice).toFixed(2) : null;
+        $form.exchange_rate = safeExchangeRate;
+
         $form.post("/dashboard/pagos", {
             onError: (errors) => {
                 if (errors.data) {
@@ -646,6 +650,11 @@
         // $form.reported_date = new Date(selectedData?.reported_date)?.toISOString().split("T")[0] || null;
         $form.account_payment_id = selectedData.account_payment_id;
         $form.total_in_dolars = selectedData.total_in_dolars;
+        $form.exchange_rate = selectedData.exchange_rate ?? (
+            selectedData.total_in_bs && selectedData.total_in_dolars
+                ? (Number(selectedData.total_in_bs) / Number(selectedData.total_in_dolars)).toFixed(2)
+                : ""
+        );
         $form.reference = selectedData.reference;
         $form.observations = selectedData.observations;
     }
@@ -691,9 +700,7 @@
         action=""
         class="w-full md:grid md:grid-cols-12 md:gap-x-5 lg:gap-x-10 px-0 md:px-3 md:pl-2"
     >
-        <div
-            class="relative w-full md:col-span-4 md:col-start-9 md:row-start-"
-        >
+        <div class="relative w-full md:col-span-4 md:col-start-9 md:row-start-">
             <Input
                 type="select"
                 label={"Concepto de pago"}
@@ -883,11 +890,9 @@
                                 <span>
                                     {student.name}
                                     {student.last_name}
-
                                 </span>
 
                                 <div>
-
                                     <span
                                         class="bg-gray-200 md:ml-2 text-gray-700 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
                                     >
@@ -898,10 +903,10 @@
                                         {/if}
                                         {student.ci}
                                     </span>
-    
+
                                     <!-- Separador opcional o punto -->
                                     <span class="text-gray-300">•</span>
-    
+
                                     <!-- Curso y Sección -->
                                     <span
                                         class="text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border-gray-200/40 text-xs"
@@ -1635,7 +1640,7 @@
                 >
                 {#if showTotalIncome}
                     <b
-                        class={`text-sm bg-white shadow-sm px-2 text-green transition-all duration-200`}
+                        class={`text-sm bg-white shadow-sm px-2 text-emerald-500 transition-all duration-200`}
                     >
                         ${data.total_income}
                     </b>
@@ -1931,39 +1936,77 @@
                     >{row.representative.user.name}
                     {row.representative.user.last_name}</td
                 > -->
-                <td>${row.total_in_dolars}</td>
-                <td>{row.total_in_bs} Bs</td>
-                <td class="">
+                <td class="text-right"
+                    ><b>${row.total_in_dolars}</b>
+                    <p class="text-gray-400 text-xs font-semibold"> USD</p>
+                </td>
+                <td class="text-right"
+                    ><b class="font-semibold">{formatBsInput(row.total_in_bs)} Bs</b>
+                    <p class="text-gray-400 text-xs">tasa: {row.exchange_rate}</p>
+                </td>
+                <td class="flex gap-3 items-center h-full">
                     <!-- <ColorsPayMethods
                         payment_method_id={row.account_payment.method.name}
                         accounts={data.accounts.data}
                     /> -->
                     <span
-                        class={`h-5 text-${ColorsPayMethods()[row.account_payment.method.name]}  bg-${ColorsPayMethods()[row.account_payment.method.name]} w-5  left-0 top-0`}
+                        class={`h-full text-[1px] text-${ColorsPayMethods()[row.account_payment.method.name]}  bg-${ColorsPayMethods()[row.account_payment.method.name]} w-1  rounded  left-0 top-0`}
                         >|</span
                     >
-                    {row.account_payment.method.name}
-                    {#if row.account_payment.bank}- {row.account_payment
-                            .bank}{/if}
-                    {#if row.account_payment.cash_currency}- {row
-                            .account_payment.cash_currency}{/if}
-                    {#if row.account_payment.username}- {row.account_payment
-                            .username}{/if}
+                    <div>
+                        <span class="font-semibold text-gray-800">
+                            {row.account_payment.method.name}
+                        </span>
+                        <p class="text-gray-500 text-sm">
+                            {#if row.account_payment.bank}
+                                {row.account_payment.bank}{/if}
+                            {#if row.account_payment.cash_currency}
+                                {row.account_payment.cash_currency}{/if}
+                            {#if row.account_payment.username}
+                                {row.account_payment.username}{/if}
+                        </p>
+                    </div>
                 </td>
                 <td>
                     {#if row.payment_concept}
                         <span
-                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200"
+                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800"
                         >
                             {row.payment_concept.name}
                         </span>
                     {:else}
-                        <span class="text-gray-400 text-xs">
+                        <span
+                            class="text-gray-800 bg-gray-100 px-2 py-0.5 rounded text-xs"
+                        >
                             Mensualidad / Inscripciones
                         </span>
                     {/if}
                 </td>
-                <td>{row.reference}</td>
+                <td>
+                    <div class="flex items-center gap-2">
+                        <span class="font-mono text-sm text-gray-700">
+                            {row.reference}
+                        </span>
+                        {#if row.reference}
+                            <button
+                                type="button"
+                                class="text-gray-500 hover:text-color1 transition-colors"
+                                title="Copiar referencia"
+                                on:click|stopPropagation={() =>
+                                    copyToClipboard(
+                                        row.reference,
+                                        "Referencia",
+                                    )}
+                            >
+                                <iconify-icon
+                                    icon="mdi:content-copy"
+                                    width="16"
+                                    height="16"
+                                ></iconify-icon>
+                            </button>
+                        {/if}
+                    </div>
+                </td>
             </SelectableRow>
         {/each}
     </tbody>

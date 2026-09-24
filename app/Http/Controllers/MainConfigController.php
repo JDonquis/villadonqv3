@@ -69,9 +69,16 @@ class MainConfigController extends Controller
             'address' => ['nullable', 'string', 'max:255'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'entity_shield' => ['nullable', 'file', 'image', 'max:2048'],
         ]);
 
         try {
+            // Handle entity shield upload
+            if ($request->hasFile('entity_shield')) {
+                $path = $request->file('entity_shield')->store('institution', 'public');
+                $validated['entity_shield'] = $path;
+            }
+
             $this->mainConfigService->updateInstitutionData($validated);
 
             return back()->with([

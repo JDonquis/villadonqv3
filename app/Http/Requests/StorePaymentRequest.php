@@ -28,6 +28,7 @@ class StorePaymentRequest extends FormRequest
             'payment_concept_id' => 'nullable|exists:payment_concepts,id',
             'total_in_dolars' => 'required|numeric|min:0',
             'total_in_bs' => 'required|numeric|min:0',
+            'exchange_rate' => 'nullable|numeric|min:0',
             'reference' => 'nullable|string|max:50',
             'observations' => 'nullable|string',
             'students' => [

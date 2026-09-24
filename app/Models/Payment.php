@@ -21,6 +21,7 @@ class Payment extends Model
         'date',
         'total_in_dolars',
         'total_in_bs',
+        'exchange_rate',
         'reference',
         'status',
         'observations',
@@ -33,6 +34,7 @@ class Payment extends Model
         'date' => 'date',
         'total_in_dolars' => 'decimal:2',
         'total_in_bs' => 'decimal:2',
+        'exchange_rate' => 'decimal:2',
         'status' => 'integer',
     ];
 
@@ -71,7 +73,7 @@ class Payment extends Model
     protected function date(): Attribute
     {
         return Attribute::make(
-            get: fn ($value) => ucfirst(Carbon::parse($value)->translatedFormat('D j F, Y')),
+            get: fn ($value) => ucfirst(Carbon::parse($value)->translatedFormat('D j M, Y')),
         );
     }
 

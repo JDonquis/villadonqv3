@@ -29,6 +29,7 @@ class MainConfig extends Model
         'director_ci',
         'latitude',
         'longitude',
+        'entity_shield',
         'regular_inscription_price',
         'new_inscription_price',
         'preescolar_inscription_price',
