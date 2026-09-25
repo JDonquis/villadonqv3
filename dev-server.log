@@ -6909,3 +6909,27 @@ See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
    |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 61 |      }
    |  ^^^^^[39m
+[2m0:22:36[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+[2m0:22:39[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/Pagos.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m

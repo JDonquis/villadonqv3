@@ -168,8 +168,9 @@ h3 {
     border-radius: 10px !important;
 }
 .table thead {
-    background-color: rgb(255, 255, 255);
-    color: rgb(44, 44, 44);
+    background-color: rgb(247, 247, 247);
+    color: rgb(87, 89, 92);
+    text-transform: uppercase;
 }
 
 .table tbody {
@@ -177,9 +178,9 @@ h3 {
 }
 
 .table th {
-    font-size: 0.875rem;
+    font-size: 0.7rem;
     /* .text-sm */
-    font-weight: 400;
+    font-weight: bold;
     /* .font-normal */
     text-align: left;
     /* .text-left */
@@ -190,6 +191,7 @@ h3 {
     /* px-4 */
     padding-top: 14px;
     padding-bottom: 14px;
+    
     /* py-3.5 */
 }
 
