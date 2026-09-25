@@ -10,6 +10,7 @@
     export let labelClass = "";
     export let theme = "ligtht";
     export let min = "";
+    export let step = "";
     export let readonly = false;
 
     export let max = "";
@@ -70,6 +71,7 @@
                 {required}
                 {max}
                 {min}
+                {step}
                 {readonly}
                 on:change
                 on:input
