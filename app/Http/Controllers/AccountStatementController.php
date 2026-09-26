@@ -12,7 +12,7 @@ class AccountStatementController extends Controller
     {
         $service = new AccountStatementService;
         $result = $service->getAll($request->all());
-        $config = MainConfig::select('day_of_monthly_payment', 'grace_period')->first();
+        $config = MainConfig::select('day_of_monthly_payment', 'grace_period', 'ame_price', 'investment_plan_price')->first();
 
         return inertia('Dashboard/EstadosDeCuenta', [
             'data' => $result,

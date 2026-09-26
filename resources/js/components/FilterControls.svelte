@@ -229,7 +229,7 @@
                     on:change={(e) => {
                         const selectedValue = e.target.value;
                         if (selectedValue == "todos") {
-                            delete filterClientData[filterKey];
+                            filterClientData[filterKey] = "todos";
                         }
                         handleFilters();
                     }}

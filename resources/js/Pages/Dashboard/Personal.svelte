@@ -13,6 +13,7 @@
     console.log($page);
     export let types = [];
     export let data = [];
+    export let modules = [];
     let submitStatus = "Crear";
 
     let importFileInput = null;
@@ -56,6 +57,7 @@
         address: "",
         is_admin: false,
         email_verified_status: false,
+        modules: [],
     };
 
     let form = useForm({
@@ -103,6 +105,7 @@
             phone_number: user.phone_number,
             address: user.address,
             is_admin: user.is_admin || false,
+            modules: (user.modules || []).map((m) => m.id),
         });
         editingUser = user;
         submitStatus = "Editar";
@@ -178,6 +181,7 @@
         $form.address = personal.address;
         $form.is_admin = personal.is_admin || false;
         $form.email_verified_status = personal.email_verified_status || false;
+        $form.modules = (personal.modules || []).map((m) => m.id);
     }
 
     function handleDelete() {
@@ -475,6 +479,49 @@
                 >¿Es administrador?</label
             >
         </div>
+
+        <div class="col-span-2 mt-3 border-t border-gray-200 pt-3">
+            <p class="text-sm font-semibold text-gray-800">
+                Permisos de módulos
+            </p>
+            <p class="text-xs text-gray-500 mb-2">
+                {#if $form.is_admin}
+                    Administrador completo: tiene acceso a todos los módulos.
+                {:else}
+                    Selecciona los módulos a los que podrá ingresar.
+                {/if}
+            </p>
+            <div
+                class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2"
+            >
+                {#each modules as module (module.id)}
+                    <label
+                        class="flex items-center gap-2 text-sm text-gray-700 {$form.is_admin
+                            ? 'opacity-60'
+                            : ''}"
+                    >
+                        <input
+                            type="checkbox"
+                            bind:group={$form.modules}
+                            value={module.id}
+                            disabled={$form.is_admin}
+                            class="w-4 h-4 text-green bg-gray-100 border-gray-300 rounded focus:ring-green/50 focus:ring-2"
+                        />
+                        <span class="flex items-center gap-1">
+                            {#if module.icon}
+                                <iconify-icon
+                                    icon={module.icon}
+                                    width="16"
+                                    height="16"
+                                ></iconify-icon>
+                            {/if}
+                            {module.name}
+                        </span>
+                    </label>
+                {/each}
+            </div>
+        </div>
+
         <button
             type="submit"
             class="animated-button col-span-2 mt-7 flex items-center justify-center gap-3"

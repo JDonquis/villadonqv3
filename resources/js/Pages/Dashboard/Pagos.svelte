@@ -89,6 +89,47 @@
 
     $: isConceptPayment = !!$form.payment_concept_id;
 
+    function chargeRemaining(charge) {
+        return Math.max(
+            0,
+            (Number(charge.amount) || 0) - (Number(charge.paid_amount) || 0),
+        );
+    }
+
+    function chargeAccumulated(student, type) {
+        if (!type) return 0;
+        return (student.charges || [])
+            .filter((c) => c.type === type)
+            .reduce((sum, c) => sum + chargeRemaining(c), 0);
+    }
+
+    function chargeSummary(student, type) {
+        const charges = (student.charges || []).filter(
+            (c) => c.type === type,
+        );
+
+        if (charges.length === 0) return null;
+
+        const unpaid = charges.filter((c) => chargeRemaining(c) > 0);
+
+        if (unpaid.length === 0) {
+            return {
+                text: "Pagado",
+                cls: "bg-green/20 text-green-800 border-green-300",
+            };
+        }
+
+        const total = unpaid.reduce((sum, c) => sum + chargeRemaining(c), 0);
+
+        return {
+            text:
+                unpaid.length > 1
+                    ? `Debe $${total.toFixed(2)} (${unpaid.length} períodos)`
+                    : `Debe $${total.toFixed(2)}`,
+            cls: "bg-red/20 text-red-800 border-red-300",
+        };
+    }
+
     function applyConceptToStudents() {
         const concept = concepts.find(
             (c) => String(c.id) === String($form.payment_concept_id),
@@ -96,11 +137,15 @@
         if (!concept) return;
         const price = parseFloat(concept.price);
         if (!(price > 0)) return;
-        $form.students = $form.students.map((s) => ({
-            ...s,
-            amount_in_dolars: price.toFixed(2),
-            amount_in_bs: (price * dolarPrice).toFixed(2),
-        }));
+        $form.students = $form.students.map((s) => {
+            const accumulated = chargeAccumulated(s, concept.type);
+            const amount = accumulated > 0 ? accumulated : price;
+            return {
+                ...s,
+                amount_in_dolars: amount.toFixed(2),
+                amount_in_bs: (amount * dolarPrice).toFixed(2),
+            };
+        });
         $form.total_in_dolars = $form.students
             .reduce(
                 (total, s) => total + (parseFloat(s.amount_in_dolars) || 0),
@@ -630,7 +675,7 @@
         $form.id = selectedData.id;
         $form.payment_concept_id = selectedData.payment_concept_id || "";
         // console.log({ studentsWithBalances });
-        $form.students = selectedData.students.map((s) => ({
+        $form.students = (selectedData.students || []).map((s) => ({
             id: s.id,
             name: s.name,
             last_name: s.last_name,
@@ -815,6 +860,7 @@
                                             id: student.id,
                                             name: student.name,
                                             balances: student.balances || [],
+                                            charges: student.charges || [],
                                             last_name: student.last_name,
                                             ci: student.ci,
                                             document_type:
@@ -913,6 +959,27 @@
                                     >
                                         {student.course_name}-{student.section_name}
                                     </span>
+
+                                    {#if chargeSummary(student, "ame")}
+                                        {@const ameInfo = chargeSummary(student, "ame")}
+                                        <span
+                                            class="px-1.5 py-0.5 rounded border text-[11px] font-semibold {ameInfo.cls}"
+                                        >
+                                            AME: {ameInfo.text}
+                                        </span>
+                                    {/if}
+
+                                    {#if chargeSummary(student, "investment_plan")}
+                                        {@const planInfo = chargeSummary(
+                                            student,
+                                            "investment_plan",
+                                        )}
+                                        <span
+                                            class="px-1.5 py-0.5 rounded border text-[11px] font-semibold {planInfo.cls}"
+                                        >
+                                            Plan: {planInfo.text}
+                                        </span>
+                                    {/if}
                                 </div>
                             </span>
 
@@ -1724,6 +1791,25 @@
             bind:showModal={showMobileFilters}
             inlineFilters={!isMobileView}
             filtersOptions={{
+                month: {
+                    type: "select",
+                    label: "Mes pagado",
+                    options: [
+                        { id: "inscription", name: "Inscripción" },
+                        { id: "september", name: "Septiembre" },
+                        { id: "october", name: "Octubre" },
+                        { id: "november", name: "Noviembre" },
+                        { id: "december", name: "Diciembre" },
+                        { id: "january", name: "Enero" },
+                        { id: "february", name: "Febrero" },
+                        { id: "march", name: "Marzo" },
+                        { id: "april", name: "Abril" },
+                        { id: "may", name: "Mayo" },
+                        { id: "june", name: "Junio" },
+                        { id: "july", name: "Julio" },
+                        { id: "august", name: "Agosto" },
+                    ],
+                },
                 payment_concept_id: {
                     type: "select",
                     multiple: true,
@@ -1820,7 +1906,7 @@
             label: "Ver detalles",
             icon: "mdi:eye",
             classes: "bg-blue",
-            onClick: fillFormToEdit,
+            onClick: () => fillFormToEdit(selectedRow?.data),
         },
     ]}
     edit={false}

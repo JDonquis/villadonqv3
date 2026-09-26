@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\PaymentMethodEnum;
+use App\Http\Requests\StoreChargePaymentRequest;
 use App\Http\Requests\StorePaymentRequest;
 use App\Models\BalanceStudent;
 use App\Models\MainConfig;
@@ -44,7 +45,7 @@ class RepresentativePaymentController extends Controller
             PaymentMethodEnum::Transferencia->value,
         ]);
         $result = $this->paymentService->getAll($request->all(), $allowedStudentIds);
-        $config = MainConfig::select('day_of_monthly_payment', 'grace_period')->first();
+        $config = MainConfig::select('day_of_monthly_payment', 'grace_period', 'ame_price', 'investment_plan_price')->first();
 
         return inertia('Dashboard/MisPagos', [
             'data' => [
@@ -103,6 +104,41 @@ class RepresentativePaymentController extends Controller
             DB::rollBack();
 
             Log::error('Error al crear pago (representante): '.$e->getMessage());
+
+            return redirect('/dashboard/mis-pagos')->withErrors(['message' => ErrorTranslator::translate($e)]);
+        }
+    }
+
+    public function storeCharges(StoreChargePaymentRequest $request)
+    {
+        $user = Auth::user();
+        $allowedStudentIds = $this->representativeService->getStudents($user)->pluck('id')->all();
+
+        $validated = $request->validated();
+
+        $submittedStudentIds = collect($validated['items'])
+            ->pluck('student_id')
+            ->map(fn ($id) => (int) $id)
+            ->unique();
+
+        if ($submittedStudentIds->diff($allowedStudentIds)->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                'items' => 'No puedes registrar pagos para estudiantes que no te pertenecen.',
+            ]);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $this->paymentService->createForStudentCharges($validated, $allowedStudentIds);
+
+            DB::commit();
+
+            return redirect('/dashboard/mis-pagos');
+        } catch (Exception $e) {
+            DB::rollBack();
+
+            Log::error('Error al crear pago de conceptos (representante): '.$e->getMessage());
 
             return redirect('/dashboard/mis-pagos')->withErrors(['message' => ErrorTranslator::translate($e)]);
         }

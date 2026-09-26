@@ -32,7 +32,7 @@ class UserService
                 ->orWhere('email', 'like', '%'.$filters['search'].'%');
         });
 
-        $users = $query->orderBy('id', 'desc')->get();
+        $users = $query->with('modules')->orderBy('id', 'desc')->get();
 
         return $users;
     }
@@ -147,6 +147,10 @@ class UserService
         $user->fill($data);
         $user->save();
 
+        if (array_key_exists('modules', $data)) {
+            $user->modules()->sync($data['modules'] ?? []);
+        }
+
         return $user;
     }
 
@@ -154,6 +158,10 @@ class UserService
     {
         $user->fill($data);
         $user->save();
+
+        if (array_key_exists('modules', $data)) {
+            $user->modules()->sync($data['modules'] ?? []);
+        }
 
         return $user;
     }
@@ -253,7 +261,7 @@ class UserService
 
     public function getUserById(int $id): ?User
     {
-        return User::find($id);
+        return User::with('modules')->find($id);
     }
 
     public function sendPasswordSetupEmail(User $user): string

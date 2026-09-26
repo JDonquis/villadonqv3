@@ -41,6 +41,16 @@
         });
     }
 
+    // Mantener sincronizados los filtros simples con los props del servidor
+    // (se pierden tras navegaciones con preserveState si solo se leen al montar)
+    $: if (serverSideData?.filters && typeof serverSideData.filters === "object") {
+        Object.entries(serverSideData.filters).forEach(([key, value]) => {
+            if (!Array.isArray(value)) {
+                filterClientData[key] = value ?? "";
+            }
+        });
+    }
+
     let buttonPosition = { top: "-100px", left: "auto" };
 
     $: if (selectedRow?.status && selectedRow?.data?._clickPosition) {
@@ -176,9 +186,7 @@ router.get(`${$page.url.split("?")[0]}`, params, {
                                     handleFilters();
                                 }}
                                 class="px-5 font-semibold py-2 text-xs bg-white text-gray-600 transition-colors duration-200 sm:text-sm hover:bg-gray-100"
-                                class:bg-yellow={serverSideData.filters[
-                                    filterKey
-                                ] == filter.id ||
+                                class:bg-yellow={filterClientData[filterKey] == filter.id ||
                                     (i == 0 && !filterClientData[filterKey])}
                             >
                                 {filter.name}
@@ -211,7 +219,7 @@ router.get(`${$page.url.split("?")[0]}`, params, {
                                         selected={
                                             Array.isArray(filterClientData[filterKey])
                                                 ? (filterClientData[filterKey] || []).map(String).includes(String(filter.id))
-                                                : (serverSideData.filters[filterKey] == filter.id) || (i == 0 && !filterClientData[filterKey])
+                                                : (filterClientData[filterKey] == filter.id) || (i == 0 && !filterClientData[filterKey])
                                         }
                                     >
                                         {filter.name}

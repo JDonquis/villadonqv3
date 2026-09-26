@@ -827,6 +827,7 @@ class StudentService
                     'representative.user',
                     'course',
                     'section',
+                    'charges.paymentConcept',
                     'balances' => function ($query) {
                         $query->with('schoolLapse')->oldest();
                     },
@@ -858,6 +859,7 @@ class StudentService
                 'representative.user',
                 'course',
                 'section',
+                'charges.paymentConcept',
                 'balances' => function ($query) {
                     $query->with('schoolLapse')->oldest();
                 },

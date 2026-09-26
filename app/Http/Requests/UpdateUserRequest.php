@@ -47,6 +47,8 @@ class UpdateUserRequest extends FormRequest
             // 'photo' => 'nullable|string|max:100',
             'email_verified_status' => 'nullable|boolean',
             'is_admin' => ['required', 'boolean'],
+            'modules' => ['nullable', 'array'],
+            'modules.*' => ['integer', 'exists:modules,id'],
         ];
     }
 }

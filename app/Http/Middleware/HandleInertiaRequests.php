@@ -55,6 +55,7 @@ class HandleInertiaRequests extends Middleware
                 'type_user_id' => $user->type_user_id ?? null,
                 'photo' => $user->photo ?? null,
                 'has_rep_students' => $hasRepStudents,
+                'modules' => $user ? $user->modules()->pluck('slug')->all() : [],
             ],
             'flash' => [
                 'import' => $request->session()->pull('import_summary'),

@@ -2,16 +2,33 @@
 
 namespace App\Services;
 
+use App\Enums\BalanceStudentStatusEnum;
 use App\Models\Payment;
+use App\Models\PaymentConcept;
 use App\Models\Student;
+use App\Models\StudentCharge;
+use App\Models\StudentChargePayment;
 use Illuminate\Support\Facades\Auth;
 
 class PaymentService
 {
+    private const CHARGE_TYPES = [
+        StudentCharge::TYPE_AME,
+        StudentCharge::TYPE_INVESTMENT_PLAN,
+    ];
+
     public function getAll($params = [], ?array $allowedStudentIds = null)
     {
         $query = Payment::query()
-            ->with('students', 'accountPayment.method', 'user', 'deletedBy', 'paymentConcept')
+            ->with(
+                'students.course',
+                'students.section',
+                'students.representative.user',
+                'accountPayment.method',
+                'user',
+                'deletedBy',
+                'paymentConcept'
+            )
             ->when($allowedStudentIds, function ($q) use ($allowedStudentIds) {
                 $q->whereHas('students', function ($query) use ($allowedStudentIds) {
                     $query->whereIn('students.id', $allowedStudentIds);
@@ -91,6 +108,38 @@ class PaymentService
                         });
                     }
                 });
+            })
+            ->when(! empty($params['month']), function ($q) use ($params) {
+                $month = $params['month'];
+
+                if ($month === 'inscription') {
+                    $q->whereHas('balancePayments', function ($sub) {
+                        $sub->where('is_inscription', true);
+                    });
+
+                    return;
+                }
+
+                $validMonths = [
+                    'september',
+                    'october',
+                    'november',
+                    'december',
+                    'january',
+                    'february',
+                    'march',
+                    'april',
+                    'may',
+                    'june',
+                    'july',
+                    'august',
+                ];
+
+                if (in_array($month, $validMonths, true)) {
+                    $q->whereHas('balancePayments', function ($sub) use ($month) {
+                        $sub->where('month', $month);
+                    });
+                }
             });
 
         $totalIncome = (clone $query)->where('status', '!=', 0)->sum('total_in_dolars');
@@ -139,6 +188,10 @@ class PaymentService
 
         $hasConcept = ! empty($data['payment_concept_id']);
 
+        $concept = $hasConcept ? PaymentConcept::find($data['payment_concept_id']) : null;
+        $chargeType = $concept?->type;
+        $isChargePayment = in_array($chargeType, self::CHARGE_TYPES, true);
+
         $balanceService = new BalanceService;
 
         foreach ($studentsData as $studentData) {
@@ -156,7 +209,9 @@ class PaymentService
                 'amount_in_dolars' => $studentData['amount_in_dolars'],
             ]);
 
-            if (! $hasConcept) {
+            if ($isChargePayment) {
+                $this->applyToStudentCharge($payment, $student, $studentData['amount_in_dolars'], $chargeType);
+            } elseif (! $hasConcept) {
                 $balanceService->updateStudentBalance($payment, $student, $studentData['balances']);
             }
         }
@@ -164,6 +219,131 @@ class PaymentService
         $payment->load('students', 'accountPayment', 'paymentConcept');
 
         return $payment;
+    }
+
+    /**
+     * Registra un pago de conceptos separados (AME / Plan de inversión) para el representante.
+     * Crea un Payment por cada tipo presente en los items, sin tocar el balance del estudiante.
+     */
+    public function createForStudentCharges(array $data, ?array $allowedStudentIds = null): array
+    {
+        $userId = Auth::id() ?? 1;
+
+        $items = collect($data['items'])
+            ->filter(fn ($item) => in_array($item['type'] ?? null, self::CHARGE_TYPES, true))
+            ->groupBy('type');
+
+        $payments = [];
+
+        foreach ($items as $type => $typeItems) {
+            $concept = PaymentConcept::ofType($type)->first();
+
+            $totalDolars = (float) $typeItems->sum('amount_in_dolars');
+            $totalBs = (float) $typeItems->sum(fn ($item) => $item['amount_in_bs'] ?? 0);
+
+            $payment = Payment::create([
+                'user_id' => $userId,
+                'account_payment_id' => $data['account_payment_id'],
+                'payment_concept_id' => $concept?->id,
+                'date' => $data['date'],
+                'total_in_dolars' => $totalDolars,
+                'total_in_bs' => $totalBs,
+                'reference' => $data['reference'] ?? null,
+                'status' => 1,
+                'observations' => $data['observations'] ?? null,
+                'reported_date' => $data['reported_date'] ?? null,
+            ]);
+
+            foreach ($typeItems as $item) {
+                $student = Student::where('id', $item['student_id'])
+                    ->when($allowedStudentIds, function ($q) use ($allowedStudentIds) {
+                        $q->whereIn('id', $allowedStudentIds);
+                    })
+                    ->where(function ($q) {
+                        $q->where('status', '!=', 0)
+                            ->orWhere('graduate', 1);
+                    })
+                    ->firstOrFail();
+
+                $payment->students()->attach($student->id, [
+                    'amount_in_dolars' => $item['amount_in_dolars'],
+                ]);
+
+                $this->applyToStudentCharge($payment, $student, $item['amount_in_dolars'], $type);
+            }
+
+            $payments[] = $payment->load('students', 'accountPayment', 'paymentConcept');
+        }
+
+        return $payments;
+    }
+
+    /**
+     * Aplica un monto al cargo separado (AME / Plan) del estudiante.
+     */
+    private function applyToStudentCharge(Payment $payment, Student $student, $amount, string $type): void
+    {
+        $remainingAmount = (float) $amount;
+
+        if ($remainingAmount <= 0) {
+            return;
+        }
+
+        $charges = StudentCharge::where('student_id', $student->id)
+            ->where('type', $type)
+            ->where('status', '!=', BalanceStudentStatusEnum::Paid->value)
+            ->orderBy('school_lapse_id')
+            ->get();
+
+        foreach ($charges as $charge) {
+            if ($remainingAmount <= 0) {
+                break;
+            }
+
+            $debt = $charge->remaining();
+
+            if ($debt <= 0) {
+                continue;
+            }
+
+            $applied = min($remainingAmount, $debt);
+
+            StudentChargePayment::create([
+                'student_charge_id' => $charge->id,
+                'payment_id' => $payment->id,
+                'amount' => $applied,
+            ]);
+
+            $charge->paid_amount = round((float) $charge->paid_amount + $applied, 2);
+            $charge->status = $charge->isPaid()
+                ? BalanceStudentStatusEnum::Paid->value
+                : BalanceStudentStatusEnum::PartiallyPaid->value;
+            $charge->save();
+
+            $remainingAmount -= $applied;
+        }
+    }
+
+    /**
+     * Revierte los abonos a cargos separados hechos por un pago.
+     */
+    private function revertStudentChargePayments(Payment $payment): void
+    {
+        $entries = StudentChargePayment::where('payment_id', $payment->id)->get();
+
+        if ($entries->isEmpty()) {
+            return;
+        }
+
+        $chargeIds = $entries->pluck('student_charge_id')->unique();
+
+        foreach ($entries as $entry) {
+            $entry->delete();
+        }
+
+        foreach (StudentCharge::whereIn('id', $chargeIds)->get() as $charge) {
+            $charge->syncFromPayments();
+        }
     }
 
     public function delete($id)
@@ -179,6 +359,8 @@ class PaymentService
         foreach ($payment->students as $student) {
             $balanceService->revertStudentBalance($payment, $student);
         }
+
+        $this->revertStudentChargePayments($payment);
 
         $payment->status = 0;
         $payment->deleted_by = Auth::id();
@@ -197,6 +379,8 @@ class PaymentService
         foreach ($existingPayment->students as $student) {
             $balanceService->revertStudentBalance($existingPayment, $student);
         }
+
+        $this->revertStudentChargePayments($existingPayment);
 
         $existingPayment->status = 0;
         $existingPayment->deleted_by = Auth::id();

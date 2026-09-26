@@ -48,7 +48,7 @@ Route::post('/establecer-contrasena', [AuthController::class, 'setupPassword']);
 Route::get('/login/google', [AuthController::class, 'redirectToGoogle'])->middleware('guest');
 Route::get('/login/google/callback', [AuthController::class, 'handleGoogleCallback'])->middleware('guest');
 
-Route::middleware(['auth', 'role:administrator'])->group(function () {
+Route::middleware(['auth', 'role:administrator', 'module.access'])->group(function () {
     Route::get('/dashboard', [AppController::class, 'dashboard'])->name('dashboard');
     Route::get('/dashboard/graficos/annual-vs-monthly-flow/{schoolLapse?}', [AppController::class, 'annualVsMonthlyFlow']);
     Route::get('/dashboard/graficos/debt-by-course/{schoolLapse?}', [AppController::class, 'debtByCourse']);
@@ -178,6 +178,7 @@ Route::middleware(['auth', 'role:administrator,representative,teacher'])->group(
     Route::get('/dashboard/mis-hijos/{student}/materias', [RepresentativeController::class, 'materiasHijo']);
     Route::get('/dashboard/mis-pagos', [RepresentativePaymentController::class, 'index']);
     Route::post('/dashboard/mis-pagos', [RepresentativePaymentController::class, 'store']);
+    Route::post('/dashboard/mis-pagos/conceptos', [RepresentativePaymentController::class, 'storeCharges']);
 
     Route::get('/dashboard/perfil', [ProfileController::class, 'index']);
     Route::post('/dashboard/perfil', [ProfileController::class, 'update']);

@@ -65,6 +65,16 @@ class Payment extends Model
         return $this->hasMany(PaymentHistory::class);
     }
 
+    public function balancePayments()
+    {
+        return $this->hasMany(BalancePayment::class);
+    }
+
+    public function studentChargePayments()
+    {
+        return $this->hasMany(StudentChargePayment::class);
+    }
+
     public function deletedBy()
     {
         return $this->belongsTo(User::class, 'deleted_by');

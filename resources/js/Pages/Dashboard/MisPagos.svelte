@@ -239,6 +239,143 @@
 
     let form = useForm({ ...emptyDataForm });
 
+    const CHARGE_TYPE_LABELS = {
+        ame: "Seguro de atención primaria (AME)",
+        investment_plan: "Plan de inversión",
+    };
+
+    let showChargesPay = false;
+
+    let chargesForm = useForm({
+        date: currentDateString,
+        reported_date: currentDateString,
+        account_payment_id: "",
+        reference: "",
+        observations: "",
+        items: [],
+    });
+
+    $: studentsWithCharges = (data?.students || []).filter(
+        (student) => (student.charges || []).length > 0,
+    );
+
+    $: chargesTotal = ($chargesForm.items || []).reduce(
+        (sum, item) => sum + (parseFloat(item.amount_in_dolars) || 0),
+        0,
+    );
+
+    function buildChargesItems() {
+        const grouped = new Map();
+
+        for (const student of data?.students || []) {
+            for (const charge of student.charges || []) {
+                const key = `${student.id}-${charge.type}`;
+                const entry = grouped.get(key) || {
+                    student_id: student.id,
+                    student_name: `${student.name} ${student.last_name}`,
+                    type: charge.type,
+                    concept_name:
+                        charge.concept_name ||
+                        CHARGE_TYPE_LABELS[charge.type] ||
+                        charge.type,
+                    remaining: 0,
+                    lapses: new Set(),
+                };
+
+                entry.remaining += Number(charge.remaining) || 0;
+                entry.lapses.add(charge.school_lapse_id);
+                grouped.set(key, entry);
+            }
+        }
+
+        return [...grouped.values()].map((entry) => {
+            const remaining = Number(entry.remaining) || 0;
+
+            return {
+                student_id: entry.student_id,
+                student_name: entry.student_name,
+                type: entry.type,
+                concept_name: entry.concept_name,
+                remaining,
+                periods: entry.lapses.size,
+                amount_in_dolars: remaining.toFixed(2),
+                amount_in_bs:
+                    dolarPrice > 0
+                        ? (remaining * dolarPrice).toFixed(2)
+                        : "0.00",
+            };
+        });
+    }
+
+    function toggleChargesPay() {
+        if (!showChargesPay) {
+            $chargesForm.items = buildChargesItems();
+
+            const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (saved) {
+                $chargesForm.account_payment_id = +saved;
+            }
+        }
+
+        showChargesPay = !showChargesPay;
+    }
+
+    function updateChargeItem(index, value) {
+        $chargesForm.items = ($chargesForm.items || []).map((item, i) => {
+            if (i !== index) return item;
+
+            const amount = parseFloat(value) || 0;
+
+            return {
+                ...item,
+                amount_in_dolars: value,
+                amount_in_bs:
+                    dolarPrice > 0
+                        ? (amount * dolarPrice).toFixed(2)
+                        : "0.00",
+            };
+        });
+    }
+
+    function submitCharges(event) {
+        if (event) event.preventDefault();
+
+        const items = ($chargesForm.items || []).filter(
+            (item) => (parseFloat(item.amount_in_dolars) || 0) > 0,
+        );
+
+        if (items.length === 0) {
+            displayAlert({
+                type: "error",
+                message: "Indica al menos un monto a pagar.",
+            });
+            return;
+        }
+
+        $chargesForm.items = items;
+
+        $chargesForm.post("/dashboard/mis-pagos/conceptos", {
+            preserveScroll: true,
+            onSuccess: () => {
+                showChargesPay = false;
+                $chargesForm.reset();
+                displayAlert({
+                    type: "success",
+                    message: "Pago de conceptos registrado",
+                });
+            },
+            onError: (errors) => {
+                displayAlert({
+                    type: "error",
+                    message:
+                        errors?.message ||
+                        errors?.items ||
+                        "No se pudo registrar el pago.",
+                });
+            },
+        });
+    }
+
     $: console.log($form.account_payment_id);
     function formatCurrency(value) {
         return (
@@ -817,6 +954,143 @@
                     </form>
                 {/if}
             </div>
+
+            {#if studentsWithCharges.length > 0}
+                <div class="col-span-12 mt-4 border-t border-gray-200 pt-4">
+                    <div
+                        class="flex items-center justify-between gap-3 flex-wrap"
+                    >
+                        <div>
+                            <h3 class="font-bold text-gray-800">
+                                Conceptos aparte (AME / Plan de inversión)
+                            </h3>
+                            <p class="text-xs text-gray-500">
+                                Deuda separada del balance. Puedes abonar
+                                parcial o totalmente.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            class="animated-button w-fit"
+                            on:click={toggleChargesPay}
+                        >
+                            <span class="text-sm">
+                                {showChargesPay
+                                    ? "Cerrar"
+                                    : "Pagar conceptos aparte"}
+                            </span>
+                        </button>
+                    </div>
+
+                    {#if showChargesPay}
+                        <form
+                            class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-x-5"
+                            on:submit={submitCharges}
+                        >
+                            <Input
+                                type="select"
+                                label={"Método de pago"}
+                                required={true}
+                                bind:value={$chargesForm.account_payment_id}
+                                error={$chargesForm.errors
+                                    ?.account_payment_id}
+                            >
+                                {#each data.accounts.data as account}
+                                    <option value={account.id}>
+                                        {account.payment_method_name}
+                                        {#if account.bank}
+                                            - {account.bank}
+                                        {/if}
+                                    </option>
+                                {/each}
+                            </Input>
+
+                            <Input
+                                type="date"
+                                label={"Fecha del pago"}
+                                required={true}
+                                bind:value={$chargesForm.date}
+                                error={$chargesForm.errors?.date}
+                                max={currentDateString}
+                            />
+
+                            <div class="md:col-span-2 space-y-2">
+                                {#each $chargesForm.items as item, index}
+                                    <div
+                                        class="flex items-center gap-3 flex-wrap rounded-lg border border-gray-200 bg-gray-50 px-3 py-2"
+                                    >
+                                        <div class="flex-1 min-w-[180px]">
+                                            <div
+                                                class="text-sm font-semibold text-gray-800"
+                                            >
+                                                {item.student_name}
+                                            </div>
+                                            <div class="text-xs text-gray-500">
+                                                {item.concept_name} · Debe ${Number(
+                                                    item.remaining,
+                                                ).toFixed(2)}{item.periods > 1
+                                                    ? ` (${item.periods} períodos)`
+                                                    : ""}
+                                            </div>
+                                        </div>
+
+                                        <div class="flex flex-col">
+                                            <label
+                                                class="text-[10px] font-semibold text-gray-500"
+                                                >$. USD</label
+                                            >
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                class="w-28 border border-gray-300 rounded-md px-2 py-1"
+                                                value={item.amount_in_dolars}
+                                                on:input={(e) =>
+                                                    updateChargeItem(
+                                                        index,
+                                                        e.target.value,
+                                                    )}
+                                            />
+                                        </div>
+
+                                        <div class="flex flex-col">
+                                            <label
+                                                class="text-[10px] font-semibold text-gray-500"
+                                                >Bs.</label
+                                            >
+                                            <input
+                                                type="text"
+                                                class="w-32 border border-gray-300 rounded-md px-2 py-1 bg-gray-100"
+                                                value={formatBsInput(
+                                                    item.amount_in_bs,
+                                                )}
+                                                readonly
+                                            />
+                                        </div>
+                                    </div>
+                                {/each}
+                            </div>
+
+                            <div
+                                class="md:col-span-2 flex items-center justify-between gap-3"
+                            >
+                                <p class="font-semibold text-gray-800">
+                                    Total: ${chargesTotal.toFixed(2)}
+                                </p>
+                                <button
+                                    type="submit"
+                                    class="animated-button w-fit"
+                                    disabled={$chargesForm.processing}
+                                >
+                                    <span class="text-sm text">
+                                        Confirmar pago de conceptos
+                                    </span>
+                                </button>
+                            </div>
+                        </form>
+                    {/if}
+                </div>
+            {/if}
         </div>
     {/if}
 

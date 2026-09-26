@@ -17,47 +17,56 @@
             icon: "uil:setting",
             href: "/dashboard/configuracion",
             name: "Configuración",
+            slug: "configuracion",
         },
         {
             icon: "mdi:school",
             href: "/dashboard/matricula",
             name: "Matricula",
+            slug: "matricula",
         },
 
         {
             icon: "streamline:payment-10-solid",
             href: "/dashboard/pagos",
             name: "Pagos",
+            slug: "pagos",
         },
         {
             icon: "mdi:finance",
             href: "/dashboard/estados-de-cuenta",
             name: "Estados de Cuenta",
+            slug: "estados-cuenta",
         },
         {
             icon: "ph:users",
             href: "/dashboard/personal",
             name: "Personal",
+            slug: "personal",
         },
         {
             icon: "mdi:account-tie",
             href: "/dashboard/profesores",
             name: "Profesores",
+            slug: "profesores",
         },
         {
             icon: "mdi:book-open-variant",
             href: "/dashboard/materias",
             name: "Materias",
+            slug: "materias",
         },
         {
             icon: "mdi:clipboard-check-outline",
             href: "/dashboard/planes-evaluacion",
             name: "Planes de Evaluación",
+            slug: "planes-evaluacion",
         },
         {
             icon: "mdi:calendar-clock",
             href: "/dashboard/horarios",
             name: "Horarios",
+            slug: "horarios",
         },
     ];
 
@@ -100,22 +109,36 @@
 
     $: isTeacher = Number($page.props.auth?.type_user_id) === 3;
     $: isRep = Number($page.props.auth?.type_user_id) === 2;
+    $: isAdmin = Number($page.props.auth?.is_admin) === 1;
     $: hasRepStudents = $page.props.auth?.has_rep_students === true;
+    $: allowedModules = $page.props.auth?.modules || [];
 
     $: navPages = (() => {
         if (isTeacher) {
             return teacherNavPages;
         }
 
-        const base = isRep
-            ? repNavPages
-            : hasRepStudents
-              ? [...adminNavPages, ...repNavPages]
-              : adminNavPages;
+        if (isRep) {
+            return repNavPages;
+        }
+
+        const unrestricted = isAdmin;
+
+        const base = hasRepStudents
+            ? [...adminNavPages, ...repNavPages]
+            : adminNavPages;
+
+        const filtered = base.filter((navPage) => {
+            if (!navPage.slug) {
+                return true;
+            }
+
+            return unrestricted || allowedModules.includes(navPage.slug);
+        });
 
         const seen = new Set();
 
-        return base.filter((page) =>
+        return filtered.filter((page) =>
             seen.has(page.href) ? false : (seen.add(page.href), true),
         );
     })();

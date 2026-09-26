@@ -12,6 +12,9 @@ class Module extends Model
 
     protected $fillable = [
         'name',
+        'slug',
+        'icon',
+        'order',
     ];
 
     public function users()

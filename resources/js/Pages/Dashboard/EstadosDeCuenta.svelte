@@ -3,22 +3,54 @@
     import Search from "../../components/Search.svelte";
     import Table from "../../components/Table.svelte";
     import html2canvas from "html2canvas";
-    import { page } from "@inertiajs/svelte";
+    import { page, router } from "@inertiajs/svelte";
     import { displayAlert } from "../../stores/alertStore";
 
     export let data = [];
     export let config;
 
+    const CALENDAR_MONTHS = [
+        ["january", "Enero"],
+        ["february", "Febrero"],
+        ["march", "Marzo"],
+        ["april", "Abril"],
+        ["may", "Mayo"],
+        ["june", "Junio"],
+        ["july", "Julio"],
+        ["august", "Agosto"],
+        ["september", "Septiembre"],
+        ["october", "Octubre"],
+        ["november", "Noviembre"],
+        ["december", "Diciembre"],
+    ];
+
     let showTotalDebt = false;
+    $: urlParams = new URLSearchParams($page.url.split("?")[1] || "");
     $: tableData = {
         ...data?.students,
         filters: {
-            debt_filter:
-                new URLSearchParams($page.url.split("?")[1] || "").get(
-                    "debt_filter",
-                ) || "",
+            debt_filter: urlParams.get("debt_filter") || "",
+            month: urlParams.get("month") || "",
+            course_id: urlParams.get("course_id") || "",
         },
     };
+    $: selectedMonth = tableData.filters.month || "";
+    $: selectedCourseId = tableData.filters.course_id || "";
+
+    function applyStatementParam(name, value) {
+        const current = new URLSearchParams($page.url.split("?")[1] || "");
+        if (value) {
+            current.set(name, value);
+        } else {
+            current.delete(name);
+        }
+        current.delete("page");
+        router.get(
+            $page.url.split("?")[0],
+            Object.fromEntries(current.entries()),
+            { preserveState: true, replace: true },
+        );
+    }
 
     $: console.log({ data }, { tableData });
     $: console.log(config);
@@ -44,6 +76,62 @@
                 message: "No se pudo copiar al portapapeles.",
             });
         }
+    }
+
+    const CHARGE_DEFAULT_LABELS = {
+        ame: "Seguro de atención primaria (AME)",
+        investment_plan: "Plan de inversión",
+    };
+
+    function chargeInfo(student, type) {
+        const charges = (student.charges || []).filter((c) => c.type === type);
+
+        if (charges.length === 0) {
+            return {
+                text: "Sin cargo",
+                cls: "bg-gray-50 text-gray-400 border-gray-200",
+                title: "",
+            };
+        }
+
+        const conceptName =
+            charges[0]?.concept_name || CHARGE_DEFAULT_LABELS[type] || type;
+        const unpaid = charges.filter((c) => Number(c.remaining) > 0);
+
+        if (unpaid.length === 0) {
+            return {
+                text: "Pagado",
+                cls: "bg-green/20 text-green-800 border-green-300",
+                title: conceptName,
+            };
+        }
+
+        const total = unpaid.reduce(
+            (sum, c) => sum + (Number(c.remaining) || 0),
+            0,
+        );
+
+        const hasPartial = unpaid.some(
+            (c) => (Number(c.paid_amount) || 0) > 0,
+        );
+
+        const cls = hasPartial
+            ? "bg-yellow/30 text-yellow-900 border-yellow-300"
+            : "bg-red/20 text-red-800 border-red-300";
+
+        if (unpaid.length > 1) {
+            return {
+                text: `Debe $${total.toFixed(2)} (${unpaid.length} períodos)`,
+                cls,
+                title: `${conceptName} · deuda acumulada de ${unpaid.length} períodos`,
+            };
+        }
+
+        return {
+            text: `Debe $${total.toFixed(2)}`,
+            cls,
+            title: conceptName,
+        };
     }
 
     async function sendToWhatsApp(student) {
@@ -185,6 +273,35 @@ Si ya realizó el pago, por favor ignore este mensaje o envíenos el comprobante
         ],
     }}
 >
+    <div slot="filterBox" class="flex items-center gap-2 md:gap-2">
+        <select
+            id="month-filter"
+            name="month"
+            bind:value={selectedMonth}
+            on:change={(e) => applyStatementParam("month", e.target.value)}
+            class="px-2 py-1.5 text-xs font-semibold text-gray-700 bg-white border-0 focus:outline-none focus:ring-0"
+            title="Filtrar deudores por mes"
+        >
+            <option value="">Mes: Todos</option>
+            {#each CALENDAR_MONTHS as [id, label]}
+                <option value={id}>Mes: {label}</option>
+            {/each}
+        </select>
+        <select
+            id="course-filter"
+            name="course_id"
+            bind:value={selectedCourseId}
+            on:change={(e) =>
+                applyStatementParam("course_id", e.target.value)}
+            class="px-2 py-1.5 text-xs font-semibold text-gray-700 bg-white border-0 focus:outline-none focus:ring-0"
+            title="Filtrar por grado"
+        >
+            <option value="">Grado: Todos</option>
+            {#each data?.courses || [] as course}
+                <option value={course.id}>Grado: {course.name}</option>
+            {/each}
+        </select>
+    </div>
     <thead slot="thead">
         <tr>
             <th>Estudiante</th>
@@ -250,6 +367,29 @@ Si ya realizó el pago, por favor ignore este mensaje o envíenos el comprobante
                                         {student.course?.name} - {student
                                             .section?.name}
                                     </span>
+
+                                    {#if Number(config?.ame_price) > 0}
+                                        {@const ameInfo = chargeInfo(student, "ame")}
+                                        <span
+                                            class="px-1.5 py-0.5 rounded border text-[11px] font-semibold {ameInfo.cls}"
+                                            title={ameInfo.title}
+                                        >
+                                            AME: {ameInfo.text}
+                                        </span>
+                                    {/if}
+
+                                    {#if Number(config?.investment_plan_price) > 0}
+                                        {@const planInfo = chargeInfo(
+                                            student,
+                                            "investment_plan",
+                                        )}
+                                        <span
+                                            class="px-1.5 py-0.5 rounded border text-[11px] font-semibold {planInfo.cls}"
+                                            title={planInfo.title}
+                                        >
+                                            Plan: {planInfo.text}
+                                        </span>
+                                    {/if}
                                 </div>
                             </div>
 

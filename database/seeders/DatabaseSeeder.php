@@ -51,6 +51,8 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             TypeDocumentSeeder::class,
             MainConfigSeeder::class,
+            ModuleSeeder::class,
+            PaymentConceptSeeder::class,
             SchoolLapseSeeder::class,
             QuotaSeeder::class,
             MatterSeeder::class,

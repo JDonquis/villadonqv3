@@ -69,6 +69,11 @@ class Student extends Model
         return $this->hasMany(BalanceStudent::class);
     }
 
+    public function charges()
+    {
+        return $this->hasMany(StudentCharge::class);
+    }
+
     public function inscriptions()
     {
         return $this->hasMany(Inscription::class);

@@ -11,6 +11,7 @@ class PaymentConcept extends Model
 
     protected $fillable = [
         'name',
+        'type',
         'description',
         'price',
         'status',
@@ -41,5 +42,10 @@ class PaymentConcept extends Model
     public function scopeActive($query)
     {
         return $query->where('status', 1);
+    }
+
+    public function scopeOfType($query, string $type)
+    {
+        return $query->where('type', $type);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\BalanceStudentStatusEnum;
 use App\Models\BalanceStudent;
+use App\Models\Course;
 use App\Models\SchoolLapse;
 use App\Models\Section;
 use App\Models\Student;
@@ -94,16 +95,27 @@ class AccountStatementService
             });
         }
 
-        // Apply debt filter via whereHas
-        if (! empty($params['debt_filter'])) {
-            if ($params['debt_filter'] === 'exempted') {
-                $studentQuery->where('students.is_exempt', 1);
-            } else {
-                $studentQuery->whereHas('balances', function ($q) use ($params, $hasDebtSql, $currentLapse) {
-                    $this->applyDebtFilter($q, $params['debt_filter'], $hasDebtSql, $currentLapse);
-                });
-            }
-        } else {
+        // Course (grade) filter
+        if (! empty($params['course_id'])) {
+            $studentQuery->where('students.course_id', $params['course_id']);
+        }
+
+        // Exempted students filter (student-level)
+        if (! empty($params['debt_filter']) && $params['debt_filter'] === 'exempted') {
+            $studentQuery->where('students.is_exempt', 1);
+        }
+
+        // Month filter: students who owe that month (global across lapses)
+        $month = $this->validMonth($params['month'] ?? null);
+        $debtFilter = (! empty($params['debt_filter']) && $params['debt_filter'] !== 'exempted')
+            ? $params['debt_filter']
+            : null;
+
+        if ($month || $debtFilter) {
+            $studentQuery->whereHas('balances', function ($q) use ($debtFilter, $month, $hasDebtSql, $currentLapse) {
+                $this->applyDebtAndMonthFilter($q, $debtFilter, $month, $hasDebtSql, $currentLapse);
+            });
+        } elseif (empty($params['debt_filter'])) {
             // Ensure student has at least one balance to show up in account statement
             $studentQuery->has('balances');
         }
@@ -114,13 +126,12 @@ class AccountStatementService
 
         switch ($sortField) {
             case 'debt':
+                $sortMonth = $this->validMonth($params['month'] ?? null);
                 $studentQuery->orderBy(
                     BalanceStudent::selectRaw("SUM($debtSumSql)")
                         ->whereColumn('student_id', 'students.id')
-                        ->where(function ($q) use ($params, $hasDebtSql, $currentLapse) {
-                            if (! empty($params['debt_filter'])) {
-                                $this->applyDebtFilter($q, $params['debt_filter'], $hasDebtSql, $currentLapse);
-                            }
+                        ->where(function ($q) use ($params, $sortMonth, $hasDebtSql, $currentLapse) {
+                            $this->applyDebtAndMonthFilter($q, $params['debt_filter'] ?? null, $sortMonth, $hasDebtSql, $currentLapse);
                         }), $sortDirection
                 );
                 break;
@@ -142,14 +153,14 @@ class AccountStatementService
 
         // Pagination
         $perPage = $params['per_page'] ?? 25;
+        $loadMonth = $this->validMonth($params['month'] ?? null);
         $paginatedStudents = $studentQuery->with([
             'course',
             'section',
             'representative.user',
-            'balances' => function ($q) use ($params, $hasDebtSql, $currentLapse) {
-                if (! empty($params['debt_filter'])) {
-                    $this->applyDebtFilter($q, $params['debt_filter'], $hasDebtSql, $currentLapse);
-                }
+            'charges.paymentConcept',
+            'balances' => function ($q) use ($params, $loadMonth, $hasDebtSql, $currentLapse) {
+                $this->applyDebtAndMonthFilter($q, $params['debt_filter'] ?? null, $loadMonth, $hasDebtSql, $currentLapse);
             },
             'balances.schoolLapse',
             'balances.balancePayments.payment.accountPayment.method',
@@ -211,8 +222,24 @@ class AccountStatementService
                 'section' => $student->section,
                 'representative' => $student->representative,
                 'balances' => $transformedBalances->values()->all(),
+                'charges' => $student->charges->map(function ($charge) {
+                    $status = $charge->status;
+
+                    return [
+                        'id' => $charge->id,
+                        'type' => $charge->type,
+                        'concept_name' => $charge->paymentConcept?->name
+                            ?? (StudentChargeService::TYPES[$charge->type] ?? $charge->type),
+                        'amount' => (float) $charge->amount,
+                        'paid_amount' => (float) $charge->paid_amount,
+                        'remaining' => $charge->remaining(),
+                        'status' => $status instanceof BalanceStudentStatusEnum ? $status->value : $status,
+                        'school_lapse_id' => $charge->school_lapse_id,
+                    ];
+                })->values()->all(),
                 'total_debt' => (float) $transformedBalances->sum('total_debt'),
                 'total_income' => (float) $transformedBalances->sum('total_income'),
+                'total_charges_debt' => (float) $student->charges->sum(fn ($charge) => $charge->remaining()),
             ];
         });
 
@@ -224,6 +251,7 @@ class AccountStatementService
             'total_income' => $totalIncome,
             'school_lapses' => SchoolLapse::where('status', '!=', 0)->get(),
             'sections' => Section::all(),
+            'courses' => Course::orderBy('id')->get(),
         ];
     }
 
@@ -244,6 +272,14 @@ class AccountStatementService
             });
         }
 
+        // Course (grade) filter
+        if (! empty($params['course_id'])) {
+            $query->where('students.course_id', $params['course_id']);
+        }
+
+        // Month filter: students who owe that month (global across lapses)
+        $month = $this->validMonth($params['month'] ?? null);
+
         // Debt Filter
         if (! empty($params['debt_filter'])) {
             if ($params['debt_filter'] === 'graduated_with_debts') {
@@ -252,8 +288,37 @@ class AccountStatementService
             if ($params['debt_filter'] === 'exempted') {
                 $query->where('students.is_exempt', 1);
             }
-            $this->applyDebtFilter($query, $params['debt_filter'], $hasDebtSql, $currentLapse);
         }
+
+        $this->applyDebtAndMonthFilter($query, $params['debt_filter'] ?? null, $month, $hasDebtSql, $currentLapse);
+    }
+
+    private function applyDebtAndMonthFilter($query, $debtFilter, $month, $hasDebtSql, $currentLapse)
+    {
+        if ($month) {
+            $this->applyMonthFilter($query, $month);
+        }
+
+        if ($debtFilter) {
+            $this->applyDebtFilter($query, $debtFilter, $hasDebtSql, $currentLapse);
+        }
+    }
+
+    private function applyMonthFilter($query, $month): void
+    {
+        $debtVal = BalanceStudentStatusEnum::Debt->value;
+        $partialVal = BalanceStudentStatusEnum::PartiallyPaid->value;
+
+        $query->whereRaw("balance_students.$month < 0 AND balance_students.{$month}_status IN ('$debtVal', '$partialVal')");
+    }
+
+    private function validMonth($month): ?string
+    {
+        if ($month && in_array($month, self::MONTHS, true)) {
+            return $month;
+        }
+
+        return null;
     }
 
     private function applyDebtFilter($query, $debtFilter, $hasDebtSql, $currentLapse)

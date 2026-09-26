@@ -41,6 +41,8 @@ class StoreUserRequest extends FormRequest
             'address' => ['nullable', 'string', 'max:100'],
             // 'photo' => ['nullable', 'string', 'max:100'],
             'is_admin' => ['required', 'boolean'],
+            'modules' => ['nullable', 'array'],
+            'modules.*' => ['integer', 'exists:modules,id'],
         ];
     }
 }

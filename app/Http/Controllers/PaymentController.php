@@ -31,7 +31,7 @@ class PaymentController extends Controller
         $prices = $this->mainConfigService->getPrices();
         $accounts = $this->mainConfigService->getAccounts();
         $result = $this->paymentService->getAll($request->all());
-        $config = MainConfig::select('day_of_monthly_payment', 'grace_period')->first();
+        $config = MainConfig::select('day_of_monthly_payment', 'grace_period', 'ame_price', 'investment_plan_price')->first();
         $concepts = PaymentConcept::active()->orderBy('name')->get();
 
         return inertia('Dashboard/Pagos', [

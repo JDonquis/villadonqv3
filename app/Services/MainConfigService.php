@@ -100,6 +100,8 @@ class MainConfigService
         $oldPrice = $this->mainConfigModel->monthly_payment;
         $oldDayOfPayment = $this->mainConfigModel->day_of_monthly_payment;
         $oldGracePeriod = $this->mainConfigModel->grace_period;
+        $oldAmePrice = $this->mainConfigModel->ame_price;
+        $oldInvestmentPrice = $this->mainConfigModel->investment_plan_price;
         $this->mainConfigModel->update($data);
 
         if ($data['monthly_payment'] != $oldPrice) {
@@ -108,6 +110,14 @@ class MainConfigService
 
         if ($data['day_of_monthly_payment'] != $oldDayOfPayment || $data['grace_period'] != $oldGracePeriod) {
             Artisan::call('balance:recalculate-status');
+        }
+
+        $chargeService = new StudentChargeService;
+        $chargeService->syncConcepts();
+
+        if ($data['ame_price'] != $oldAmePrice || $data['investment_plan_price'] != $oldInvestmentPrice) {
+            $chargeService->generateForLapse();
+            $chargeService->recalculatePendingCharges();
         }
     }
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Models\Module;
 use App\Services\ExcelTemplateService;
 use App\Services\LoginService;
 use App\Services\UserService;
@@ -32,6 +33,7 @@ class UserController extends Controller
 
         return inertia('Dashboard/Personal', [
             'data' => $users,
+            'modules' => Module::orderBy('order')->get(['id', 'name', 'slug', 'icon']),
             'filters' => [
                 'search' => $request->input('search') ?? null,
             ],

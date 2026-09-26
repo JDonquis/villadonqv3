@@ -84,7 +84,14 @@
 
     const handleFilters = () => {
         firstTime = false;
-        router.get(`${$page.url.split("?")[0]}`, filterClientData, {
+
+        const params = Object.fromEntries(
+            Object.entries(filterClientData).filter(
+                ([, value]) => value !== "todos",
+            ),
+        );
+
+        router.get(`${$page.url.split("?")[0]}`, params, {
             preserveState: true,
             preserveScroll: true,
         });

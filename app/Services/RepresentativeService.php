@@ -304,7 +304,7 @@ class RepresentativeService
         $currentLapse = SchoolLapse::where('status', 1)->first();
 
         $students = $this->getStudents($user)
-            ->load(['balances.schoolLapse', 'balances.balancePayments.payment.accountPayment.method']);
+            ->load(['balances.schoolLapse', 'balances.balancePayments.payment.accountPayment.method', 'charges.paymentConcept']);
 
         return [
             'students' => $students->map(function ($student) use ($currentLapse) {
@@ -343,8 +343,29 @@ class RepresentativeService
                                 ->values(),
                         ];
                     })->values(),
+                    'charges' => $student->charges
+                        ->filter(fn ($charge) => $charge->remaining() > 0)
+                        ->map(fn ($charge) => $this->formatCharge($charge))
+                        ->values(),
                 ]);
             })->values(),
+        ];
+    }
+
+    private function formatCharge($charge): array
+    {
+        $status = $charge->status;
+
+        return [
+            'id' => $charge->id,
+            'type' => $charge->type,
+            'concept_name' => $charge->paymentConcept?->name
+                ?? (StudentChargeService::TYPES[$charge->type] ?? $charge->type),
+            'amount' => (float) $charge->amount,
+            'paid_amount' => (float) $charge->paid_amount,
+            'remaining' => $charge->remaining(),
+            'status' => $status instanceof \App\Enums\BalanceStudentStatusEnum ? $status->value : $status,
+            'school_lapse_id' => $charge->school_lapse_id,
         ];
     }
 
