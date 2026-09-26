@@ -1,4 +1,5 @@
 <script>
+    import { onDestroy } from "svelte";
     import { useForm, router } from "@inertiajs/svelte";
     import Alert from "../../components/Alert.svelte";
     import { displayAlert } from "../../stores/alertStore";
@@ -12,6 +13,11 @@
     // Grades state
     let editable = {};
     let rasgosEditable = {};
+    let selectedVoiceItemId = "";
+    let voiceListening = false;
+    let voiceStatus = "Selecciona un tema de la tabla y activa el micrófono.";
+    let voiceRecognition = null;
+    let pendingVoiceStudentId = null;
 
     // Attendance state
     let attendanceSessions = [];
@@ -153,6 +159,193 @@
         $form.grades = getGradesFromEditable();
     }
 
+    function normalizeVoiceText(value) {
+        return String(value || "")
+            .toLocaleLowerCase("es-VE")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9.,\s]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+
+    function findVoiceStudent(transcript) {
+        const words = normalizeVoiceText(transcript)
+            .split(" ")
+            .filter((word) => !["estudiante", "alumno", "alumna", "nota", "para", "de", "a"].includes(word));
+        if (!words.length) return { student: null, ambiguous: false };
+
+        const matches = (data.matrix?.students || [])
+            .map((student) => {
+                const nameWords = normalizeVoiceText(`${student.name} ${student.last_name}`)
+                    .split(" ")
+                    .filter(Boolean);
+                const score = nameWords.filter((word) => words.includes(word)).length;
+                return { student, score };
+            })
+            .filter((entry) => entry.score > 0)
+            .sort((a, b) => b.score - a.score);
+
+        if (!matches.length) return { student: null, ambiguous: false };
+        const best = matches.filter((entry) => entry.score === matches[0].score);
+        return best.length === 1
+            ? { student: best[0].student, ambiguous: false }
+            : { student: null, ambiguous: true };
+    }
+
+    function parseVoiceScore(transcript) {
+        const normalized = normalizeVoiceText(transcript);
+        const digitMatch = normalized.match(/(?:^|\s)(\d{1,2}(?:[.,]\d+)?)(?:\s|$)/);
+        if (digitMatch) return Number(digitMatch[1].replace(",", "."));
+
+        const numberWords = {
+            cero: 0, un: 1, uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4,
+            cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10,
+            once: 11, doce: 12, trece: 13, catorce: 14, quince: 15,
+            dieciseis: 16, diecisiete: 17, dieciocho: 18, diecinueve: 19,
+            veinte: 20,
+        };
+        const words = normalized.split(" ");
+        const scoreWord = words.find((word) => Object.hasOwn(numberWords, word));
+        if (scoreWord === undefined) return null;
+
+        let score = numberWords[scoreWord];
+        const scoreIndex = words.indexOf(scoreWord);
+        const separatorIndex = words.findIndex((word, index) =>
+            index > scoreIndex && ["coma", "punto"].includes(word),
+        );
+        if (separatorIndex !== -1) {
+            const decimalWord = words[separatorIndex + 1];
+            if (decimalWord && Object.hasOwn(numberWords, decimalWord)) {
+                score += numberWords[decimalWord] / 10;
+            }
+        } else if (words.includes("medio")) {
+            score += 0.5;
+        }
+        return score;
+    }
+
+    function focusVoiceGrade(studentId) {
+        const input = document.querySelector(
+            `[data-grade-input="${studentId}_${selectedVoiceItemId}"]`,
+        );
+        input?.focus();
+        input?.select();
+    }
+
+    function processVoiceTranscript(transcript) {
+        if (pendingVoiceStudentId !== null) {
+            const score = parseVoiceScore(transcript);
+            if (score === null) {
+                voiceStatus = `No reconocí una nota en «${transcript}». Diga un número del 0 al 20.`;
+                return;
+            }
+            if (score < 0 || score > 20) {
+                voiceStatus = "La nota debe estar entre 0 y 20. Diga el número nuevamente.";
+                return;
+            }
+
+            const studentId = pendingVoiceStudentId;
+            updateGrade(`${studentId}_${selectedVoiceItemId}`, String(score));
+            pendingVoiceStudentId = null;
+            voiceStatus = `Nota ${score} registrada. Diga el nombre del siguiente estudiante.`;
+            return;
+        }
+
+        const { student, ambiguous } = findVoiceStudent(transcript);
+        if (!student) {
+            voiceStatus = ambiguous
+                ? `Hay varios estudiantes que coinciden con «${transcript}». Diga también el apellido.`
+                : `No encontré a «${transcript}». Diga su nombre y/o apellido.`;
+            return;
+        }
+
+        pendingVoiceStudentId = student.id;
+        focusVoiceGrade(student.id);
+        voiceStatus = `${student.name} ${student.last_name}: input enfocado. Ahora diga la nota.`;
+    }
+
+    function stopVoiceDictation() {
+        const recognition = voiceRecognition;
+        voiceRecognition = null;
+        voiceListening = false;
+        if (recognition) {
+            try {
+                recognition.stop();
+            } catch (error) {
+                // The browser may already have stopped recognition.
+            }
+        }
+    }
+
+    function resetVoiceSelection() {
+        stopVoiceDictation();
+        selectedVoiceItemId = "";
+        pendingVoiceStudentId = null;
+        voiceStatus = "Selecciona un tema de la tabla y activa el micrófono.";
+    }
+
+    function toggleVoiceDictation() {
+        if (voiceListening) {
+            stopVoiceDictation();
+            voiceStatus = "Dictado pausado.";
+            return;
+        }
+        if (!selectedVoiceItemId) {
+            voiceStatus = "Primero selecciona el tema en el encabezado de su columna.";
+            return;
+        }
+
+        const SpeechRecognition =
+            window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            voiceStatus = "Este navegador no admite dictado por voz. Prueba con Chrome o Edge.";
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.lang = "es-VE";
+        recognition.continuous = true;
+        recognition.interimResults = false;
+        voiceRecognition = recognition;
+        voiceListening = true;
+        voiceStatus = "Escuchando: diga el nombre del estudiante.";
+
+        recognition.onresult = (event) => {
+            for (let index = event.resultIndex; index < event.results.length; index += 1) {
+                if (event.results[index].isFinal) {
+                    processVoiceTranscript(event.results[index][0].transcript);
+                }
+            }
+        };
+        recognition.onerror = (event) => {
+            voiceListening = false;
+            voiceRecognition = null;
+            voiceStatus = event.error === "not-allowed"
+                ? "Permite el acceso al micrófono en el navegador para dictar notas."
+                : `Error de dictado: ${event.error}. Puedes volver a activar el micrófono.`;
+        };
+        recognition.onend = () => {
+            if (voiceRecognition === recognition) {
+                voiceRecognition = null;
+                voiceListening = false;
+                if (pendingVoiceStudentId !== null) {
+                    voiceStatus += " Activa nuevamente el micrófono para dictar la nota pendiente.";
+                }
+            }
+        };
+
+        try {
+            recognition.start();
+        } catch (error) {
+            voiceRecognition = null;
+            voiceListening = false;
+            voiceStatus = "No se pudo iniciar el micrófono. Inténtalo nuevamente.";
+        }
+    }
+
+    onDestroy(stopVoiceDictation);
+
     function updateRasgos(studentId, value) {
         rasgosEditable[studentId] = value;
         rasgosEditable = { ...rasgosEditable };
@@ -206,6 +399,7 @@
     }
 
     function selectSchoolLapse(schoolLapseId) {
+        resetVoiceSelection();
         const nextSchool = (data.school_lapses || []).find(
             (l) => String(l.id) === String(schoolLapseId),
         );
@@ -228,6 +422,7 @@
     }
 
     function selectMoment(momentId) {
+        resetVoiceSelection();
         // Mark that the user explicitly chose a moment so we don't
         // overwrite their selection with the date-based default.
         userSelectedLapse = true;
@@ -248,6 +443,7 @@
     }
 
     function selectPlan(planId) {
+        resetVoiceSelection();
         router.get(
             "/dashboard/mis-estudiantes",
             {
@@ -697,9 +893,6 @@
         Notas
     </button>
 
-    {#if viewMode = "notas"}
-        
-    {/if}
     <button
         class={`px-4 py-2 rounded-lg font-medium transition ${
             viewMode === 'asistencia' 
@@ -707,6 +900,7 @@
                 : 'bg-white opacity-70 text-gray-700 hover:bg-gray-200'
         }`}
         on:click={() => {
+            stopVoiceDictation();
             viewMode = 'asistencia';
             if (data.matrix?.plan?.id && !attendanceSessions.length) {
                 loadAttendanceMatrix(data.matrix.plan.id);
@@ -737,6 +931,27 @@
         <div
             class="bg-white  mb-14  rounded-lg shadow overflow-x-auto"
         >
+            <div class="flex flex-col gap-2 border-b border-gray-200 bg-gray-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex flex-wrap items-center gap-2">
+                    <button
+                        type="button"
+                        class={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition ${voiceListening ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-color1 text-white hover:bg-color1/90'}`}
+                        aria-pressed={voiceListening}
+                        on:click={toggleVoiceDictation}
+                    >
+                        <iconify-icon icon={voiceListening ? "mdi:microphone-off" : "mdi:microphone"} class="text-lg"></iconify-icon>
+                        {voiceListening ? "Apagar micrófono" : "Dictar notas"}
+                    </button>
+                    <span class="text-xs text-gray-500">
+                        {#if selectedVoiceItemId}
+                            Tema: {data.matrix.items.find((item) => String(item.id) === selectedVoiceItemId)?.name || "—"}
+                        {:else}
+                            Selecciona un tema desde su columna
+                        {/if}
+                    </span>
+                </div>
+                <p class="text-xs text-gray-600" aria-live="polite">{voiceStatus}</p>
+            </div>
             <table class="w-full text-sm ">
                 <thead class="bg-gray-50">
                     <tr>
@@ -796,6 +1011,18 @@
                                         )}
                                     </div>
                                 </div>
+                                <button
+                                    type="button"
+                                    class={`mt-2 rounded px-2 py-1 text-[11px] font-semibold ${String(selectedVoiceItemId) === String(item.id) ? 'bg-color1 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                                    aria-pressed={String(selectedVoiceItemId) === String(item.id)}
+                                    on:click={() => {
+                                        selectedVoiceItemId = String(item.id);
+                                        pendingVoiceStudentId = null;
+                                        voiceStatus = `Tema «${item.name}» seleccionado. Activa el micrófono para dictar.`;
+                                    }}
+                                >
+                                    {String(selectedVoiceItemId) === String(item.id) ? "Tema seleccionado" : "Dictar en este tema"}
+                                </button>
                             </th>
                         {/each}
                         {#if planRasgosMax > 0}
@@ -843,6 +1070,7 @@
                                 <td class="px-3 py-2">
                                     <input
                                         type="number"
+                                        data-grade-input={`${student.id}_${item.id}`}
                                         min="0"
                                         max="20"
                                         step="0.5"
