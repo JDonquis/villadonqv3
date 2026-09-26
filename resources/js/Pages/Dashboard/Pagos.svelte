@@ -64,13 +64,18 @@
     }
 
     function openRegistrarPago() {
+        const shouldResetToDefault = submitStatus !== "Registrar";
+
         showModal = true;
-        searchInputRef.focus();
+        searchInputRef?.focus();
         currentPayment = null;
-        if (submitStatus === "Solo lectura") {
+
+        if (shouldResetToDefault) {
             $form.reset();
+            selectedRow = { status: false, data: null };
             submitStatus = "Registrar";
         }
+
         applyLastPaymentMethod();
     }
 
@@ -200,8 +205,7 @@
         }
     }
 
-    $: showPerStudentAmounts =
-        $form.students.length > 1 || submitStatus === "Solo lectura";
+    $: showPerStudentAmounts = $form.students.length > 1;
 
     function syncSingleStudentTotals(type, value) {
         console.log($form.students);
@@ -533,7 +537,8 @@
         event.preventDefault();
         $form.clearErrors();
 
-        const safeExchangeRate = Number(dolarPrice) > 0 ? Number(dolarPrice).toFixed(2) : null;
+        const safeExchangeRate =
+            Number(dolarPrice) > 0 ? Number(dolarPrice).toFixed(2) : null;
         $form.exchange_rate = safeExchangeRate;
 
         $form.post("/dashboard/pagos", {
@@ -650,13 +655,31 @@
     }
 
     async function fillFormToEdit(payment = null) {
+        // If called as an event handler, the first arg may be an Event.
+        if (
+            payment &&
+            (payment instanceof Event ||
+                payment.currentTarget ||
+                payment.target)
+        ) {
+            payment = null;
+        }
+
         showModal = true;
         submitStatus = "Solo lectura";
-        const selectedData = payment || selectedRow.data;
+        const selectedData = payment || selectedRow?.data;
+        if (!selectedData) {
+            console.warn("fillFormToEdit: no payment selected", {
+                payment,
+                selectedRow,
+            });
+            return;
+        }
         currentPayment = selectedData;
 
+        console.log("Filling form with payment data:", selectedData);
         // const studentsWithBalances = await Promise.all(
-        //     selectedData.students.map(async (s) => {
+        //     (selectedData.students || []).map(async (s) => {
         //         const response_student = await getBalanceByStudentId(s.id);
         //         const studentData = Array.isArray(response_student)
         //             ? response_student[0]
@@ -673,6 +696,7 @@
         // );
 
         $form.id = selectedData.id;
+        console.log({ selectedData });
         $form.payment_concept_id = selectedData.payment_concept_id || "";
         // console.log({ studentsWithBalances });
         $form.students = (selectedData.students || []).map((s) => ({
@@ -683,23 +707,27 @@
             course_name: s.course?.name || "",
             section_name: s.section?.name || "",
             legal_rep_name:
-                s.representative?.user?.name +
+                (s.representative?.user?.name || "") +
                 " " +
-                s.representative?.user?.last_name,
+                (s.representative?.user?.last_name || ""),
             // balances: s.balances || [],
             amount_in_dolars: s.pivot?.amount_in_dolars,
             amount_in_bs: s.pivot?.amount_in_bs,
         }));
-        console.log(selectedData.date);
+        console.log(selectedData.reference);
         $form.date = selectedData.raw_date;
         // $form.reported_date = new Date(selectedData?.reported_date)?.toISOString().split("T")[0] || null;
         $form.account_payment_id = selectedData.account_payment_id;
         $form.total_in_dolars = selectedData.total_in_dolars;
-        $form.exchange_rate = selectedData.exchange_rate ?? (
-            selectedData.total_in_bs && selectedData.total_in_dolars
-                ? (Number(selectedData.total_in_bs) / Number(selectedData.total_in_dolars)).toFixed(2)
-                : ""
-        );
+        $form.total_in_bs = selectedData.total_in_bs;
+        $form.exchange_rate =
+            selectedData.exchange_rate ??
+            (selectedData.total_in_bs && selectedData.total_in_dolars
+                ? (
+                      Number(selectedData.total_in_bs) /
+                      Number(selectedData.total_in_dolars)
+                  ).toFixed(2)
+                : "");
         $form.reference = selectedData.reference;
         $form.observations = selectedData.observations;
     }
@@ -735,484 +763,191 @@
     bind:showModal
     keyShortcut="n"
     onKeyShortcut={openRegistrarPago}
-    classes="w-full h-full md:h-auto md:w-11/12"
+    classes="w-full h-full md:h-auto md:w-11/12 max-w-[1150px]"
 >
-    <h2 slot="header" class="text-sm text-center">REGISTRO DE PAGO</h2>
+    <!-- TOP HEADER / BANNER DEL COMPROBANTE -->
+    <div
+        slot="header"
+        class="flex flex-wrap items-center md:pr-10 justify-between gap-4 pb-4 border-b border-grayBlue/30"
+    >
+        <div class="flex items-center gap-3">
+            <div
+                class="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-color2/10 flex items-center justify-center text-color2"
+            >
+                <iconify-icon
+                    icon="streamline:payment-10-solid"
+                    width="24"
+                    height="24"
+                ></iconify-icon>
+            </div>
+            <div>
+                <h3
+                    class="text-base md:text-xl font-black text-color1 tracking-tight"
+                >
+                    {submitStatus === "Solo lectura"
+                        ? "Comprobante de Pago"
+                        : "Registro de Pago"}
+                </h3>
+            </div>
+        </div>
 
+        <!-- Indicador de modo y tasa de cambio del día -->
+        <div class="flex items-center gap-2">
+            {#if submitStatus === "Solo lectura"}
+                <span
+                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green/20 text-color1 border border-green/40"
+                >
+                    <span class="w-2 h-2 rounded-full bg-green animate-pulse"
+                    ></span>
+                    Modo Solo Lectura
+                </span>
+            {:else}
+                <span
+                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-color2/10 text-color2 border border-color2/20"
+                >
+                    <span class="w-2 h-2 rounded-full bg-color3"></span>
+                    En Registro
+                </span>
+            {/if}
+            {#if dolarPrice > 0}
+                <span
+                    class="text-xs font-semibold px-3 py-1 rounded-full bg-white border border-grayBlue/40 text-gray-700 shadow-sm"
+                >
+                    Tasa: <b class="text-color2">{dolarPrice} Bs / USD</b>
+                </span>
+            {/if}
+        </div>
+    </div>
     <form
         id="a-form"
         on:submit={handleSubmit}
         action=""
-        class="w-full md:grid md:grid-cols-12 md:gap-x-5 lg:gap-x-10 px-0 md:px-3 md:pl-2"
+        class="w-full p-0 md:p-6 rounded-2xl space-y-6"
     >
-        <div class="relative w-full md:col-span-4 md:col-start-9 md:row-start-">
-            <Input
-                type="select"
-                label={"Concepto de pago"}
-                bind:value={$form.payment_concept_id}
-                error={$form.errors?.payment_concept_id}
-                readonly={submitStatus === "Solo lectura"}
-                on:change={applyConceptToStudents}
-            >
-                <option value="">Mensualidad / Inscripciones</option>
-                {#each concepts as concept}
-                    <option value={concept.id}>
-                        {concept.name}
-                        {#if concept.price != null && Number(concept.price) > 0}
-                            - ${concept.price}
-                        {/if}
-                    </option>
-                {/each}
-            </Input>
-            {#if submitStatus !== "Solo lectura"}
-                <button
-                    type="button"
-                    class="absolute right-0 top-0 md:top-5 text-xs font-semibold text-color2 bg-gray-200 hover:text-color1 hover:shadow-md px-1.5 py-0.5 rounded-md"
-                    on:click={openCreateConcept}
-                >
-                    + Crear concepto
-                </button>
-            {/if}
-        </div>
+        <!-- CUERPO PRINCIPAL EN 2 COLUMNAS (12 COLS) -->
         <div
-            class="col-span-8 md:col-start-1 md:row-start- md:-top-12 relative mx-auto md:mx-0 text-left w-full"
+            class="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full lg:gap-x-12 items-start justify-between"
         >
-            <!-- <Input
-                type="text"
-                required={true}
-                label={"Nombre"}
-                bind:value={$form.name}
-                error={$form.errors?.name}
-            /> -->
-            <div
-                class="w-fit mx-auto md:mx-0 mt-4 md:mt-0 z-50 lg right-20 md:right-64 flex items-center rounded-xl bg-gray-50 border border-gray-400"
-            >
-                <span class="absolute">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke-width="1.5"
-                        stroke="currentColor"
-                        class="w-5 h-5 mx-3 text-gray-400"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-                        />
-                    </svg>
-                </span>
-                <input
-                    type="search"
-                    placeholder="Buscar Estudiante / representante"
-                    class={`block  w-full rounded-xl py-1.5 pr-5 text-gray-700 -full   md:w-56 lg:w-96 placeholder-gray-400/70 pl-11 rtl:pr-11 rtl:pl-5 focus:border-blue-400 focus:ring-blue-300 focus:outline-none focus:ring focus:ring-opacity-40`}
-                    bind:this={searchInputRef}
-                    on:input={(e) => {
-                        search_student(e.target.value);
-                    }}
-                    on:focus={(e) => {
-                        e.target.select();
-                    }}
-                    on:click={(e) => {
-                        e.stopPropagation();
-                        isSearchTableOpen = true;
-                    }}
-                />
-            </div>
-            <table
-                id="students-search-table"
-                bind:this={searchTableRef}
-                class={`${isSearchTableOpen ? "block bg-gray-200 z-50" : "hidden"} p-2 md:p-6 w-full absolute font-semibold rounded-md top-12 max-h-[370px] min-h-[300px] overflow-y-scroll z-50 shadow-xl [&_*]:px-4 [&_*]:py-2 [&_*]:text-left  text-sm  mt-5`}
-            >
-                <thead class="">
-                    <tr>
-                        <th>Estudiante</th>
-                        <th>C.I</th>
-                        <th>Grado/Año</th>
-                        <th>Rep Legal</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {#each searched_students as student}
-                        <tr
-                            class={`text-xs rounded-xl overflow-hidden py-1 hover:bg-black/10  [&_*]:px-4 [&_*]:py-2 cursor-pointer bg-white bg-opacity-10 border-gray-500`}
-                            on:click={async () => {
-                                // Verificar si el estudiante ya está en el arreglo
-                                if (
-                                    !$form.students.some(
-                                        (s) => s.id === student.id,
-                                    )
-                                ) {
-                                    const defaultDebt =
-                                        getStudentDebtInDollars(student);
-                                    const defaultBs =
-                                        dolarPrice > 0
-                                            ? (
-                                                  Number(defaultDebt) *
-                                                  dolarPrice
-                                              ).toFixed(2)
-                                            : "0.00";
-
-                                    $form.students = [
-                                        ...$form.students,
-                                        {
-                                            id: student.id,
-                                            name: student.name,
-                                            balances: student.balances || [],
-                                            charges: student.charges || [],
-                                            last_name: student.last_name,
-                                            ci: student.ci,
-                                            document_type:
-                                                student.document_type,
-                                            course_name: student.course.name,
-                                            section_name: student.section.name,
-                                            legal_rep_name:
-                                                student.representative.user
-                                                    .name +
-                                                " " +
-                                                student.representative.user
-                                                    .last_name,
-                                            balances: student.balances,
-                                            is_exempt: student.is_exempt,
-                                            total_debt: defaultDebt,
-                                            amount_in_dolars: defaultDebt,
-                                            amount_in_bs: defaultBs,
-                                        },
-                                    ];
-
-                                    $form.total_in_dolars = $form.students
-                                        .reduce(
-                                            (total, s) =>
-                                                total +
-                                                (parseFloat(
-                                                    s.amount_in_dolars,
-                                                ) || 0),
-                                            0,
-                                        )
-                                        .toFixed(2);
-                                    $form.total_in_bs = (
-                                        Number($form.total_in_dolars) *
-                                        dolarPrice
-                                    ).toFixed(2);
-
-                                    applyConceptToStudents();
-                                }
-                                isSearchTableOpen = false;
-                                await focusBolivaresTarget();
-                            }}
+            <!-- COLUMNA IZQUIERDA: Búsqueda y Lista de Estudiantes (7 Cols) -->
+            <div class="lg:col-span-7 space-y-4">
+                <!-- Barra de búsqueda superior (Solo visible si no es solo lectura) -->
+                {#if submitStatus !== "Solo lectura"}
+                    <div class="relative w-full">
+                        <label
+                            class="block text-xs font-bold uppercase tracking-wider text-color1 mb-1.5 mt-3 md:mt-0"
                         >
-                            <td class="rounded-l-lg"
-                                >{student.name} {student.last_name}</td
+                            Asignación de Estudiantes
+                        </label>
+                        <div class="relative flex items-center">
+                            <span
+                                class="absolute left-3.5 text-gray-400 pointer-events-none flex items-center"
                             >
-                            <td>
-                                {#if student.document_type}
-                                    <span style=" padding: 0 "
-                                        >{student.document_type}-</span
-                                    >
-                                {/if}{student.ci}</td
-                            >
-                            <td>
-                                {student.course.name}
-                                {student.section.name}
-                            </td>
-
-                            <td class="rounded-r-lg"
-                                >{student.representative.user.name}
-                                {student.representative.user.last_name}</td
-                            >
-                        </tr>
-                    {/each}
-                </tbody>
-            </table>
-
-            <div class="mt-2 md:mt-4 space-y-3">
-                {#each $form.students as student, i}
-                    <div class="neumorphism md:p-3 lg:mx-2 rounded-lg">
-                        <div
-                            class="flex justify-between items-center mb-1 mt-3"
-                        >
-                            <span class="flex flex-col md:flex-row">
-                                <span>
-                                    {student.name}
-                                    {student.last_name}
-                                </span>
-
-                                <div>
-                                    <span
-                                        class="bg-gray-200 md:ml-2 text-gray-700 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
-                                    >
-                                        {#if student.document_type}
-                                            <span class="uppercase"
-                                                >{student.document_type}-</span
-                                            >
-                                        {/if}
-                                        {student.ci}
-                                    </span>
-
-                                    <!-- Separador opcional o punto -->
-                                    <span class="text-gray-300">•</span>
-
-                                    <!-- Curso y Sección -->
-                                    <span
-                                        class="text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border-gray-200/40 text-xs"
-                                    >
-                                        {student.course_name}-{student.section_name}
-                                    </span>
-
-                                    {#if chargeSummary(student, "ame")}
-                                        {@const ameInfo = chargeSummary(student, "ame")}
-                                        <span
-                                            class="px-1.5 py-0.5 rounded border text-[11px] font-semibold {ameInfo.cls}"
-                                        >
-                                            AME: {ameInfo.text}
-                                        </span>
-                                    {/if}
-
-                                    {#if chargeSummary(student, "investment_plan")}
-                                        {@const planInfo = chargeSummary(
-                                            student,
-                                            "investment_plan",
-                                        )}
-                                        <span
-                                            class="px-1.5 py-0.5 rounded border text-[11px] font-semibold {planInfo.cls}"
-                                        >
-                                            Plan: {planInfo.text}
-                                        </span>
-                                    {/if}
-                                </div>
-                            </span>
-
-                            <button
-                                type="button"
-                                class="h-full hover:bg-paper ml-1"
-                                on:click={() => {
-                                    // Eliminar el estudiante del arreglo
-                                    $form.students = $form.students.filter(
-                                        (s) => s.id !== student.id,
-                                    );
-                                }}
-                            >
-                                <iconify-icon icon="line-md:close"
+                                <iconify-icon
+                                    icon="mdi:magnify"
+                                    width="20"
+                                    height="20"
                                 ></iconify-icon>
-                            </button>
+                            </span>
+                            <input
+                                type="search"
+                                placeholder="Buscar por estudiante, cédula o representante..."
+                                class="w-full pl-10 pr-4 py-2.5 text-xs md:text-sm bg-white border border-grayBlue/60 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:border-color2 focus:ring-2 focus:ring-color2/20 shadow-sm transition-all"
+                                bind:this={searchInputRef}
+                                on:input={(e) => search_student(e.target.value)}
+                                on:focus={(e) => e.target.select()}
+                                on:click={(e) => {
+                                    e.stopPropagation();
+                                    isSearchTableOpen = true;
+                                }}
+                            />
                         </div>
 
-                        {#if !isConceptPayment && submitStatus !== "Solo lectura"}
-                            <BalanceBar
-                                balances={student.balances.map((b) => ({
-                                    ...b,
-                                    ...b.months,
-                                }))}
-                                amountToPay={student.amount_in_dolars}
-                                is_exempt={student.is_exempt
-                                    ? student.exemption_percentage
-                                    : false}
-                                dayOfPayment={config.day_of_monthly_payment}
-                                gracePeriod={config.grace_period}
-                                dolarRate={dolarPrice}
-                            />
-                        {/if}
-
-                        {#if showPerStudentAmounts}
-                            <div class="grid grid-cols-2 gap-3 mt-3 mb-2">
-                                <div
-                                    class="flex flex-col items-start col-span-1"
-                                >
-                                    <b class="pr-1 text-xs">$. USD</b>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        placeholder="Dólares"
-                                        step="0.01"
-                                        class="w-full py-1 px-1 md:py-2 md:px-2 border-gray-300 rounded-md border focus:outline-0"
-                                        data-student-amount="usd"
-                                        value={student.amount_in_dolars || ""}
-                                        readonly={submitStatus ===
-                                            "Solo lectura"}
-                                        on:input={(e) => {
-                                            $form.students[i] = {
-                                                ...$form.students[i],
-                                                amount_in_dolars:
-                                                    e.target.value,
-                                                amount_in_bs: (
-                                                    e.target.value * dolarPrice
-                                                ).toFixed(2),
-                                            };
-                                            $form.total_in_dolars =
-                                                $form.students
-                                                    .reduce(
-                                                        (total, s) =>
-                                                            total +
-                                                            (parseFloat(
-                                                                s.amount_in_dolars,
-                                                            ) || 0),
-                                                        0,
-                                                    )
-                                                    .toFixed(2);
-                                            $form.total_in_bs = (
-                                                $form.total_in_dolars *
-                                                dolarPrice
-                                            ).toFixed(2);
-                                        }}
-                                    />
-                                </div>
-                                <div class="flex flex-col items-start">
-                                    <b class="pr-1 text-xs">Bs. VES</b>
-                                    <input
-                                        type="text"
-                                        inputmode="numeric"
-                                        min="0"
-                                        step="0.01"
-                                        class="w-full border py-1 px-1 md:py-2 md:px-2 border-gray-300 rounded-md focus:outline-"
-                                        data-student-amount="bs"
-                                        value={formatBsInput(
-                                            student.amount_in_bs || "",
-                                        )}
-                                        placeholder="Bolívares"
-                                        readonly={submitStatus ===
-                                            "Solo lectura"}
-                                        on:focus={(e) => {
-                                            if (e.target.value !== "") {
-                                                e.target.select();
-                                            }
-                                        }}
-                                        id={`student-bs-${student.id ?? i}`}
-                                        on:input={(e) => {
-                                            const el = e.target;
-                                            const rawValue = el.value;
-                                            const start = el.selectionStart;
-                                            const end = el.selectionEnd;
-                                            const wasAtEnd =
-                                                start === end &&
-                                                start === rawValue.length;
-                                            const digitsBeforeCaret = (
-                                                rawValue
-                                                    .slice(0, start)
-                                                    .match(/\d/g) || []
-                                            ).length;
-
-                                            const numericBs =
-                                                parseBsInput(rawValue);
-                                            const bsValue =
-                                                numericBs.toFixed(2);
-                                            const usdValue =
-                                                dolarPrice > 0
-                                                    ? (
-                                                          numericBs / dolarPrice
-                                                      ).toFixed(2)
-                                                    : "0.00";
-
-                                            $form.students[i] = {
-                                                ...$form.students[i],
-                                                amount_in_bs: bsValue,
-                                                amount_in_dolars: usdValue,
-                                            };
-                                            $form.total_in_bs = $form.students
-                                                .reduce(
-                                                    (total, s) =>
-                                                        total +
-                                                        (parseFloat(
-                                                            s.amount_in_bs,
-                                                        ) || 0),
-                                                    0,
-                                                )
-                                                .toFixed(2);
-                                            $form.total_in_dolars = (
-                                                $form.total_in_bs / dolarPrice
-                                            ).toFixed(2);
-
-                                            const formattedValue =
-                                                formatBsInput(bsValue);
-                                            restoreBsCaret(
-                                                el,
-                                                formattedValue,
-                                                digitsBeforeCaret,
-                                                wasAtEnd,
-                                            );
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                        {/if}
-                    </div>
-                {/each}
-            </div>
-        </div>
-        <!-- <div
-            class="hidden md:block md:col-span-8 md:col-start-1 md:row-start-2 w-full"
-        >
-            <table
-                id="selected_student"
-                class={`${$form.students.length > 0 ? "md:block" : "hidden"} hidden  w-full font-semibold relative    text-sm  mt-1 p-2`}
-            >
-                <thead
-                    class="[&_*]:px-2 md:[&_*]:px-4 [&_*]:py-2 [&_*]:text-left"
-                >
-                    <tr>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody class="neumorphism p-2 rounded-lg m-2">
-                    {#each $form.students as student, i}
-                        <tr
-                            class={` w-full [&_td]:px-2 [&_td*]:py-2 text-sm cursor-pointer  border-gray-500`}
+                        <!-- Dropdown flotante de resultados -->
+                        <div
+                            id="students-search-table"
+                            bind:this={searchTableRef}
+                            class="{isSearchTableOpen
+                                ? 'block'
+                                : 'hidden'} absolute left-0 right-0 top-full mt-2 bg-white rounded-xl border border-grayBlue/50 shadow-2xl z-50 max-h-[320px] overflow-y-auto overflow-hidden divide-y divide-grayBlue/20"
                         >
-                            <td class="md:min-w-[300px]">
-                                <div class="flex items-center mb-1">
-                                    <span>
-                                        {student.name}
-                                        {student.last_name}
-                                    </span>
+                            {#if searched_students.length === 0}
+                                <div
+                                    class="p-4 text-center text-xs text-gray-400"
+                                >
+                                    No se encontraron estudiantes coincidentes.
                                 </div>
-                                <span
-                                    class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
+                            {:else}
+                                <div
+                                    class="p-2 bg-gray-50 text-[11px] font-bold uppercase tracking-wider text-gray-400 grid grid-cols-12 gap-2 px-3"
                                 >
-                                    {#if student.document_type}
-                                        <span class="uppercase"
-                                            >{student.document_type}-</span
-                                        >
-                                    {/if}
-                                    {student.ci}
-                                </span>
+                                    <span class="col-span-4">Estudiante</span>
+                                    <span class="col-span-3">Cédula</span>
+                                    <span class="col-span-2">Grado/Año</span>
+                                    <span class="col-span-3">Representante</span
+                                    >
+                                </div>
+                                {#each searched_students as student}
+                                    <!-- svelte-ignore a11y-click-events-have-key-events -->
+                                    <!-- svelte-ignore a11y-no-static-element-interactions -->
+                                    <div
+                                        class="grid grid-cols-12 gap-2 items-center p-3 text-xs hover:bg-color4/10 cursor-pointer transition-colors"
+                                        on:click={async () => {
+                                            if (
+                                                !$form.students.some(
+                                                    (s) => s.id === student.id,
+                                                )
+                                            ) {
+                                                const defaultDebt =
+                                                    getStudentDebtInDollars(
+                                                        student,
+                                                    );
+                                                const defaultBs =
+                                                    dolarPrice > 0
+                                                        ? (
+                                                              Number(
+                                                                  defaultDebt,
+                                                              ) * dolarPrice
+                                                          ).toFixed(2)
+                                                        : "0.00";
 
-                                <span class="text-gray-300">•</span>
+                                                $form.students = [
+                                                    ...$form.students,
+                                                    {
+                                                        id: student.id,
+                                                        name: student.name,
+                                                        last_name:
+                                                            student.last_name,
+                                                        balances:
+                                                            student.balances ||
+                                                            [],
+                                                        charges:
+                                                            student.charges ||
+                                                            [],
+                                                        ci: student.ci,
+                                                        document_type:
+                                                            student.document_type,
+                                                        course_name:
+                                                            student.course.name,
+                                                        section_name:
+                                                            student.section
+                                                                .name,
+                                                        legal_rep_name:
+                                                            student
+                                                                .representative
+                                                                .user.name +
+                                                            " " +
+                                                            student
+                                                                .representative
+                                                                .user.last_name,
+                                                        is_exempt:
+                                                            student.is_exempt,
+                                                        total_debt: defaultDebt,
+                                                        amount_in_dolars:
+                                                            defaultDebt,
+                                                        amount_in_bs: defaultBs,
+                                                    },
+                                                ];
 
-                                <span
-                                    class="text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200/40 text-xs"
-                                >
-                                    {student.course_name}-{student.section_name}
-                                </span>
-                            </td>
-                            {#if showPerStudentAmounts}
-                                <td>
-                                    <div class="flex flex-col items-start">
-                                        <b class="pr-1 text-xs">$. USD</b>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            placeholder="Dólares"
-                                            step="0.01"
-                                            class="w-20 py-2 px-2 border-gray-400 rounded-md border focus:outline-0"
-                                            data-student-amount="usd"
-                                            value={student.amount_in_dolars ||
-                                                ""}
-                                            readonly={submitStatus ===
-                                                "Solo lectura"}
-                                            on:input={(e) => {
-                                                $form.students[i] = {
-                                                    ...$form.students[i],
-                                                    amount_in_dolars:
-                                                        e.target.value,
-                                                    amount_in_bs: (
-                                                        e.target.value *
-                                                        dolarPrice
-                                                    ).toFixed(2),
-                                                };
                                                 $form.total_in_dolars =
                                                     $form.students
                                                         .reduce(
@@ -1225,117 +960,200 @@
                                                         )
                                                         .toFixed(2);
                                                 $form.total_in_bs = (
-                                                    $form.total_in_dolars *
-                                                    dolarPrice
-                                                ).toFixed(2);
-                                            }}
-                                        />
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="flex flex-col items-start">
-                                        <b class="pr-1 text-xs">Bs. VES</b>
-                                        <input
-                                            type="text"
-                                            inputmode="numeric"
-                                            min="0"
-                                            step="0.01"
-                                            id={`student-bs-${student.id ?? i}`}
-                                            class="w-24 border py-2 px-2 border-gray-400 rounded-md focus:outline-"
-                                            data-student-amount="bs"
-                                            value={formatBsInput(
-                                                student.amount_in_bs || "",
-                                            )}
-                                            placeholder="Bolívares"
-                                            readonly={submitStatus ===
-                                                "Solo lectura"}
-                                            on:focus={(e) => {
-                                                if (e.target.value !== "") {
-                                                    e.target.select();
-                                                }
-                                            }}
-                                            on:input={(e) => {
-                                                const el = e.target;
-                                                const rawValue = el.value;
-                                                const start = el.selectionStart;
-                                                const end = el.selectionEnd;
-                                                const wasAtEnd =
-                                                    start === end &&
-                                                    start === rawValue.length;
-                                                const digitsBeforeCaret = (
-                                                    rawValue
-                                                        .slice(0, start)
-                                                        .match(/\d/g) || []
-                                                ).length;
-
-                                                const numericBs =
-                                                    parseBsInput(rawValue);
-                                                const bsValue =
-                                                    numericBs.toFixed(2);
-                                                const usdValue =
-                                                    dolarPrice > 0
-                                                        ? (
-                                                              numericBs /
-                                                              dolarPrice
-                                                          ).toFixed(2)
-                                                        : "0.00";
-
-                                                $form.students[i] = {
-                                                    ...$form.students[i],
-                                                    amount_in_bs: bsValue,
-                                                    amount_in_dolars: usdValue,
-                                                };
-                                                $form.total_in_bs =
-                                                    $form.students
-                                                        .reduce(
-                                                            (total, s) =>
-                                                                total +
-                                                                (parseFloat(
-                                                                    s.amount_in_bs,
-                                                                ) || 0),
-                                                            0,
-                                                        )
-                                                        .toFixed(2);
-                                                $form.total_in_dolars = (
-                                                    $form.total_in_bs /
-                                                    dolarPrice
+                                                    Number(
+                                                        $form.total_in_dolars,
+                                                    ) * dolarPrice
                                                 ).toFixed(2);
 
-                                                const formattedValue =
-                                                    formatBsInput(bsValue);
-                                                restoreBsCaret(
-                                                    el,
-                                                    formattedValue,
-                                                    digitsBeforeCaret,
-                                                    wasAtEnd,
-                                                );
-                                            }}
-                                        />
+                                                applyConceptToStudents();
+                                            }
+                                            isSearchTableOpen = false;
+                                            await focusBolivaresTarget();
+                                        }}
+                                    >
+                                        <span
+                                            class="col-span-4 font-bold text-color1"
+                                        >
+                                            {student.name}
+                                            {student.last_name}
+                                        </span>
+                                        <span
+                                            class="col-span-3 font-mono text-gray-600"
+                                        >
+                                            {student.document_type
+                                                ? `${student.document_type}-`
+                                                : ""}{student.ci}
+                                        </span>
+                                        <span class="col-span-2 text-gray-500">
+                                            {student.course.name} - {student
+                                                .section.name}
+                                        </span>
+                                        <span
+                                            class="col-span-3 text-gray-500 truncate"
+                                        >
+                                            {student.representative.user.name}
+                                            {student.representative.user
+                                                .last_name}
+                                        </span>
                                     </div>
-                                </td>
+                                {/each}
                             {/if}
+                        </div>
+                    </div>
+                {/if}
 
-                            <td class="max-w-[70px] bg-gray-200">
-                                <button
-                                    type="button"
-                                    class="h-full hover:bg-paper ml-1"
-                                    on:click={() => {
-                                        $form.students = $form.students.filter(
-                                            (s) => s.id !== student.id,
-                                        );
-                                    }}
-                                >
-                                    <iconify-icon icon="line-md:close"
-                                    ></iconify-icon>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr class=" ">
-                            <td
-                                colspan="7"
-                                class="md:px-3 pb-10 max-w-[350px] md:max-w-[900px]"
+                <!-- Lista de tarjetas de estudiantes agregados -->
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span
+                            class="text-xs font-bold uppercase tracking-wider text-gray-500"
+                        >
+                            Alumnos en este Recibo ({$form.students.length})
+                        </span>
+                        {#if $form.students.length > 0 && submitStatus !== "Solo lectura"}
+                            <span class="text-[11px] text-gray-400"
+                                >Verifique los montos asignados</span
                             >
-                                {#if !isConceptPayment && submitStatus !== "Solo lectura"}
+                        {/if}
+                    </div>
+
+                    {#if $form.students.length === 0}
+                        <div
+                            class="p-8 text-center flex items-center justify-center flex-col bg-white rounded-2xl border-2 border-dashed border-grayBlue/40 text-gray-400 text-xs"
+                        >
+                            <iconify-icon
+                                icon="mdi:account-school-outline"
+                                width="36"
+                                height="36"
+                                class="  text-grayBlue"
+                            ></iconify-icon>
+                            <span>
+                                No hay estudiantes seleccionados para este pago.
+                            </span>
+                        </div>
+                    {/if}
+
+                    {#each $form.students as student, i}
+                        <div
+                            class="bg-white p-2 md:p-5 rounded-2xl border border-grayBlue/50 shadow-sm space-y-3 transition-all hover:border-color3/60"
+                        >
+                            <!-- Header de la tarjeta del alumno -->
+                            <div
+                                class="flex items-center justify-between gap-3 pb-2.5 border-b border-grayBlue/20"
+                            >
+                                <div class="flex items-center gap-3">
+                                    <!-- Monograma / Iniciales -->
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-9 h-9 rounded-xl bg-color1 text-white font-black text-xs flex items-center justify-center shadow-sm shrink-0"
+                                        >
+                                            {(student.name || "A").charAt(0)}{(
+                                                student.last_name || ""
+                                            ).charAt(0)}
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div
+                                                class="flex items-center gap-2"
+                                            >
+                                                <span
+                                                    class="font-bold text-color1 text-sm truncate"
+                                                >
+                                                    {student.name}
+                                                    {student.last_name}
+                                                </span>
+                                                <!-- Badge inline de representante -->
+                                                {#if student.legal_rep_name}
+                                                    <span
+                                                        class="text-[10px] font-medium text-gray-500 bg-gray-100 px-1.5 py-0.2 rounded border border-gray-200 truncate max-w-[180px]"
+                                                    >
+                                                        Rep: {student.legal_rep_name}
+                                                    </span>
+                                                {/if}
+                                            </div>
+
+                                            <div
+                                                class="flex items-center gap-1.5 mt-0.5"
+                                            >
+                                                <span
+                                                    class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md font-mono text-[11px] border border-gray-200"
+                                                >
+                                                    {student.document_type
+                                                        ? `${student.document_type}-`
+                                                        : ""}{student.ci}
+                                                </span>
+                                                <span class="text-gray-300"
+                                                    >•</span
+                                                >
+                                                <span
+                                                    class="text-color2 bg-color2/10 px-2 py-0.5 rounded-md text-[11px] font-semibold"
+                                                >
+                                                    {student.course_name} - {student.section_name}
+                                                </span>
+
+                                                {#if chargeSummary(student, "ame")}
+                                                    {@const ameInfo = chargeSummary(student, "ame")}
+                                                    <span
+                                                        class="px-2 py-0.5 rounded-md border text-[11px] font-semibold {ameInfo.cls}"
+                                                    >
+                                                        AME: {ameInfo.text}
+                                                    </span>
+                                                {/if}
+
+                                                {#if chargeSummary(student, "investment_plan")}
+                                                    {@const planInfo = chargeSummary(
+                                                        student,
+                                                        "investment_plan",
+                                                    )}
+                                                    <span
+                                                        class="px-2 py-0.5 rounded-md border text-[11px] font-semibold {planInfo.cls}"
+                                                    >
+                                                        Plan: {planInfo.text}
+                                                    </span>
+                                                {/if}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {#if submitStatus !== "Solo lectura"}
+                                    <button
+                                        type="button"
+                                        class="w-7 h-7 rounded-lg text-gray-400 hover:text-red hover:bg-red/10 flex items-center justify-center transition-colors"
+                                        title="Quitar estudiante"
+                                        on:click={() => {
+                                            $form.students =
+                                                $form.students.filter(
+                                                    (s) => s.id !== student.id,
+                                                );
+                                            $form.total_in_dolars =
+                                                $form.students
+                                                    .reduce(
+                                                        (total, s) =>
+                                                            total +
+                                                            (parseFloat(
+                                                                s.amount_in_dolars,
+                                                            ) || 0),
+                                                        0,
+                                                    )
+                                                    .toFixed(2);
+                                            $form.total_in_bs = (
+                                                Number($form.total_in_dolars) *
+                                                dolarPrice
+                                            ).toFixed(2);
+                                        }}
+                                    >
+                                        <iconify-icon
+                                            icon="line-md:close"
+                                            width="18"
+                                            height="18"
+                                        ></iconify-icon>
+                                    </button>
+                                {/if}
+                            </div>
+
+                            <!-- Barra de mensualidades si no es concepto especial -->
+                            {#if !isConceptPayment && submitStatus !== "Solo lectura"}
+                                <div class="pt-1">
                                     <BalanceBar
                                         balances={student.balances.map((b) => ({
                                             ...b,
@@ -1349,227 +1167,482 @@
                                         gracePeriod={config.grace_period}
                                         dolarRate={dolarPrice}
                                     />
-                                {/if}
-                            </td>
-                        </tr>
+                                </div>
+                            {/if}
+
+                            <!-- Desglose bimonetario por alumno -->
+                            {#if showPerStudentAmounts}
+                                <div class="grid grid-cols-2 gap-3 pt-2">
+                                    <div>
+                                        <label
+                                            class="block text-[11px] font-bold text-gray-500 mb-1"
+                                        >
+                                            $. Cuota USD
+                                        </label>
+                                        <div class="relative">
+                                            <span
+                                                class="absolute left-3 top-2 text-xs font-bold text-gray-400 pointer-events-none"
+                                                >$</span
+                                            >
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                placeholder="0.00"
+                                                step="0.01"
+                                                class="w-full pl-7 pr-3 py-1.5 text-xs md:text-sm font-semibold text-color1 bg-slate-50/70 border border-grayBlue/50 rounded-xl focus:bg-white focus:outline-none focus:border-color2 focus:ring-2 focus:ring-color2/20 disabled:bg-gray-100 {submitStatus ===
+                                                'Solo lectura'
+                                                    ? 'bg-transparent border-transparent px-1'
+                                                    : ''}"
+                                                data-student-amount="usd"
+                                                value={student.amount_in_dolars ||
+                                                    ""}
+                                                readonly={submitStatus ===
+                                                    "Solo lectura"}
+                                                on:input={(e) => {
+                                                    $form.students[i] = {
+                                                        ...$form.students[i],
+                                                        amount_in_dolars:
+                                                            e.target.value,
+                                                        amount_in_bs: (
+                                                            e.target.value *
+                                                            dolarPrice
+                                                        ).toFixed(2),
+                                                    };
+                                                    $form.total_in_dolars =
+                                                        $form.students
+                                                            .reduce(
+                                                                (total, s) =>
+                                                                    total +
+                                                                    (parseFloat(
+                                                                        s.amount_in_dolars,
+                                                                    ) || 0),
+                                                                0,
+                                                            )
+                                                            .toFixed(2);
+                                                    $form.total_in_bs = (
+                                                        $form.total_in_dolars *
+                                                        dolarPrice
+                                                    ).toFixed(2);
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label
+                                            class="block text-[11px] font-bold text-gray-500 mb-1"
+                                        >
+                                            Bs. Equivalente VES
+                                        </label>
+                                        <div class="relative">
+                                            <span
+                                                class="absolute left-3 top-2 text-xs font-bold text-gray-400 pointer-events-none"
+                                                >Bs.</span
+                                            >
+                                            <input
+                                                type="text"
+                                                inputmode="numeric"
+                                                min="0"
+                                                step="0.01"
+                                                class="w-full pl-9 pr-3 py-1.5 text-xs md:text-sm font-semibold text-color1 bg-slate-50/70 border border-grayBlue/50 rounded-xl focus:bg-white focus:outline-none focus:border-color2 focus:ring-2 focus:ring-color2/20 disabled:bg-gray-100 {submitStatus ===
+                                                'Solo lectura'
+                                                    ? 'bg-transparent border-transparent px-1'
+                                                    : ''}"
+                                                data-student-amount="bs"
+                                                value={formatBsInput(
+                                                    student.amount_in_bs || "",
+                                                )}
+                                                placeholder="0,00"
+                                                readonly={submitStatus ===
+                                                    "Solo lectura"}
+                                                on:focus={(e) => {
+                                                    if (e.target.value !== "")
+                                                        e.target.select();
+                                                }}
+                                                id={`student-bs-${student.id ?? i}`}
+                                                on:input={(e) => {
+                                                    const el = e.target;
+                                                    const rawValue = el.value;
+                                                    const start =
+                                                        el.selectionStart;
+                                                    const end = el.selectionEnd;
+                                                    const wasAtEnd =
+                                                        start === end &&
+                                                        start ===
+                                                            rawValue.length;
+                                                    const digitsBeforeCaret = (
+                                                        rawValue
+                                                            .slice(0, start)
+                                                            .match(/\d/g) || []
+                                                    ).length;
+
+                                                    const numericBs =
+                                                        parseBsInput(rawValue);
+                                                    const bsValue =
+                                                        numericBs.toFixed(2);
+                                                    const usdValue =
+                                                        dolarPrice > 0
+                                                            ? (
+                                                                  numericBs /
+                                                                  dolarPrice
+                                                              ).toFixed(2)
+                                                            : "0.00";
+
+                                                    $form.students[i] = {
+                                                        ...$form.students[i],
+                                                        amount_in_bs: bsValue,
+                                                        amount_in_dolars:
+                                                            usdValue,
+                                                    };
+                                                    $form.total_in_bs =
+                                                        $form.students
+                                                            .reduce(
+                                                                (total, s) =>
+                                                                    total +
+                                                                    (parseFloat(
+                                                                        s.amount_in_bs,
+                                                                    ) || 0),
+                                                                0,
+                                                            )
+                                                            .toFixed(2);
+                                                    $form.total_in_dolars = (
+                                                        $form.total_in_bs /
+                                                        dolarPrice
+                                                    ).toFixed(2);
+
+                                                    const formattedValue =
+                                                        formatBsInput(bsValue);
+                                                    restoreBsCaret(
+                                                        el,
+                                                        formattedValue,
+                                                        digitsBeforeCaret,
+                                                        wasAtEnd,
+                                                    );
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            {/if}
+                        </div>
                     {/each}
-                </tbody>
-            </table>
-        </div> -->
+                </div>
+            </div>
 
-        <div
-            class={`w-full md:col-span-4 md:col-start-9 md:row-start-0 grid grid-cols-2 gap-x-3 md:gap-x-5 ${$form.students.length > 0 ? "block" : "hidden"} md:grid`}
-        >
-            <Input
-                type="date"
-                required={true}
-                label={"F. de la transacción"}
-                bind:value={$form.date}
-                error={$form.errors?.date}
-                max={currentDateString}
-                readonly={submitStatus === "Solo lectura"}
-                classes={"col-span-1"}
-            />
-            <Input
-                type="date"
-                required={true}
-                label={"F. de reporte"}
-                bind:value={$form.reported_date}
-                error={$form.errors?.reported_date}
-                max={currentDateString}
-                readonly={submitStatus === "Solo lectura"}
-                classes={"col-span-1"}
-            />
-            <Input
-                type="select"
-                label={"Método de pago"}
-                bind:value={$form.account_payment_id}
-                error={$form.errors?.account_payment_id}
-                required={true}
-                readonly={submitStatus === "Solo lectura"}
-                classes={"col-span-2 "}
-                on:change={(e) => savePaymentMethod(e.target.value)}
-            >
-                {#each data.accounts.data as account}
-                    <option
-                        value={account.id}
-                        class={`border-l-4 mix-blend-difference  }`}
+            <!-- COLUMNA DERECHA: Totales, Concepto y Datos Bancarios (5 Cols) -->
+            <div class="lg:col-span-5 w-full space-y-4">
+                <!-- TARJETA HERO: TOTALES BIMONETARIOS -->
+                <!-- <div class="bg-color1 text-white p-5 rounded-2xl shadow-lg relative overflow-hidden">
+                <div class="relative z-10 space-y-3">
+                    <div class="flex items-center justify-between border-b border-white/10 pb-2">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-color4">
+                            Total Liquidado
+                        </span>
+                        <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-ligthGreen border border-emerald-500/30">
+                            {submitStatus === "Solo lectura" ? "Monto Conciliado" : "Cálculo Dinámico"}
+                        </span>
+                    </div>
+
+                    <div>
+                        <div class="text-xs text-gray-300">Importe en Dólares (USD)</div>
+                        <div class="text-3xl font-black text-white flex items-baseline gap-1 mt-0.5">
+                            <span class="text-color4 text-xl">$</span>
+                            <span>{$form.total_in_dolars || "0.00"}</span>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-white/10 flex items-center justify-between text-xs">
+                        <span class="text-gray-300">Equivalente VES:</span>
+                        <span class="font-bold text-emerald-400 font-mono text-sm">
+                            Bs. {formatBsInput($form.total_in_bs) || "0,00"}
+                        </span>
+                    </div>
+                </div>
+            </div> -->
+
+                <!-- CARD DE DATOS DE LA TRANSACCIÓN -->
+                <div class="bg-white space-y-4 grid grid-cols-2 gap-x-3">
+                    <!-- Concepto de Pago -->
+                    <div class="col-span-2 space-y-1">
+                        <div class="flex items-center justify-between">
+                            <label class="block text-xs font-bold text-gray-700"
+                                >Concepto de pago</label
+                            >
+                            {#if submitStatus !== "Solo lectura"}
+                                <button
+                                    type="button"
+                                    class="text-[11px] font-semibold text-color2 hover:text-color3 transition-colors"
+                                    on:click={openCreateConcept}
+                                >
+                                    + Crear concepto
+                                </button>
+                            {/if}
+                        </div>
+                        <Input
+                            type="select"
+                            bind:value={$form.payment_concept_id}
+                            error={$form.errors?.payment_concept_id}
+                            readonly={submitStatus === "Solo lectura"}
+                            on:change={applyConceptToStudents}
+                        >
+                            <option value="">Mensualidad / Inscripciones</option
+                            >
+                            {#each concepts as concept}
+                                <option value={concept.id}>
+                                    {concept.name}
+                                    {#if concept.price != null && Number(concept.price) > 0}
+                                        - ${concept.price}
+                                    {/if}
+                                </option>
+                            {/each}
+                        </Input>
+                    </div>
+
+                    <!-- Fechas de Transacción y Reporte -->
+                    <Input
+                        type="date"
+                        required={true}
+                        label="F. de la transacción "
+                        bind:value={$form.date}
+                        error={$form.errors?.date}
+                        max={currentDateString}
+                        readonly={submitStatus === "Solo lectura"}
+                        classes="col-span-1 "
+                    />
+                    <Input
+                        type="date"
+                        required={true}
+                        label="F. de reporte "
+                        bind:value={$form.reported_date}
+                        error={$form.errors?.reported_date}
+                        max={currentDateString}
+                        readonly={submitStatus === "Solo lectura"}
+                        classes="col-span-1 "
+                    />
+
+                    <!-- Método de Pago -->
+                    <Input
+                        type="select"
+                        label="Método de pago"
+                        bind:value={$form.account_payment_id}
+                        error={$form.errors?.account_payment_id}
+                        required={true}
+                        readonly={submitStatus === "Solo lectura"}
+                        classes="col-span-2"
+                        on:change={(e) => savePaymentMethod(e.target.value)}
                     >
-                        {account.payment_method_name}
-                        {#if account.bank}- {account.bank}{/if}
-                        {#if account.cash_currency}- {account.cash_currency}{/if}
-                        {#if account.username}- {account.username}{/if}
-                    </option>
-                {/each}
-            </Input>
+                        {#each data.accounts.data as account}
+                            <option value={account.id}>
+                                {account.payment_method_name}
+                                {#if account.bank}
+                                    - {account.bank}{/if}
+                                {#if account.cash_currency}
+                                    - {account.cash_currency}{/if}
+                                {#if account.username}
+                                    - {account.username}{/if}
+                            </option>
+                        {/each}
+                    </Input>
 
-            {#if showPerStudentAmounts}
-                <Input
-                    type="hidden"
-                    label={"Total en Dólares ($)"}
-                    required={true}
-                    readonly={true}
-                    bind:value={$form.total_in_dolars}
-                    error={$form.errors?.total_in_dolars}
-                />
+                    {#if showPerStudentAmounts}
+                        <Input
+                            type="hidden"
+                            label={"Total en Dólares ($)"}
+                            required={true}
+                            readonly={true}
+                            bind:value={$form.total_in_dolars}
+                            error={$form.errors?.total_in_dolars}
+                        />
 
-                <Input
-                    type="hidden"
-                    label={"Total en Bolívares (Bs)"}
-                    readonly={true}
-                    bind:value={$form.total_in_bs}
-                    error={$form.errors?.total_in_bs}
-                />
-                <div class="col-span-1">
-                    <span class="block font-medium text-sm">
-                        Total en USD:
-                    </span>
-                    <span class="text-gray-500"> $ </span>
-                    <b>{$form.total_in_dolars}</b>
+                        <Input
+                            type="hidden"
+                            label={"Total en Bolívares (Bs)"}
+                            readonly={true}
+                            bind:value={$form.total_in_bs}
+                            error={$form.errors?.total_in_bs}
+                        />
+                        <div class="col-span-1">
+                            <span class="block font-medium text-sm">
+                                Total en USD:
+                            </span>
+                            <span class="text-gray-500"> $ </span>
+                            <b>{$form.total_in_dolars}</b>
+                        </div>
+                        <div class="col-span-1">
+                            <span class="block font-medium text-sm">
+                                Total en VES:
+                            </span>
+                            <span class="text-gray-500"> Bs </span>
+                            <b>{formatBsInput($form.total_in_bs)}</b>
+                        </div>
+                    {:else if $form.students.length > 0}
+                        <Input
+                            type="number"
+                            label={"Total en Dólares ($)"}
+                            required={true}
+                            min="0"
+                            step="0.01"
+                            value={$form.total_in_dolars || ""}
+                            error={$form.errors?.total_in_dolars}
+                            classes={"col-span-1"}
+                            on:focus={(e) => {
+                                if (e.target.value !== "") {
+                                    e.target.select();
+                                }
+                            }}
+                            on:input={(e) =>
+                                syncSingleStudentTotals("usd", e.target.value)}
+                        />
+
+                        <Input
+                            id="payment-total-bs"
+                            type="text"
+                            label={"Total en Bolívares (Bs)"}
+                            min="0"
+                            step="0.01"
+                            value={formatBsInput($form.total_in_bs)}
+                            error={$form.errors?.total_in_bs}
+                            classes={"col-span-1"}
+                            on:focus={(e) => {
+                                if (e.target.value !== "") {
+                                    e.target.select();
+                                }
+                            }}
+                            on:input={(e) => {
+                                const el = e.target;
+                                const rawValue = el.value;
+                                const start = el.selectionStart;
+                                const end = el.selectionEnd;
+                                const wasAtEnd =
+                                    start === end && start === rawValue.length;
+                                const digitsBeforeCaret = (
+                                    rawValue.slice(0, start).match(/\d/g) || []
+                                ).length;
+
+                                syncSingleStudentTotals("bs", rawValue);
+
+                                const formattedValue = formatBsInput(
+                                    $form.total_in_bs,
+                                );
+                                restoreBsCaret(
+                                    el,
+                                    formattedValue,
+                                    digitsBeforeCaret,
+                                    wasAtEnd,
+                                );
+                            }}
+                        />
+                    {/if}
+
+                    <!-- Referencia Bancaria -->
+                    <Input
+                        type="number"
+                        label="Referencia Bancaria"
+                        required={true}
+                        bind:value={$form.reference}
+                        error={$form.errors?.reference}
+                        readonly={submitStatus === "Solo lectura"}
+                        classes="col-span-2 font-mono"
+                        placeholder="Ej. 123654"
+                    />
+
+                    <!-- Observaciones -->
+                    <Input
+                        type="textarea"
+                        label="Observaciones / Nota de Caja"
+                        classes="col-span-2"
+                        bind:value={$form.observations}
+                        error={$form.errors?.observations}
+                        readonly={submitStatus === "Solo lectura"}
+                        placeholder="Detalles adicionales, notas de conciliación..."
+                    />
                 </div>
-                <div class="col-span-1">
-                    <span class="block font-medium text-sm">
-                        Total en VES:
-                    </span>
-                    <span class="text-gray-500"> Bs </span>
-                    <b>{formatBsInput($form.total_in_bs)}</b>
-                </div>
-            {:else if $form.students.length > 0}
-                <Input
-                    type="number"
-                    label={"Total en Dólares ($)"}
-                    required={true}
-                    min="0"
-                    step="0.01"
-                    value={$form.total_in_dolars || ""}
-                    error={$form.errors?.total_in_dolars}
-                    classes={"col-span-1"}
-                    on:focus={(e) => {
-                        if (e.target.value !== "") {
-                            e.target.select();
-                        }
-                    }}
-                    on:input={(e) =>
-                        syncSingleStudentTotals("usd", e.target.value)}
-                />
-
-                <Input
-                    id="payment-total-bs"
-                    type="text"
-                    label={"Total en Bolívares (Bs)"}
-                    min="0"
-                    step="0.01"
-                    value={formatBsInput($form.total_in_bs)}
-                    error={$form.errors?.total_in_bs}
-                    classes={"col-span-1"}
-                    on:focus={(e) => {
-                        if (e.target.value !== "") {
-                            e.target.select();
-                        }
-                    }}
-                    on:input={(e) => {
-                        const el = e.target;
-                        const rawValue = el.value;
-                        const start = el.selectionStart;
-                        const end = el.selectionEnd;
-                        const wasAtEnd =
-                            start === end && start === rawValue.length;
-                        const digitsBeforeCaret = (
-                            rawValue.slice(0, start).match(/\d/g) || []
-                        ).length;
-
-                        syncSingleStudentTotals("bs", rawValue);
-
-                        const formattedValue = formatBsInput($form.total_in_bs);
-                        restoreBsCaret(
-                            el,
-                            formattedValue,
-                            digitsBeforeCaret,
-                            wasAtEnd,
-                        );
-                    }}
-                />
-            {/if}
-            <Input
-                type="number"
-                label={"Referencia"}
-                required={true}
-                bind:value={$form.reference}
-                error={$form.errors?.reference}
-                readonly={submitStatus === "Solo lectura"}
-                classes={"col-span-2"}
-            />
-            <Input
-                type="textarea"
-                label={"Observaciones"}
-                classes={"col-span-2"}
-                bind:value={$form.observations}
-                error={$form.errors?.observations}
-                readonly={submitStatus === "Solo lectura"}
-            />
+            </div>
         </div>
 
-        {#if submitStatus !== "Solo lectura"}
-            <div class="flex justify-end col-span-12">
-                <button
-                    type="submit"
-                    class={` max-w-[430px] mt-7  items-center justify-center gap-3 ${!$form.students.length > 0 ? "hidden  " : "flex animated-button"} `}
-                    disabled={$form.processing}
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="arr-2"
-                        viewBox="0 0 24 24"
+        <!-- FOOTER DE ACCIONES -->
+        <div
+            class="pt-1 border-t border-grayBlue/30 flex flex-wrap items-center justify-between gap-3"
+        >
+            <div class="flex items-center gap-2">
+                {#if submitStatus === "Solo lectura"}
+                    <button
+                        type="button"
+                        class="px-4 py-2 rounded-xl border border-grayBlue/60 hover:bg-white text-gray-700 text-xs md:text-sm font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
+                        on:click={() => window.print()}
                     >
-                        <path
-                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                        ></path>
-                    </svg>
-                    <iconify-icon
-                        class="text"
-                        icon="material-symbols:save-sharp"
-                        width="24"
-                        height="24"
-                    />
-                    {#if $form.processing}
-                        <span class="text"> Cargando...</span>
-                    {:else}
-                        <span class="text">{submitStatus}</span>
-                    {/if}
-                    <span class="circle"></span>
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="arr-1"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                        ></path>
-                    </svg>
-                </button>
+                        <iconify-icon
+                            icon="mdi:printer-outline"
+                            width="18"
+                            height="18"
+                        ></iconify-icon>
+                        Imprimir comprobante
+                    </button>
+                {/if}
             </div>
-        {/if}
 
-        {#if submitStatus === "Solo lectura" && $page.props.auth.is_admin}
-            <div class="flex justify-end col-span-12 mt-7">
-                <button
-                    type="button"
-                    class="flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-red text-white text-sm font-semibold hover:bg-red/90 transition-colors"
-                    on:click={() =>
-                        handleDelete(
-                            currentPayment?.id || $form.id,
-                            currentPayment,
-                        )}
-                >
-                    <iconify-icon
-                        icon="material-symbols:delete-outline"
-                        width="20"
-                        height="20"
-                    ></iconify-icon>
-                    Eliminar pago
-                </button>
+            <div class="flex items-center gap-3 ml-auto">
+                <!-- Botón Eliminar / Anular (en Solo lectura para administradores) -->
+                {#if submitStatus === "Solo lectura" && $page.props.auth.is_admin}
+                    <button
+                        type="button"
+                        class="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-red/30 bg-red/10 text-red text-xs md:text-sm font-bold hover:bg-red hover:text-white transition-all shadow-sm"
+                        on:click={() =>
+                            handleDelete(
+                                currentPayment?.id || $form.id,
+                                currentPayment,
+                            )}
+                    >
+                        <iconify-icon
+                            icon="material-symbols:delete-outline"
+                            width="18"
+                            height="18"
+                        ></iconify-icon>
+                        Eliminar pago
+                    </button>
+                {/if}
+
+                <!-- Botón Principal Submit (Guardar / Crear) -->
+                {#if submitStatus !== "Solo lectura"}
+                    <button
+                        type="submit"
+                        class={` max-w-[430px] mt-7  items-center justify-center gap-3 ${!$form.students.length > 0 ? "hidden  " : "flex animated-button"} `}
+                        disabled={$form.processing}
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="arr-2"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                            ></path>
+                        </svg>
+                        <iconify-icon
+                            class="text"
+                            icon="material-symbols:save-sharp"
+                            width="24"
+                            height="24"
+                        />
+                        {#if $form.processing}
+                            <span class="text"> Cargando...</span>
+                        {:else}
+                            <span class="text">{submitStatus}</span>
+                        {/if}
+                        <span class="circle"></span>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="arr-1"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                            ></path>
+                        </svg>
+                    </button>
+                {/if}
             </div>
-        {/if}
+        </div>
     </form>
 </Modal>
 
@@ -1906,7 +1979,7 @@
             label: "Ver detalles",
             icon: "mdi:eye",
             classes: "bg-blue",
-            onClick: () => fillFormToEdit(selectedRow?.data),
+            onClick: fillFormToEdit,
         },
     ]}
     edit={false}
@@ -1915,7 +1988,7 @@
     <thead slot="thead" class="sticky top-0 z-40">
         <tr>
             <th>ID</th>
-            <th>Fecha de la transacción</th>
+            <th>Fec. Transacción</th>
             <th>Estudiante/s</th>
             <th>Total USD$</th>
             <th>Total Bs</th>
@@ -2024,11 +2097,15 @@
                 > -->
                 <td class="text-right"
                     ><b>${row.total_in_dolars}</b>
-                    <p class="text-gray-400 text-xs font-semibold"> USD</p>
+                    <p class="text-gray-400 text-xs font-semibold">USD</p>
                 </td>
                 <td class="text-right"
-                    ><b class="font-semibold">{formatBsInput(row.total_in_bs)} Bs</b>
-                    <p class="text-gray-400 text-xs">tasa: {row.exchange_rate}</p>
+                    ><b class="font-semibold"
+                        >{formatBsInput(row.total_in_bs)} Bs</b
+                    >
+                    <p class="text-gray-400 text-xs">
+                        tasa: {row.exchange_rate}
+                    </p>
                 </td>
                 <td class="flex gap-3 items-center h-full">
                     <!-- <ColorsPayMethods
