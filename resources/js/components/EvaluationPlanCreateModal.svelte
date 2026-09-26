@@ -508,7 +508,7 @@
     <form
         on:submit={submit}
         id="admin-plan-form"
-        class="p-6 bg-slate-50/60 rounded-xl space-y-6"
+        class="md:p-6 bg-slate-50/60 rounded-xl space-y-6"
     >
         <!-- Header del Modal -->
         <div
@@ -516,7 +516,7 @@
         >
             <div>
                
-                <h3 class="text-xl font-bold text-slate-900 mt-1">
+                <h3 class="text-base md:text-xl font-bold text-slate-900 mt-1">
                     {submitStatus === "Crear"
                         ? "Nuevo plan de evaluación"
                         : "Editar plan de evaluación"}
@@ -532,7 +532,7 @@
             <div class="lg:col-span-4 space-y-5 lg:sticky lg:top-4">
                 <!-- Tarjeta 1: Parámetros Generales -->
                 <div
-                    class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4"
+                    class="bg-white p-3 md:p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4"
                 >
                     <div
                         class="flex items-center gap-2 pb-2 border-b border-slate-100"
@@ -596,7 +596,7 @@
                             bind:value={$form.school_lapse_id}
                             error={$form.errors?.school_lapse_id}
                             required={true}
-                            classes="col-span-1"
+                            classes="col-span-2 md:col-span-1"
                         >
                             {#each data.school_lapses || [] as lapse}
                                 <option value={lapse.id}>{lapse.label}</option>
@@ -609,7 +609,7 @@
                             bind:value={$form.lapse_id}
                             error={$form.errors?.lapse_id}
                             required={true}
-                            classes="col-span-1"
+                            classes="col-span-2 md:col-span-1"
                         >
                             {#each moments as moment}
                                 <option value={moment.id}>{moment.label}</option
@@ -721,7 +721,7 @@
 
                 <!-- Tarjeta 2: Balance, Ponderación y Rasgos -->
                 <div
-                    class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4"
+                    class="bg-white p-3 md:p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4"
                 >
                     <div
                         class="flex items-center justify-between pb-2 border-b border-slate-100"

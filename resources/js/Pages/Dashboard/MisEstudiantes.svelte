@@ -689,17 +689,21 @@
     <button
         class={`px-4 py-2 rounded-lg font-medium transition ${
             viewMode === 'notas' 
-                ? 'bg-yellow text-gray-900 shadow' 
+                ? 'bg-yellow text-gray-900 ' 
                 : 'bg-white opacity-70 text-gray-700 hover:bg-gray-200'
         }`}
         on:click={() => viewMode = 'notas'}
     >
         Notas
     </button>
+
+    {#if viewMode = "notas"}
+        
+    {/if}
     <button
         class={`px-4 py-2 rounded-lg font-medium transition ${
             viewMode === 'asistencia' 
-                ? 'bg-yellow text-gray-900 shadow' 
+                ? 'bg-yellow text-gray-900 ' 
                 : 'bg-white opacity-70 text-gray-700 hover:bg-gray-200'
         }`}
         on:click={() => {
