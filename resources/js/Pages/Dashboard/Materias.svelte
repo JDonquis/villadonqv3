@@ -10,7 +10,7 @@
 
     export let data = [];
 
-    let form = useForm({ name: "" });
+    let form = useForm({ name: "", literary_grading_secondary: false });
 
     let showModal = false;
     let selectedRow = { status: false, data: null };
@@ -69,6 +69,7 @@
 
     function openNuevaMateria() {
         $form.reset();
+        $form.literary_grading_secondary = false;
         submitStatus = "Crear";
         editingMatterId = null;
         showModal = true;
@@ -79,6 +80,7 @@
         editingMatterId = matter.id;
         submitStatus = "Editar";
         $form.name = matter.name;
+        $form.literary_grading_secondary = Boolean(matter.literary_grading_secondary);
         showModal = true;
     }
 
@@ -166,6 +168,7 @@
         <tr>
             <th>N°</th>
             <th>Nombre</th>
+            <th>Notas literarias en secundaria</th>
             <th>Profesores asignados</th>
         </tr>
     </thead>
@@ -182,6 +185,7 @@
             >
                 <td>{i + 1}</td>
                 <td>{matter.name}</td>
+                <td>{matter.literary_grading_secondary ? "Sí" : "No"}</td>
                 <td>{matter.teachers_count}</td>
             </SelectableRow>
         {/each}
@@ -207,6 +211,14 @@
             bind:value={$form.name}
             error={$form.errors.name}
         />
+        <label class="mt-3 flex items-start gap-2 text-sm text-gray-700">
+            <input
+                type="checkbox"
+                class="mt-0.5 h-4 w-4 rounded border-gray-300 text-color1 focus:ring-color1"
+                bind:checked={$form.literary_grading_secondary}
+            />
+            <span>Usar notas literarias (A, B, C) también en secundaria</span>
+        </label>
     </form>
     <button
         form="m-form"

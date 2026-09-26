@@ -9,6 +9,7 @@ use App\Models\StudentGradePublication;
 use App\Models\StudentGradePublicationItem;
 use App\Models\StudentGradePublicationRasgo;
 use App\Models\StudentPlanRasgo;
+use App\Support\EducationLevel;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -80,6 +81,9 @@ class StudentGradeService
 
         $rasgosByStudent = $plan->rasgos->pluck('rasgos_score', 'student_id');
         $planRasgosPoints = (int) $plan->rasgos_points;
+        $educationLevel = EducationLevel::forCourseId((int) $plan->course_id);
+        $literaryGradingEnabled = $educationLevel === EducationLevel::PRIMARIA
+            || ($educationLevel === EducationLevel::SECUNDARIA && (bool) $plan->matter?->literary_grading_secondary);
 
         $studentsData = $students->map(function ($student) use ($gradesByItemStudent, $items, $rasgosByStudent, $planRasgosPoints) {
             $scores = [];
@@ -131,6 +135,7 @@ class StudentGradeService
                 'school_lapse_label' => $this->lapseLabel($plan->schoolLapse),
                 'lapse_label' => $this->momentLabel($plan->lapse),
                 'course_name' => $plan->course?->name,
+                'literary_grading_enabled' => $literaryGradingEnabled,
                 'section_name' => $plan->section?->name,
                 'rasgos_points' => $planRasgosPoints,
             ],

@@ -16,6 +16,7 @@ class StoreMatterRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:50', Rule::unique('matters', 'name')],
+            'literary_grading_secondary' => ['required', 'boolean'],
         ];
     }
 }

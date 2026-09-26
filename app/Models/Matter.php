@@ -13,6 +13,11 @@ class Matter extends Model
 
     protected $fillable = [
         'name',
+        'literary_grading_secondary',
+    ];
+
+    protected $casts = [
+        'literary_grading_secondary' => 'boolean',
     ];
 
     public $timestamps = false;

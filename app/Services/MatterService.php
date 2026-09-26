@@ -14,6 +14,7 @@ class MatterService
             ->map(fn ($matter) => [
                 'id' => $matter->id,
                 'name' => $matter->name,
+                'literary_grading_secondary' => (bool) $matter->literary_grading_secondary,
                 'teachers_count' => $matter->teachers_count,
             ])
             ->values();
@@ -23,6 +24,7 @@ class MatterService
     {
         return Matter::create([
             'name' => $data['name'],
+            'literary_grading_secondary' => $data['literary_grading_secondary'],
         ]);
     }
 
@@ -30,6 +32,7 @@ class MatterService
     {
         $matter->update([
             'name' => $data['name'],
+            'literary_grading_secondary' => $data['literary_grading_secondary'],
         ]);
 
         return $matter;

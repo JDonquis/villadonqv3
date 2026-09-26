@@ -159,6 +159,19 @@
         $form.grades = getGradesFromEditable();
     }
 
+    function letterForScore(value) {
+        if (value === "" || value === null || value === undefined) return "";
+        const score = Number(value);
+        if (!Number.isFinite(score) || score < 10) return "";
+        if (score >= 18) return "A";
+        if (score >= 15) return "B";
+        return "C";
+    }
+
+    function scoreForLetter(letter) {
+        return { A: "20", B: "18", C: "15" }[letter] ?? "";
+    }
+
     function normalizeVoiceText(value) {
         return String(value || "")
             .toLocaleLowerCase("es-VE")
@@ -1067,41 +1080,59 @@
                                 </p>
                             </td>
                             {#each data.matrix.items as item}
+                                {@const gradeKey = `${student.id}_${item.id}`}
                                 <td class="px-3 py-2">
-                                    <input
-                                        type="number"
-                                        data-grade-input={`${student.id}_${item.id}`}
-                                        min="0"
-                                        max="20"
-                                        step="0.5"
-                                        class="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
-                                        inputmode="decimal"
-                                        on:wheel|preventDefault
-                                        on:focus={(e) =>
-                                            e.currentTarget.select()}
-                                        on:keydown={(e) => {
-                                            if (
-                                                [
-                                                    "ArrowUp",
-                                                    "ArrowDown",
-                                                    "PageUp",
-                                                    "PageDown",
-                                                    "Home",
-                                                    "End",
-                                                ].includes(e.key)
-                                            ) {
-                                                e.stopPropagation();
-                                            }
-                                        }}
-                                        value={editable[
-                                            `${student.id}_${item.id}`
-                                        ]}
-                                        on:input={(event) =>
-                                            updateGrade(
-                                                `${student.id}_${item.id}`,
-                                                event.currentTarget.value,
-                                            )}
-                                    />
+                                    <div class="flex items-center gap-1.5">
+                                        {#if data.matrix.plan.literary_grading_enabled}
+                                            <select
+                                                class="w-16 rounded-md border border-gray-300 bg-white px-1.5 py-1.5 text-sm font-semibold"
+                                                aria-label={`Nota literaria de ${student.name} ${student.last_name} en ${item.name}`}
+                                                value={letterForScore(editable[gradeKey])}
+                                                on:change={(event) =>
+                                                    updateGrade(
+                                                        gradeKey,
+                                                        scoreForLetter(event.currentTarget.value),
+                                                    )}
+                                            >
+                                                <option value="">—</option>
+                                                <option value="A">A</option>
+                                                <option value="B">B</option>
+                                                <option value="C">C</option>
+                                            </select>
+                                        {/if}
+                                        <input
+                                            type="number"
+                                            data-grade-input={gradeKey}
+                                            min="0"
+                                            max="20"
+                                            step="0.5"
+                                            class="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+                                            inputmode="decimal"
+                                            on:wheel|preventDefault
+                                            on:focus={(e) =>
+                                                e.currentTarget.select()}
+                                            on:keydown={(e) => {
+                                                if (
+                                                    [
+                                                        "ArrowUp",
+                                                        "ArrowDown",
+                                                        "PageUp",
+                                                        "PageDown",
+                                                        "Home",
+                                                        "End",
+                                                    ].includes(e.key)
+                                                ) {
+                                                    e.stopPropagation();
+                                                }
+                                            }}
+                                            value={editable[gradeKey]}
+                                            on:input={(event) =>
+                                                updateGrade(
+                                                    gradeKey,
+                                                    event.currentTarget.value,
+                                                )}
+                                        />
+                                    </div>
                                 </td>
                             {/each}
                             {#if planRasgosMax > 0}
@@ -1144,6 +1175,16 @@
                                                 ></iconify-icon>
                                             </span>
                                         {/if}
+                                        {#if data.matrix.plan.literary_grading_enabled}
+                                            {@const definitiveLetter = letterForScore(definitive)}
+                                            {#if definitiveLetter}
+                                                <span class="rounded bg-blue-100 px-2 py-0.5  font-bold text-blue-700" title="Equivalencia literaria de la definitiva">
+                                                    {definitiveLetter}
+                                                </span>
+
+                                                <span>|</span>
+                                            {/if}
+                                        {/if}
                                         <span
                                             class="font-bold {definitive >= 10
                                                 ? 'text-green-600'
@@ -1151,6 +1192,7 @@
                                         >
                                             {definitive}
                                         </span>
+                                        
                                         <span
                                             class="ml-1 text-xs px-2 py-0.5 rounded font-bold {definitive >=
                                             10
