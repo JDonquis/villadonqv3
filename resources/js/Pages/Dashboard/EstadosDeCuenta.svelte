@@ -273,7 +273,7 @@ Si ya realizó el pago, por favor ignore este mensaje o envíenos el comprobante
         ],
     }}
 >
-    <div slot="filterBox" class="flex items-center gap-2 md:gap-2">
+    <!-- <div slot="filterBox" class="flex items-center gap-2 md:gap-2">
         <select
             id="month-filter"
             name="month"
@@ -301,7 +301,7 @@ Si ya realizó el pago, por favor ignore este mensaje o envíenos el comprobante
                 <option value={course.id}>Grado: {course.name}</option>
             {/each}
         </select>
-    </div>
+    </div> -->
     <thead slot="thead">
         <tr>
             <th>Estudiante</th>

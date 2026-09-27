@@ -763,12 +763,12 @@
     bind:showModal
     keyShortcut="n"
     onKeyShortcut={openRegistrarPago}
-    classes="w-full h-full md:h-auto md:w-11/12 max-w-[1150px]"
+    classes="w-full h-full md:h-auto md:w-11/12 max-w-[1140px]"
 >
     <!-- TOP HEADER / BANNER DEL COMPROBANTE -->
     <div
         slot="header"
-        class="flex flex-wrap items-center md:pr-10 justify-between gap-4 pb-4 border-b border-grayBlue/30"
+        class="flex flex-wrap items-center md:pr-12 justify-between gap-4 pb-4 border-b border-grayBlue/30"
     >
         <div class="flex items-center gap-3">
             <div
@@ -826,7 +826,7 @@
     >
         <!-- CUERPO PRINCIPAL EN 2 COLUMNAS (12 COLS) -->
         <div
-            class="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full lg:gap-x-12 items-start justify-between"
+            class="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full lg:gap-x-10 items-start justify-between"
         >
             <!-- COLUMNA IZQUIERDA: Búsqueda y Lista de Estudiantes (7 Cols) -->
             <div class="lg:col-span-7 space-y-4">
@@ -880,8 +880,8 @@
                                 <div
                                     class="p-2 bg-gray-50 text-[11px] font-bold uppercase tracking-wider text-gray-400 grid grid-cols-12 gap-2 px-3"
                                 >
-                                    <span class="col-span-4">Estudiante</span>
-                                    <span class="col-span-3">Cédula</span>
+                                    <span class="col-span-5">Estudiante</span>
+                                    <span class="col-span-2">Cédula</span>
                                     <span class="col-span-2">Grado/Año</span>
                                     <span class="col-span-3">Representante</span
                                     >
@@ -972,20 +972,20 @@
                                         }}
                                     >
                                         <span
-                                            class="col-span-4 font-bold text-color1"
+                                            class="col-span-5 font-bold text-color1"
                                         >
                                             {student.name}
                                             {student.last_name}
                                         </span>
                                         <span
-                                            class="col-span-3 font-mono text-gray-600"
+                                            class="col-span-2 font-mono text-gray-600"
                                         >
                                             {student.document_type
                                                 ? `${student.document_type}-`
                                                 : ""}{student.ci}
                                         </span>
                                         <span class="col-span-2 text-gray-500">
-                                            {student.course.name} - {student
+                                            {student.course.name} {student
                                                 .section.name}
                                         </span>
                                         <span
@@ -1361,7 +1361,7 @@
             </div> -->
 
                 <!-- CARD DE DATOS DE LA TRANSACCIÓN -->
-                <div class="bg-white space-y-4 grid grid-cols-2 gap-x-3">
+                <div class="bg-white space-y-4 grid grid-cols-2 gap-x-3 max-w-[430px] ml-auto">
                     <!-- Concepto de Pago -->
                     <div class="col-span-2 space-y-1">
                         <div class="flex items-center justify-between">
@@ -1807,16 +1807,19 @@
             </div>
         {/if}
 
-        <div class=" items-center gap-5 ml-auto mb-3">
-            <p class="text-sm text-gray-500">
-                1$ <span class="hidden md:inline"
-                    >el {formatFechaCorta(dateOfDolarPrice)}</span
+        <div class=" items-center gap-5 ml-auto mb-2">
+            <p class="text-sm text-gray-500 bg-color3/10 px-2 py-1 rounded-xl">
+                 <span class="hidden md:inline font-semibold text-emerald-700"
+                    >1 USD =</span
                 >
-                = {#if dolarPrice}{dolarPrice}{:else}<iconify-icon
+                
+                 {#if dolarPrice}<span class="text-color1 text-sm font-semibold">{dolarPrice} Bs</span> {:else}<iconify-icon
                         icon="line-md:loading-loop"
                         width="24"
                         height="24"
-                    ></iconify-icon>{/if} Bs
+                    ></iconify-icon>{/if} 
+
+                    | {formatFechaCorta(dateOfDolarPrice)}
             </p>
             <div class="hidden sm:block">
                 <button

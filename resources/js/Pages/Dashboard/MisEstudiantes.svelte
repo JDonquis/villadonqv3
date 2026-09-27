@@ -1,5 +1,5 @@
 <script>
-    import { onDestroy } from "svelte";
+    import { onDestroy, onMount } from "svelte";
     import { useForm, router } from "@inertiajs/svelte";
     import Alert from "../../components/Alert.svelte";
     import { displayAlert } from "../../stores/alertStore";
@@ -8,7 +8,7 @@
     export let data = [];
 
     // View mode: 'notas' | 'asistencia'
-    let viewMode = 'notas';
+    let viewMode = "notas";
 
     // Grades state
     let editable = {};
@@ -22,7 +22,7 @@
     // Attendance state
     let attendanceSessions = [];
     let attendanceData = {}; // sessionId -> { studentId: status }
-    let newSessionDate = new Date().toISOString().split('T')[0];
+    let newSessionDate = new Date().toISOString().split("T")[0];
     let attendanceSaving = false;
     let attendanceDirty = false;
     let lastLoadedPlanId = null;
@@ -182,50 +182,169 @@
             .trim();
     }
 
+    function levenshteinDistance(a, b) {
+        const matrix = Array.from({ length: a.length + 1 }, () =>
+            Array(b.length + 1).fill(0),
+        );
+
+        for (let i = 0; i <= a.length; i += 1) matrix[i][0] = i;
+        for (let j = 0; j <= b.length; j += 1) matrix[0][j] = j;
+
+        for (let i = 1; i <= a.length; i += 1) {
+            for (let j = 1; j <= b.length; j += 1) {
+                const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                matrix[i][j] = Math.min(
+                    matrix[i - 1][j] + 1,
+                    matrix[i][j - 1] + 1,
+                    matrix[i - 1][j - 1] + cost,
+                );
+            }
+        }
+
+        return matrix[a.length][b.length];
+    }
+
+    function tokenSimilarity(wordA, wordB) {
+        if (!wordA || !wordB) return 0;
+
+        const a = normalizeVoiceText(wordA);
+        const b = normalizeVoiceText(wordB);
+        if (!a || !b) return 0;
+
+        if (a === b) return 1;
+        if (a.startsWith(b) || b.startsWith(a)) return 0.8;
+
+        const phoneticA = a.replace(/[aeiou]/g, "");
+        const phoneticB = b.replace(/[aeiou]/g, "");
+        if (phoneticA === phoneticB) return 0.75;
+
+        const distance = levenshteinDistance(a, b);
+        const maxLen = Math.max(a.length, b.length, 1);
+        const ratio = 1 - distance / maxLen;
+        if (ratio > 0.75) return ratio;
+
+        return 0;
+    }
+
     function findVoiceStudent(transcript) {
-        const words = normalizeVoiceText(transcript)
+        const transcriptText = normalizeVoiceText(transcript);
+        const words = transcriptText
             .split(" ")
-            .filter((word) => !["estudiante", "alumno", "alumna", "nota", "para", "de", "a"].includes(word));
+            .filter(
+                (word) =>
+                    ![
+                        "estudiante",
+                        "alumno",
+                        "alumna",
+                        "nota",
+                        "para",
+                        "de",
+                        "a",
+                    ].includes(word),
+            );
         if (!words.length) return { student: null, ambiguous: false };
 
         const matches = (data.matrix?.students || [])
             .map((student) => {
-                const nameWords = normalizeVoiceText(`${student.name} ${student.last_name}`)
-                    .split(" ")
-                    .filter(Boolean);
-                const score = nameWords.filter((word) => words.includes(word)).length;
+                const nameText = normalizeVoiceText(
+                    `${student.name} ${student.last_name}`,
+                );
+                const nameWords = nameText.split(" ").filter(Boolean);
+
+                let exactScore = 0;
+                nameWords.forEach((nameWord) => {
+                    if (words.includes(nameWord)) exactScore += 1;
+                });
+
+                // Boost exact score weight (B): each matched word counts double
+                // This makes first+middle+last name combinations score significantly higher
+                const weightedExactScore = exactScore * 2;
+
+                let fuzzyScore = 0;
+                if (nameText && transcriptText) {
+                    const fullDistance = levenshteinDistance(
+                        transcriptText,
+                        nameText,
+                    );
+                    const fullRatio =
+                        1 -
+                        fullDistance /
+                            Math.max(transcriptText.length, nameText.length, 1);
+                    fuzzyScore = Math.max(fuzzyScore, fullRatio * 0.7);
+                }
+
+                words.forEach((word) => {
+                    const bestWordMatch = nameWords.reduce(
+                        (maxScore, nameWord) =>
+                            Math.max(maxScore, tokenSimilarity(word, nameWord)),
+                        0,
+                    );
+                    fuzzyScore = Math.max(fuzzyScore, bestWordMatch * 0.9);
+                });
+
+                const score = weightedExactScore + fuzzyScore;
                 return { student, score };
             })
-            .filter((entry) => entry.score > 0)
+            .filter((entry) => entry.score > 0.25)
             .sort((a, b) => b.score - a.score);
 
         if (!matches.length) return { student: null, ambiguous: false };
-        const best = matches.filter((entry) => entry.score === matches[0].score);
-        return best.length === 1
-            ? { student: best[0].student, ambiguous: false }
+
+        const bestScore = matches[0].score;
+        // Tighten ambiguity threshold (C): from 0.95 to 0.99
+        // Requires near-perfect score tie to trigger ambiguity
+        const closest = matches.filter(
+            (entry) => entry.score >= bestScore * 0.99,
+        );
+
+        return closest.length === 1
+            ? { student: closest[0].student, ambiguous: false }
             : { student: null, ambiguous: true };
     }
 
     function parseVoiceScore(transcript) {
         const normalized = normalizeVoiceText(transcript);
-        const digitMatch = normalized.match(/(?:^|\s)(\d{1,2}(?:[.,]\d+)?)(?:\s|$)/);
+        const digitMatch = normalized.match(
+            /(?:^|\s)(\d{1,2}(?:[.,]\d+)?)(?:\s|$)/,
+        );
         if (digitMatch) return Number(digitMatch[1].replace(",", "."));
 
         const numberWords = {
-            cero: 0, un: 1, uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4,
-            cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10,
-            once: 11, doce: 12, trece: 13, catorce: 14, quince: 15,
-            dieciseis: 16, diecisiete: 17, dieciocho: 18, diecinueve: 19,
+            cero: 0,
+            un: 1,
+            uno: 1,
+            una: 1,
+            dos: 2,
+            tres: 3,
+            cuatro: 4,
+            cinco: 5,
+            seis: 6,
+            siete: 7,
+            ocho: 8,
+            nueve: 9,
+            diez: 10,
+            once: 11,
+            doce: 12,
+            trece: 13,
+            catorce: 14,
+            quince: 15,
+            dieciseis: 16,
+            diecisiete: 17,
+            dieciocho: 18,
+            diecinueve: 19,
             veinte: 20,
         };
         const words = normalized.split(" ");
-        const scoreWord = words.find((word) => Object.hasOwn(numberWords, word));
+        const scoreWord = words.find((word) =>
+            Object.hasOwn(numberWords, word),
+        );
         if (scoreWord === undefined) return null;
 
         let score = numberWords[scoreWord];
         const scoreIndex = words.indexOf(scoreWord);
-        const separatorIndex = words.findIndex((word, index) =>
-            index > scoreIndex && ["coma", "punto"].includes(word),
+        const separatorIndex = words.findIndex(
+            (word, index) =>
+                index > scoreIndex && ["coma", "punto"].includes(word),
         );
         if (separatorIndex !== -1) {
             const decimalWord = words[separatorIndex + 1];
@@ -238,7 +357,28 @@
         return score;
     }
 
-    function focusVoiceGrade(studentId) {
+    let voiceFocusTimer = null;
+
+    function focusVoiceGrade(studentId, force = false) {
+        if (voiceFocusTimer) {
+            clearTimeout(voiceFocusTimer);
+            voiceFocusTimer = null;
+        }
+
+        if (!force) {
+            voiceFocusTimer = setTimeout(() => {
+                if (pendingVoiceStudentId !== studentId) return;
+
+                const input = document.querySelector(
+                    `[data-grade-input="${studentId}_${selectedVoiceItemId}"]`,
+                );
+                input?.focus();
+                input?.select();
+                voiceFocusTimer = null;
+            }, 220);
+            return;
+        }
+
         const input = document.querySelector(
             `[data-grade-input="${studentId}_${selectedVoiceItemId}"]`,
         );
@@ -247,22 +387,47 @@
     }
 
     function processVoiceTranscript(transcript) {
+        const score = parseVoiceScore(transcript);
+
         if (pendingVoiceStudentId !== null) {
-            const score = parseVoiceScore(transcript);
             if (score === null) {
                 voiceStatus = `No reconocí una nota en «${transcript}». Diga un número del 0 al 20.`;
                 return;
             }
             if (score < 0 || score > 20) {
-                voiceStatus = "La nota debe estar entre 0 y 20. Diga el número nuevamente.";
+                voiceStatus =
+                    "La nota debe estar entre 0 y 20. Diga el número nuevamente.";
                 return;
             }
 
             const studentId = pendingVoiceStudentId;
+            if (voiceFocusTimer) {
+                clearTimeout(voiceFocusTimer);
+                voiceFocusTimer = null;
+            }
             updateGrade(`${studentId}_${selectedVoiceItemId}`, String(score));
+            focusVoiceGrade(studentId, true);
             pendingVoiceStudentId = null;
             voiceStatus = `Nota ${score} registrada. Diga el nombre del siguiente estudiante.`;
             return;
+        }
+
+        if (score !== null) {
+            const { student } = findVoiceStudent(
+                transcript.replace(/\b(\d{1,2}(?:[.,]\d+)?)\b/g, "").trim(),
+            );
+            if (student) {
+                pendingVoiceStudentId = student.id;
+                focusVoiceGrade(student.id);
+                updateGrade(
+                    `${student.id}_${selectedVoiceItemId}`,
+                    String(score),
+                );
+                focusVoiceGrade(student.id, true);
+                voiceStatus = `Nota ${score} registrada para ${student.name} ${student.last_name}. Diga el nombre del siguiente estudiante.`;
+                pendingVoiceStudentId = null;
+                return;
+            }
         }
 
         const { student, ambiguous } = findVoiceStudent(transcript);
@@ -291,6 +456,35 @@
         }
     }
 
+    onMount(() => {
+        const handleKeyboardShortcut = (event) => {
+            const target = event.target;
+            const isTypingField =
+                target instanceof HTMLElement &&
+                ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
+
+            const isShortcut =
+                (event.ctrlKey || event.metaKey) &&
+                !event.altKey &&
+                !event.shiftKey &&
+                event.key.toLowerCase() === "m";
+
+            if (!isShortcut || isTypingField) return;
+
+            event.preventDefault();
+            if (!selectedVoiceItemId) {
+                voiceStatus =
+                    "Primero selecciona el tema en el encabezado de su columna.";
+                return;
+            }
+
+            toggleVoiceDictation();
+        };
+
+        window.addEventListener("keydown", handleKeyboardShortcut);
+        return () => window.removeEventListener("keydown", handleKeyboardShortcut);
+    });
+
     function resetVoiceSelection() {
         stopVoiceDictation();
         selectedVoiceItemId = "";
@@ -305,14 +499,16 @@
             return;
         }
         if (!selectedVoiceItemId) {
-            voiceStatus = "Primero selecciona el tema en el encabezado de su columna.";
+            voiceStatus =
+                "Primero selecciona el tema en el encabezado de su columna.";
             return;
         }
 
         const SpeechRecognition =
             window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
-            voiceStatus = "Este navegador no admite dictado por voz. Prueba con Chrome o Edge.";
+            voiceStatus =
+                "Este navegador no admite dictado por voz. Prueba con Chrome o Edge.";
             return;
         }
 
@@ -325,7 +521,11 @@
         voiceStatus = "Escuchando: diga el nombre del estudiante.";
 
         recognition.onresult = (event) => {
-            for (let index = event.resultIndex; index < event.results.length; index += 1) {
+            for (
+                let index = event.resultIndex;
+                index < event.results.length;
+                index += 1
+            ) {
                 if (event.results[index].isFinal) {
                     processVoiceTranscript(event.results[index][0].transcript);
                 }
@@ -334,16 +534,18 @@
         recognition.onerror = (event) => {
             voiceListening = false;
             voiceRecognition = null;
-            voiceStatus = event.error === "not-allowed"
-                ? "Permite el acceso al micrófono en el navegador para dictar notas."
-                : `Error de dictado: ${event.error}. Puedes volver a activar el micrófono.`;
+            voiceStatus =
+                event.error === "not-allowed"
+                    ? "Permite el acceso al micrófono en el navegador para dictar notas."
+                    : `Error de dictado: ${event.error}. Puedes volver a activar el micrófono.`;
         };
         recognition.onend = () => {
             if (voiceRecognition === recognition) {
                 voiceRecognition = null;
                 voiceListening = false;
                 if (pendingVoiceStudentId !== null) {
-                    voiceStatus += " Activa nuevamente el micrófono para dictar la nota pendiente.";
+                    voiceStatus +=
+                        " Activa nuevamente el micrófono para dictar la nota pendiente.";
                 }
             }
         };
@@ -353,7 +555,8 @@
         } catch (error) {
             voiceRecognition = null;
             voiceListening = false;
-            voiceStatus = "No se pudo iniciar el micrófono. Inténtalo nuevamente.";
+            voiceStatus =
+                "No se pudo iniciar el micrófono. Inténtalo nuevamente.";
         }
     }
 
@@ -668,14 +871,19 @@
 
     async function loadAttendanceMatrix(planId) {
         try {
-            const response = await axios.get(`/dashboard/mis-estudiantes/asistencia/${planId}`);
+            const response = await axios.get(
+                `/dashboard/mis-estudiantes/asistencia/${planId}`,
+            );
             const matrix = response.data.data;
             attendanceSessions = matrix.sessions || [];
             attendanceData = matrix.attendance || {};
             attendanceDirty = false;
         } catch (error) {
-            console.error('Error loading attendance:', error);
-            displayAlert({ type: 'error', message: 'Error al cargar asistencia' });
+            console.error("Error loading attendance:", error);
+            displayAlert({
+                type: "error",
+                message: "Error al cargar asistencia",
+            });
         }
     }
 
@@ -683,149 +891,215 @@
         if (!data.matrix?.plan?.id || !newSessionDate) return;
 
         try {
-            const response = await axios.post('/dashboard/mis-estudiantes/asistencia/session', {
-                plan_id: data.matrix.plan.id,
-                date: newSessionDate,
-            });
+            const response = await axios.post(
+                "/dashboard/mis-estudiantes/asistencia/session",
+                {
+                    plan_id: data.matrix.plan.id,
+                    date: newSessionDate,
+                },
+            );
             const session = response.data.data;
-            attendanceSessions = [...attendanceSessions, {
-                id: session.id,
-                date: session.date,
-                order: session.order,
-                day_of_week: formatDayOfWeek(session.date),
-            }].sort((a, b) => a.order - b.order || a.date.localeCompare(b.date));
-            
+            attendanceSessions = [
+                ...attendanceSessions,
+                {
+                    id: session.id,
+                    date: session.date,
+                    order: session.order,
+                    day_of_week: formatDayOfWeek(session.date),
+                },
+            ].sort((a, b) => a.order - b.order || a.date.localeCompare(b.date));
+
             // Initialize attendance for new session
             attendanceData[session.id] = {};
             attendanceDirty = true;
-            displayAlert({ type: 'success', message: 'Sesión creada correctamente' });
+            displayAlert({
+                type: "success",
+                message: "Sesión creada correctamente",
+            });
         } catch (error) {
-            console.error('Error creating session:', error);
-            displayAlert({ type: 'error', message: 'Error al crear sesión' });
+            console.error("Error creating session:", error);
+            displayAlert({ type: "error", message: "Error al crear sesión" });
         }
     }
 
     async function deleteSession(sessionId) {
-        if (!confirm('¿Eliminar esta sesión de asistencia? Se borrarán todos los registros.')) return;
+        if (
+            !confirm(
+                "¿Eliminar esta sesión de asistencia? Se borrarán todos los registros.",
+            )
+        )
+            return;
 
         try {
-            await axios.delete(`/dashboard/mis-estudiantes/asistencia/session/${sessionId}`);
-            attendanceSessions = attendanceSessions.filter(s => s.id !== sessionId);
+            await axios.delete(
+                `/dashboard/mis-estudiantes/asistencia/session/${sessionId}`,
+            );
+            attendanceSessions = attendanceSessions.filter(
+                (s) => s.id !== sessionId,
+            );
             delete attendanceData[sessionId];
             attendanceDirty = true;
-            displayAlert({ type: 'success', message: 'Sesión eliminada' });
+            displayAlert({ type: "success", message: "Sesión eliminada" });
         } catch (error) {
-            console.error('Error deleting session:', error);
-            displayAlert({ type: 'error', message: 'Error al eliminar sesión' });
+            console.error("Error deleting session:", error);
+            displayAlert({
+                type: "error",
+                message: "Error al eliminar sesión",
+            });
         }
     }
 
     function toggleAttendance(sessionId, studentId) {
-        const current = attendanceData[sessionId]?.[studentId] || 'absent';
-        const next = current === 'absent' ? 'present' :
-                     current === 'present' ? 'excused' : 'absent';
-        
-        attendanceData[sessionId] = { ...attendanceData[sessionId], [studentId]: next };
+        const current = attendanceData[sessionId]?.[studentId] || "absent";
+        const next =
+            current === "absent"
+                ? "present"
+                : current === "present"
+                  ? "excused"
+                  : "absent";
+
+        attendanceData[sessionId] = {
+            ...attendanceData[sessionId],
+            [studentId]: next,
+        };
         attendanceData = { ...attendanceData };
         attendanceDirty = true;
     }
 
     function toggleAllInSession(sessionId) {
-        const studentIds = (data.matrix?.students || []).map((student) => student.id);
+        const studentIds = (data.matrix?.students || []).map(
+            (student) => student.id,
+        );
         if (!studentIds.length) return;
 
         const sessionData = attendanceData[sessionId] || {};
-        const allPresent = studentIds.length > 0 && studentIds.every((studentId) => sessionData[studentId] === 'present');
-        const target = allPresent ? 'absent' : 'present';
+        const allPresent =
+            studentIds.length > 0 &&
+            studentIds.every(
+                (studentId) => sessionData[studentId] === "present",
+            );
+        const target = allPresent ? "absent" : "present";
 
         attendanceData[sessionId] = Object.fromEntries(
             studentIds.map((studentId) => [studentId, target]),
         );
         attendanceData = { ...attendanceData };
         attendanceDirty = true;
-
     }
 
     function formatDayOfWeek(dateStr) {
         const date = new Date(`${dateStr}T00:00:00`);
-        return date.toLocaleDateString('es-VE', { weekday: 'short' }).replace(/\./g, '').trim();
+        return date
+            .toLocaleDateString("es-VE", { weekday: "short" })
+            .replace(/\./g, "")
+            .trim();
     }
 
     function getAttendanceClass(status) {
-        return status === 'present' ? 'bg-green-50 text-green-600' :
-               status === 'excused' ? 'bg-orange-50 text-orange-600' :
-               'bg-gray-50 text-gray-300';
+        return status === "present"
+            ? "bg-green-50 text-green-600"
+            : status === "excused"
+              ? "bg-orange-50 text-orange-600"
+              : "bg-gray-50 text-gray-300";
     }
 
     function renderAttendanceIcon(status) {
-        if (status === 'present') return '<iconify-icon icon="mdi:check-bold" class="text-2xl"></iconify-icon>';
-        if (status === 'excused') return 'J';
-        return '—';
+        if (status === "present")
+            return '<iconify-icon icon="mdi:check-bold" class="text-2xl"></iconify-icon>';
+        if (status === "excused") return "J";
+        return "—";
     }
 
     function isAllPresent(sessionId) {
-        const studentIds = (data.matrix?.students || []).map((student) => student.id);
+        const studentIds = (data.matrix?.students || []).map(
+            (student) => student.id,
+        );
         if (!studentIds.length) return false;
 
         const sessionData = attendanceData[sessionId] || {};
 
-       return studentIds.every((studentId) => sessionData[studentId] === 'present');
+        return studentIds.every(
+            (studentId) => sessionData[studentId] === "present",
+        );
     }
 
     function formatDate(dateStr) {
-        if (!dateStr) return '—';
+        if (!dateStr) return "—";
         const date = new Date(`${dateStr}T00:00:00`);
-        return date.toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit' });
+        return date.toLocaleDateString("es-VE", {
+            day: "2-digit",
+            month: "2-digit",
+        });
     }
 
     async function saveAttendance() {
         if (!data.matrix?.plan?.id) return;
-        
+
         attendanceSaving = true;
-        
+
         // Build records array
         const records = [];
-        attendanceSessions.forEach(session => {
-            Object.entries(attendanceData[session.id] || {}).forEach(([studentId, status]) => {
-                records.push({
-                    session_id: session.id,
-                    student_id: parseInt(studentId),
-                    status,
-                });
-            });
+        attendanceSessions.forEach((session) => {
+            Object.entries(attendanceData[session.id] || {}).forEach(
+                ([studentId, status]) => {
+                    records.push({
+                        session_id: session.id,
+                        student_id: parseInt(studentId),
+                        status,
+                    });
+                },
+            );
         });
 
         try {
-            await router.post('/dashboard/mis-estudiantes/asistencia/save', {
-                plan_id: data.matrix.plan.id,
-                records,
-            }, {
-                preserveScroll: true,
-                onSuccess: () => {
-                    attendanceDirty = false;
-                    attendanceSaving = false;
-                    displayAlert({ type: 'success', message: 'Asistencia guardada correctamente' });
+            await router.post(
+                "/dashboard/mis-estudiantes/asistencia/save",
+                {
+                    plan_id: data.matrix.plan.id,
+                    records,
                 },
-                onError: (errors) => {
-                    attendanceSaving = false;
-                    displayAlert({ type: 'error', message: errors.message || 'Error al guardar asistencia' });
+                {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        attendanceDirty = false;
+                        attendanceSaving = false;
+                        displayAlert({
+                            type: "success",
+                            message: "Asistencia guardada correctamente",
+                        });
+                    },
+                    onError: (errors) => {
+                        attendanceSaving = false;
+                        displayAlert({
+                            type: "error",
+                            message:
+                                errors.message || "Error al guardar asistencia",
+                        });
+                    },
                 },
-            });
+            );
         } catch (error) {
             attendanceSaving = false;
-            console.error('Error saving attendance:', error);
-            displayAlert({ type: 'error', message: 'Error al guardar asistencia' });
+            console.error("Error saving attendance:", error);
+            displayAlert({
+                type: "error",
+                message: "Error al guardar asistencia",
+            });
         }
     }
 
     // Watch for plan change to load attendance
-    $: if (viewMode === 'asistencia' && data.matrix?.plan?.id && data.matrix.plan.id !== lastLoadedPlanId) {
+    $: if (
+        viewMode === "asistencia" &&
+        data.matrix?.plan?.id &&
+        data.matrix.plan.id !== lastLoadedPlanId
+    ) {
         lastLoadedPlanId = data.matrix.plan.id;
         loadAttendanceMatrix(data.matrix.plan.id);
     }
 
     // Reset attendance state when switching away from asistencia or changing plan
-    $: if (viewMode !== 'asistencia') {
+    $: if (viewMode !== "asistencia") {
         attendanceSessions = [];
         attendanceData = {};
         attendanceDirty = false;
@@ -839,7 +1113,9 @@
 <Alert />
 
 <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
-    <h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden">Mis Estudiantes</h2>
+    <h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden">
+        Mis Estudiantes
+    </h2>
 </div>
 
 <div
@@ -897,24 +1173,24 @@
 <div class="flex gap-2 mb-4">
     <button
         class={`px-4 py-2 rounded-lg font-medium transition ${
-            viewMode === 'notas' 
-                ? 'bg-yellow text-gray-900 ' 
-                : 'bg-white opacity-70 text-gray-700 hover:bg-gray-200'
+            viewMode === "notas"
+                ? "bg-yellow text-gray-900 "
+                : "bg-white opacity-70 text-gray-700 hover:bg-gray-200"
         }`}
-        on:click={() => viewMode = 'notas'}
+        on:click={() => (viewMode = "notas")}
     >
         Notas
     </button>
 
     <button
         class={`px-4 py-2 rounded-lg font-medium transition ${
-            viewMode === 'asistencia' 
-                ? 'bg-yellow text-gray-900 ' 
-                : 'bg-white opacity-70 text-gray-700 hover:bg-gray-200'
+            viewMode === "asistencia"
+                ? "bg-yellow text-gray-900 "
+                : "bg-white opacity-70 text-gray-700 hover:bg-gray-200"
         }`}
         on:click={() => {
             stopVoiceDictation();
-            viewMode = 'asistencia';
+            viewMode = "asistencia";
             if (data.matrix?.plan?.id && !attendanceSessions.length) {
                 loadAttendanceMatrix(data.matrix.plan.id);
             }
@@ -934,299 +1210,317 @@
 
 {#if data.matrix && viewMode === 'notas'}
     {#if data.matrix.students.length === 0}
-        <div
-            class="bg-white border border-gray-200 rounded-lg p-8 text-center text-gray-400"
-        >
-            No hay estudiantes en {data.matrix.plan.course_name} · Sección
-            {data.matrix.plan.section_name}.
+        <div class="bg-white border border-grayBlue/40 rounded-2xl p-12 text-center text-gray-400 shadow-sm max-w-2xl mx-auto my-8">
+            <div class="w-12 h-12 rounded-2xl bg-color2/10 text-color2 flex items-center justify-center mx-auto mb-3">
+                <iconify-icon icon="mdi:account-group-outline" width="28" height="28"></iconify-icon>
+            </div>
+            <p class="font-bold text-color1 text-base">No hay estudiantes inscritos</p>
+            <p class="text-xs text-gray-500 mt-1">
+                {data.matrix.plan.course_name} · Sección {data.matrix.plan.section_name}
+            </p>
         </div>
     {:else}
-        <div
-            class="bg-white  mb-14  rounded-lg shadow overflow-x-auto"
-        >
-            <div class="flex flex-col gap-2 border-b border-gray-200 bg-gray-50 p-3 sm:flex-row sm:items-center sm:justify-between">
-                <div class="flex flex-wrap items-center gap-2">
-                    <button
-                        type="button"
-                        class={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition ${voiceListening ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-color1 text-white hover:bg-color1/90'}`}
-                        aria-pressed={voiceListening}
-                        on:click={toggleVoiceDictation}
-                    >
-                        <iconify-icon icon={voiceListening ? "mdi:microphone-off" : "mdi:microphone"} class="text-lg"></iconify-icon>
-                        {voiceListening ? "Apagar micrófono" : "Dictar notas"}
-                    </button>
-                    <span class="text-xs text-gray-500">
-                        {#if selectedVoiceItemId}
-                            Tema: {data.matrix.items.find((item) => String(item.id) === selectedVoiceItemId)?.name || "—"}
-                        {:else}
-                            Selecciona un tema desde su columna
-                        {/if}
+        <!-- CONTENEDOR PRINCIPAL ELEVADO -->
+        <div class="bg-white rounded-2xl border border-grayBlue/40 shadow-sm overflow-hidden mb-12">
+
+            <!-- HEADER SUPERIOR LIMPIO: FEEDBACK DE ESTADO / DICTADO ACTIVO -->
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-grayBlue/30 bg-slate-50/70 px-5 py-3 min-h-[52px]">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-color1 uppercase tracking-wider">Matriz de Calificaciones</span>
+                    <span class="text-gray-300">•</span>
+                    <span class="text-xs text-gray-500 font-medium">
+                        Total alumnos: <b class="text-color1">{sortedStudents.length}</b>
                     </span>
                 </div>
-                <p class="text-xs text-gray-600" aria-live="polite">{voiceStatus}</p>
+
+                <!-- Feedback contextual de dictado por voz -->
+                {#if voiceListening && selectedVoiceItemId}
+                    {@const activeItem = data.matrix.items.find((item) => String(item.id) === selectedVoiceItemId)}
+                    <div class="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-red/10 border border-red/30 text-red text-xs font-semibold animate-pulse shadow-xs">
+                        <span class="relative flex h-2.5 w-2.5">
+                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-red opacity-75"></span>
+                            <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-red"></span>
+                        </span>
+                        <span>Dictando en: <strong class="underline decoration-red/40">{activeItem?.name || "Tema seleccionado"}</strong></span>
+                        <span class="text-gray-400">•</span>
+                        <span class="text-[11px] font-normal text-gray-600 truncate max-w-[280px] sm:max-w-md">{voiceStatus}</span>
+                    </div>
+                {:else}
+                    <div class="flex items-center gap-2 text-xs text-gray-400 font-medium">
+                        <iconify-icon icon="mdi:waveform" class="text-color3 text-base"></iconify-icon>
+                        <span>{voiceStatus || "Selecciona 'Dictar notas' en cualquier tema para comenzar"}</span>
+                    </div>
+                {/if}
+
             </div>
-            <table class="w-full text-sm ">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th
-                            class="px-3 py-3 text-left sticky left-0 bg-gray-50"
-                        >
-                            <button
-                                type="button"
-                                class="flex items-center gap-1 font-semibold text-left"
-                                on:click={() => toggleSort("student")}
-                            >
-                                <span>Estudiante</span>
-                                <span class="text-[10px] text-gray-500">
-                                    {getSortIndicator("student")}
-                                </span>
-                            </button>
-                        </th>
-                        {#each data.matrix.items as item}
-                            {@const meta = getUnitMetaForItem(item)}
-                            <th
-                                class="px-3 py-3 text-left min-w-[150px] relative group"
-                                title=""
-                            >
-                                <button
-                                    type="button"
-                                    class="flex w-full items-center justify-between gap-2 text-left"
-                                    on:click={() =>
-                                        toggleSort(`item_${item.id}`)}
-                                >
-                                    <span>
-                                        <span
-                                            class="font-semibold block text-xs"
-                                            >{item.name}</span
-                                        >
-                                        <span
-                                            class="text-xs text-gray-400 font-normal"
-                                        >
-                                            {item.percentage}%
-                                        </span>
-                                    </span>
-                                    <span class="text-[10px] text-gray-500">
-                                        {getSortIndicator(`item_${item.id}`)}
-                                    </span>
-                                </button>
-                                <div
-                                    class="pointer-events-none absolute left-1/2 top-12 z-20 mt-2 w-64 -translate-x-1/2 rounded-lg border border-gray-200 bg-white p-2 text-left text-[11px] text-gray-700 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100"
-                                >
-                                    <div class="font-semibold text-gray-800">
-                                        Unidad {meta.unit_number}: "{meta.unit_name}"
-                                    </div>
-                                    <div class="mt-1">
-                                        Tipo: {meta.assessment_type}
-                                    </div>
-                                    <div class="mt-1">
-                                        Fecha: {formatTooltipDate(
-                                            meta.scheduled_date,
-                                        )}
-                                    </div>
-                                </div>
-                                <button
-                                    type="button"
-                                    class={`mt-2 rounded px-2 py-1 text-[11px] font-semibold ${String(selectedVoiceItemId) === String(item.id) ? 'bg-color1 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-                                    aria-pressed={String(selectedVoiceItemId) === String(item.id)}
-                                    on:click={() => {
-                                        selectedVoiceItemId = String(item.id);
-                                        pendingVoiceStudentId = null;
-                                        voiceStatus = `Tema «${item.name}» seleccionado. Activa el micrófono para dictar.`;
-                                    }}
-                                >
-                                    {String(selectedVoiceItemId) === String(item.id) ? "Tema seleccionado" : "Dictar en este tema"}
+
+            <!-- Banner flotante sutil en pantalla solo cuando el micrófono está en escucha -->
+            {#if voiceListening}
+                <div class="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-red/30 bg-white/95 px-5 py-3 shadow-2xl backdrop-blur-md ring-4 ring-red/10 animate-in fade-in zoom-in-95 duration-200 md:left-auto md:right-8 md:bottom-8 md:translate-x-0" aria-live="polite">
+                    <span class="relative flex h-3.5 w-3.5 shrink-0">
+                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-red opacity-75"></span>
+                        <span class="relative inline-flex h-3.5 w-3.5 rounded-full bg-red"></span>
+                    </span>
+                    <div class="max-w-[260px] sm:max-w-xs">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-red">Micrófono encendido</span>
+                        </div>
+                        <p class="text-xs font-semibold text-color1 truncate">{voiceStatus}</p>
+                    </div>
+                    <button type="button" class="ml-1 p-1 rounded-lg text-gray-400 hover:text-red hover:bg-red/10 transition-colors" title="Detener dictado" on:click={toggleVoiceDictation}>
+                        <iconify-icon icon="line-md:close" width="18" height="18"></iconify-icon>
+                    </button>
+                </div>
+            {/if}
+
+            <!-- TABLA DE CALIFICACIONES (DATA MATRIX) -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs md:text-sm border-collapse">
+                    <thead class="bg-gray-50/70 border-b border-grayBlue/30 text-gray-500">
+                        <tr>
+                            <!-- 1. Columna Estudiante (Sticky) -->
+                            <th class="px-5 py-3.5 text-left sticky left-0 z-20 bg-gray-50/95 backdrop-blur-sm min-w-[220px] shadow-[1px_0_0_rgba(199,210,218,0.4)]">
+                                <button type="button" class="inline-flex items-center gap-1.5 font-bold text-color1 hover:text-color2 transition-colors uppercase tracking-wider text-[11px]" on:click={() => toggleSort("student")}>
+                                    <span>Estudiante</span>
+                                    <span class="text-color3 font-bold text-xs">{getSortIndicator("student")}</span>
                                 </button>
                             </th>
-                        {/each}
-                        {#if planRasgosMax > 0}
-                            <th
-                                class="px-3 py-3 text-center bg-gray-50"
-                                title="Puntos de rasgos (conducta)"
-                            >
-                                <span class="font-semibold"
-                                    >Rasgos ({planRasgosMax})</span
-                                >
-                            </th>
-                        {/if}
-                        <th class="px-3 py-3 text-left bg-gray-50">
-                            <button
-                                type="button"
-                                class="flex items-center gap-1 font-semibold text-left"
-                                on:click={() => toggleSort("definitive")}
-                            >
-                                <span
-                                    >Definitiva ({data.matrix.plan
-                                        .lapse_label})</span
-                                >
-                                <span class="text-[10px] text-gray-500">
-                                    {getSortIndicator("definitive")}
-                                </span>
-                            </button>
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {#each sortedStudents as student}
-                        {@const definitive = definitiveByStudent[student.id]}
-                        <tr class="border-t border-gray-100">
-                            <td class="px-3 py-2 sticky left-0 bg-white">
-                                <p
-                                    class="font-semibold text-gray-800 capitalize"
-                                >
-                                    {student.last_name}, {student.name}
-                                </p>
-                                <p class="text-xs text-gray-400">
-                                    C.I {student.ci}
-                                </p>
-                            </td>
+
+                            <!-- 2. Columnas de Temas / Evaluaciones -->
                             {#each data.matrix.items as item}
-                                {@const gradeKey = `${student.id}_${item.id}`}
-                                <td class="px-3 py-2">
-                                    <div class="flex items-center gap-1.5">
-                                        {#if data.matrix.plan.literary_grading_enabled}
-                                            <select
-                                                class="w-16 rounded-md border border-gray-300 bg-white px-1.5 py-1.5 text-sm font-semibold"
-                                                aria-label={`Nota literaria de ${student.name} ${student.last_name} en ${item.name}`}
-                                                value={letterForScore(editable[gradeKey])}
-                                                on:change={(event) =>
-                                                    updateGrade(
-                                                        gradeKey,
-                                                        scoreForLetter(event.currentTarget.value),
-                                                    )}
-                                            >
-                                                <option value="">—</option>
-                                                <option value="A">A</option>
-                                                <option value="B">B</option>
-                                                <option value="C">C</option>
-                                            </select>
-                                        {/if}
+                                {@const meta = getUnitMetaForItem(item)}
+                                {@const isThisItemListening = voiceListening && String(selectedVoiceItemId) === String(item.id)}
+                                {@const isSelected = String(selectedVoiceItemId) === String(item.id)}
+                                <th class={`px-4 py-3 text-left min-w-[175px] transition-colors align-top ${isThisItemListening ? 'bg-red/5' : isSelected ? 'bg-color4/10' : ''}`}>
+                                    <div class="flex flex-col gap-2">
+                                        <!-- ÁREA DEL TÍTULO (AQUÍ ESTÁ EL GROUP PARA EL TOOLTIP AISLADO) -->
+                                        <div class="group relative">
+                                            <button type="button" class="flex w-full items-start justify-between gap-1 text-left" on:click={() => toggleSort(`item_${item.id}`)}>
+                                                <div class="min-w-0 pr-1">
+                                                    <span class="font-bold text-color1 text-xs block truncate" title={item.name}>
+                                                        {item.name}
+                                                    </span>
+                                                    <span class="inline-block mt-0.5 text-[11px] font-semibold text-color3">
+                                                        {item.percentage}% Ponderación
+                                                    </span>
+                                                </div>
+                                                <span class="text-color3 text-xs mt-0.5 shrink-0">{getSortIndicator(`item_${item.id}`)}</span>
+                                            </button>
+
+                                            <!-- TOOLTIP AISLADO: SOLO APARECE AL HACER HOVER SOBRE EL TÍTULO -->
+                                            <div class="pointer-events-none absolute left-1/2 top-full z-30 w-64 -translate-x-1/2 mt-1 rounded-xl border border-grayBlue/50 bg-white p-3 text-left text-xs text-gray-700 opacity-0 shadow-xl transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-1">
+                                                <div class="font-bold text-color1 flex items-center gap-1.5">
+                                                    <span class="w-2 h-2 rounded-full bg-color2"></span>
+                                                    Unidad {meta.unit_number}: "{meta.unit_name}"
+                                                </div>
+                                                <div class="mt-2 space-y-1 text-[11px] text-gray-600">
+                                                    <div><span class="font-semibold text-gray-500">Tipo:</span> {meta.assessment_type}</div>
+                                                    <div><span class="font-semibold text-gray-500">Fecha:</span> {formatTooltipDate(meta.scheduled_date)}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- BOTÓN CONTEXTUAL DE DICTADO (FUERA DEL GROUP: NUNCA ACTIVA EL TOOLTIP) -->
+                                        <button type="button" class={`w-full py-1.5 px-2.5 rounded-xl text-[11px] font-bold tracking-tight transition-all duration-200 flex items-center justify-center gap-1.5 border shadow-2xs ${
+                                            isThisItemListening
+                                                ? 'bg-red text-white border-red shadow-red/25 ring-2 ring-red/20 animate-pulse'
+                                                : isSelected
+                                                    ? 'bg-color1 text-white border-color1 hover:bg-color2'
+                                                    : 'bg-white text-gray-700 border-grayBlue/60 hover:border-color2 hover:text-color2 hover:bg-slate-50'
+                                        }`} title="Atajo de teclado: Ctrl + M (o Cmd + M en Mac)" on:click={() => {
+                                            if (isThisItemListening) {
+                                                // Si ya está escuchando este tema, lo apaga
+                                                toggleVoiceDictation();
+                                            } else {
+                                                // Selecciona el tema e inicia el micrófono en 1 solo paso
+                                                selectedVoiceItemId = String(item.id);
+                                                pendingVoiceStudentId = null;
+                                                voiceStatus = `Escuchando para «${item.name}». Diga el nombre y la nota...`;
+                                                if (!voiceListening) {
+                                                    toggleVoiceDictation();
+                                                }
+                                            }
+                                        }}>
+                                            <iconify-icon icon={isThisItemListening ? "mdi:microphone-off" : isSelected ? "mdi:microphone" : "mdi:microphone-outline"} class="text-sm"></iconify-icon>
+                                            <span>
+                                                {isThisItemListening ? "Detener dictado" : isSelected ? "Dictar notas" : "Dictar notas"}
+                                            </span>
+                                        </button>
+                                    </div>
+                                </th>
+                            {/each}
+
+                            <!-- 3. Columna de Rasgos Personales (si aplica) -->
+                            {#if planRasgosMax > 0}
+                                <th class="px-4 py-3 text-center bg-gray-50/80 min-w-[110px]" title="Puntos de rasgos (conducta y puntualidad)">
+                                    <span class="font-bold text-color1 uppercase tracking-wider text-[11px] block">
+                                        Rasgos
+                                    </span>
+                                    <span class="text-[11px] font-semibold text-color3">({planRasgosMax} pts)</span>
+                                </th>
+                            {/if}
+
+                            <!-- 4. Columna Definitiva -->
+                            <th class="px-5 py-3.5 text-left bg-gray-50/80 min-w-[150px]">
+                                <button type="button" class="inline-flex items-center gap-1.5 font-bold text-color1 hover:text-color2 transition-colors uppercase tracking-wider text-[11px]" on:click={() => toggleSort("definitive")}>
+                                    <span>Definitiva ({data.matrix.plan.lapse_label})</span>
+                                    <span class="text-color3 font-bold text-xs">{getSortIndicator("definitive")}</span>
+                                </button>
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <!-- CUERPO DE ESTUDIANTES Y CALIFICACIONES -->
+                    <tbody class="divide-y divide-grayBlue/20">
+                        {#each sortedStudents as student}
+                            {@const definitive = definitiveByStudent[student.id]}
+                            <tr class="hover:bg-slate-50/80 transition-colors">
+                                <!-- Celda Estudiante (Sticky) -->
+                                <td class="px-5 py-3 sticky left-0 z-10 bg-white group-hover:bg-slate-50 transition-colors shadow-[1px_0_0_rgba(199,210,218,0.4)]">
+                                    <div class="flex items-center gap-3">
+                                       
+                                        <div class="min-w-0">
+                                            <p class="font-bold text-color1 text-sm truncate capitalize">
+                                                {student.last_name}, {student.name}
+                                            </p>
+                                            <p class="text-[11px] font-mono text-gray-400 mt-0">
+                                                C.I. {student.ci}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <!-- Celdas de Calificación por Tema -->
+                                {#each data.matrix.items as item}
+                                    {@const gradeKey = `${student.id}_${item.id}`}
+                                    {@const isItemActive = String(selectedVoiceItemId) === String(item.id)}
+                                    <td class={`px-4 py-3 align-middle transition-colors ${isItemActive && voiceListening ? 'bg-color4/10' : ''}`}>
+                                        <div class="flex items-center gap-2">
+                                            {#if data.matrix.plan.literary_grading_enabled}
+                                                <select
+                                                    class="w-12 h-9 rounded-xl border border-grayBlue/60 bg-white px-1 text-center font-bold text-xs text-color1 focus:border-color2 focus:ring-2 focus:ring-color2/20 focus:outline-none transition-all shadow-2xs"
+                                                    aria-label={`Nota literaria de ${student.name} ${student.last_name} en ${item.name}`}
+                                                    value={letterForScore(editable[gradeKey])}
+                                                    on:change={(event) =>
+                                                        updateGrade(
+                                                            gradeKey,
+                                                            scoreForLetter(event.currentTarget.value),
+                                                        )}
+                                                >
+                                                    <option value="">—</option>
+                                                    <option value="A">A</option>
+                                                    <option value="B">B</option>
+                                                    <option value="C">C</option>
+                                                </select>
+                                            {/if}
+
+                                            <!-- Input Numérico Pulido -->
+                                            <div class="relative">
+                                                <input
+                                                    type="number"
+                                                    data-grade-input={gradeKey}
+                                                    min="0"
+                                                    max="20"
+                                                    step="0.5"
+                                                    class={`w-16 h-9 rounded-xl border text-center focus:border-color2 font-bold text-sm text-color1 transition-all shadow-2xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-color2/20`}
+                                                    inputmode="decimal"
+                                                    on:wheel|preventDefault
+                                                    on:focus={(e) => e.currentTarget.select()}
+                                                    on:keydown={(e) => {
+                                                        if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"].includes(e.key)) {
+                                                            e.stopPropagation();
+                                                        }
+                                                    }}
+                                                    value={editable[gradeKey]}
+                                                    placeholder="—"
+                                                    on:input={(event) =>
+                                                        updateGrade(
+                                                            gradeKey,
+                                                            event.currentTarget.value,
+                                                        )}
+                                                />
+                                            </div>
+                                        </div>
+                                    </td>
+                                {/each}
+
+                                <!-- Celda de Rasgos -->
+                                {#if planRasgosMax > 0}
+                                    <td class="px-4 py-3 text-center bg-gray-50/40">
                                         <input
                                             type="number"
-                                            data-grade-input={gradeKey}
                                             min="0"
-                                            max="20"
-                                            step="0.5"
-                                            class="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
-                                            inputmode="decimal"
-                                            on:wheel|preventDefault
-                                            on:focus={(e) =>
-                                                e.currentTarget.select()}
-                                            on:keydown={(e) => {
-                                                if (
-                                                    [
-                                                        "ArrowUp",
-                                                        "ArrowDown",
-                                                        "PageUp",
-                                                        "PageDown",
-                                                        "Home",
-                                                        "End",
-                                                    ].includes(e.key)
-                                                ) {
-                                                    e.stopPropagation();
-                                                }
-                                            }}
-                                            value={editable[gradeKey]}
+                                            max={planRasgosMax}
+                                            step="1"
+                                            class="w-14 h-9 rounded-xl border border-grayBlue/60 bg-white text-center font-bold text-sm text-color1 transition-all shadow-2xs focus:border-color2 focus:ring-2 focus:ring-color2/20 focus:outline-none"
+                                            inputmode="numeric"
+                                            title={`Puntos de rasgos (0-${planRasgosMax})`}
+                                            value={rasgosEditable[student.id]}
+                                            placeholder="0"
                                             on:input={(event) =>
-                                                updateGrade(
-                                                    gradeKey,
+                                                updateRasgos(
+                                                    student.id,
                                                     event.currentTarget.value,
                                                 )}
                                         />
-                                    </div>
-                                </td>
-                            {/each}
-                            {#if planRasgosMax > 0}
-                                <td class="px-3 py-2 text-center bg-gray-50">
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        max={planRasgosMax}
-                                        step="1"
-                                        class="w-16 rounded-md border border-gray-300 px-2 py-1.5 text-sm text-center"
-                                        inputmode="numeric"
-                                        title="Puntos de rasgos (0-{planRasgosMax})"
-                                        value={rasgosEditable[student.id]}
-                                        on:input={(event) =>
-                                            updateRasgos(
-                                                student.id,
-                                                event.currentTarget.value,
-                                            )}
-                                    />
-                                </td>
-                            {/if}
-                            <td class="px-3 py-2 bg-gray-50">
-                                {#if definitive !== null}
-                                    {@const medal = getDefinitiveMedal(student)}
-                                    <div class="flex items-center gap-2">
-                                        {#if medal}
-                                            <span
-                                                class="text-lg leading-none"
-                                                title={medal === "gold"
-                                                    ? "Primero"
-                                                    : medal === "silver"
-                                                      ? "Segundo"
-                                                      : "Tercero"}
-                                            >
-                                                <iconify-icon
-                                                    icon={getMedalIcon(medal)
-                                                        .icon}
-                                                    class={getMedalIcon(medal)
-                                                        .class}
-                                                ></iconify-icon>
-                                            </span>
-                                        {/if}
-                                        {#if data.matrix.plan.literary_grading_enabled}
-                                            {@const definitiveLetter = letterForScore(definitive)}
-                                            {#if definitiveLetter}
-                                                <span class="rounded bg-blue-100 px-2 py-0.5  font-bold text-blue-700" title="Equivalencia literaria de la definitiva">
-                                                    {definitiveLetter}
-                                                </span>
-
-                                                <span>|</span>
-                                            {/if}
-                                        {/if}
-                                        <span
-                                            class="font-bold {definitive >= 10
-                                                ? 'text-green-600'
-                                                : 'text-red'}"
-                                        >
-                                            {definitive}
-                                        </span>
-                                        
-                                        <span
-                                            class="ml-1 text-xs px-2 py-0.5 rounded font-bold {definitive >=
-                                            10
-                                                ? 'bg-green-100 text-green-700'
-                                                : 'bg-red text-white'}"
-                                        >
-                                            {definitive >= 10 ? "" : "R"}
-                                        </span>
-                                    </div>
-                                {:else}
-                                    <span
-                                        class="text-xs px-2 py-0.5 rounded bg-yellow text-gray-800 font-bold"
-                                    >
-                                        En curso
-                                    </span>
+                                    </td>
                                 {/if}
-                            </td>
-                        </tr>
-                    {/each}
-                </tbody>
-            </table>
+
+                                <!-- Celda Definitiva y Estado -->
+                                <td class="px-5 py-3 bg-gray-50/40">
+                                    {#if definitive !== null}
+                                        {@const medal = getDefinitiveMedal(student)}
+                                        <div class="flex items-center gap-2">
+                                            {#if medal}
+                                                <span class="text-base leading-none shrink-0" title={medal === "gold" ? "1er Lugar" : medal === "silver" ? "2do Lugar" : "3er Lugar"}>
+                                                    <iconify-icon icon={getMedalIcon(medal).icon} class={getMedalIcon(medal).class}></iconify-icon>
+                                                </span>
+                                            {/if}
+                                            {#if data.matrix.plan.literary_grading_enabled}
+                                                {@const definitiveLetter = letterForScore(definitive)}
+                                                {#if definitiveLetter}
+                                                    <span class="rounded-lg bg-color4/20 border border-color4/40 px-2 py-0.5 text-xs font-bold text-color2">
+                                                        {definitiveLetter}
+                                                    </span>
+                                                {/if}
+                                            {/if}
+                                            <!-- Píldora de Calificación Definitiva -->
+                                            <span class={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold border ${
+                                                definitive >= 10
+                                                    ? 'bg-green/15 text-color1 border-green/30'
+                                                    : 'bg-red/10 text-red border-red/20'
+                                            }`}>
+                                                <span>{definitive}</span>
+                                                {#if definitive < 10}
+                                                    <span class="text-[10px] font-black uppercase tracking-tight text-red">Aplazado</span>
+                                                {/if}
+                                            </span>
+                                        </div>
+                                    {:else}
+                                        <span class="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full bg-yellow/20 text-gray-800 border border-yellow/40">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-yellow animate-pulse"></span>
+                                            En curso
+                                        </span>
+                                    {/if}
+                                </td>
+                            </tr>
+                        {/each}
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <div
-            class="mt-4 fixed bottom-8 right-10  gap-3 flex justify-end max-w-[600px] ml-auto items-center"
+            class="mt-4 fixed bottom-8 right-10 gap-3 flex justify-end max-w-[600px] ml-auto items-center z-40"
         >
             {#if $form.isDirty}
                 <button
                     on:click={handleSave}
-                    class="max-w-[300px] animated-button flex items-center gap-10 hover:shadow-lg "
+                    class="max-w-[300px] animated-button flex items-center gap-10 hover:shadow-lg"
                     disabled={$form.processing}
                 >
                     {#if $form.processing}
-                        Guardando...
+                        <span class="text">Guardando...</span>
                     {:else}
                         <span class="text">Guardar notas</span>
                         <span class="circle"></span>
@@ -1235,28 +1529,41 @@
             {/if}
 
             {#if !$form.isDirty && canPublish}
-
-            <button type="button" on:click={handlePublish} disabled={$form.processing} class="bg-color4  hover:bg-color4/80 hover:shadow-lg  rounded-full text-dark min-w-fit font-bold py-3 px-4 mt-5">
-                Publicar notas
-            </button>
+                <button
+                    type="button"
+                    on:click={handlePublish}
+                    disabled={$form.processing}
+                    class="bg-color4 hover:bg-color4/80 hover:shadow-lg rounded-full text-dark min-w-fit font-bold py-3 px-4 mt-5"
+                >
+                    Publicar notas
+                </button>
             {/if}
         </div>
     {/if}
-{:else if viewMode === 'asistencia'}
+
+{:else if viewMode === "asistencia"}
     {#if !data.matrix}
-        <div class="bg-white border border-gray-200 rounded-lg p-8 text-center text-gray-400">
+        <div
+            class="bg-white border border-gray-200 rounded-lg p-8 text-center text-gray-400"
+        >
             Selecciona un plan para cargar la matriz de asistencia.
         </div>
     {:else}
-        <div class="bg-white border border-gray-200 rounded-lg shadow overflow-hidden">
+        <div
+            class="bg-white border border-gray-200 rounded-lg shadow overflow-hidden"
+        >
             <!-- Add Session Bar -->
-            <div class="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row md:items-center gap-4">
+            <div
+                class="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row md:items-center gap-4"
+            >
                 <div class="flex items-center gap-3">
-                    <label class="text-sm font-semibold text-gray-700">Nueva sesión:</label>
+                    <label class="text-sm font-semibold text-gray-700"
+                        >Nueva sesión:</label
+                    >
                     <input
                         type="date"
                         bind:value={newSessionDate}
-                        max={new Date().toISOString().split('T')[0]}
+                        max={new Date().toISOString().split("T")[0]}
                         class="rounded-md border border-gray-300 px-3 py-2 text-sm"
                     />
                     <button
@@ -1271,24 +1578,42 @@
 
             {#if attendanceSessions.length === 0}
                 <div class="p-8 text-center text-gray-400">
-                    No hay sesiones de asistencia. Agrega una sesión para comenzar.
+                    No hay sesiones de asistencia. Agrega una sesión para
+                    comenzar.
                 </div>
             {:else}
                 <div class="overflow-x-auto">
                     <table class="w-fit text-sm">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-3 py-3 text-left sticky left-0 bg-gray-50 z-10">
-                                    <div class="font-semibold text-gray-800">Estudiante</div>
+                                <th
+                                    class="px-3 py-3 text-left sticky left-0 bg-gray-50 z-10"
+                                >
+                                    <div class="font-semibold text-gray-800">
+                                        Estudiante
+                                    </div>
                                 </th>
                                 {#each attendanceSessions as session}
-                                    <th class="px-2 py-3 text-center justify-center relative group">
-                                        <div class="flex flex-col items-center gap-1">
-                                            <span class="font-semibold text-gray-800">{formatDate(session.date)}</span>
-                                            <span class="text-xs text-gray-500 capitalize">{session.day_of_week}</span>
+                                    <th
+                                        class="px-2 py-3 text-center justify-center relative group"
+                                    >
+                                        <div
+                                            class="flex flex-col items-center gap-1"
+                                        >
+                                            <span
+                                                class="font-semibold text-gray-800"
+                                                >{formatDate(
+                                                    session.date,
+                                                )}</span
+                                            >
+                                            <span
+                                                class="text-xs text-gray-500 capitalize"
+                                                >{session.day_of_week}</span
+                                            >
                                             <button
                                                 class="absolute top-1 right-1 text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-700 hover:bg-red-200 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                on:click={() => deleteSession(session.id)}
+                                                on:click={() =>
+                                                    deleteSession(session.id)}
                                                 title="Eliminar sesión"
                                             >
                                                 ✕
@@ -1300,7 +1625,8 @@
                                             class="h-4 w-4 accent-green-600 cursor-pointer"
                                             checked={isAllPresent(session.id)}
                                             title="marcar /desmarcar todos"
-                                            on:change={() => toggleAllInSession(session.id)}
+                                            on:change={() =>
+                                                toggleAllInSession(session.id)}
                                             aria-label={`Marcar todos de la sesión ${session.date}`}
                                         />
                                     </th>
@@ -1310,19 +1636,40 @@
                         <tbody>
                             {#each sortedStudents as student}
                                 <tr class="border-t border-gray-100">
-                                    <td class="px-3 py-2 sticky left-0 bg-white z-10">
-                                        <p class="font-semibold text-gray-800 capitalize">{student.last_name}, {student.name}</p>
-                                        <p class="text-xs text-gray-400">C.I {student.ci}</p>
+                                    <td
+                                        class="px-3 py-2 sticky left-0 bg-white z-10"
+                                    >
+                                        <p
+                                            class="font-semibold text-gray-800 capitalize"
+                                        >
+                                            {student.last_name}, {student.name}
+                                        </p>
+                                        <p class="text-xs text-gray-400">
+                                            C.I {student.ci}
+                                        </p>
                                     </td>
                                     {#each attendanceSessions as session}
-                                        <td class="px-2 w-[44px] aspect-square h-[44px] min-h-[44px] py-2 text-center">
+                                        <td
+                                            class="px-2 w-[44px] aspect-square h-[44px] min-h-[44px] py-2 text-center"
+                                        >
                                             <button
-                                                class="w-[44px] hover:text-gray-400 hover:bg-gray-200 aspect-square h-[44px] min-h-[44px] flex items-center justify-center text-2xl transition-colors rounded {getAttendanceClass(attendanceData[session.id]?.[student.id] || 'absent')}"
-                                                on:click={() => toggleAttendance(session.id, student.id)}
+                                                class="w-[44px] hover:text-gray-400 hover:bg-gray-200 aspect-square h-[44px] min-h-[44px] flex items-center justify-center text-2xl transition-colors rounded {getAttendanceClass(
+                                                    attendanceData[
+                                                        session.id
+                                                    ]?.[student.id] || 'absent',
+                                                )}"
+                                                on:click={() =>
+                                                    toggleAttendance(
+                                                        session.id,
+                                                        student.id,
+                                                    )}
                                             >
-                                                {#if (attendanceData[session.id]?.[student.id] || 'absent') === 'present'}
-                                                    <iconify-icon icon="mdi:check-bold" class="text-2xl"></iconify-icon>
-                                                {:else if (attendanceData[session.id]?.[student.id] || 'absent') === 'excused'}
+                                                {#if (attendanceData[session.id]?.[student.id] || "absent") === "present"}
+                                                    <iconify-icon
+                                                        icon="mdi:check-bold"
+                                                        class="text-2xl"
+                                                    ></iconify-icon>
+                                                {:else if (attendanceData[session.id]?.[student.id] || "absent") === "excused"}
                                                     J
                                                 {:else}
                                                     —
@@ -1339,8 +1686,8 @@
         </div>
 
         <!-- Save Button -->
-       <div
-            class="mt-4 fixed bottom-8 right-10  gap-3 flex justify-end max-w-[600px] ml-auto items-center"
+        <div
+            class="mt-4 fixed bottom-8 right-10 gap-3 flex justify-end max-w-[600px] ml-auto items-center"
         >
             {#if attendanceDirty}
                 <button
@@ -1348,18 +1695,35 @@
                     class="animated-button flex items-center gap-3"
                     disabled={attendanceSaving}
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="arr-2" viewBox="0 0 24 24">
-                        <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="arr-2"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                        ></path>
                     </svg>
                     {#if attendanceSaving}
                         <span class="text">Guardando...</span>
                     {:else}
-                        <iconify-icon icon="material-symbols:save" class="text" width="20" height="20"></iconify-icon>
+                        <iconify-icon
+                            icon="material-symbols:save"
+                            class="text"
+                            width="20"
+                            height="20"
+                        ></iconify-icon>
                         <span class="text">Guardar asistencia</span>
                     {/if}
                     <span class="circle"></span>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="arr-1" viewBox="0 0 24 24">
-                        <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="arr-1"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                        ></path>
                     </svg>
                 </button>
             {/if}
