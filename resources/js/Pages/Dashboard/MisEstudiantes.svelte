@@ -2,8 +2,8 @@
     import { onDestroy, onMount } from "svelte";
     import { useForm, router } from "@inertiajs/svelte";
     import Alert from "../../components/Alert.svelte";
+    import AsistenciaMatrix from "../../components/AsistenciaMatrix.svelte";
     import { displayAlert } from "../../stores/alertStore";
-    import axios from "axios";
 
     export let data = [];
 
@@ -18,14 +18,6 @@
     let voiceStatus = "Selecciona un tema de la tabla y activa el micrófono.";
     let voiceRecognition = null;
     let pendingVoiceStudentId = null;
-
-    // Attendance state
-    let attendanceSessions = [];
-    let attendanceData = {}; // sessionId -> { studentId: status }
-    let newSessionDate = new Date().toISOString().split("T")[0];
-    let attendanceSaving = false;
-    let attendanceDirty = false;
-    let lastLoadedPlanId = null;
 
     function getInitialGrades(matrix) {
         const grades = [];
@@ -82,18 +74,25 @@
 
     function toggleSort(key) {
         if (sortState.key === key) {
-            sortState.direction =
-                sortState.direction === "asc" ? "desc" : "asc";
+            sortState = {
+                ...sortState,
+                direction: sortState.direction === "asc" ? "desc" : "asc",
+            };
             return;
         }
 
-        sortState.key = key;
-        sortState.direction = "asc";
+        sortState = {
+            key,
+            direction: "asc",
+        };
     }
 
-    function getSortIndicator(key) {
-        if (sortState.key !== key) return "↕";
-        return sortState.direction === "asc" ? "▲" : "▼";
+    // `state` is passed explicitly: Svelte only tracks variables referenced
+    // syntactically in the template, so reading sortState inside the function
+    // would leave the indicator without a reactive dependency.
+    function getSortIndicator(key, state) {
+        if (state.key !== key) return "↕";
+        return state.direction === "asc" ? "▲" : "▼";
     }
 
     $: if (data?.matrix?.plan?.id) rebuildEditable(data.matrix);
@@ -227,80 +226,169 @@
     }
 
     function findVoiceStudent(transcript) {
-        const transcriptText = normalizeVoiceText(transcript);
-        const words = transcriptText
-            .split(" ")
-            .filter(
-                (word) =>
-                    ![
-                        "estudiante",
-                        "alumno",
-                        "alumna",
-                        "nota",
-                        "para",
-                        "de",
-                        "a",
-                    ].includes(word),
+    const transcriptText = normalizeVoiceText(transcript);
+    const words = transcriptText
+        .split(" ")
+        .filter(
+            (word) =>
+                ![
+                    "estudiante",
+                    "alumno",
+                    "alumna",
+                    "nota",
+                    "para",
+                    "de",
+                    "a",
+                ].includes(word),
+        );
+    if (!words.length) return { student: null, ambiguous: false };
+
+    const matches = (data.matrix?.students || [])
+        .map((student) => {
+            const lastNameParts = student.last_name
+                .split(" ")
+                .filter(Boolean);
+            const firstLastName = normalizeVoiceText(
+                lastNameParts[0] || "",
             );
-        if (!words.length) return { student: null, ambiguous: false };
+            const secondLastName = normalizeVoiceText(
+                lastNameParts[1] || "",
+            );
+            const firstName = normalizeVoiceText(
+                student.name.split(" ")[0] || "",
+            );
+            const secondName = normalizeVoiceText(
+                student.name.split(" ")[1] || "",
+            );
 
-        const matches = (data.matrix?.students || [])
-            .map((student) => {
-                const nameText = normalizeVoiceText(
-                    `${student.name} ${student.last_name}`,
-                );
-                const nameWords = nameText.split(" ").filter(Boolean);
+            // ===== MATCHING DE APELLIDO =====
+            let firstLastNameScore = 0;
+            let secondLastNameScore = 0;
 
-                let exactScore = 0;
-                nameWords.forEach((nameWord) => {
-                    if (words.includes(nameWord)) exactScore += 1;
-                });
-
-                // Boost exact score weight (B): each matched word counts double
-                // This makes first+middle+last name combinations score significantly higher
-                const weightedExactScore = exactScore * 2;
-
-                let fuzzyScore = 0;
-                if (nameText && transcriptText) {
-                    const fullDistance = levenshteinDistance(
-                        transcriptText,
-                        nameText,
-                    );
-                    const fullRatio =
-                        1 -
-                        fullDistance /
-                            Math.max(transcriptText.length, nameText.length, 1);
-                    fuzzyScore = Math.max(fuzzyScore, fullRatio * 0.7);
-                }
-
+            if (firstLastName) {
                 words.forEach((word) => {
-                    const bestWordMatch = nameWords.reduce(
-                        (maxScore, nameWord) =>
-                            Math.max(maxScore, tokenSimilarity(word, nameWord)),
-                        0,
-                    );
-                    fuzzyScore = Math.max(fuzzyScore, bestWordMatch * 0.9);
+                    const sim = tokenSimilarity(word, firstLastName);
+                    if (sim > firstLastNameScore) firstLastNameScore = sim;
                 });
+            }
 
-                const score = weightedExactScore + fuzzyScore;
-                return { student, score };
-            })
-            .filter((entry) => entry.score > 0.25)
-            .sort((a, b) => b.score - a.score);
+            if (secondLastName) {
+                words.forEach((word) => {
+                    const sim = tokenSimilarity(word, secondLastName);
+                    if (sim > secondLastNameScore)
+                        secondLastNameScore = sim;
+                });
+            }
 
-        if (!matches.length) return { student: null, ambiguous: false };
+            // ===== MATCHING DE NOMBRE =====
+            let firstNameScore = 0;
+            let secondNameScore = 0;
 
-        const bestScore = matches[0].score;
-        // Tighten ambiguity threshold (C): from 0.95 to 0.99
-        // Requires near-perfect score tie to trigger ambiguity
-        const closest = matches.filter(
-            (entry) => entry.score >= bestScore * 0.99,
+            if (firstName) {
+                words.forEach((word) => {
+                    const sim = tokenSimilarity(word, firstName);
+                    if (sim > firstNameScore) firstNameScore = sim;
+                });
+            }
+
+            if (secondName) {
+                words.forEach((word) => {
+                    const sim = tokenSimilarity(word, secondName);
+                    if (sim > secondNameScore) secondNameScore = sim;
+                });
+            }
+
+            // ===== COMBINACIÓN CON PESOS =====
+            const hasFirstLastName = firstLastNameScore > 0.7;
+            const hasFirstName = firstNameScore > 0.7;
+            const hasBoth = hasFirstName && hasFirstLastName;
+
+            // Score base: apellido pesa 3, nombre pesa 1
+            let score = firstLastNameScore * 3.0 + firstNameScore * 1.0;
+
+            // Bonus fuerte si matchea nombre + apellido paterno
+            if (hasBoth) {
+                score += 2.0;
+            }
+
+            // Bonus por segundo apellido
+            if (secondLastNameScore > 0.7) {
+                score += secondLastNameScore * 1.5;
+            }
+
+            // Bonus por segundo nombre
+            if (secondNameScore > 0.7) {
+                score += secondNameScore * 0.5;
+            }
+
+            // ✅ CORREGIDO: Solo penalizar si hay un apellido en el dictado
+            // y NO matchea, pero el nombre sí. Si no se dictó apellido,
+            // no penalizar.
+            const transcriptHasLastName = words.some((word) => {
+                const allLastNames = [
+                    normalizeVoiceText(firstLastName),
+                    normalizeVoiceText(secondLastName),
+                ].filter(Boolean);
+                return allLastNames.some(
+                    (lastName) => tokenSimilarity(word, lastName) > 0.7,
+                );
+            });
+
+            if (
+                transcriptHasLastName &&
+                !hasFirstLastName &&
+                hasFirstName
+            ) {
+                score *= 0.4;
+            }
+
+            // Bonus extra si el apellido es EXACTO
+            if (firstLastName && words.includes(firstLastName)) {
+                score += 2.0;
+            }
+
+            return { student, score };
+        })
+        .filter((entry) => entry.score > 0.3) // ✅ Bajado de 0.5 a 0.3
+        .sort((a, b) => b.score - a.score);
+
+    if (!matches.length) return { student: null, ambiguous: false };
+
+    const bestScore = matches[0].score;
+
+    if (matches.length === 1) {
+        return { student: matches[0].student, ambiguous: false };
+    }
+
+    const secondBest = matches[1].score;
+
+    // ✅ Umbral de ambigüedad más relajado
+    const ambiguityThreshold = 0.85;
+
+    if (secondBest >= bestScore * ambiguityThreshold) {
+        const exactLastNameMatches = matches.filter(
+            (m) =>
+                m.score >= bestScore * 0.9 &&
+                m.student.last_name
+                    .toLowerCase()
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "")
+                    .split(" ")[0]
+                    .includes(words.find((w) => w.length > 3) || ""),
         );
 
-        return closest.length === 1
-            ? { student: closest[0].student, ambiguous: false }
-            : { student: null, ambiguous: true };
+        if (exactLastNameMatches.length === 1) {
+            return {
+                student: exactLastNameMatches[0].student,
+                ambiguous: false,
+            };
+        }
+
+        return { student: null, ambiguous: true };
     }
+
+    return { student: matches[0].student, ambiguous: false };
+}
 
     function parseVoiceScore(transcript) {
         const normalized = normalizeVoiceText(transcript);
@@ -867,243 +955,6 @@
         });
     }
 
-    // ===== ATTENDANCE FUNCTIONS =====
-
-    async function loadAttendanceMatrix(planId) {
-        try {
-            const response = await axios.get(
-                `/dashboard/mis-estudiantes/asistencia/${planId}`,
-            );
-            const matrix = response.data.data;
-            attendanceSessions = matrix.sessions || [];
-            attendanceData = matrix.attendance || {};
-            attendanceDirty = false;
-        } catch (error) {
-            console.error("Error loading attendance:", error);
-            displayAlert({
-                type: "error",
-                message: "Error al cargar asistencia",
-            });
-        }
-    }
-
-    async function createSession() {
-        if (!data.matrix?.plan?.id || !newSessionDate) return;
-
-        try {
-            const response = await axios.post(
-                "/dashboard/mis-estudiantes/asistencia/session",
-                {
-                    plan_id: data.matrix.plan.id,
-                    date: newSessionDate,
-                },
-            );
-            const session = response.data.data;
-            attendanceSessions = [
-                ...attendanceSessions,
-                {
-                    id: session.id,
-                    date: session.date,
-                    order: session.order,
-                    day_of_week: formatDayOfWeek(session.date),
-                },
-            ].sort((a, b) => a.order - b.order || a.date.localeCompare(b.date));
-
-            // Initialize attendance for new session
-            attendanceData[session.id] = {};
-            attendanceDirty = true;
-            displayAlert({
-                type: "success",
-                message: "Sesión creada correctamente",
-            });
-        } catch (error) {
-            console.error("Error creating session:", error);
-            displayAlert({ type: "error", message: "Error al crear sesión" });
-        }
-    }
-
-    async function deleteSession(sessionId) {
-        if (
-            !confirm(
-                "¿Eliminar esta sesión de asistencia? Se borrarán todos los registros.",
-            )
-        )
-            return;
-
-        try {
-            await axios.delete(
-                `/dashboard/mis-estudiantes/asistencia/session/${sessionId}`,
-            );
-            attendanceSessions = attendanceSessions.filter(
-                (s) => s.id !== sessionId,
-            );
-            delete attendanceData[sessionId];
-            attendanceDirty = true;
-            displayAlert({ type: "success", message: "Sesión eliminada" });
-        } catch (error) {
-            console.error("Error deleting session:", error);
-            displayAlert({
-                type: "error",
-                message: "Error al eliminar sesión",
-            });
-        }
-    }
-
-    function toggleAttendance(sessionId, studentId) {
-        const current = attendanceData[sessionId]?.[studentId] || "absent";
-        const next =
-            current === "absent"
-                ? "present"
-                : current === "present"
-                  ? "excused"
-                  : "absent";
-
-        attendanceData[sessionId] = {
-            ...attendanceData[sessionId],
-            [studentId]: next,
-        };
-        attendanceData = { ...attendanceData };
-        attendanceDirty = true;
-    }
-
-    function toggleAllInSession(sessionId) {
-        const studentIds = (data.matrix?.students || []).map(
-            (student) => student.id,
-        );
-        if (!studentIds.length) return;
-
-        const sessionData = attendanceData[sessionId] || {};
-        const allPresent =
-            studentIds.length > 0 &&
-            studentIds.every(
-                (studentId) => sessionData[studentId] === "present",
-            );
-        const target = allPresent ? "absent" : "present";
-
-        attendanceData[sessionId] = Object.fromEntries(
-            studentIds.map((studentId) => [studentId, target]),
-        );
-        attendanceData = { ...attendanceData };
-        attendanceDirty = true;
-    }
-
-    function formatDayOfWeek(dateStr) {
-        const date = new Date(`${dateStr}T00:00:00`);
-        return date
-            .toLocaleDateString("es-VE", { weekday: "short" })
-            .replace(/\./g, "")
-            .trim();
-    }
-
-    function getAttendanceClass(status) {
-        return status === "present"
-            ? "bg-green-50 text-green-600"
-            : status === "excused"
-              ? "bg-orange-50 text-orange-600"
-              : "bg-gray-50 text-gray-300";
-    }
-
-    function renderAttendanceIcon(status) {
-        if (status === "present")
-            return '<iconify-icon icon="mdi:check-bold" class="text-2xl"></iconify-icon>';
-        if (status === "excused") return "J";
-        return "—";
-    }
-
-    function isAllPresent(sessionId) {
-        const studentIds = (data.matrix?.students || []).map(
-            (student) => student.id,
-        );
-        if (!studentIds.length) return false;
-
-        const sessionData = attendanceData[sessionId] || {};
-
-        return studentIds.every(
-            (studentId) => sessionData[studentId] === "present",
-        );
-    }
-
-    function formatDate(dateStr) {
-        if (!dateStr) return "—";
-        const date = new Date(`${dateStr}T00:00:00`);
-        return date.toLocaleDateString("es-VE", {
-            day: "2-digit",
-            month: "2-digit",
-        });
-    }
-
-    async function saveAttendance() {
-        if (!data.matrix?.plan?.id) return;
-
-        attendanceSaving = true;
-
-        // Build records array
-        const records = [];
-        attendanceSessions.forEach((session) => {
-            Object.entries(attendanceData[session.id] || {}).forEach(
-                ([studentId, status]) => {
-                    records.push({
-                        session_id: session.id,
-                        student_id: parseInt(studentId),
-                        status,
-                    });
-                },
-            );
-        });
-
-        try {
-            await router.post(
-                "/dashboard/mis-estudiantes/asistencia/save",
-                {
-                    plan_id: data.matrix.plan.id,
-                    records,
-                },
-                {
-                    preserveScroll: true,
-                    onSuccess: () => {
-                        attendanceDirty = false;
-                        attendanceSaving = false;
-                        displayAlert({
-                            type: "success",
-                            message: "Asistencia guardada correctamente",
-                        });
-                    },
-                    onError: (errors) => {
-                        attendanceSaving = false;
-                        displayAlert({
-                            type: "error",
-                            message:
-                                errors.message || "Error al guardar asistencia",
-                        });
-                    },
-                },
-            );
-        } catch (error) {
-            attendanceSaving = false;
-            console.error("Error saving attendance:", error);
-            displayAlert({
-                type: "error",
-                message: "Error al guardar asistencia",
-            });
-        }
-    }
-
-    // Watch for plan change to load attendance
-    $: if (
-        viewMode === "asistencia" &&
-        data.matrix?.plan?.id &&
-        data.matrix.plan.id !== lastLoadedPlanId
-    ) {
-        lastLoadedPlanId = data.matrix.plan.id;
-        loadAttendanceMatrix(data.matrix.plan.id);
-    }
-
-    // Reset attendance state when switching away from asistencia or changing plan
-    $: if (viewMode !== "asistencia") {
-        attendanceSessions = [];
-        attendanceData = {};
-        attendanceDirty = false;
-    }
 </script>
 
 <svelte:head>
@@ -1191,9 +1042,6 @@
         on:click={() => {
             stopVoiceDictation();
             viewMode = "asistencia";
-            if (data.matrix?.plan?.id && !attendanceSessions.length) {
-                loadAttendanceMatrix(data.matrix.plan.id);
-            }
         }}
     >
         Asistencia
@@ -1282,7 +1130,7 @@
                             <th class="px-5 py-3.5 text-left sticky left-0 z-20 bg-gray-50/95 backdrop-blur-sm min-w-[220px] shadow-[1px_0_0_rgba(199,210,218,0.4)]">
                                 <button type="button" class="inline-flex items-center gap-1.5 font-bold text-color1 hover:text-color2 transition-colors uppercase tracking-wider text-[11px]" on:click={() => toggleSort("student")}>
                                     <span>Estudiante</span>
-                                    <span class="text-color3 font-bold text-xs">{getSortIndicator("student")}</span>
+                                    <span class="text-color3 font-bold text-xs">{getSortIndicator("student", sortState)}</span>
                                 </button>
                             </th>
 
@@ -1304,7 +1152,7 @@
                                                         {item.percentage}% Ponderación
                                                     </span>
                                                 </div>
-                                                <span class="text-color3 text-xs mt-0.5 shrink-0">{getSortIndicator(`item_${item.id}`)}</span>
+                                                <span class="text-color3 text-xs mt-0.5 shrink-0">{getSortIndicator(`item_${item.id}`, sortState)}</span>
                                             </button>
 
                                             <!-- TOOLTIP AISLADO: SOLO APARECE AL HACER HOVER SOBRE EL TÍTULO -->
@@ -1364,7 +1212,7 @@
                             <th class="px-5 py-3.5 text-left bg-gray-50/80 min-w-[150px]">
                                 <button type="button" class="inline-flex items-center gap-1.5 font-bold text-color1 hover:text-color2 transition-colors uppercase tracking-wider text-[11px]" on:click={() => toggleSort("definitive")}>
                                     <span>Definitiva ({data.matrix.plan.lapse_label})</span>
-                                    <span class="text-color3 font-bold text-xs">{getSortIndicator("definitive")}</span>
+                                    <span class="text-color3 font-bold text-xs">{getSortIndicator("definitive", sortState)}</span>
                                 </button>
                             </th>
                         </tr>
@@ -1376,7 +1224,7 @@
                             {@const definitive = definitiveByStudent[student.id]}
                             <tr class="hover:bg-slate-50/80 transition-colors">
                                 <!-- Celda Estudiante (Sticky) -->
-                                <td class="px-5 py-3 sticky left-0 z-10 bg-white group-hover:bg-slate-50 transition-colors shadow-[1px_0_0_rgba(199,210,218,0.4)]">
+                                <td class={`px-5 py-3 sticky left-0 z-10 transition-colors shadow-[1px_0_0_rgba(199,210,218,0.4)] ${pendingVoiceStudentId === student.id ? 'bg-color4/10' : 'bg-white group-hover:bg-slate-50'}`}>
                                     <div class="flex items-center gap-3">
                                        
                                         <div class="min-w-0">
@@ -1549,184 +1397,9 @@
             Selecciona un plan para cargar la matriz de asistencia.
         </div>
     {:else}
-        <div
-            class="bg-white border border-gray-200 rounded-lg shadow overflow-hidden"
-        >
-            <!-- Add Session Bar -->
-            <div
-                class="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row md:items-center gap-4"
-            >
-                <div class="flex items-center gap-3">
-                    <label class="text-sm font-semibold text-gray-700"
-                        >Nueva sesión:</label
-                    >
-                    <input
-                        type="date"
-                        bind:value={newSessionDate}
-                        max={new Date().toISOString().split("T")[0]}
-                        class="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                    />
-                    <button
-                        on:click={createSession}
-                        class="bg-color1 text-white px-4 py-2 rounded-md hover:bg-color1/90 text-sm"
-                        disabled={!newSessionDate}
-                    >
-                        Agregar sesión
-                    </button>
-                </div>
-            </div>
-
-            {#if attendanceSessions.length === 0}
-                <div class="p-8 text-center text-gray-400">
-                    No hay sesiones de asistencia. Agrega una sesión para
-                    comenzar.
-                </div>
-            {:else}
-                <div class="overflow-x-auto">
-                    <table class="w-fit text-sm">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th
-                                    class="px-3 py-3 text-left sticky left-0 bg-gray-50 z-10"
-                                >
-                                    <div class="font-semibold text-gray-800">
-                                        Estudiante
-                                    </div>
-                                </th>
-                                {#each attendanceSessions as session}
-                                    <th
-                                        class="px-2 py-3 text-center justify-center relative group"
-                                    >
-                                        <div
-                                            class="flex flex-col items-center gap-1"
-                                        >
-                                            <span
-                                                class="font-semibold text-gray-800"
-                                                >{formatDate(
-                                                    session.date,
-                                                )}</span
-                                            >
-                                            <span
-                                                class="text-xs text-gray-500 capitalize"
-                                                >{session.day_of_week}</span
-                                            >
-                                            <button
-                                                class="absolute top-1 right-1 text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-700 hover:bg-red-200 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                on:click={() =>
-                                                    deleteSession(session.id)}
-                                                title="Eliminar sesión"
-                                            >
-                                                ✕
-                                            </button>
-                                        </div>
-                                        <!-- Mark All Toggle -->
-                                        <input
-                                            type="checkbox"
-                                            class="h-4 w-4 accent-green-600 cursor-pointer"
-                                            checked={isAllPresent(session.id)}
-                                            title="marcar /desmarcar todos"
-                                            on:change={() =>
-                                                toggleAllInSession(session.id)}
-                                            aria-label={`Marcar todos de la sesión ${session.date}`}
-                                        />
-                                    </th>
-                                {/each}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {#each sortedStudents as student}
-                                <tr class="border-t border-gray-100">
-                                    <td
-                                        class="px-3 py-2 sticky left-0 bg-white z-10"
-                                    >
-                                        <p
-                                            class="font-semibold text-gray-800 capitalize"
-                                        >
-                                            {student.last_name}, {student.name}
-                                        </p>
-                                        <p class="text-xs text-gray-400">
-                                            C.I {student.ci}
-                                        </p>
-                                    </td>
-                                    {#each attendanceSessions as session}
-                                        <td
-                                            class="px-2 w-[44px] aspect-square h-[44px] min-h-[44px] py-2 text-center"
-                                        >
-                                            <button
-                                                class="w-[44px] hover:text-gray-400 hover:bg-gray-200 aspect-square h-[44px] min-h-[44px] flex items-center justify-center text-2xl transition-colors rounded {getAttendanceClass(
-                                                    attendanceData[
-                                                        session.id
-                                                    ]?.[student.id] || 'absent',
-                                                )}"
-                                                on:click={() =>
-                                                    toggleAttendance(
-                                                        session.id,
-                                                        student.id,
-                                                    )}
-                                            >
-                                                {#if (attendanceData[session.id]?.[student.id] || "absent") === "present"}
-                                                    <iconify-icon
-                                                        icon="mdi:check-bold"
-                                                        class="text-2xl"
-                                                    ></iconify-icon>
-                                                {:else if (attendanceData[session.id]?.[student.id] || "absent") === "excused"}
-                                                    J
-                                                {:else}
-                                                    —
-                                                {/if}
-                                            </button>
-                                        </td>
-                                    {/each}
-                                </tr>
-                            {/each}
-                        </tbody>
-                    </table>
-                </div>
-            {/if}
-        </div>
-
-        <!-- Save Button -->
-        <div
-            class="mt-4 fixed bottom-8 right-10 gap-3 flex justify-end max-w-[600px] ml-auto items-center"
-        >
-            {#if attendanceDirty}
-                <button
-                    on:click={saveAttendance}
-                    class="animated-button flex items-center gap-3"
-                    disabled={attendanceSaving}
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="arr-2"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                        ></path>
-                    </svg>
-                    {#if attendanceSaving}
-                        <span class="text">Guardando...</span>
-                    {:else}
-                        <iconify-icon
-                            icon="material-symbols:save"
-                            class="text"
-                            width="20"
-                            height="20"
-                        ></iconify-icon>
-                        <span class="text">Guardar asistencia</span>
-                    {/if}
-                    <span class="circle"></span>
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="arr-1"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                        ></path>
-                    </svg>
-                </button>
-            {/if}
-        </div>
+        <AsistenciaMatrix
+            planId={data.matrix.plan.id}
+            students={sortedStudents}
+        />
     {/if}
 {/if}

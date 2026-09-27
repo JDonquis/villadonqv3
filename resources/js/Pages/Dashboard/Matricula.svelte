@@ -168,7 +168,7 @@
             selectedRow = { status: false, data: null };
         }
     });
-
+    let isSecondRepOpen = false;
     function handleSubmit(event) {
         event.preventDefault();
         const targetCourseId = Number($form.course_id);
@@ -627,6 +627,47 @@
     onKeyShortcut={openInscribirModal}
     classes={"w-fit"}
 >
+    <div
+        slot="header"
+        class="px-6 py-5 border-b border-grayBlue/30 bg-slate-50/50 flex flex-wrap items-center justify-between gap-4"
+    >
+        <div class="flex items-center gap-3.5">
+            <div
+                class="w-11 h-11 rounded-2xl bg-color1/10 text-color1 flex items-center justify-center shrink-0 shadow-2xs"
+            >
+                <iconify-icon icon="mdi:school-outline" class="text-2xl"
+                ></iconify-icon>
+            </div>
+            <div>
+                <div class="flex items-center gap-2.5">
+                    <h2
+                        class="text-lg md:text-xl font-black text-color1 tracking-tight"
+                    >
+                        Ficha de Inscripción y Matrícula
+                    </h2>
+                    <span
+                        class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-green/10 text-green-700 border border-green/30"
+                    >
+                        <span
+                            class="w-1.5 h-1.5 rounded-full bg-green animate-pulse"
+                        ></span> Periodo 2026–2027
+                    </span>
+                </div>
+                <p class="text-xs text-gray-500 mt-0.5">
+                    Registra o actualiza la información académica y familiar del
+                    alumno
+                </p>
+            </div>
+        </div>
+        <button
+            type="button"
+            class="w-9 h-9 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+            aria-label="Cerrar"
+            on:click={() => history.back()}
+        >
+            <iconify-icon icon="line-md:close" class="text-xl"></iconify-icon>
+        </button>
+    </div>
     {#if deletedStudentGraduate}
         <div
             class="mx-7 mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm font-medium"
@@ -646,11 +687,11 @@
         id="a-form"
         on:submit={handleSubmit}
         action=""
-        class="max-w-[1260px] gap-10 md:flex justify-around pt-2 md:px-7"
+        class="max-w-[1260px] gap-10 md:grid grid-cols-12 justify-around pt-2 md:px-7"
     >
-        <div>
+        <div class="col-span-7">
             <fieldset
-                class="pb-6 md:bg-color1/5 rounded-lg grid grid-cols-2 gap-x-3 md:gap-x-10 h-fit md:px-9 md:pt-2"
+                class="pb-6 md:bg-gray-50 rounded-lg grid grid-cols-2 gap-x-3 md:gap-x-10 h-fit md:px-9 md:pt-2"
             >
                 <legend
                     class="text-color1 text-center px-5 font-bold rounded-sm bg"
@@ -757,71 +798,119 @@
                     error={$form.errors?.address}
                 />
             </fieldset>
-            <fieldset
-                class="pb-6 md:bg-color1/5 rounded-lg mt-7 grid grid-cols-2 gap-x-3 md:gap-x-10 h-fit md:px-9 md:pt-2"
-            >
-                <legend
-                    class="text-color1 text-center px-5 font-bold rounded-sm bg"
-                    >EXONERACIÓN</legend
+           <div
+                    class="bg-gray-50 p-5 mt-5 rounded-2xl border border-grayBlue/40 shadow-2xs space-y-4"
                 >
-
-                <div class="col-span-2 flex items-center gap-3 mt-4">
-                    <input
-                        type="checkbox"
-                        id="is_exempt"
-                        bind:checked={$form.is_exempt}
-                        class="w-5 h-5 border-3 border-black cursor-pointer"
-                    />
-                    <label
-                        for="is_exempt"
-                        class="font-semibold text-sm cursor-pointer select-none"
-                    >
-                        Exonerado de pago
-                        <span class="text-purple">
-                            <iconify-icon icon="mdi:shield-check" class="" />
-                        </span>
-                    </label>
-                </div>
-
-                {#if $form.is_exempt}
-                    <div class="col-span-2 grid grid-cols-2 gap-x-10">
-                        <Input
-                            type="number"
-                            label="Porcentaje de exoneración (%)"
-                            bind:value={$form.exemption_percentage}
-                            error={$form.errors?.exemption_percentage}
-                            min="1"
-                            max="100"
-                        />
-                        <Input
-                            type="textarea"
-                            label="Observación (opcional)"
-                            bind:value={$form.exemption_observations}
-                            error={$form.errors?.exemption_observations}
-                        />
-                    </div>
-
-                    <div class="col-span-2 flex items-center gap-3 mt-2">
-                        <input
-                            type="checkbox"
-                            id="apply_to_past_debts"
-                            bind:checked={$form.apply_to_past_debts}
-                            class="w-5 h-5 border-3 border-black cursor-pointer"
-                        />
+                    <div class="flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="w-8 h-8 rounded-xl bg-purple/5 text-purple flex items-center justify-center shrink-0"
+                            >
+                                <iconify-icon
+                                    icon="mdi:shield-check"
+                                    class="text-lg"
+                                ></iconify-icon>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span
+                                        class="text-xs font-bold text-color1 uppercase tracking-wider"
+                                    >
+                                        Exoneración de pago
+                                    </span>
+                                    <span
+                                        class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple/10 text-purple border border-purple/30"
+                                    >
+                                        BECA / SUBSIDIO
+                                    </span>
+                                </div>
+                                <p class="text-[11px] text-gray-500 mt-0.5">
+                                    Marque si el estudiante cuenta con subsidio
+                                    o exoneración de cuota
+                                </p>
+                            </div>
+                        </div>
+                        <!-- Switch Toggle Moderno -->
                         <label
-                            for="apply_to_past_debts"
-                            class="font-semibold text-sm cursor-pointer select-none"
+                            class="relative inline-flex items-center cursor-pointer select-none"
                         >
-                            Aplicar a deudas anteriores
+                            <input
+                                type="checkbox"
+                                id="is_exempt"
+                                bind:checked={$form.is_exempt}
+                                class="sr-only peer"
+                            />
+                            <div
+                                class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple"
+                            ></div>
                         </label>
                     </div>
-                {/if}
-            </fieldset>
+                    <!-- Campos condicionales si tiene exoneración -->
+                    {#if $form.is_exempt}
+                        <div
+                            class="pt-3 border-t border-grayBlue/20 grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in duration-200"
+                        >
+                            <div class="space-y-1">
+                                <label
+                                    class="block text-xs font-semibold text-color1"
+                                >
+                                    Porcentaje de exoneración (%) <span
+                                        class="text-red font-bold">*</span
+                                    >
+                                </label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="100"
+                                    placeholder="100"
+                                    bind:value={$form.exemption_percentage}
+                                    class="w-full h-10 px-3.5 rounded-xl border border-grayBlue/60 bg-white text-sm font-bold text-color1 focus:border-color2 focus:ring-2 focus:ring-color2/20 focus:outline-none transition-all shadow-2xs"
+                                />
+                                {#if $form.errors?.exemption_percentage}
+                                    <span
+                                        class="text-[11px] text-red font-medium"
+                                        >{$form.errors
+                                            .exemption_percentage}</span
+                                    >
+                                {/if}
+                            </div>
+                            <div class="space-y-1">
+                                <label
+                                    class="block text-xs font-semibold text-color1"
+                                >
+                                    Observación (opcional)
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="Ej. Beca de excelencia deportiva"
+                                    bind:value={$form.exemption_observations}
+                                    class="w-full h-10 px-3.5 rounded-xl border border-grayBlue/60 bg-white text-sm font-medium text-color1 placeholder:text-gray-400 focus:border-color2 focus:ring-2 focus:ring-color2/20 focus:outline-none transition-all shadow-2xs"
+                                />
+                            </div>
+                            <div
+                                class="sm:col-span-2 flex items-center gap-2.5 pt-1"
+                            >
+                                <input
+                                    type="checkbox"
+                                    id="apply_to_past_debts"
+                                    bind:checked={$form.apply_to_past_debts}
+                                    class="w-4 h-4 rounded text-purple focus:ring-purple border-gray-300 cursor-pointer"
+                                />
+                                <label
+                                    for="apply_to_past_debts"
+                                    class="text-xs font-semibold text-gray-700 cursor-pointer select-none"
+                                >
+                                    Aplicar a deudas anteriores
+                                </label>
+                            </div>
+                        </div>
+                    {/if}
+                </div>
         </div>
 
-        <div>
+        <div class="col-span-5">
             <fieldset
-                class="pb-6 md:bg-color1/5 rounded-lg grid grid-cols-2 gap-x-3 md:gap-x-10 h-fit md:px-9 md:pt-2"
+                class="pb-6 md:bg-gray-50 rounded-lg grid grid-cols-2 gap-x-3 md:gap-x-10 h-fit md:px-9 md:pt-2"
             >
                 <legend
                     class="text-color1 text-center px-5 font-bold rounded-sm bg"
@@ -915,7 +1004,7 @@
             </fieldset>
 
             <fieldset
-                class="pb-6 md:bg-color1/5 rounded-lg md:pb-9  mt-9  grid grid-cols-2 gap-x-3 md:gap-x-10 h-fit md:px-9 md:pt-2"
+                class="pb-6 md:bg-gray-50 rounded-lg md:pb-9 mt-9 grid grid-cols-2 gap-x-3 md:gap-x-10 h-fit md:px-9 md:pt-2"
             >
                 <legend
                     class="text-color1 text-center px-5 font-bold rounded-sm bg"
@@ -1045,16 +1134,15 @@
     </button>
 </Modal>
 
-<div class="flex  justify-between items-center">
+
+
+<div class="flex justify-between items-center">
     {#if isSearching}
         <div class="w-56 mb-3">
             <div
                 class="flex items-center gap-2 w-fit rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-amber-700 text-sm font-medium"
             >
-                <iconify-icon
-                    icon="mdi:magnify"
-                    width="18"
-                    height="18"
+                <iconify-icon icon="mdi:magnify" width="18" height="18"
                 ></iconify-icon>
                 Buscando en todos los años y secciones
             </div>
@@ -1079,7 +1167,7 @@
             </Input>
         </div>
     {/if}
-    <div class="flex flex-col md:flex-row items-center gap-3 relative ">
+    <div class="flex flex-col md:flex-row items-center gap-3 relative">
         <input
             type="file"
             accept=".xlsx"
@@ -1114,9 +1202,9 @@
             </a>
         </div>
         <!-- Mobile: show a small button that opens a Modal with the two actions -->
-        <div class="md:hidden ">
+        <div class="md:hidden">
             <button
-                class="toolbar-secondary p-2 "
+                class="toolbar-secondary p-2"
                 on:click={() => (showMobileActions = true)}
                 aria-label="Más acciones"
             >
