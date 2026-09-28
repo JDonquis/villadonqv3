@@ -171,6 +171,42 @@
         return { A: "20", B: "18", C: "15" }[letter] ?? "";
     }
 
+    // Formatea la nota con cero inicial (01, 02, ..., 09).
+    // Nota 0 se muestra como la raya gris "—" del placeholder.
+    function formatGrade(value) {
+        if (value === "" || value === null || value === undefined) return "";
+        const n = Number(value);
+        if (!Number.isFinite(n)) return "";
+        if (n <= 0) return "";
+        return String(n).padStart(2, "0");
+    }
+
+    // Cuántos estudiantes tienen nota > 0 por cada tema (vive de `editable` para reflejar
+    // el estado en tiempo real, no el del servidor).
+    function getCorregidoInfo() {
+        const counts = {};
+        const students = data.matrix?.students || [];
+        const total = students.length;
+        (data.matrix?.items || []).forEach((item) => {
+            const positive = students.filter((student) => {
+                const val = editable[`${student.id}_${item.id}`];
+                const n = Number(val);
+                return Number.isFinite(n) && n > 0;
+            }).length;
+            counts[item.id] = positive;
+        });
+        return { counts, total };
+    }
+
+    $: corregidoInfo = (() => {
+        const { counts, total } = getCorregidoInfo();
+        return {
+            counts,
+            total,
+            isAllCorrected: (id) => (counts[id] || 0) === total,
+        };
+    })();
+
     function normalizeVoiceText(value) {
         return String(value || "")
             .toLocaleLowerCase("es-VE")
@@ -563,7 +599,26 @@
             oscillator.connect(gainNode);
             gainNode.connect(ctx.destination);
 
-            if (type === "nota") {
+            if (type === "completo") {
+                // Fanfarria de 3 notas
+                oscillator.type = "sine";
+                oscillator.frequency.setValueAtTime(523.25, ctx.currentTime);
+                oscillator.frequency.setValueAtTime(
+                    659.25,
+                    ctx.currentTime + 0.1,
+                );
+                oscillator.frequency.setValueAtTime(
+                    783.99,
+                    ctx.currentTime + 0.2,
+                );
+                gainNode.gain.setValueAtTime(0.15, ctx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(
+                    0.001,
+                    ctx.currentTime + 0.4,
+                );
+                oscillator.start(ctx.currentTime);
+                oscillator.stop(ctx.currentTime + 0.4);
+            } else if (type === "nota") {
                 oscillator.type = "sine";
                 oscillator.frequency.setValueAtTime(523.25, ctx.currentTime);
                 oscillator.frequency.setValueAtTime(
@@ -605,6 +660,20 @@
                 );
                 oscillator.start(ctx.currentTime);
                 oscillator.stop(ctx.currentTime + 0.25);
+            } else if (type === "casi") {
+                oscillator.type = "triangle";
+                oscillator.frequency.setValueAtTime(600, ctx.currentTime);
+                oscillator.frequency.setValueAtTime(
+                    750,
+                    ctx.currentTime + 0.08,
+                );
+                gainNode.gain.setValueAtTime(0.12, ctx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(
+                    0.001,
+                    ctx.currentTime + 0.2,
+                );
+                oscillator.start(ctx.currentTime);
+                oscillator.stop(ctx.currentTime + 0.2);
             }
 
             setTimeout(() => ctx.close(), 500);
@@ -685,6 +754,7 @@
             // ✅ Sonido y animación de nota guardada
             playSound("nota");
             triggerVoiceFlash("nota");
+            showVoiceProgressBanner();
             return;
         }
 
@@ -706,6 +776,7 @@
                 // ✅ Sonido y animación de nota guardada
                 playSound("nota");
                 triggerVoiceFlash("nota");
+                showVoiceProgressBanner();
                 return;
             }
         }
@@ -1179,6 +1250,55 @@
             },
         });
     }
+
+    let voiceProgressVisible = false;
+    let voiceProgressMessage = "";
+    let voiceProgressType = "progreso"; // "progreso" | "casi" | "completo"
+    let voiceProgressTimer = null;
+
+    function showVoiceProgressBanner() {
+        if (!selectedVoiceItemId) return;
+
+        const { counts, total } = getCorregidoInfo();
+        const corrected = counts[selectedVoiceItemId] || 0;
+        if (corrected === 0) return;
+
+        const percentage = (corrected / total) * 100;
+        const remaining = total - corrected;
+
+        if (corrected === total) {
+            voiceProgressMessage = "¡Todos corregidos!";
+            voiceProgressType = "completo";
+            playSound("completo");
+            stopVoiceDictation();
+        } else if (percentage >= 65) {
+            voiceProgressMessage = `¡Solo faltan ${remaining}!`;
+            voiceProgressType = "casi";
+            playSound("casi");
+        } else {
+            voiceProgressMessage = `Corregidos: ${corrected}/${total}`;
+            voiceProgressType = "progreso";
+        }
+
+        voiceProgressVisible = true;
+
+        if (voiceProgressTimer) clearTimeout(voiceProgressTimer);
+        voiceProgressTimer = setTimeout(() => {
+            voiceProgressVisible = false;
+        }, 2500);
+    }
+
+    let lastProgressItemId = null;
+
+    $: if (selectedVoiceItemId && selectedVoiceItemId !== lastProgressItemId) {
+        // Solo resetear cuando REALMENTE cambia el item
+        lastProgressItemId = selectedVoiceItemId;
+        voiceProgressVisible = false;
+        if (voiceProgressTimer) {
+            clearTimeout(voiceProgressTimer);
+            voiceProgressTimer = null;
+        }
+    }
 </script>
 
 <svelte:head>
@@ -1283,7 +1403,7 @@
 {#if data.matrix && viewMode === "notas"}
     {#if data.matrix.students.length === 0}
         <div
-            class="bg-white border border-grayBlue/40 rounded-2xl p-12 text-center text-gray-400 shadow-sm max-w-2xl mx-auto my-8 "
+            class="bg-white border border-grayBlue/40 rounded-2xl p-12 text-center text-gray-400 shadow-sm max-w-2xl mx-auto my-8"
         >
             <div
                 class="w-12 h-12 rounded-2xl bg-color2/10 text-color2 flex items-center justify-center mx-auto mb-3"
@@ -1368,6 +1488,52 @@
                     </div>
                 {/if}
             </div>
+
+            <!-- ✅ Banner temporal de progreso -->
+            {#if voiceProgressVisible && voiceListening}
+                <div
+                    class={`fixed bottom-20 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-xl border px-4 py-2 shadow-lg backdrop-blur-md transition-all duration-300 md:left-auto md:right-8 md:bottom-44 md:translate-x-0
+            ${
+                voiceProgressType === "completo"
+                    ? "bg-emerald-50/95 border-emerald-500/40 ring-2 ring-emerald-500/20"
+                    : voiceProgressType === "casi"
+                      ? "bg-blue-50/95 border-blue/40 ring-2 ring-blue/20"
+                      : "bg-white/95 border-grayBlue/40 ring-2 ring-grayBlue/10"
+            }
+            animate-in fade-in slide-in-from-bottom-2 duration-200
+        `}
+                    aria-live="polite"
+                >
+                    {#if voiceProgressType === "completo"}
+                        <iconify-icon
+                            icon="mdi:party-popper"
+                            class="text-emerald-500 text-lg"
+                        ></iconify-icon>
+                    {:else if voiceProgressType === "casi"}
+                        <iconify-icon
+                            icon="mdi:flag-checkered"
+                            class="text-blue text-lg"
+                        ></iconify-icon>
+                    {:else}
+                        <iconify-icon
+                            icon="mdi:progress-check"
+                            class="text-gray-500 text-lg"
+                        ></iconify-icon>
+                    {/if}
+
+                    <span
+                        class={`text-xs font-bold ${
+                            voiceProgressType === "completo"
+                                ? "text-emerald-600"
+                                : voiceProgressType === "casi"
+                                  ? "text-blue"
+                                  : "text-gray-700"
+                        }`}
+                    >
+                        {voiceProgressMessage}
+                    </span>
+                </div>
+            {/if}
 
             {#if voiceListening}
                 <div
@@ -1486,13 +1652,13 @@
                         class="bg-gray-50/70 border-b border-grayBlue/30 text-gray-500"
                     >
                         <tr>
-                            <!-- 1. Columna Estudiante (Sticky) -->
+                            <!-- 1. Columna Estudiante (Sticky y compacta en móvil: max 125px-140px) -->
                             <th
-                                class="px-5 py-3.5 text-left sticky left-0 z-20 bg-gray-50/95 backdrop-blur-sm min-w-[220px] shadow-[1px_0_0_rgba(199,210,218,0.4)]"
+                                class="px-2.5 py-2.5 md:px-5 md:py-3.5 text-left sticky left-0 z-20 bg-gray-50/95 backdrop-blur-sm w-[125px] min-w-[120px] max-w-[140px] md:w-auto md:min-w-[220px] md:max-w-none shadow-[1px_0_0_rgba(199,210,218,0.4)]"
                             >
                                 <button
                                     type="button"
-                                    class="inline-flex items-center gap-1.5 font-bold text-color1 hover:text-color2 transition-colors uppercase tracking-wider text-[11px]"
+                                    class="inline-flex items-center gap-1 font-bold text-color1 hover:text-color2 transition-colors uppercase tracking-wider text-[10px] md:text-[11px]"
                                     on:click={() => toggleSort("student")}
                                 >
                                     <span>Estudiante</span>
@@ -1504,7 +1670,6 @@
                                     >
                                 </button>
                             </th>
-
                             <!-- 2. Columnas de Temas / Evaluaciones -->
                             {#each data.matrix.items as item}
                                 {@const meta = getUnitMetaForItem(item)}
@@ -1516,14 +1681,14 @@
                                     String(selectedVoiceItemId) ===
                                     String(item.id)}
                                 <th
-                                    class={`px-4 py-3 text-left min-w-[175px] transition-colors align-top ${isThisItemListening ? "bg-red/5" : isSelected ? "bg-color4/10" : ""}`}
+                                    class={`px-2 py-2.5 md:px-4 md:py-3 text-left w-[115px] min-w-[110px] max-w-[130px] md:w-auto md:min-w-[175px] md:max-w-none transition-colors align-top ${isThisItemListening ? "bg-red/5" : isSelected ? "bg-color4/10" : ""}`}
                                 >
-                                    <div class="flex flex-col gap-2">
-                                        <!-- ÁREA DEL TÍTULO (AQUÍ ESTÁ EL GROUP PARA EL TOOLTIP AISLADO) -->
+                                    <div class="flex flex-col gap-1.5 md:gap-2">
+                                        <!-- ÁREA DEL TÍTULO (CON TOOLTIP AISLADO) -->
                                         <div class="group relative">
                                             <button
                                                 type="button"
-                                                class="flex w-full items-start justify-between gap-1 text-left"
+                                                class="flex w-full items-start justify-center text-center"
                                                 on:click={() =>
                                                     toggleSort(
                                                         `item_${item.id}`,
@@ -1531,30 +1696,29 @@
                                             >
                                                 <div class="min-w-0 pr-1">
                                                     <span
-                                                        class="font-bold text-color1 text-xs block truncate"
+                                                        class="font-bold text-color1 text-[11px] md:text-xs block truncate"
                                                         title={item.name}
                                                     >
                                                         {item.name}
                                                     </span>
                                                     <span
-                                                        class="inline-block mt-0.5 text-[11px] font-semibold text-color3"
+                                                        class="inline-block mt-0.5 text-[10px] md:text-[11px] font-semibold text-color3"
                                                     >
                                                         {item.percentage}%
-                                                        Ponderación
                                                     </span>
                                                 </div>
                                                 <span
                                                     class="text-color3 text-xs mt-0.5 shrink-0"
-                                                    >{getSortIndicator(
+                                                >
+                                                    {getSortIndicator(
                                                         `item_${item.id}`,
                                                         sortState,
-                                                    )}</span
-                                                >
+                                                    )}
+                                                </span>
                                             </button>
-
-                                            <!-- TOOLTIP AISLADO: SOLO APARECE AL HACER HOVER SOBRE EL TÍTULO -->
+                                            <!-- Tooltip (oculto en móvil con hidden md:block) -->
                                             <div
-                                                class="pointer-events-none absolute left-1/2 top-full z-30 w-64 -translate-x-1/2 mt-1 rounded-xl border border-grayBlue/50 bg-white p-3 text-left text-xs text-gray-700 opacity-0 shadow-xl transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-1"
+                                                class="hidden md:block pointer-events-none absolute left-1/2 top-full z-30 w-64 -translate-x-1/2 mt-1 rounded-xl border border-grayBlue/50 bg-white p-3 text-left text-xs text-gray-700 opacity-0 shadow-xl transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-1"
                                             >
                                                 <div
                                                     class="font-bold text-color1 flex items-center gap-1.5"
@@ -1586,84 +1750,90 @@
                                                 </div>
                                             </div>
                                         </div>
-
-                                        <!-- BOTÓN CONTEXTUAL DE DICTADO (FUERA DEL GROUP: NUNCA ACTIVA EL TOOLTIP) -->
-                                        <button
-                                            type="button"
-                                            class={`w-full py-1.5 px-2.5 rounded-xl text-[11px] font-bold tracking-tight transition-all duration-200 flex items-center justify-center gap-1.5 border shadow-2xs ${
-                                                isThisItemListening
-                                                    ? "bg-red text-white border-red shadow-red/25 ring-2 ring-red/20 animate-pulse"
-                                                    : isSelected
-                                                      ? "bg-color1 text-white border-color1 hover:bg-color2"
-                                                      : "bg-white text-gray-700 border-grayBlue/60 hover:border-color2 hover:text-color2 hover:bg-slate-50"
-                                            }`}
-                                            title="Atajo de teclado: Ctrl + M (o Cmd + M en Mac)"
-                                            on:click={() => {
-                                                if (isThisItemListening) {
-                                                    // Si ya está escuchando este tema, lo apaga
-                                                    toggleVoiceDictation();
-                                                } else {
-                                                    // Selecciona el tema e inicia el micrófono en 1 solo paso
-                                                    selectedVoiceItemId =
-                                                        String(item.id);
-                                                    pendingVoiceStudentId =
-                                                        null;
-                                                    voiceStatus = `Escuchando para «${item.name}». Diga el nombre y la nota...`;
-                                                    if (!voiceListening) {
-                                                        toggleVoiceDictation();
-                                                    }
-                                                }
-                                            }}
+                                        <!-- BOTÓN CONTEXTUAL DE DICTADO -->
+                                        <div
+                                            class="flex items-center gap-1 justify-center"
                                         >
-                                            <iconify-icon
-                                                icon={isThisItemListening
-                                                    ? "mdi:microphone-off"
-                                                    : isSelected
-                                                      ? "mdi:microphone"
-                                                      : "mdi:microphone-outline"}
-                                                class="text-sm"
-                                            ></iconify-icon>
-                                            <span>
-                                                {isThisItemListening
-                                                    ? "Detener dictado"
-                                                    : isSelected
-                                                      ? "Dictar notas"
-                                                      : "Dictar notas"}
-                                            </span>
-                                        </button>
+                                            {#if (corregidoInfo.counts[item.id] || 0) > 0}
+                                                <span
+                                                    class={`text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 border ${corregidoInfo.isAllCorrected(item.id) ? "bg-green/10 text-emerald-500 border-green/20" : "bg-gray-100 text-gray-600 border-grayBlue/40"}`}
+                                                >
+                                                    {#if corregidoInfo.isAllCorrected(item.id)}
+                                                        <iconify-icon
+                                                            icon="mdi:check-circle"
+                                                            class="text-emerald-500 text-xs"
+                                                        ></iconify-icon>
+                                                    {/if}
+                                                    {corregidoInfo.counts[
+                                                        item.id
+                                                    ]}/{corregidoInfo.total}
+                                                </span>
+                                            {/if}
+                                            <button
+                                                type="button"
+                                                class={`flex items-center rounded-lg md:rounded-xl justify-center gap-1 border shadow-2xs transition-all duration-200 ${isThisItemListening ? "bg-red text-white border-red ring-2 ring-red/20 animate-pulse" : isSelected ? "bg-color1 text-white border-color1 hover:bg-color2" : "bg-white text-gray-500 border-grayBlue/50 hover:border-color2 hover:text-color2 hover:bg-slate-50"} ${(corregidoInfo.counts[item.id] || 0) > 0 ? "w-6 h-6 md:w-7 md:h-7 px-0" : "w-7 h-7 md:w-auto md:py-1 md:px-2.5 px-0 text-[10px] md:text-[11px] font-bold"}`}
+                                                title="Dictar notas"
+                                                on:click={() => {
+                                                    if (isThisItemListening) {
+                                                        toggleVoiceDictation();
+                                                    } else {
+                                                        selectedVoiceItemId =
+                                                            String(item.id);
+                                                        pendingVoiceStudentId =
+                                                            null;
+                                                        voiceStatus = `Escuchando para «${item.name}». Diga el nombre y la nota...`;
+                                                        if (!voiceListening) {
+                                                            toggleVoiceDictation();
+                                                        }
+                                                    }
+                                                }}
+                                            >
+                                                <iconify-icon
+                                                    icon={isThisItemListening
+                                                        ? "mdi:microphone-off"
+                                                        : isSelected
+                                                          ? "mdi:microphone"
+                                                          : "mdi:microphone-outline"}
+                                                    class="text-xs md:text-sm"
+                                                ></iconify-icon>
+                                                {#if (corregidoInfo.counts[item.id] || 0) === 0}
+                                                    <span
+                                                        class="hidden md:inline"
+                                                        >Dictar notas</span
+                                                    >
+                                                {/if}
+                                            </button>
+                                        </div>
                                     </div>
                                 </th>
                             {/each}
-
                             <!-- 3. Columna de Rasgos Personales (si aplica) -->
                             {#if planRasgosMax > 0}
                                 <th
-                                    class="px-4 py-3 text-center bg-gray-50/80 min-w-[110px]"
-                                    title="Puntos de rasgos (conducta y puntualidad)"
+                                    class="px-2 py-2.5 md:px-4 md:py-3 text-center bg-gray-50/80 w-[70px] min-w-[65px] md:w-auto md:min-w-[110px]"
                                 >
                                     <span
-                                        class="font-bold text-color1 uppercase tracking-wider text-[11px] block"
+                                        class="font-bold text-color1 uppercase tracking-wider text-[10px] md:text-[11px] block"
                                     >
                                         Rasgos
                                     </span>
                                     <span
-                                        class="text-[11px] font-semibold text-color3"
-                                        >({planRasgosMax} pts)</span
+                                        class="text-[10px] md:text-[11px] font-semibold text-color3"
+                                        >({planRasgosMax})</span
                                     >
                                 </th>
                             {/if}
-
                             <!-- 4. Columna Definitiva -->
                             <th
-                                class="px-5 py-3.5 text-left bg-gray-50/80 min-w-[150px]"
+                                class="px-2.5 py-2.5 md:px-5 md:py-3.5 text-left bg-gray-50/80 w-[110px] min-w-[95px] md:w-auto md:min-w-[150px]"
                             >
                                 <button
                                     type="button"
-                                    class="inline-flex items-center gap-1.5 font-bold text-color1 hover:text-color2 transition-colors uppercase tracking-wider text-[11px]"
+                                    class="inline-flex items-center gap-1 font-bold text-color1 hover:text-color2 transition-colors uppercase tracking-wider text-[10px] md:text-[11px]"
                                     on:click={() => toggleSort("definitive")}
                                 >
-                                    <span
-                                        >Definitiva ({data.matrix.plan
+                                    <span class="truncate"
+                                        >Def. ({data.matrix.plan
                                             .lapse_label})</span
                                     >
                                     <span class="text-color3 font-bold text-xs"
@@ -1676,30 +1846,28 @@
                             </th>
                         </tr>
                     </thead>
-
                     <!-- CUERPO DE ESTUDIANTES Y CALIFICACIONES -->
                     <tbody class="divide-y divide-grayBlue/20">
                         {#each sortedStudents as student}
                             {@const definitive =
                                 definitiveByStudent[student.id]}
                             <tr class="hover:bg-slate-50/80 transition-colors">
-                                <!-- Celda Estudiante (Sticky) -->
+                                <!-- Celda Estudiante (Sticky fija a 125px-140px en móvil con truncado suave) -->
                                 <td
-                                    class={`px-5 py-3 sticky left-0 z-10 transition-colors shadow-[1px_0_0_rgba(199,210,218,0.4)] ${pendingVoiceStudentId === student.id ? "bg-color4/10" : "bg-white group-hover:bg-slate-50"}`}
+                                    class={`px-2.5 py-2 md:px-5 md:py-3 sticky left-0 z-10 w-[125px] min-w-[120px] max-w-[140px] md:w-auto md:min-w-[220px] md:max-w-none transition-colors shadow-[1px_0_0_rgba(199,210,218,0.4)] ${pendingVoiceStudentId === student.id ? "bg-color4/10" : "bg-white group-hover:bg-slate-50"}`}
                                 >
-                                    <div class="flex items-center gap-3">
-                                        <div class="min-w-0">
-                                            <p
-                                                class="font-bold text-color1 text-sm truncate capitalize"
-                                            >
-                                                {student.last_name}, {student.name}
-                                            </p>
-                                            <p
-                                                class="text-[11px] font-mono text-gray-400 mt-0"
-                                            >
-                                                C.I. {student.ci}
-                                            </p>
-                                        </div>
+                                    <div class="min-w-0 pr-1">
+                                        <p
+                                            class="font-bold text-color1 text-xs md:text-sm truncate capitalize leading-tight"
+                                            title="{student.last_name}, {student.name}"
+                                        >
+                                            {student.last_name}, {student.name}
+                                        </p>
+                                        <p
+                                            class="text-[10px] md:text-[11px] font-mono text-gray-400 mt-0.5 leading-none truncate"
+                                        >
+                                            {student.ci}
+                                        </p>
                                     </div>
                                 </td>
 
@@ -1738,16 +1906,13 @@
                                             {/if}
 
                                             <!-- Input Numérico Pulido -->
-                                            <div class="relative">
+                                            <div class="relative mx-auto">
                                                 <input
-                                                    type="number"
+                                                    type="text"
                                                     data-grade-input={gradeKey}
-                                                    min="0"
-                                                    max="20"
-                                                    step="0.5"
-                                                    class={`w-16 h-9 rounded-xl border text-center focus:border-color2 font-bold text-sm text-color1 transition-all shadow-2xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-color2/20`}
                                                     inputmode="decimal"
-                                                    on:wheel|preventDefault
+                                                    pattern="[0-9.,]*"
+                                                    class={`w-16 h-9 mx-auto rounded-xl border text-center focus:border-color2 font-bold text-sm text-color1 transition-all shadow-2xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-color2/20`}
                                                     on:focus={(e) =>
                                                         e.currentTarget.select()}
                                                     on:keydown={(e) => {
@@ -1764,7 +1929,9 @@
                                                             e.stopPropagation();
                                                         }
                                                     }}
-                                                    value={editable[gradeKey]}
+                                                    value={formatGrade(
+                                                        editable[gradeKey],
+                                                    )}
                                                     placeholder="—"
                                                     on:input={(event) =>
                                                         updateGrade(
@@ -1896,8 +2063,10 @@
                     type="button"
                     on:click={handlePublish}
                     disabled={$form.processing}
-                    class="bg-color4 hover:bg-color4/80 hover:shadow-lg rounded-full text-dark min-w-fit font-bold py-3 px-4 mt-5"
+                    class="bg-color4 flex items-center gap-2 shadow-md hover:bg-color4/80 hover:shadow-lg rounded-full text-dark min-w-fit font-bold py-3 px-4 mt-5"
                 >
+                    <!-- share icon -->
+                    <iconify-icon icon="entypo:publish" class="text-lg" />
                     Publicar notas
                 </button>
             {/if}

@@ -651,3 +651,25 @@ En el modal de Pagos, replicar el patrón de MisPagos en el bloque móvil `<div 
 
 ### Limpieza: scripts de depuración fuera del repo
 - Eliminados `check_user.php` y `check_admin.php` de la raíz. Eran scripts de depuración arrojados a mano (boot manual de Laravel + `echo` de datos de usuarios) que se habían colado en un commit (`d6f74fe "ni"`); `check_user.php` además tenía hardcodeada una cuenta real (`sales43581@bullbaby.com`). No forman parte de la app.
+
+### 2026-09-28 — Banner de progreso de dictado: fix de conteo off-by-one + sonido de completado
+
+#### Objetivo
+- Corregir el banner de progreso que contaba mal las notas corregidas (siempre retrasado una actualización) y habilitar el sonido de fanfarria al completar el 100%.
+
+#### Root cause del off-by-one
+- `corregidoInfo` era una declaración `$:` reactiva en Svelte. Cuando `updateGrade()` mutaba `editable` y reasignaba `editable = { ...editable }`, el `$:` recomputaba **en un microtask posterior** al final del bloque síncrono actual. `showVoiceProgressBanner()` se invocaba **inmediatamente** después de `updateGrade()`, pero leía `corregidoInfo` que aún tenía los valores **anteriores** a la última corrección.
+- Resultado: al corregir al primer estudiante de un tema, `corregidoInfo.counts[itemId]` era aún `0` → `if (corrected === 0) return` → banner no aparecía. Al corregir al segundo, `corregidoInfo` ya había procesado la primera → mostraba `1/35`. El caso "completo" nunca se alcanzaba porque siempre iba retrasado una corrección.
+
+#### Fix
+1. **Extraer `getCorregidoInfo()` como función regular** (no `$:`) en `MisEstudiantes.svelte`. Se llama directamente desde `showVoiceProgressBanner()` para obtener el conteo fresco en el mismo tick síncrono. El `$:` reactivo para el template (badges) sigue existiendo pero delega en esta misma función.
+2. **Añadir `playSound("completo")`** dentro de `showVoiceProgressBanner()` cuando `corrected === total`. Antes el sonido estaba definido en `playSound()` pero nunca se invocaba.
+3. **Añadir `playSound("casi")`** para el tipo `voiceProgressType === "casi"` (nota intermedia, >= 65%).
+
+#### `playSound("casi")`
+- Onda `triangle` con frecuencias 600→750 Hz, duración 0.2s, volumen 0.12.
+
+#### Verificado
+- Build sin errores (`corepack yarn run build`).
+- Corregido 1 de 35 → banner muestra `corregido 1/35` inmediatamente.
+- Corregido todos → banner muestra `¡Todos corregidos!` + suena fanfarria.
