@@ -140,7 +140,7 @@
                 <!-- Avatar con Anillo y Estado -->
                 <div class="relative shrink-0">
                     <div
-                        class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-color1/50 hover:bg-color1git text-white font-bold text-xs flex items-center justify-center overflow-hidden shadow-2xs ring-2 ring-color2/20"
+                        class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-color2/70 hover:bg-color1git text-white font-bold text-xs flex items-center justify-center overflow-hidden shadow-2xs ring-2 ring-color2/20"
                     >
                         {#if authUser.photo && authUser.photo !== "guest.webp"}
                             <img

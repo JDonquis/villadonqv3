@@ -76,7 +76,7 @@
                  {step}
                  {readonly}
                  {inputmode}
-                 {pattern}
+                pattern={pattern || undefined}
                  on:change
                  on:input
                  on:focus
