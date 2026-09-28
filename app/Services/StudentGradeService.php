@@ -76,6 +76,7 @@ class StudentGradeService
                 'unit_name' => $unit['name'] ?? ($item->unit_name ?? 'Unidad 1'),
                 'assessment_type' => $item->assessment_type ?? null,
                 'scheduled_date' => $item->scheduled_date ?? $item->date,
+                'published_at' => $item->published_at?->toISOString(),
             ];
         })->values()->all();
 
@@ -209,7 +210,24 @@ class StudentGradeService
             }
         }
 
+        $this->syncPublishedAt($plan, $studentIds);
+
         return $saved;
+    }
+
+    protected function syncPublishedAt(EvaluationPlan $plan, $studentIds): void
+    {
+        $studentCount = $studentIds->count();
+        foreach ($plan->items as $item) {
+            $positiveCount = StudentGrade::where('plan_item_id', $item->id)
+                ->where('score', '>', 0)
+                ->count();
+            $item->published_at =
+                ($positiveCount > 0 && $positiveCount === $studentCount)
+                    ? now()
+                    : null;
+            $item->save();
+        }
     }
 
     public function publishGrades(int $planId, int $teacherId): StudentGradePublication

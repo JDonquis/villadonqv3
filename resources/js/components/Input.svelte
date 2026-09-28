@@ -12,6 +12,8 @@
     export let min = "";
     export let step = "";
     export let readonly = false;
+    export let inputmode = "";
+    export let pattern = "";
 
     export let max = "";
     export let name = "";
@@ -62,23 +64,25 @@
                 <slot></slot>
             </select>
         {:else}
-            <input
-                bind:value
-                {...{ type }}
-                id={id || label}
-                {name}
-                class="form__field "
-                {required}
-                {max}
-                {min}
-                {step}
-                {readonly}
-                on:change
-                on:input
-                on:focus
-                on:click
-                bind:this={inputEl}
-            />
+<input
+                 bind:value
+                 {...{ type }}
+                 id={id || label}
+                 {name}
+                 class="form__field "
+                 {required}
+                 {max}
+                 {min}
+                 {step}
+                 {readonly}
+                 {inputmode}
+                 {pattern}
+                 on:change
+                 on:input
+                 on:focus
+                 on:click
+                 bind:this={inputEl}
+             />
         {/if}
         {#if error}
             <div class="text-black font-semibold bg-red pt-1 px-2">

@@ -21,6 +21,8 @@ const colorClasses = {
     binance: "#F3BA2F",
     yellow: "#FFD23F",
     purple: "#b8a9fa",
+    purple700: "#967eff",
+    indigo: colors.indigo,
     orange: "#FFA552",
     blue: "#74b9ff",
 };
@@ -59,6 +61,8 @@ module.exports = {
             binance: "#F3BA2F",
             yellow: "#FFD23F",
             purple: "#b8a9fa",
+            purple700: "#967eff",
+            indigo: colors.indigo,
             orange: "#FFA552",
             blue: "#74b9ff",
         },

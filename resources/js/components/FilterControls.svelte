@@ -13,14 +13,14 @@
     {#each Object.entries(filtersOptions) as [filterKey, filterOption] (filterKey)}
         <article class="md:flex  mt-3">
             <h4
-                class="capitalize w-fit  text-xs md:text-sm font-medium px-2 flex items-center  lg:mb-1.5"
+                class="capitalize w-fit text-slate-600  text-xs md:text-sm font-medium px-2 flex items-center  lg:mb-1.5"
             >
                 {filterOption.label}
             </h4>
             {#if filterOption.type === "search"}
                 <input
                     value={filterClientData?.[filterKey] || ""}
-                    class="h-auto border-gray-400 border p-2 py-1"
+                    class="h-auto border-gray-400 border p-2 py-1 rounded-xl"
                     placeholder={"🔍 " + filterOption.label}
                     type="search"
                     name=""
@@ -43,7 +43,7 @@
                     <!-- svelte-ignore a11y-no-noninteractive-tabindex -->
                     <!-- svelte-ignore a11y-no-static-element-interactions -->
                     <div
-                        class="flex z-50 items-center justify-between w-full px-3 py-2 text-sm border border-gray-300 rounded-md cursor-pointer hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="flex z-50 items-center justify-between w-full px-3 py-2 text-sm border border-gray-300 rounded-xl cursor-pointer hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         on:click={() => (isDropdownOpen = !isDropdownOpen)}
                         on:blur={() =>
                             setTimeout(() => (isDropdownOpen = false), 200)}
@@ -193,7 +193,7 @@
                                     <span class="flex items-center gap-2">
                                         {#if option.color}
                                             <span
-                                                class={`inline-block w-3 h-3 rounded-full bg-${option.color} text-${option.color} `}
+                                                class={`inline-block w-3 h-3 rounded-lg bg-${option.color} text-${option.color} `}
                                             ></span>
                                         {/if}
                                         {option.name}
@@ -235,11 +235,11 @@
                     }}
                     name={filterOption.label}
                     id=""
-                    class="rounded p-1 py-2"
+                    class="rounded-xl  p-1 py-2 bg-transparent border"
                 >
-                    <option value="todos">Todos</option>
+                    <option class="text-gray-700" value="todos">Todos</option>
                     {#each filterOption.options as filter, i (filter.id)}
-                        <option
+                        <option class="text-gray-700"
                             selected={String(
                                 filterClientData?.[filterKey],
                             ) === String(filter.id)}
@@ -282,3 +282,10 @@
         </article>
     {/each}
 </div>
+
+<style>
+select {
+    background: transparent;
+    color: gray;
+}
+</style>

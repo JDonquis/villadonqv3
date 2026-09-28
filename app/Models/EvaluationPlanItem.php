@@ -23,6 +23,11 @@ class EvaluationPlanItem extends Model
         'scheduled_date',
         'description',
         'order',
+        'published_at',
+    ];
+
+    protected $casts = [
+        'published_at' => 'datetime',
     ];
 
     public $timestamps = false;
