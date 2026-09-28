@@ -9,7 +9,7 @@
         { key: 5, label: "Viernes" },
     ];
 
-    const PX_PER_HOUR = 70;
+    const PX_PER_HOUR = 80;
     const BASE_HOUR = 7;
 
     function from24String(hhmm) {
@@ -36,7 +36,9 @@
     }
 
     function topOf(timeStr) {
-        const [h, m] = String(timeStr || "").split(":").map((n) => parseInt(n, 10));
+        const [h, m] = String(timeStr || "")
+            .split(":")
+            .map((n) => parseInt(n, 10));
         return (h + m / 60 - BASE_HOUR) * PX_PER_HOUR;
     }
 
@@ -65,7 +67,8 @@
         const days = schedule.days || {};
         for (const rows of Object.values(days)) {
             for (const c of rows || []) {
-                if (c.end_time) maxHours = Math.max(maxHours, toMinutes(c.end_time) / 60);
+                if (c.end_time)
+                    maxHours = Math.max(maxHours, toMinutes(c.end_time) / 60);
             }
         }
         const rEnd = recessEnd();
@@ -113,18 +116,22 @@
 </script>
 
 {#if !hasGridContent()}
-    <div class="border border-gray-200 bg-gray-50 rounded-xl p-8 text-center text-gray-500">
+    <div
+        class="border border-gray-200 bg-gray-50 rounded-xl p-8 text-center text-gray-500"
+    >
         No hay un horario definido para esta sección en el periodo seleccionado.
     </div>
 {:else}
-    <div class="overflow-x-auto rounded-xl border border-gray-300">
+    <div class="overflow-x-auto rounded-xl border border-gray-300 bg-white">
         <div class="grid grid-cols-5 min-w-[680px]">
             {#each DAYS as day}
-                <div class="border border-gray-300">
-                    <div class="bg-color1 text-white text-center py-2 font-semibold text-sm">
+                <div class=" ">
+                    <div
+                        class="bg-color1 text-white uppercase text-center py-3 font-semibold text-sm"
+                    >
                         {day.label}
                     </div>
-                    <div class="relative" style="height: {dayHeight()}px">
+                    <div class="relative p-1" style="height: {dayHeight()}px">
                         {#if schedule?.recess_start}
                             {@const rEnd = recessEnd()}
                             <div
@@ -134,32 +141,45 @@
                                 <span
                                     class="text-[10px] opacity-40 py-1 font-bold uppercase tracking-wider text-center"
                                 >
-                                    Receso ({timeLabel(schedule.recess_start)} – {timeLabel(rEnd)})
+                                    Receso ({timeLabel(schedule.recess_start)} –
+                                    {timeLabel(rEnd)})
                                 </span>
                             </div>
                         {/if}
                         {#each classesFor(day.key) as cls}
                             {@const color = matterColor(cls.matter_id)}
                             <div
-                                class="absolute w-full px-2 py-1 overflow-hidden z-10"
-                                style={`top: ${topOf(cls.start_time)}px; height: ${heightOf(cls.start_time, cls.end_time)}px; background-color: ${color.bg}; color: ${color.text};`}
+                                class="absolute rounded-md px-2 py-1 overflow-hidden z-10 w-[calc(100%-4px)]"
+                                style={`top: ${topOf(cls.start_time)}px; height: ${heightOf(cls.start_time, cls.end_time)}px; background-color: ${color.bg}; color: ${color.text}; border-left: 5px solid color-mix(in srgb, ${color.bg} 100%, black 10%)`}
                             >
                                 <div class="text-[10px] font-semibold">
-                                    {formatTimeRange(cls.start_time, cls.end_time)}
+                                    {formatTimeRange(
+                                        cls.start_time,
+                                        cls.end_time,
+                                    )}
                                 </div>
-                                <div class="text-xs font-bold leading-tight truncate">
+                                <div
+                                    class="text-xs font-bold leading-tight truncate"
+                                >
                                     {cls.matter_name || "—"}
                                 </div>
-                                <div class="text-[10px] font-semibold opacity-80 truncate">
+                                <div
+                                    class="text-[10px] font-semibold opacity-80 truncate"
+                                >
                                     {#if cls.teacher_name}
-                                        {cls.teacher_name}
+                                        Prof. {cls.teacher_name}
                                     {/if}
                                     {#if cls.section_name}
-                                        {#if cls.teacher_name} · {/if}Sección {cls.section_name}
+                                        {#if cls.teacher_name}
+                                            ·
+                                        {/if}Sección {cls.section_name}
                                     {/if}
                                     {#if cls.course_name}
-                                        {#if cls.teacher_name || cls.section_name} · {/if}{cls.course_name}
-                                    {/if}                                </div>
+                                        {#if cls.teacher_name || cls.section_name}
+                                            ·
+                                        {/if}{cls.course_name}
+                                    {/if}
+                                </div>
                             </div>
                         {/each}
                     </div>

@@ -208,7 +208,10 @@
 
         const teacherId = Number(row.teacher_id);
         const conflict = occupancy.find((block) => {
-            if (Number(block.teacher_id) !== teacherId || Number(block.day) !== day) {
+            if (
+                Number(block.teacher_id) !== teacherId ||
+                Number(block.day) !== day
+            ) {
                 return false;
             }
             const bStart = toMinutes(block.start_time);
@@ -220,7 +223,8 @@
 
         const parts = [];
         if (conflict.course_name) parts.push(conflict.course_name);
-        if (conflict.section_name) parts.push(`Sección ${conflict.section_name}`);
+        if (conflict.section_name)
+            parts.push(`Sección ${conflict.section_name}`);
 
         return `Este profesor ya tiene clase ${blocksLabel(blockDayName(conflict.day))} de ${timeLabel(conflict.start_time)} a ${timeLabel(conflict.end_time)} en ${parts.join(" · ")}.`;
     }
@@ -321,6 +325,10 @@
     }
 </script>
 
+<svelte:head>
+    <title>Horarios</title>
+</svelte:head>
+
 <div class="w-full">
     <h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden mb-3">
         Horarios
@@ -369,7 +377,8 @@
                             type="button"
                             on:click={() => changeSection(section.id)}
                             class="px-4 py-2 text-sm font-semibold rounded-md transition-colors"
-                            class:bg-yellow={String(section.id) === selectedSection}
+                            class:bg-yellow={String(section.id) ===
+                                selectedSection}
                             class:bg-gray-200={String(section.id) !==
                                 selectedSection}
                         >
@@ -395,15 +404,13 @@
 
         {#if subjectHours.length > 0}
             <div class="mt-7 rounded-xl w-fit overflow-hidden">
-                <div
-                    class=" text-gray-600 px-4 py-2 font-semibold text-sm"
-                >
+                <div class=" text-gray-600 px-4 py-2 font-semibold text-sm">
                     Materias y horas semanales
                 </div>
                 <table class="w-fit text-sm">
                     <tbody>
                         {#each subjectHours as s}
-                            <tr class="border-t border-gray-100 ">
+                            <tr class="border-t border-gray-100">
                                 <td class="px-4 py-1.5 font-medium">
                                     {s.matter_name}
                                 </td>
@@ -420,309 +427,335 @@
             </div>
         {/if}
     {:else}
-    <div
-        class="flex flex-wrap items-center gap-4 border border-gray-200 bg-gray-50 rounded-xl p-4"
-    >
-        <div class="flex flex-col">
-            <label class="text-xs font-semibold text-gray-700 mb-1"
-                >Periodo escolar</label
-            >
-            <select
-                bind:value={selectedPeriod}
-                on:change={changePeriod}
-                class="border border-gray-300 rounded-md px-3 py-2 text-sm"
-            >
-                {#each data.periods as period}
-                    <option value={period.id}>{period.name}</option>
-                {/each}
-            </select>
-        </div>
-
-        <div class="flex flex-col">
-            <label class="text-xs font-semibold text-gray-700 mb-1">Curso</label
-            >
-            <select
-                bind:value={selectedCourse}
-                on:change={changeCourse}
-                class="border border-gray-300 rounded-md px-3 py-2 text-sm"
-            >
-                {#each data.courses as course}
-                    <option value={course.id}>{course.name}</option>
-                {/each}
-            </select>
-        </div>
-
-        <div class="flex flex-col">
-            <span class="text-xs font-semibold text-gray-700 mb-1">Sección</span
-            >
-            <div class="flex items-center gap-2">
-                {#each sectionsOfCourse as section, i}
-                    <button
-                        type="button"
-                        on:click={() => changeSection(section.id)}
-                        class="px-4 py-2 text-sm font-semibold rounded-md transition-colors"
-                        class:bg-yellow={String(section.id) === selectedSection}
-                        class:bg-gray-200={String(section.id) !==
-                            selectedSection}
-                    >
-                        {section.name}
-                    </button>
-                {/each}
-            </div>
-        </div>
-        <div class="flex flex-col">
-            <label class="text-xs font-semibold text-gray-700 mb-1"
-                >Receso — hora</label
-            >
-            <div class="flex items-center gap-1">
-                <select
-                    bind:value={recess.hora}
-                    class="border border-gray-300 rounded-md px-2 py-2 text-sm"
+        <div
+            class="flex flex-wrap items-center gap-4 border border-gray-200 bg-gray-50 rounded-xl p-4"
+        >
+            <div class="flex flex-col">
+                <label class="text-xs font-semibold text-gray-700 mb-1"
+                    >Periodo escolar</label
                 >
-                    {#each HOURS as h}
-                        <option value={h}>{h}</option>
+                <select
+                    bind:value={selectedPeriod}
+                    on:change={changePeriod}
+                    class="border border-gray-300 rounded-md px-3 py-2 text-sm"
+                >
+                    {#each data.periods as period}
+                        <option value={period.id}>{period.name}</option>
                     {/each}
                 </select>
-                <span>:</span>
-                <select
-                    bind:value={recess.minuto}
-                    class="border border-gray-300 rounded-md px-2 py-2 text-sm"
+            </div>
+
+            <div class="flex flex-col">
+                <label class="text-xs font-semibold text-gray-700 mb-1"
+                    >Curso</label
                 >
-                    {#each MINUTES as m}
-                        <option value={m}>{m}</option>
+                <select
+                    bind:value={selectedCourse}
+                    on:change={changeCourse}
+                    class="border border-gray-300 rounded-md px-3 py-2 text-sm"
+                >
+                    {#each data.courses as course}
+                        <option value={course.id}>{course.name}</option>
                     {/each}
                 </select>
-                <select
-                    bind:value={recess.ampm}
-                    class="border border-gray-300 rounded-md px-2 py-2 text-sm"
-                >
-                    <option value="AM">AM</option>
-                    <option value="PM">PM</option>
-                </select>
             </div>
-        </div>
 
-        <div class="flex flex-col">
-            <label class="text-xs font-semibold text-gray-700 mb-1"
-                >Duración receso (min)</label
-            >
-            <input
-                type="number"
-                min="0"
-                bind:value={recess.duracion}
-                class="border border-gray-300 rounded-md px-3 py-2 text-sm w-28"
-            />
-        </div>
-    </div>
-
-    <p class="text-sm text-gray-500 mt-3">
-        Receso:
-        {recess.hora}:{recess.minuto}
-        {recess.ampm} · {recess.duracion}
-        minutos (aplica a todos los días)
-    </p>
-
-    <div class="grid grid-cols-1 md:grid-cols-5 border-gray-300 border-2 rounded-xl overflow-hidden  mt-4">
-        {#each DAYS as day}
-            <div
-                class="border border-gray-200  bg-gray-50  flex flex-col"
-            >
-                <h4 class="font-semibold text-gray-100 text-center bg-color1 text-sm py-2">
-                    {day.label}
-                </h4>
-
-                {#each classes[day.key] || [] as row, index}
-                    <div class=" flex flex-col px-3">
+            <div class="flex flex-col">
+                <span class="text-xs font-semibold text-gray-700 mb-1"
+                    >Sección</span
+                >
+                <div class="flex items-center gap-2">
+                    {#each sectionsOfCourse as section, i}
                         <button
                             type="button"
-                            on:click={() => insertClass(day.key, index)}
-                            class="flex group hover:text-black text-gray-500 items-center justify-center gap-2 py-2 "
-                            title="Insertar clase antes de esta"
+                            on:click={() => changeSection(section.id)}
+                            class="px-4 py-2 text-sm font-semibold rounded-md transition-colors"
+                            class:bg-yellow={String(section.id) ===
+                                selectedSection}
+                            class:bg-gray-200={String(section.id) !==
+                                selectedSection}
                         >
-                            <span
-                                class="hidden group-hover:block opacity-0 group-hover:opacity-100 transition-opacity duration-150 py-1 border border-dashed border-gray-400 w-full rounded bg-gray-100"
-                            >
-                             <iconify-icon
-                                icon="ic:baseline-plus"
-                                class="shrink-0 relative top-0.5 "
-                                width="14"
-                            ></iconify-icon>    
-                        </span>
-                           
+                            {section.name}
                         </button>
-                        <div
-                            class=" p-2 border border-gray-200 rounded-lg bg-white"
-                        >
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-medium text-gray-500"
-                                >Clase {index + 1}</span
-                            >
+                    {/each}
+                </div>
+            </div>
+            <div class="flex flex-col">
+                <label class="text-xs font-semibold text-gray-700 mb-1"
+                    >Receso — hora</label
+                >
+                <div class="flex items-center gap-1">
+                    <select
+                        bind:value={recess.hora}
+                        class="border border-gray-300 rounded-md px-2 py-2 text-sm"
+                    >
+                        {#each HOURS as h}
+                            <option value={h}>{h}</option>
+                        {/each}
+                    </select>
+                    <span>:</span>
+                    <select
+                        bind:value={recess.minuto}
+                        class="border border-gray-300 rounded-md px-2 py-2 text-sm"
+                    >
+                        {#each MINUTES as m}
+                            <option value={m}>{m}</option>
+                        {/each}
+                    </select>
+                    <select
+                        bind:value={recess.ampm}
+                        class="border border-gray-300 rounded-md px-2 py-2 text-sm"
+                    >
+                        <option value="AM">AM</option>
+                        <option value="PM">PM</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex flex-col">
+                <label class="text-xs font-semibold text-gray-700 mb-1"
+                    >Duración receso (min)</label
+                >
+                <input
+                    type="number"
+                    min="0"
+                    bind:value={recess.duracion}
+                    class="border border-gray-300 rounded-md px-3 py-2 text-sm w-28"
+                />
+            </div>
+        </div>
+
+        <p class="text-sm text-gray-500 mt-3">
+            Receso:
+            {recess.hora}:{recess.minuto}
+            {recess.ampm} · {recess.duracion}
+            minutos (aplica a todos los días)
+        </p>
+
+        <div
+            class="grid grid-cols-1 md:grid-cols-5 rounded-xl overflow-hidden gap-2 lg:gap mt-4"
+        >
+            {#each DAYS as day}
+                <div class="  flex flex-col">
+                    <h4
+                        class="font-semibold bg-white text-center rounded-lg text-sm py-2 shadow uppercase"
+                    >
+                        {day.label}
+                    </h4>
+
+                    {#each classes[day.key] || [] as row, index}
+                        <div class=" flex flex-col">
                             <button
                                 type="button"
-                                on:click={() => removeClass(day.key, index)}
-                                class="text-red-500 hover:text-red-700"
-                                title="Quitar clase"
+                                on:click={() => insertClass(day.key, index)}
+                                class="flex group hover:text-black text-gray-500 items-center justify-center gap-2 py-2"
+                                title="Insertar clase antes de esta"
                             >
-                                <iconify-icon icon="mdi:close" width="16"
-                                ></iconify-icon>
+                                <span
+                                    class="hidden group-hover:block opacity-0 group-hover:opacity-100 transition-opacity duration-150 py-1 border border-dashed border-gray-400 w-full rounded bg-gray-100"
+                                >
+                                    <iconify-icon
+                                        icon="ic:baseline-plus"
+                                        class="shrink-0 relative top-0.5"
+                                        width="14"
+                                    ></iconify-icon>
+                                </span>
                             </button>
-                        </div>
-
-                        <div class="text-[11px] font-medium text-gray-500 mb-1">
-                            Inicio
-                        </div>
-                        <div class="flex items-center gap-1 mb-2">
-                            <select
-                                bind:value={row.start.hour}
-                                class="border border-gray-300 rounded-md px-1 py-1 text-xs"
+                            <div
+                                class=" p-2  shadow rounded-lg bg-white md:p-3.5"
                             >
-                                {#each HOURS as h}
-                                    <option value={h}>{h}</option>
-                                {/each}
-                            </select>
-                            <span class="text-xs">:</span>
-                            <select
-                                bind:value={row.start.minute}
-                                class="border border-gray-300 rounded-md px-1 py-1 text-xs"
-                            >
-                                {#each MINUTES as m}
-                                    <option value={m}>{m}</option>
-                                {/each}
-                            </select>
-                            <select
-                                bind:value={row.start.ampm}
-                                class="border border-gray-300 rounded-md px-1 py-1 text-xs"
-                            >
-                                <option value="AM">AM</option>
-                                <option value="PM">PM</option>
-                            </select>
-                        </div>
-
-                        <div class="text-[11px] font-medium text-gray-500 mb-1">
-                            Fin
-                        </div>
-                        <div class="flex items-center gap-1 mb-3">
-                            <select
-                                bind:value={row.end.hour}
-                                class="border border-gray-300 rounded-md px-1 py-1 text-xs"
-                            >
-                                {#each HOURS as h}
-                                    <option value={h}>{h}</option>
-                                {/each}
-                            </select>
-                            <span class="text-xs">:</span>
-                            <select
-                                bind:value={row.end.minute}
-                                class="border border-gray-300 rounded-md px-1 py-1 text-xs"
-                            >
-                                {#each MINUTES as m}
-                                    <option value={m}>{m}</option>
-                                {/each}
-                            </select>
-                            <select
-                                bind:value={row.end.ampm}
-                                class="border border-gray-300 rounded-md px-1 py-1 text-xs"
-                            >
-                                <option value="AM">AM</option>
-                                <option value="PM">PM</option>
-                            </select>
-                        </div>
-
-                        {#if startMustNotBeBefore(row, day.key, index)}
-                            <p class="text-[11px] text-red-500 mb-2">
-                                La hora de inicio no puede ser menor al fin de
-                                la clase anterior.
-                            </p>
-                        {/if}
-
-                        {#if teacherConflictInfo(row, day.key)}
-                            <p class="text-[11px] text-red-500 mb-2">
-                                {teacherConflictInfo(row, day.key)}
-                            </p>
-                        {/if}
-
-                        <div class="mb-2">
-                            <select
-                                bind:value={row.matter_id}
-                                class="w-full border border-gray-300 rounded-md px-2 py-1.5 text-xs"
-                            >
-                                <option value="">Selecciona materia</option>
-                                {#each matters as matter}
-                                    <option value={matter.id}
-                                        >{matter.name}</option
+                                <div
+                                    class="flex items-center justify-between mb-2"
+                                >
+                                    <span
+                                        class="text-xs font-medium text-gray-500"
+                                        >Clase {index + 1}</span
                                     >
-                                {/each}
-                            </select>
-                        </div>
-
-                        <div>
-                            <select
-                                bind:value={row.teacher_id}
-                                class="w-full border border-gray-300 rounded-md px-2 py-1.5 text-xs"
-                            >
-                                <option value="">— Profesor —</option>
-                                {#each teachersFor(row.matter_id) as teacher}
-                                    <option value={teacher.id}
-                                        >{teacher.full_name}</option
+                                    <button
+                                        type="button"
+                                        on:click={() =>
+                                            removeClass(day.key, index)}
+                                        class="text-red-500 hover:text-red-700"
+                                        title="Quitar clase"
                                     >
-                                {/each}
-                            </select>
-                            {#if row.matter_id && teachersFor(row.matter_id).length === 0}
-                                <p class="text-[11px] text-amber-600 mt-1">
-                                    No hay profesores con esta materia.
-                                </p>
-                            {/if}
-                        </div>
-                    </div>
-                    </div>
-                {/each}
+                                        <iconify-icon
+                                            icon="mdi:close"
+                                            width="16"
+                                        ></iconify-icon>
+                                    </button>
+                                </div>
 
-                <button
-                    type="button"
-                    on:click={() => addClass(day.key)}
-                    class=" flex items-center justify-center m-3 gap-1 text-sm font-medium text-gray-600 hover:text-gray-900 border border-dashed border-gray-300 rounded-lg py-2"
+                                <div
+                                    class="flex items-center justify-center p-2 bg-color4/10 rounded-lg"
+                                >
+                                    <div
+                                        class="text-[11px] font-medium text-gray-500 mr-1"
+                                    >
+                                        Inicio:
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <select
+                                            bind:value={row.start.hour}
+                                            class="bg-white rounded-md px-1 py-1 text-xs"
+                                        >
+                                            {#each HOURS as h}
+                                                <option value={h}>{h}</option>
+                                            {/each}
+                                        </select>
+                                        <span class="text-xs">:</span>
+                                        <select
+                                            bind:value={row.start.minute}
+                                            class="bg-white rounded-md px-1 py-1 text-xs"
+                                        >
+                                            {#each MINUTES as m}
+                                                <option value={m}>{m}</option>
+                                            {/each}
+                                        </select>
+                                        <select
+                                            bind:value={row.start.ampm}
+                                            class=" bg-color4/20 rounded-md px-1 py-1 text-xs"
+                                        >
+                                            <option value="AM">AM</option>
+                                            <option value="PM">PM</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div
+                                    class="flex my-2 items-center justify-center p-2 mb-4 bg-color4/10 rounded-lg"
+                                >
+                                    <div
+                                        class="text-[11px] font-medium text-gray-500 mr-4"
+                                    >
+                                        Fin
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <select
+                                            bind:value={row.end.hour}
+                                            class=" bg-white rounded-md px-1 py-1 text-xs"
+                                        >
+                                            {#each HOURS as h}
+                                                <option value={h}>{h}</option>
+                                            {/each}
+                                        </select>
+                                        <span class="text-xs">:</span>
+                                        <select
+                                            bind:value={row.end.minute}
+                                            class=" bg-white rounded-md px-1 py-1 text-xs"
+                                        >
+                                            {#each MINUTES as m}
+                                                <option value={m}>{m}</option>
+                                            {/each}
+                                        </select>
+                                        <select
+                                            bind:value={row.end.ampm}
+                                            class=" bg-color4/20 rounded-md px-1 py-1 text-xs"
+                                        >
+                                            <option value="AM">AM</option>
+                                            <option value="PM">PM</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {#if startMustNotBeBefore(row, day.key, index)}
+                                    <p class="text-[11px] text-red-500 mb-2">
+                                        La hora de inicio no puede ser menor al
+                                        fin de la clase anterior.
+                                    </p>
+                                {/if}
+
+                                {#if teacherConflictInfo(row, day.key)}
+                                    <p class="text-[11px] text-red-500 mb-2">
+                                        {teacherConflictInfo(row, day.key)}
+                                    </p>
+                                {/if}
+
+                                <div class="mb-2 mt-2">
+                                    <select
+                                        bind:value={row.matter_id}
+                                        class="w-full bg-color4/10 rounded-md px-2 py-1.5 text-xs"
+                                    >
+                                        <option value=""
+                                            >Selecciona materia</option
+                                        >
+                                        {#each matters as matter}
+                                            <option value={matter.id}
+                                                >{matter.name}</option
+                                            >
+                                        {/each}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <select
+                                        bind:value={row.teacher_id}
+                                        class="w-full bg-color4/10 rounded-md px-2 py-1.5 text-xs"
+                                    >
+                                        <option value="">— Profesor —</option>
+                                        {#each teachersFor(row.matter_id) as teacher}
+                                            <option value={teacher.id}
+                                                >{teacher.full_name}</option
+                                            >
+                                        {/each}
+                                    </select>
+                                    {#if row.matter_id && teachersFor(row.matter_id).length === 0}
+                                        <p
+                                            class="text-[11px] text-amber-600 mt-1"
+                                        >
+                                            No hay profesores con esta materia.
+                                        </p>
+                                    {/if}
+                                </div>
+                            </div>
+                        </div>
+                    {/each}
+
+                    <button
+                        type="button"
+                        on:click={() => addClass(day.key)}
+                        class=" flex items-center justify-center m-3 gap-1 text-sm font-medium text-gray-600 hover:text-gray-900 border border- bg-color4/10 rounded-lg py-2"
+                    >
+                        <iconify-icon icon="ic:baseline-plus"></iconify-icon>
+                        Agregar clase
+                    </button>
+                </div>
+            {/each}
+        </div>
+
+        <div class="flex justify-end items-center gap-5 mt-6">
+            <button
+                type="button"
+                on:click={showGrid}
+                class="px-4 mt-4 py-2 text-sm font-semibold rounded-md bg-color4/10 text-gray-600 hover:bg-gray-100 transition"
+            >
+                Ver vista de horario
+            </button>
+            <button
+                type="button"
+                on:click={save}
+                class="animated-button w-fitcontent"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="arr-2"
+                    viewBox="0 0 24 24"
                 >
-                    <iconify-icon icon="ic:baseline-plus"></iconify-icon>
-                    Agregar clase
-                </button>
-            </div>
-        {/each}
-    </div>
-
-    <div class="flex justify-end items-center gap-5 mt-6">
-        <button
-            type="button"
-            on:click={showGrid}
-            class="px-4 mt-4 py-2 text-sm font-semibold rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
-        >
-            Ver vista de horario
-        </button>
-        <button
-            type="button"
-            on:click={save}
-            class="animated-button w-fitcontent "
-        >
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="arr-2"
-                viewBox="0 0 24 24"
-            >
-                <path
-                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                ></path>
-            </svg>
-            <span class="text">Guardar horario</span>
-            <span class="circle"></span>
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="arr-1"
-                viewBox="0 0 24 24"
-            >
-                <path
-                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                ></path>
-            </svg>
-        </button>
-    </div>
+                    <path
+                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                    ></path>
+                </svg>
+                <span class="text">Guardar horario</span>
+                <span class="circle"></span>
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="arr-1"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+                    ></path>
+                </svg>
+            </button>
+        </div>
     {/if}
 </div>
