@@ -673,3 +673,30 @@ En el modal de Pagos, replicar el patrón de MisPagos en el bloque móvil `<div 
 - Build sin errores (`corepack yarn run build`).
 - Corregido 1 de 35 → banner muestra `corregido 1/35` inmediatamente.
 - Corregido todos → banner muestra `¡Todos corregidos!` + suena fanfarria.
+- Microfono se detiene automaticamente al corregir todos los estudiantes de un tema.
+
+### 2026-09-28 — Formato de teléfonos en Matrícula para compatibilidad con wa.me
+
+#### Objetivo
+- Los campos de teléfono en `Matricula.svelte` ahora muestran el número con guiones (`XXX-XXX-XXXX`) para mejor legibilidad.
+- Al generar enlaces `wa.me`, el código existente en `EstadosDeCuenta.svelte` ya stripa espacios/guiones (`/[ -]/g, ""`) y agrega el código de país `58` si no existe, produciendo el formato `58XXXXXXXXXX`.
+
+#### Cambios
+- `Input.svelte`: añadidos `inputmode` y `pattern` como props exportables (pasados al `<input>`).
+- `Matricula.svelte`:
+  - Nueva `formatPhoneNumber(value)`: limpia no-dígitos, formatea como `XXX-XXX-XXXX` (o menos si hay menos dígitos).
+  - Nueva `formatPhone(fieldName)`: aplica `formatPhoneNumber` al campo del formulario.
+  - Los 5 campos de teléfono (`student_phone_number`, `rep_phone_number`, `rep_phone_number2`, `second_rep_phone_number`, `second_rep_phone_number2`) tienen `inputmode="numeric"` y `on:input={() => formatPhone("campo")}`.
+  - Se removió `pattern="[0-9]*"` porque el valor formateado contiene guiones.
+
+#### Compatibilidad `wa.me`
+- `EstadosDeCuenta.svelte` ya tiene la lógica de conversión:
+  ```js
+  let phoneNumber = student.representative.user.phone_number.replace(/[ -]/g, "");
+  if (!phoneNumber || phoneNumber.length < 9) return;
+  if (!phoneNumber.startsWith("+") && !phoneNumber.startsWith("58")) {
+      phoneNumber = "58" + phoneNumber;
+  }
+  phoneNumber = phoneNumber.replace("+", "");
+  ```
+- `041-234-5678` → strip → `0412345678` → prepend `58` → `580412345678` → URL: `https://wa.me/580412345678?text=...` ✓

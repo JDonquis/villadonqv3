@@ -126,7 +126,7 @@
         on:input={() => {
             handleSearch();
         }}
-        class={`block w-full rounded-xl py-1.5 pr-5 text-gray-700 -full ${filtersOptions ? "-r-none" : ""}  md:w-56  placeholder-gray-400/70 pl-11 rtl:pr-11 rtl:pl-5 focus:border-blue-400 focus:ring-blue-300 focus:outline-none focus:ring focus:ring-opacity-40`}
+        class={`block w-full bg-gray-100 rounded-xl py-1.5 pr-5 text-gray-700 -full ${filtersOptions ? "-r-none" : ""}  md:w-56  placeholder-gray-400/70 pl-11 rtl:pr-11 rtl:pl-5 focus:border-blue-400 focus:ring-blue-300 focus:outline-none focus:ring focus:ring-opacity-40`}
         style={$$props.style}
     />
     {#if filtersOptions && !inlineFilters}

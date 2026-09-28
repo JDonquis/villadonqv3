@@ -176,7 +176,7 @@
                     {/if}
                 {/if}
                 {#if is_exempt}
-                    <div class="flex ml-2 items-center gap-2 text-xs mb-2 font-bold bg-purple w-fit px-2 py-1">
+                    <div class="flex ml-2 rounded-md items-center gap-2 text-xs mb- font-bold bg-purple w-fit px-2 py-1">
                         <p>Exonerado: {is_exempt}%</p>
                         <iconify-icon icon="mdi:shield-check" />
                     </div>
