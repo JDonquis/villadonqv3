@@ -29,7 +29,7 @@
             const { data } = await axios.post(
                 "/dashboard/personal/importar",
                 formData,
-                { headers: { Accept: "application/json" } }
+                { headers: { Accept: "application/json" } },
             );
             importSummary = data;
             showImportResult = true;
@@ -225,22 +225,27 @@
             });
             return;
         }
-        router.post(`/dashboard/personal/${selectedRow.data.id}/reenviar-correo`, {}, {
-            preserveScroll: true,
-            onSuccess: () => {
-                displayAlert({
-                    type: "success",
-                    message: "Correo reenviado correctamente",
-                });
-                selectedRow = { status: false, data: {} };
+        router.post(
+            `/dashboard/personal/${selectedRow.data.id}/reenviar-correo`,
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    displayAlert({
+                        type: "success",
+                        message: "Correo reenviado correctamente",
+                    });
+                    selectedRow = { status: false, data: {} };
+                },
+                onError: (errors) => {
+                    displayAlert({
+                        type: "error",
+                        message:
+                            errors.message || "Error al reenviar el correo",
+                    });
+                },
             },
-            onError: (errors) => {
-                displayAlert({
-                    type: "error",
-                    message: errors.message || "Error al reenviar el correo",
-                });
-            },
-        });
+        );
     }
 </script>
 
@@ -263,32 +268,70 @@
             />
             <!-- Desktop: show buttons -->
             <div class="hidden md:flex items-center gap-3">
-                <button type="button" class="toolbar-secondary opacity-50 hover:opacity-100" on:click={() => importFileInput?.click()}>
-                    <iconify-icon icon="material-symbols:upload" width="20" height="20" />
+                <button
+                    type="button"
+                    class="toolbar-secondary opacity-50 hover:opacity-100"
+                    on:click={() => importFileInput?.click()}
+                >
+                    <iconify-icon
+                        icon="material-symbols:upload"
+                        width="20"
+                        height="20"
+                    />
                     Importar
                 </button>
-                <a href="/dashboard/personal/plantilla" class="toolbar-secondary opacity-50 hover:opacity-100">
-                    <iconify-icon icon="material-symbols:download " width="20" height="20" />
+                <a
+                    href="/dashboard/personal/plantilla"
+                    class="toolbar-secondary opacity-50 hover:opacity-100"
+                >
+                    <iconify-icon
+                        icon="material-symbols:download "
+                        width="20"
+                        height="20"
+                    />
                     Descargar plantilla
                 </a>
             </div>
             <!-- Mobile: small button opens modal with actions -->
             <div class="md:hidden">
-                <button class="toolbar-secondary p-2" on:click={() => (showMobileActions = true)} aria-label="Más acciones">
-                     <iconify-icon
-                            icon="material-symbols:upload"
-                            width="20"
-                            height="20"
-                        />
+                <button
+                    class="toolbar-secondary p-2"
+                    on:click={() => (showMobileActions = true)}
+                    aria-label="Más acciones"
+                >
+                    <iconify-icon
+                        icon="material-symbols:upload"
+                        width="20"
+                        height="20"
+                    />
                 </button>
                 <Modal bind:showModal={showMobileActions} classes={"w-72"}>
                     <div class="flex flex-col gap-3 p-2">
-                        <button type="button" class="toolbar-secondary" on:click={() => { importFileInput?.click(); showMobileActions = false; }}>
-                            <iconify-icon icon="material-symbols:upload" width="20" height="20" />
+                        <button
+                            type="button"
+                            class="toolbar-secondary"
+                            on:click={() => {
+                                importFileInput?.click();
+                                showMobileActions = false;
+                            }}
+                        >
+                            <iconify-icon
+                                icon="material-symbols:upload"
+                                width="20"
+                                height="20"
+                            />
                             <span class="ml-2">Importar</span>
                         </button>
-                        <a href="/dashboard/personal/plantilla" class="toolbar-secondary" on:click={() => (showMobileActions = false)}>
-                            <iconify-icon icon="material-symbols:download " width="20" height="20" />
+                        <a
+                            href="/dashboard/personal/plantilla"
+                            class="toolbar-secondary"
+                            on:click={() => (showMobileActions = false)}
+                        >
+                            <iconify-icon
+                                icon="material-symbols:download "
+                                width="20"
+                                height="20"
+                            />
                             <span class="ml-2">Descargar plantilla</span>
                         </a>
                     </div>
@@ -300,12 +343,23 @@
                     class="toolbar-secondary"
                     style="background-color: #16a34a; color: white;"
                 >
-                    <iconify-icon icon="material-symbols:error-outline" width="20" height="20" />
-                    {$page.props.failedImportsCount} error{$page.props.failedImportsCount !== 1 ? 'es' : ''}
+                    <iconify-icon
+                        icon="material-symbols:error-outline"
+                        width="20"
+                        height="20"
+                    />
+                    {$page.props.failedImportsCount} error{$page.props
+                        .failedImportsCount !== 1
+                        ? "es"
+                        : ""}
                 </a>
             {/if}
             <div class="hidden sm:flex">
-                <button class="animated-button w-fitcontent" title="Aprieta la tecla N" on:click={openNuevoPersonal}>
+                <button
+                    class="animated-button w-fitcontent"
+                    title="Aprieta la tecla N"
+                    on:click={openNuevoPersonal}
+                >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         class="arr-2"
@@ -335,7 +389,8 @@
                 on:click={openNuevoPersonal}
                 aria-label="Nuevo personal"
             >
-                <iconify-icon icon="mdi:plus" width="26" height="26"></iconify-icon>
+                <iconify-icon icon="mdi:plus" width="26" height="26"
+                ></iconify-icon>
             </button>
         </div>
         <!-- List -->
@@ -468,55 +523,188 @@
             error={$form.errors.address}
         />
 
-        <div class="col-span-2 flex items-center gap-2 mt-2">
-            <input
-                id="is_admin"
-                type="checkbox"
-                bind:checked={$form.is_admin}
-                class="w-4 h-4 text-green bg-gray-100 border-gray-300 rounded focus:ring-green/50 focus:ring-2"
-            />
-            <label for="is_admin" class="text-sm font-medium text-gray-900"
-                >¿Es administrador?</label
+        <div class="col-span-2 mt-4">
+            <label
+                for="is_admin"
+                class="flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer select-none {$form.is_admin
+                    ? 'bg-color4/30 border-color2 ring-1 ring-color2/20'
+                    : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'}"
             >
+                <div class="flex items-center gap-3">
+                    <!-- Icono de escudo / privilegio -->
+                    <div
+                        class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors {$form.is_admin
+                            ? 'bg-color2 text-white shadow-sm'
+                            : 'bg-slate-100 text-slate-500'}"
+                    >
+                        <svg
+                            class="w-5 h-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            stroke-width="1.75"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
+                            />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-semibold text-slate-900"
+                                >¿Es administrador?</span
+                            >
+                            <span
+                                class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-slate-100 text-slate-600 uppercase tracking-wide"
+                            >
+                                Acceso Total
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5">
+                            Otorga control total y anula las restricciones
+                            individuales de módulos.
+                        </p>
+                    </div>
+                </div>
+                <!-- Switch / Checkbox interactivo estilizado -->
+                <div class="relative flex items-center">
+                    <input
+                        id="is_admin"
+                        type="checkbox"
+                        bind:checked={$form.is_admin}
+                        class="sr-only peer"
+                    />
+                    <!-- Píldora toggle visual -->
+                    <div
+                        class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-color4"
+                    ></div>
+                </div>
+            </label>
         </div>
 
-        <div class="col-span-2 mt-3 border-t border-gray-200 pt-3">
-            <p class="text-sm font-semibold text-gray-800">
-                Permisos de módulos
-            </p>
-            <p class="text-xs text-gray-500 mb-2">
+        <!-- SECCIÓN: PERMISOS DE MÓDULOS CON TUS ICONOS-->
+        <!-- ========================================== -->
+        <div class="col-span-2 mt-4 border-t border-slate-100 pt-5">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                    <p class="text-sm font-semibold text-slate-800">
+                        Permisos de módulos
+                    </p>
+                    {#if !$form.is_admin}
+                        <span
+                            class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700"
+                        >
+                            • {$form.modules.length} seleccionados
+                        </span>
+                    {/if}
+                </div>
+                <!-- Accesos rápidos para seleccionar/limpiar cuando no es admin -->
+                {#if !$form.is_admin}
+                    <div
+                        class="flex items-center gap-2 text-xs font-medium text-slate-500"
+                    >
+                        <button
+                            type="button"
+                            on:click={() =>
+                                ($form.modules = modules.map((m) => m.id))}
+                            class="hover:text-blue-600 transition-colors"
+                        >
+                            Seleccionar todos
+                        </button> <span>•</span>
+                        <button
+                            type="button"
+                            on:click={() => ($form.modules = [])}
+                            class="hover:text-red-500 transition-colors"
+                        >
+                            Limpiar
+                        </button>
+                    </div>
+                {/if}
+            </div>
+            <p class="text-xs text-slate-500 mb-3">
                 {#if $form.is_admin}
-                    Administrador completo: tiene acceso a todos los módulos.
+                    <span class="text-blue-600 font-medium">
+                        Administrador completo: tiene acceso a todos los módulos
+                        automáticamente.
+                    </span>
                 {:else}
-                    Selecciona los módulos a los que podrá ingresar.
+                    Selecciona los módulos a los que este colaborador podrá
+                    ingresar e interactuar.
                 {/if}
             </p>
-            <div
-                class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2"
-            >
+            <!-- Grilla de módulos con <iconify-icon> -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
                 {#each modules as module (module.id)}
+                    {@const isChecked = $form.modules.includes(module.id)}
                     <label
-                        class="flex items-center gap-2 text-sm text-gray-700 {$form.is_admin
-                            ? 'opacity-60'
-                            : ''}"
+                        class="group relative flex items-center justify-between p-3 rounded-xl border transition-all select-none {$form.is_admin
+                            ? 'bg-slate-50/70 border-slate-200/60 opacity-60 cursor-not-allowed'
+                            : isChecked
+                              ? 'bg-white border-slate-900 shadow-sm cursor-pointer'
+                              : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/50 cursor-pointer'}"
                     >
                         <input
                             type="checkbox"
                             bind:group={$form.modules}
                             value={module.id}
                             disabled={$form.is_admin}
-                            class="w-4 h-4 text-green bg-gray-100 border-gray-300 rounded focus:ring-green/50 focus:ring-2"
+                            class="sr-only"
                         />
-                        <span class="flex items-center gap-1">
-                            {#if module.icon}
-                                <iconify-icon
-                                    icon={module.icon}
-                                    width="16"
-                                    height="16"
-                                ></iconify-icon>
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <!-- Contenedor con tu mismo icono de Iconify -->
+                            <div
+                                class="flex items-center justify-center w-8 h-8 rounded-lg shrink-0 transition-colors {$form.is_admin
+                                    ? 'bg-slate-200/70 text-slate-500'
+                                    : isChecked
+                                      ? 'bg-slate-900 text-white'
+                                      : 'bg-slate-100 text-slate-600 group-hover:bg-slate-200'}"
+                            >
+                                {#if module.icon}
+                                    <iconify-icon
+                                        icon={module.icon}
+                                        width="16"
+                                        height="16"
+                                    ></iconify-icon>
+                                {/if}
+                            </div>
+                            <div class="truncate">
+                                <p
+                                    class="text-xs font-semibold text-slate-800 truncate"
+                                >
+                                    {module.name}
+                                </p>
+                            </div>
+                        </div>
+                        <!-- Indicador de Check cuadrado moderno -->
+                        <div
+                            class="w-4 h-4 rounded-md border flex items-center justify-center shrink-0 ml-2 transition-colors {$form.is_admin
+                                ? 'border-slate-300 bg-slate-100'
+                                : isChecked
+                                  ? 'bg-slate-900 border-slate-900 text-white'
+                                  : 'border-slate-300 bg-white group-hover:border-slate-400'}"
+                        >
+                            {#if isChecked && !$form.is_admin}
+                                <svg
+                                    class="w-2.5 h-2.5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="3.5"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M5 13l4 4L19 7"
+                                    />
+                                </svg>
+                            {:else if $form.is_admin}
+                                <div
+                                    class="w-1.5 h-1.5 rounded-full bg-slate-400"
+                                ></div>
                             {/if}
-                            {module.name}
-                        </span>
+                        </div>
                     </label>
                 {/each}
             </div>
@@ -544,7 +732,11 @@
 </Modal>
 
 {#if showImportResult}
-    <ImportResultModal bind:show={showImportResult} summary={importSummary} importType="teacher" />
+    <ImportResultModal
+        bind:show={showImportResult}
+        summary={importSummary}
+        importType="teacher"
+    />
 {/if}
 
 <style>
