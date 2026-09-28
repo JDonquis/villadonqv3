@@ -226,177 +226,184 @@
     }
 
     function findVoiceStudent(transcript) {
-    const transcriptText = normalizeVoiceText(transcript);
-    const words = transcriptText
-        .split(" ")
-        .filter(
-            (word) =>
-                ![
-                    "estudiante",
-                    "alumno",
-                    "alumna",
-                    "nota",
-                    "para",
-                    "de",
-                    "a",
-                ].includes(word),
-        );
-    if (!words.length) return { student: null, ambiguous: false };
-
-    const matches = (data.matrix?.students || [])
-        .map((student) => {
-            const lastNameParts = student.last_name
-                .split(" ")
-                .filter(Boolean);
-            const firstLastName = normalizeVoiceText(
-                lastNameParts[0] || "",
+        const transcriptText = normalizeVoiceText(transcript);
+        const words = transcriptText
+            .split(" ")
+            .filter(
+                (word) =>
+                    ![
+                        "estudiante",
+                        "alumno",
+                        "alumna",
+                        "nota",
+                        "para",
+                        "de",
+                        "a",
+                    ].includes(word),
             );
-            const secondLastName = normalizeVoiceText(
-                lastNameParts[1] || "",
-            );
-            const firstName = normalizeVoiceText(
-                student.name.split(" ")[0] || "",
-            );
-            const secondName = normalizeVoiceText(
-                student.name.split(" ")[1] || "",
-            );
+        if (!words.length) return { student: null, ambiguous: false };
 
-            // ===== MATCHING DE APELLIDO =====
-            let firstLastNameScore = 0;
-            let secondLastNameScore = 0;
-
-            if (firstLastName) {
-                words.forEach((word) => {
-                    const sim = tokenSimilarity(word, firstLastName);
-                    if (sim > firstLastNameScore) firstLastNameScore = sim;
-                });
-            }
-
-            if (secondLastName) {
-                words.forEach((word) => {
-                    const sim = tokenSimilarity(word, secondLastName);
-                    if (sim > secondLastNameScore)
-                        secondLastNameScore = sim;
-                });
-            }
-
-            // ===== MATCHING DE NOMBRE =====
-            let firstNameScore = 0;
-            let secondNameScore = 0;
-
-            if (firstName) {
-                words.forEach((word) => {
-                    const sim = tokenSimilarity(word, firstName);
-                    if (sim > firstNameScore) firstNameScore = sim;
-                });
-            }
-
-            if (secondName) {
-                words.forEach((word) => {
-                    const sim = tokenSimilarity(word, secondName);
-                    if (sim > secondNameScore) secondNameScore = sim;
-                });
-            }
-
-            // ===== COMBINACIÓN CON PESOS =====
-            const hasFirstLastName = firstLastNameScore > 0.7;
-            const hasFirstName = firstNameScore > 0.7;
-            const hasBoth = hasFirstName && hasFirstLastName;
-
-            // Score base: apellido pesa 3, nombre pesa 1
-            let score = firstLastNameScore * 3.0 + firstNameScore * 1.0;
-
-            // Bonus fuerte si matchea nombre + apellido paterno
-            if (hasBoth) {
-                score += 2.0;
-            }
-
-            // Bonus por segundo apellido
-            if (secondLastNameScore > 0.7) {
-                score += secondLastNameScore * 1.5;
-            }
-
-            // Bonus por segundo nombre
-            if (secondNameScore > 0.7) {
-                score += secondNameScore * 0.5;
-            }
-
-            // ✅ CORREGIDO: Solo penalizar si hay un apellido en el dictado
-            // y NO matchea, pero el nombre sí. Si no se dictó apellido,
-            // no penalizar.
-            const transcriptHasLastName = words.some((word) => {
-                const allLastNames = [
-                    normalizeVoiceText(firstLastName),
-                    normalizeVoiceText(secondLastName),
-                ].filter(Boolean);
-                return allLastNames.some(
-                    (lastName) => tokenSimilarity(word, lastName) > 0.7,
+        const matches = (data.matrix?.students || [])
+            .map((student) => {
+                const lastNameParts = student.last_name
+                    .split(" ")
+                    .filter(Boolean);
+                const firstLastName = normalizeVoiceText(
+                    lastNameParts[0] || "",
                 );
-            });
+                const secondLastName = normalizeVoiceText(
+                    lastNameParts[1] || "",
+                );
+                const firstName = normalizeVoiceText(
+                    student.name.split(" ")[0] || "",
+                );
+                const secondName = normalizeVoiceText(
+                    student.name.split(" ")[1] || "",
+                );
 
-            if (
-                transcriptHasLastName &&
-                !hasFirstLastName &&
-                hasFirstName
-            ) {
-                score *= 0.4;
+                // ===== MATCHING DE APELLIDO =====
+                let firstLastNameScore = 0;
+                let secondLastNameScore = 0;
+
+                if (firstLastName) {
+                    words.forEach((word) => {
+                        const sim = tokenSimilarity(word, firstLastName);
+                        if (sim > firstLastNameScore) firstLastNameScore = sim;
+                    });
+                }
+
+                if (secondLastName) {
+                    words.forEach((word) => {
+                        const sim = tokenSimilarity(word, secondLastName);
+                        if (sim > secondLastNameScore)
+                            secondLastNameScore = sim;
+                    });
+                }
+
+                // ===== MATCHING DE NOMBRE =====
+                let firstNameScore = 0;
+                let secondNameScore = 0;
+
+                if (firstName) {
+                    words.forEach((word) => {
+                        const sim = tokenSimilarity(word, firstName);
+                        if (sim > firstNameScore) firstNameScore = sim;
+                    });
+                }
+
+                if (secondName) {
+                    words.forEach((word) => {
+                        const sim = tokenSimilarity(word, secondName);
+                        if (sim > secondNameScore) secondNameScore = sim;
+                    });
+                }
+
+                // ===== COMBINACIÓN CON PESOS =====
+                const hasFirstLastName = firstLastNameScore > 0.7;
+                const hasFirstName = firstNameScore > 0.7;
+                const hasBoth = hasFirstName && hasFirstLastName;
+
+                // Score base: apellido pesa 3, nombre pesa 1
+                let score = firstLastNameScore * 3.0 + firstNameScore * 1.0;
+
+                // Bonus fuerte si matchea nombre + apellido paterno
+                if (hasBoth) {
+                    score += 2.0;
+                }
+
+                // Bonus por segundo apellido
+                if (secondLastNameScore > 0.7) {
+                    score += secondLastNameScore * 1.5;
+                }
+
+                // Bonus por segundo nombre
+                if (secondNameScore > 0.7) {
+                    score += secondNameScore * 0.5;
+                }
+
+                // ✅ CORREGIDO: Solo penalizar si hay un apellido en el dictado
+                // y NO matchea, pero el nombre sí. Si no se dictó apellido,
+                // no penalizar.
+                const transcriptHasLastName = words.some((word) => {
+                    const allLastNames = [
+                        normalizeVoiceText(firstLastName),
+                        normalizeVoiceText(secondLastName),
+                    ].filter(Boolean);
+                    return allLastNames.some(
+                        (lastName) => tokenSimilarity(word, lastName) > 0.7,
+                    );
+                });
+
+                if (
+                    transcriptHasLastName &&
+                    !hasFirstLastName &&
+                    hasFirstName
+                ) {
+                    score *= 0.4;
+                }
+
+                // Bonus extra si el apellido es EXACTO
+                if (firstLastName && words.includes(firstLastName)) {
+                    score += 2.0;
+                }
+
+                return { student, score };
+            })
+            .filter((entry) => entry.score > 0.3) // ✅ Bajado de 0.5 a 0.3
+            .sort((a, b) => b.score - a.score);
+
+        if (!matches.length) return { student: null, ambiguous: false };
+
+        const bestScore = matches[0].score;
+
+        if (matches.length === 1) {
+            return { student: matches[0].student, ambiguous: false };
+        }
+
+        const secondBest = matches[1].score;
+
+        // ✅ Umbral de ambigüedad más relajado
+        const ambiguityThreshold = 0.85;
+
+        if (secondBest >= bestScore * ambiguityThreshold) {
+            const exactLastNameMatches = matches.filter(
+                (m) =>
+                    m.score >= bestScore * 0.9 &&
+                    m.student.last_name
+                        .toLowerCase()
+                        .normalize("NFD")
+                        .replace(/[\u0300-\u036f]/g, "")
+                        .split(" ")[0]
+                        .includes(words.find((w) => w.length > 3) || ""),
+            );
+
+            if (exactLastNameMatches.length === 1) {
+                return {
+                    student: exactLastNameMatches[0].student,
+                    ambiguous: false,
+                };
             }
 
-            // Bonus extra si el apellido es EXACTO
-            if (firstLastName && words.includes(firstLastName)) {
-                score += 2.0;
-            }
+            return { student: null, ambiguous: true };
+        }
 
-            return { student, score };
-        })
-        .filter((entry) => entry.score > 0.3) // ✅ Bajado de 0.5 a 0.3
-        .sort((a, b) => b.score - a.score);
-
-    if (!matches.length) return { student: null, ambiguous: false };
-
-    const bestScore = matches[0].score;
-
-    if (matches.length === 1) {
         return { student: matches[0].student, ambiguous: false };
     }
 
-    const secondBest = matches[1].score;
-
-    // ✅ Umbral de ambigüedad más relajado
-    const ambiguityThreshold = 0.85;
-
-    if (secondBest >= bestScore * ambiguityThreshold) {
-        const exactLastNameMatches = matches.filter(
-            (m) =>
-                m.score >= bestScore * 0.9 &&
-                m.student.last_name
-                    .toLowerCase()
-                    .normalize("NFD")
-                    .replace(/[\u0300-\u036f]/g, "")
-                    .split(" ")[0]
-                    .includes(words.find((w) => w.length > 3) || ""),
-        );
-
-        if (exactLastNameMatches.length === 1) {
-            return {
-                student: exactLastNameMatches[0].student,
-                ambiguous: false,
-            };
-        }
-
-        return { student: null, ambiguous: true };
-    }
-
-    return { student: matches[0].student, ambiguous: false };
-}
-
+    // ===== PARSEAR NOTA DE VOZ =====
     function parseVoiceScore(transcript) {
         const normalized = normalizeVoiceText(transcript);
+
+        // 1. Buscar número con dígitos (ej: "15", "11,5", "18.5")
         const digitMatch = normalized.match(
             /(?:^|\s)(\d{1,2}(?:[.,]\d+)?)(?:\s|$)/,
         );
-        if (digitMatch) return Number(digitMatch[1].replace(",", "."));
+        if (digitMatch) {
+            const num = Number(digitMatch[1].replace(",", "."));
+            if (num >= 0 && num <= 20) return num;
+        }
 
+        // 2. Diccionario de números en palabras
         const numberWords = {
             cero: 0,
             un: 1,
@@ -422,7 +429,38 @@
             diecinueve: 19,
             veinte: 20,
         };
+
         const words = normalized.split(" ");
+
+        // 3. Buscar "veinte" + "uno/dos/tres..." (veintiuno, veintidos, etc.)
+        const veinteIndex = words.indexOf("veinte");
+        if (veinteIndex !== -1 && veinteIndex < words.length - 1) {
+            const nextWord = words[veinteIndex + 1];
+            if (Object.hasOwn(numberWords, nextWord)) {
+                const base = numberWords[nextWord];
+                let total = 20 + base;
+
+                // Verificar si hay decimal: "veintiuno coma cinco"
+                const comaIndex = words.indexOf("coma", veinteIndex + 2);
+                const puntoIndex = words.indexOf("punto", veinteIndex + 2);
+                const separatorIndex =
+                    comaIndex !== -1 ? comaIndex : puntoIndex;
+
+                if (separatorIndex !== -1) {
+                    const decimalWord = words[separatorIndex + 1];
+                    if (
+                        decimalWord &&
+                        Object.hasOwn(numberWords, decimalWord)
+                    ) {
+                        total += numberWords[decimalWord] / 10;
+                    }
+                }
+
+                if (total <= 20) return total;
+            }
+        }
+
+        // 4. Buscar palabra de número
         const scoreWord = words.find((word) =>
             Object.hasOwn(numberWords, word),
         );
@@ -430,6 +468,8 @@
 
         let score = numberWords[scoreWord];
         const scoreIndex = words.indexOf(scoreWord);
+
+        // 5. Verificar decimal: "quince coma cinco" o "quince punto cinco"
         const separatorIndex = words.findIndex(
             (word, index) =>
                 index > scoreIndex && ["coma", "punto"].includes(word),
@@ -439,10 +479,150 @@
             if (decimalWord && Object.hasOwn(numberWords, decimalWord)) {
                 score += numberWords[decimalWord] / 10;
             }
-        } else if (words.includes("medio")) {
+        } else if (words.includes("medio") && score < 20) {
             score += 0.5;
         }
+
         return score;
+    }
+
+    // ✅ NUEVA FUNCIÓN: Dividir transcript en comandos individuales
+    function splitTranscriptIntoCommands(transcript) {
+        const normalized = transcript
+            .toLocaleLowerCase("es-VE")
+            .replace(/\s+/g, " ")
+            .trim();
+
+        const numberWords = [
+            "cero",
+            "un",
+            "uno",
+            "una",
+            "dos",
+            "tres",
+            "cuatro",
+            "cinco",
+            "seis",
+            "siete",
+            "ocho",
+            "nueve",
+            "diez",
+            "once",
+            "doce",
+            "trece",
+            "catorce",
+            "quince",
+            "dieciseis",
+            "diecisiete",
+            "dieciocho",
+            "diecinueve",
+            "veinte",
+        ];
+
+        const decimalPattern = `(\\d{1,2}(?:[.,]\\d+)?(?:\\s+(?:coma|punto)\\s+\\d{1,2})?|\\b(?:${numberWords.join("|")})\\b(?:\\s+(?:coma|punto)\\s+\\b(?:${numberWords.join("|")})\\b)?)`;
+        const regex = new RegExp(decimalPattern, "gi");
+
+        const commands = [];
+        let lastIndex = 0;
+        let match;
+
+        while ((match = regex.exec(normalized)) !== null) {
+            const numberEnd = match.index + match[0].length;
+            const commandText = normalized.slice(lastIndex, numberEnd).trim();
+
+            if (commandText.length >= 3) {
+                commands.push(commandText);
+            }
+
+            lastIndex = numberEnd;
+        }
+
+        const remaining = normalized.slice(lastIndex).trim();
+        if (remaining.length > 0) {
+            commands.push(remaining);
+        }
+
+        if (commands.length === 0) {
+            commands.push(normalized);
+        }
+
+        return commands;
+    }
+
+    // ✅ NUEVA FUNCIÓN: Reproducir sonidos con Web Audio API
+    function playSound(type) {
+        try {
+            const AudioContext =
+                window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+
+            const ctx = new AudioContext();
+            const oscillator = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(ctx.destination);
+
+            if (type === "nota") {
+                oscillator.type = "sine";
+                oscillator.frequency.setValueAtTime(523.25, ctx.currentTime);
+                oscillator.frequency.setValueAtTime(
+                    659.25,
+                    ctx.currentTime + 0.1,
+                );
+                gainNode.gain.setValueAtTime(0.15, ctx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(
+                    0.001,
+                    ctx.currentTime + 0.25,
+                );
+                oscillator.start(ctx.currentTime);
+                oscillator.stop(ctx.currentTime + 0.25);
+            } else if (type === "estudiante") {
+                oscillator.type = "sine";
+                oscillator.frequency.setValueAtTime(440, ctx.currentTime);
+                oscillator.frequency.setValueAtTime(
+                    554.37,
+                    ctx.currentTime + 0.08,
+                );
+                gainNode.gain.setValueAtTime(0.12, ctx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(
+                    0.001,
+                    ctx.currentTime + 0.2,
+                );
+                oscillator.start(ctx.currentTime);
+                oscillator.stop(ctx.currentTime + 0.2);
+            } else if (type === "error") {
+                oscillator.type = "square";
+                oscillator.frequency.setValueAtTime(300, ctx.currentTime);
+                oscillator.frequency.setValueAtTime(
+                    200,
+                    ctx.currentTime + 0.15,
+                );
+                gainNode.gain.setValueAtTime(0.08, ctx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(
+                    0.001,
+                    ctx.currentTime + 0.25,
+                );
+                oscillator.start(ctx.currentTime);
+                oscillator.stop(ctx.currentTime + 0.25);
+            }
+
+            setTimeout(() => ctx.close(), 500);
+        } catch (e) {
+            // Silencioso si el navegador no lo soporta
+        }
+    }
+
+    // ✅ NUEVO: Estado para animación del banner
+    let voiceFlashType = "";
+    let voiceFlashTimer = null;
+
+    function triggerVoiceFlash(type) {
+        voiceFlashType = type;
+        if (voiceFlashTimer) clearTimeout(voiceFlashTimer);
+        voiceFlashTimer = setTimeout(() => {
+            voiceFlashType = "";
+        }, 700);
     }
 
     let voiceFocusTimer = null;
@@ -479,12 +659,16 @@
 
         if (pendingVoiceStudentId !== null) {
             if (score === null) {
-                voiceStatus = `No reconocí una nota en «${transcript}». Diga un número del 0 al 20.`;
+                voiceStatus = `No reconocí la nota. Diga un número del 0 al 20.`;
+                playSound("error");
+                triggerVoiceFlash("error");
                 return;
             }
             if (score < 0 || score > 20) {
                 voiceStatus =
                     "La nota debe estar entre 0 y 20. Diga el número nuevamente.";
+                playSound("error");
+                triggerVoiceFlash("error");
                 return;
             }
 
@@ -497,6 +681,10 @@
             focusVoiceGrade(studentId, true);
             pendingVoiceStudentId = null;
             voiceStatus = `Nota ${score} registrada. Diga el nombre del siguiente estudiante.`;
+
+            // ✅ Sonido y animación de nota guardada
+            playSound("nota");
+            triggerVoiceFlash("nota");
             return;
         }
 
@@ -514,6 +702,10 @@
                 focusVoiceGrade(student.id, true);
                 voiceStatus = `Nota ${score} registrada para ${student.name} ${student.last_name}. Diga el nombre del siguiente estudiante.`;
                 pendingVoiceStudentId = null;
+
+                // ✅ Sonido y animación de nota guardada
+                playSound("nota");
+                triggerVoiceFlash("nota");
                 return;
             }
         }
@@ -523,12 +715,18 @@
             voiceStatus = ambiguous
                 ? `Hay varios estudiantes que coinciden con «${transcript}». Diga también el apellido.`
                 : `No encontré a «${transcript}». Diga su nombre y/o apellido.`;
+            playSound("error");
+            triggerVoiceFlash("error");
             return;
         }
 
         pendingVoiceStudentId = student.id;
         focusVoiceGrade(student.id);
-        voiceStatus = `${student.name} ${student.last_name}: input enfocado. Ahora diga la nota.`;
+        voiceStatus = `Ahora diga la nota.`;
+
+        // ✅ Sonido y animación de estudiante detectado
+        playSound("estudiante");
+        triggerVoiceFlash("estudiante");
     }
 
     function stopVoiceDictation() {
@@ -570,7 +768,8 @@
         };
 
         window.addEventListener("keydown", handleKeyboardShortcut);
-        return () => window.removeEventListener("keydown", handleKeyboardShortcut);
+        return () =>
+            window.removeEventListener("keydown", handleKeyboardShortcut);
     });
 
     function resetVoiceSelection() {
@@ -579,6 +778,9 @@
         pendingVoiceStudentId = null;
         voiceStatus = "Selecciona un tema de la tabla y activa el micrófono.";
     }
+
+    let voiceProcessingStatus = "";
+    let voiceInterimText = "";
 
     function toggleVoiceDictation() {
         if (voiceListening) {
@@ -603,7 +805,7 @@
         const recognition = new SpeechRecognition();
         recognition.lang = "es-VE";
         recognition.continuous = true;
-        recognition.interimResults = false;
+        recognition.interimResults = true;
         voiceRecognition = recognition;
         voiceListening = true;
         voiceStatus = "Escuchando: diga el nombre del estudiante.";
@@ -614,11 +816,32 @@
                 index < event.results.length;
                 index += 1
             ) {
-                if (event.results[index].isFinal) {
-                    processVoiceTranscript(event.results[index][0].transcript);
+                const transcript = event.results[index][0].transcript;
+                const isFinal = event.results[index].isFinal;
+
+                if (isFinal) {
+                    voiceInterimText = "";
+                    const commands = splitTranscriptIntoCommands(transcript);
+
+                    if (commands.length > 1) {
+                        voiceProcessingStatus = `Guardando ${commands.length} notas...`;
+                        triggerVoiceFlash("procesando");
+                    }
+
+                    commands.forEach((command) => {
+                        if (command.trim().length >= 1) {
+                            processVoiceTranscript(command);
+                        }
+                    });
+
+                    voiceProcessingStatus = "";
+                } else {
+                    // ✅ Solo mostrar, no procesar
+                    voiceInterimText = transcript;
                 }
             }
         };
+
         recognition.onerror = (event) => {
             voiceListening = false;
             voiceRecognition = null;
@@ -647,6 +870,8 @@
                 "No se pudo iniciar el micrófono. Inténtalo nuevamente.";
         }
     }
+
+    // ===== SISTEMA DE SONIDOS =====
 
     onDestroy(stopVoiceDictation);
 
@@ -954,7 +1179,6 @@
             },
         });
     }
-
 </script>
 
 <svelte:head>
@@ -1056,142 +1280,355 @@
     </div>
 {/if}
 
-{#if data.matrix && viewMode === 'notas'}
+{#if data.matrix && viewMode === "notas"}
     {#if data.matrix.students.length === 0}
-        <div class="bg-white border border-grayBlue/40 rounded-2xl p-12 text-center text-gray-400 shadow-sm max-w-2xl mx-auto my-8">
-            <div class="w-12 h-12 rounded-2xl bg-color2/10 text-color2 flex items-center justify-center mx-auto mb-3">
-                <iconify-icon icon="mdi:account-group-outline" width="28" height="28"></iconify-icon>
+        <div
+            class="bg-white border border-grayBlue/40 rounded-2xl p-12 text-center text-gray-400 shadow-sm max-w-2xl mx-auto my-8 "
+        >
+            <div
+                class="w-12 h-12 rounded-2xl bg-color2/10 text-color2 flex items-center justify-center mx-auto mb-3"
+            >
+                <iconify-icon
+                    icon="mdi:account-group-outline"
+                    width="28"
+                    height="28"
+                ></iconify-icon>
             </div>
-            <p class="font-bold text-color1 text-base">No hay estudiantes inscritos</p>
+            <p class="font-bold text-color1 text-base">
+                No hay estudiantes inscritos
+            </p>
             <p class="text-xs text-gray-500 mt-1">
-                {data.matrix.plan.course_name} · Sección {data.matrix.plan.section_name}
+                {data.matrix.plan.course_name} · Sección {data.matrix.plan
+                    .section_name}
             </p>
         </div>
     {:else}
         <!-- CONTENEDOR PRINCIPAL ELEVADO -->
-        <div class="bg-white rounded-2xl border border-grayBlue/40 shadow-sm overflow-hidden mb-12">
-
+        <div
+            class="bg-white rounded-2xl border border-grayBlue/40 shadow-sm overflow-hidden mb-16"
+        >
             <!-- HEADER SUPERIOR LIMPIO: FEEDBACK DE ESTADO / DICTADO ACTIVO -->
-            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-grayBlue/30 bg-slate-50/70 px-5 py-3 min-h-[52px]">
+            <div
+                class="flex flex-wrap items-center justify-between gap-3 border-b border-grayBlue/30 bg-slate-50/70 px-5 py-3 min-h-[52px]"
+            >
                 <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-color1 uppercase tracking-wider">Matriz de Calificaciones</span>
+                    <span
+                        class="text-xs font-bold text-color1 uppercase tracking-wider"
+                        >Matriz de Calificaciones</span
+                    >
                     <span class="text-gray-300">•</span>
                     <span class="text-xs text-gray-500 font-medium">
-                        Total alumnos: <b class="text-color1">{sortedStudents.length}</b>
+                        Total alumnos: <b class="text-color1"
+                            >{sortedStudents.length}</b
+                        >
                     </span>
                 </div>
 
                 <!-- Feedback contextual de dictado por voz -->
                 {#if voiceListening && selectedVoiceItemId}
-                    {@const activeItem = data.matrix.items.find((item) => String(item.id) === selectedVoiceItemId)}
-                    <div class="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-red/10 border border-red/30 text-red text-xs font-semibold animate-pulse shadow-xs">
+                    {@const activeItem = data.matrix.items.find(
+                        (item) => String(item.id) === selectedVoiceItemId,
+                    )}
+                    <div
+                        class="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-red/10 border border-red/30 text-red text-xs font-semibold animate-pulse shadow-xs"
+                    >
                         <span class="relative flex h-2.5 w-2.5">
-                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-red opacity-75"></span>
-                            <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-red"></span>
+                            <span
+                                class="absolute inline-flex h-full w-full animate-ping rounded-full bg-red opacity-75"
+                            ></span>
+                            <span
+                                class="relative inline-flex h-2.5 w-2.5 rounded-full bg-red"
+                            ></span>
                         </span>
-                        <span>Dictando en: <strong class="underline decoration-red/40">{activeItem?.name || "Tema seleccionado"}</strong></span>
+                        <span
+                            >Dictando en: <strong
+                                class="underline decoration-red/40"
+                                >{activeItem?.name ||
+                                    "Tema seleccionado"}</strong
+                            ></span
+                        >
                         <span class="text-gray-400">•</span>
-                        <span class="text-[11px] font-normal text-gray-600 truncate max-w-[280px] sm:max-w-md">{voiceStatus}</span>
+                        <span
+                            class="text-[11px] font-normal text-gray-600 truncate max-w-[280px] sm:max-w-md"
+                            >{voiceStatus}</span
+                        >
                     </div>
                 {:else}
-                    <div class="flex items-center gap-2 text-xs text-gray-400 font-medium">
-                        <iconify-icon icon="mdi:waveform" class="text-color3 text-base"></iconify-icon>
-                        <span>{voiceStatus || "Selecciona 'Dictar notas' en cualquier tema para comenzar"}</span>
+                    <div
+                        class="flex items-center gap-2 text-xs text-gray-400 font-medium"
+                    >
+                        <iconify-icon
+                            icon="mdi:waveform"
+                            class="text-color3 text-base"
+                        ></iconify-icon>
+                        <span
+                            >{voiceStatus ||
+                                "Selecciona 'Dictar notas' en cualquier tema para comenzar"}</span
+                        >
                     </div>
                 {/if}
-
             </div>
 
-            <!-- Banner flotante sutil en pantalla solo cuando el micrófono está en escucha -->
             {#if voiceListening}
-                <div class="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-red/30 bg-white/95 px-5 py-3 shadow-2xl backdrop-blur-md ring-4 ring-red/10 animate-in fade-in zoom-in-95 duration-200 md:left-auto md:right-8 md:bottom-8 md:translate-x-0" aria-live="polite">
+                <div
+                    class={`fixed bottom-2 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-2xl border bg-white/95 px-5 py-3 shadow-2xl backdrop-blur-md ring-4 transition-all duration-300 md:left-auto md:right-8 md:bottom-24 md:translate-x-0
+            ${voiceFlashType === "nota" ? "border-emerald-500/50 ring-emerald-500/30 scale-105 shadow-emerald-500/30 animate-[flash-nota_0.2s_ease-out]" : ""}
+            ${voiceFlashType === "estudiante" ? "border-blue/50 ring-blue/30 scale-105 shadow-blue/30 animate-[flash-estudiante_0.2s_ease-out]" : ""}
+            ${voiceFlashType === "error" ? "border-red/60 ring-red/30 scale-105 shadow-red/30 animate-[flash-error_0.2s_ease-out]" : ""}
+            ${!voiceFlashType ? "border-red/30 ring-red/10" : ""}
+        `}
+                    aria-live="polite"
+                >
+                    <!-- Indicador pulsante (cambia según el tipo) -->
                     <span class="relative flex h-3.5 w-3.5 shrink-0">
-                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-red opacity-75"></span>
-                        <span class="relative inline-flex h-3.5 w-3.5 rounded-full bg-red"></span>
+                        <span
+                            class={`absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                                voiceFlashType === "nota"
+                                    ? "bg-emerald-700 animate-ping"
+                                    : voiceFlashType === "estudiante"
+                                      ? "bg-blue animate-ping"
+                                      : "bg-red animate-ping"
+                            }`}
+                        ></span>
+                        <span
+                            class={`relative inline-flex h-3.5 w-3.5 rounded-full ${
+                                voiceFlashType === "nota"
+                                    ? "bg-emerald-600"
+                                    : voiceFlashType === "estudiante"
+                                      ? "bg-blue"
+                                      : "bg-red"
+                            }`}
+                        ></span>
                     </span>
-                    <div class="max-w-[260px] sm:max-w-xs">
+
+                    <div class="max-w-[260px] h-fit sm:max-w-xs">
                         <div class="flex items-center justify-between gap-2">
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-red">Micrófono encendido</span>
+                            <span
+                                class={`text-[10px] font-bold uppercase tracking-wider transition-colors duration-200 ${
+                                    voiceFlashType === "nota"
+                                        ? "text-emerald-600"
+                                        : voiceFlashType === "estudiante"
+                                          ? "text-blue"
+                                          : "text-red"
+                                }`}
+                            >
+                                {voiceFlashType === "nota"
+                                    ? "✓ Nota guardada"
+                                    : voiceFlashType === "estudiante"
+                                      ? "Estudiante detectado"
+                                      : "Micrófono encendido"}
+                            </span>
+                            {#if voiceFlashType === "nota"}
+                                <iconify-icon
+                                    icon="mdi:check-circle"
+                                    class="text-emerald-600 text-sm animate-in zoom-in duration-75"
+                                ></iconify-icon>
+                            {/if}
+                            {#if voiceFlashType === "estudiante"}
+                                <iconify-icon
+                                    icon="mdi:account-check"
+                                    class="text-blue text-sm animate-in zoom-in duration-100"
+                                ></iconify-icon>
+                            {/if}
+                            {#if voiceFlashType === "error"}
+                                <iconify-icon
+                                    icon="mdi:alert-circle"
+                                    class="text-red text-sm animate-in zoom-in duration-100"
+                                ></iconify-icon>
+                            {/if}
                         </div>
-                        <p class="text-xs font-semibold text-color1 truncate">{voiceStatus}</p>
+                        <p
+                            class={`text-xs font-semibold truncate transition-colors duration-100 ${
+                                voiceInterimText
+                                    ? "text-color2"
+                                    : voiceFlashType === "nota"
+                                      ? "text-emerald-600"
+                                      : voiceFlashType === "estudiante"
+                                        ? "text-blue"
+                                        : voiceFlashType === "error"
+                                          ? "text-red"
+                                          : "text-color1"
+                            }`}
+                        >
+                            {#if voiceInterimText}
+                                <span class="inline-flex items-center gap-1">
+                                    <iconify-icon
+                                        icon="lucide:mic"
+                                        class="text-indigo-500 animate-pulse text-sm"
+                                    ></iconify-icon>
+                                    "{voiceInterimText}"
+                                </span>
+                            {:else}
+                                {voiceStatus}
+                            {/if}
+                        </p>
                     </div>
-                    <button type="button" class="ml-1 p-1 rounded-lg text-gray-400 hover:text-red hover:bg-red/10 transition-colors" title="Detener dictado" on:click={toggleVoiceDictation}>
-                        <iconify-icon icon="line-md:close" width="18" height="18"></iconify-icon>
+
+                    <button
+                        type="button"
+                        class="ml-1 p-1 rounded-lg text-gray-400 hover:text-red hover:bg-red/10 transition-colors"
+                        title="Detener dictado"
+                        on:click={toggleVoiceDictation}
+                    >
+                        <iconify-icon
+                            icon="line-md:close"
+                            width="18"
+                            height="18"
+                        ></iconify-icon>
                     </button>
                 </div>
             {/if}
 
             <!-- TABLA DE CALIFICACIONES (DATA MATRIX) -->
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto mb-">
                 <table class="w-full text-xs md:text-sm border-collapse">
-                    <thead class="bg-gray-50/70 border-b border-grayBlue/30 text-gray-500">
+                    <thead
+                        class="bg-gray-50/70 border-b border-grayBlue/30 text-gray-500"
+                    >
                         <tr>
                             <!-- 1. Columna Estudiante (Sticky) -->
-                            <th class="px-5 py-3.5 text-left sticky left-0 z-20 bg-gray-50/95 backdrop-blur-sm min-w-[220px] shadow-[1px_0_0_rgba(199,210,218,0.4)]">
-                                <button type="button" class="inline-flex items-center gap-1.5 font-bold text-color1 hover:text-color2 transition-colors uppercase tracking-wider text-[11px]" on:click={() => toggleSort("student")}>
+                            <th
+                                class="px-5 py-3.5 text-left sticky left-0 z-20 bg-gray-50/95 backdrop-blur-sm min-w-[220px] shadow-[1px_0_0_rgba(199,210,218,0.4)]"
+                            >
+                                <button
+                                    type="button"
+                                    class="inline-flex items-center gap-1.5 font-bold text-color1 hover:text-color2 transition-colors uppercase tracking-wider text-[11px]"
+                                    on:click={() => toggleSort("student")}
+                                >
                                     <span>Estudiante</span>
-                                    <span class="text-color3 font-bold text-xs">{getSortIndicator("student", sortState)}</span>
+                                    <span class="text-color3 font-bold text-xs"
+                                        >{getSortIndicator(
+                                            "student",
+                                            sortState,
+                                        )}</span
+                                    >
                                 </button>
                             </th>
 
                             <!-- 2. Columnas de Temas / Evaluaciones -->
                             {#each data.matrix.items as item}
                                 {@const meta = getUnitMetaForItem(item)}
-                                {@const isThisItemListening = voiceListening && String(selectedVoiceItemId) === String(item.id)}
-                                {@const isSelected = String(selectedVoiceItemId) === String(item.id)}
-                                <th class={`px-4 py-3 text-left min-w-[175px] transition-colors align-top ${isThisItemListening ? 'bg-red/5' : isSelected ? 'bg-color4/10' : ''}`}>
+                                {@const isThisItemListening =
+                                    voiceListening &&
+                                    String(selectedVoiceItemId) ===
+                                        String(item.id)}
+                                {@const isSelected =
+                                    String(selectedVoiceItemId) ===
+                                    String(item.id)}
+                                <th
+                                    class={`px-4 py-3 text-left min-w-[175px] transition-colors align-top ${isThisItemListening ? "bg-red/5" : isSelected ? "bg-color4/10" : ""}`}
+                                >
                                     <div class="flex flex-col gap-2">
                                         <!-- ÁREA DEL TÍTULO (AQUÍ ESTÁ EL GROUP PARA EL TOOLTIP AISLADO) -->
                                         <div class="group relative">
-                                            <button type="button" class="flex w-full items-start justify-between gap-1 text-left" on:click={() => toggleSort(`item_${item.id}`)}>
+                                            <button
+                                                type="button"
+                                                class="flex w-full items-start justify-between gap-1 text-left"
+                                                on:click={() =>
+                                                    toggleSort(
+                                                        `item_${item.id}`,
+                                                    )}
+                                            >
                                                 <div class="min-w-0 pr-1">
-                                                    <span class="font-bold text-color1 text-xs block truncate" title={item.name}>
+                                                    <span
+                                                        class="font-bold text-color1 text-xs block truncate"
+                                                        title={item.name}
+                                                    >
                                                         {item.name}
                                                     </span>
-                                                    <span class="inline-block mt-0.5 text-[11px] font-semibold text-color3">
-                                                        {item.percentage}% Ponderación
+                                                    <span
+                                                        class="inline-block mt-0.5 text-[11px] font-semibold text-color3"
+                                                    >
+                                                        {item.percentage}%
+                                                        Ponderación
                                                     </span>
                                                 </div>
-                                                <span class="text-color3 text-xs mt-0.5 shrink-0">{getSortIndicator(`item_${item.id}`, sortState)}</span>
+                                                <span
+                                                    class="text-color3 text-xs mt-0.5 shrink-0"
+                                                    >{getSortIndicator(
+                                                        `item_${item.id}`,
+                                                        sortState,
+                                                    )}</span
+                                                >
                                             </button>
 
                                             <!-- TOOLTIP AISLADO: SOLO APARECE AL HACER HOVER SOBRE EL TÍTULO -->
-                                            <div class="pointer-events-none absolute left-1/2 top-full z-30 w-64 -translate-x-1/2 mt-1 rounded-xl border border-grayBlue/50 bg-white p-3 text-left text-xs text-gray-700 opacity-0 shadow-xl transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-1">
-                                                <div class="font-bold text-color1 flex items-center gap-1.5">
-                                                    <span class="w-2 h-2 rounded-full bg-color2"></span>
+                                            <div
+                                                class="pointer-events-none absolute left-1/2 top-full z-30 w-64 -translate-x-1/2 mt-1 rounded-xl border border-grayBlue/50 bg-white p-3 text-left text-xs text-gray-700 opacity-0 shadow-xl transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-1"
+                                            >
+                                                <div
+                                                    class="font-bold text-color1 flex items-center gap-1.5"
+                                                >
+                                                    <span
+                                                        class="w-2 h-2 rounded-full bg-color2"
+                                                    ></span>
                                                     Unidad {meta.unit_number}: "{meta.unit_name}"
                                                 </div>
-                                                <div class="mt-2 space-y-1 text-[11px] text-gray-600">
-                                                    <div><span class="font-semibold text-gray-500">Tipo:</span> {meta.assessment_type}</div>
-                                                    <div><span class="font-semibold text-gray-500">Fecha:</span> {formatTooltipDate(meta.scheduled_date)}</div>
+                                                <div
+                                                    class="mt-2 space-y-1 text-[11px] text-gray-600"
+                                                >
+                                                    <div>
+                                                        <span
+                                                            class="font-semibold text-gray-500"
+                                                            >Tipo:</span
+                                                        >
+                                                        {meta.assessment_type}
+                                                    </div>
+                                                    <div>
+                                                        <span
+                                                            class="font-semibold text-gray-500"
+                                                            >Fecha:</span
+                                                        >
+                                                        {formatTooltipDate(
+                                                            meta.scheduled_date,
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
 
                                         <!-- BOTÓN CONTEXTUAL DE DICTADO (FUERA DEL GROUP: NUNCA ACTIVA EL TOOLTIP) -->
-                                        <button type="button" class={`w-full py-1.5 px-2.5 rounded-xl text-[11px] font-bold tracking-tight transition-all duration-200 flex items-center justify-center gap-1.5 border shadow-2xs ${
-                                            isThisItemListening
-                                                ? 'bg-red text-white border-red shadow-red/25 ring-2 ring-red/20 animate-pulse'
-                                                : isSelected
-                                                    ? 'bg-color1 text-white border-color1 hover:bg-color2'
-                                                    : 'bg-white text-gray-700 border-grayBlue/60 hover:border-color2 hover:text-color2 hover:bg-slate-50'
-                                        }`} title="Atajo de teclado: Ctrl + M (o Cmd + M en Mac)" on:click={() => {
-                                            if (isThisItemListening) {
-                                                // Si ya está escuchando este tema, lo apaga
-                                                toggleVoiceDictation();
-                                            } else {
-                                                // Selecciona el tema e inicia el micrófono en 1 solo paso
-                                                selectedVoiceItemId = String(item.id);
-                                                pendingVoiceStudentId = null;
-                                                voiceStatus = `Escuchando para «${item.name}». Diga el nombre y la nota...`;
-                                                if (!voiceListening) {
+                                        <button
+                                            type="button"
+                                            class={`w-full py-1.5 px-2.5 rounded-xl text-[11px] font-bold tracking-tight transition-all duration-200 flex items-center justify-center gap-1.5 border shadow-2xs ${
+                                                isThisItemListening
+                                                    ? "bg-red text-white border-red shadow-red/25 ring-2 ring-red/20 animate-pulse"
+                                                    : isSelected
+                                                      ? "bg-color1 text-white border-color1 hover:bg-color2"
+                                                      : "bg-white text-gray-700 border-grayBlue/60 hover:border-color2 hover:text-color2 hover:bg-slate-50"
+                                            }`}
+                                            title="Atajo de teclado: Ctrl + M (o Cmd + M en Mac)"
+                                            on:click={() => {
+                                                if (isThisItemListening) {
+                                                    // Si ya está escuchando este tema, lo apaga
                                                     toggleVoiceDictation();
+                                                } else {
+                                                    // Selecciona el tema e inicia el micrófono en 1 solo paso
+                                                    selectedVoiceItemId =
+                                                        String(item.id);
+                                                    pendingVoiceStudentId =
+                                                        null;
+                                                    voiceStatus = `Escuchando para «${item.name}». Diga el nombre y la nota...`;
+                                                    if (!voiceListening) {
+                                                        toggleVoiceDictation();
+                                                    }
                                                 }
-                                            }
-                                        }}>
-                                            <iconify-icon icon={isThisItemListening ? "mdi:microphone-off" : isSelected ? "mdi:microphone" : "mdi:microphone-outline"} class="text-sm"></iconify-icon>
+                                            }}
+                                        >
+                                            <iconify-icon
+                                                icon={isThisItemListening
+                                                    ? "mdi:microphone-off"
+                                                    : isSelected
+                                                      ? "mdi:microphone"
+                                                      : "mdi:microphone-outline"}
+                                                class="text-sm"
+                                            ></iconify-icon>
                                             <span>
-                                                {isThisItemListening ? "Detener dictado" : isSelected ? "Dictar notas" : "Dictar notas"}
+                                                {isThisItemListening
+                                                    ? "Detener dictado"
+                                                    : isSelected
+                                                      ? "Dictar notas"
+                                                      : "Dictar notas"}
                                             </span>
                                         </button>
                                     </div>
@@ -1200,19 +1637,41 @@
 
                             <!-- 3. Columna de Rasgos Personales (si aplica) -->
                             {#if planRasgosMax > 0}
-                                <th class="px-4 py-3 text-center bg-gray-50/80 min-w-[110px]" title="Puntos de rasgos (conducta y puntualidad)">
-                                    <span class="font-bold text-color1 uppercase tracking-wider text-[11px] block">
+                                <th
+                                    class="px-4 py-3 text-center bg-gray-50/80 min-w-[110px]"
+                                    title="Puntos de rasgos (conducta y puntualidad)"
+                                >
+                                    <span
+                                        class="font-bold text-color1 uppercase tracking-wider text-[11px] block"
+                                    >
                                         Rasgos
                                     </span>
-                                    <span class="text-[11px] font-semibold text-color3">({planRasgosMax} pts)</span>
+                                    <span
+                                        class="text-[11px] font-semibold text-color3"
+                                        >({planRasgosMax} pts)</span
+                                    >
                                 </th>
                             {/if}
 
                             <!-- 4. Columna Definitiva -->
-                            <th class="px-5 py-3.5 text-left bg-gray-50/80 min-w-[150px]">
-                                <button type="button" class="inline-flex items-center gap-1.5 font-bold text-color1 hover:text-color2 transition-colors uppercase tracking-wider text-[11px]" on:click={() => toggleSort("definitive")}>
-                                    <span>Definitiva ({data.matrix.plan.lapse_label})</span>
-                                    <span class="text-color3 font-bold text-xs">{getSortIndicator("definitive", sortState)}</span>
+                            <th
+                                class="px-5 py-3.5 text-left bg-gray-50/80 min-w-[150px]"
+                            >
+                                <button
+                                    type="button"
+                                    class="inline-flex items-center gap-1.5 font-bold text-color1 hover:text-color2 transition-colors uppercase tracking-wider text-[11px]"
+                                    on:click={() => toggleSort("definitive")}
+                                >
+                                    <span
+                                        >Definitiva ({data.matrix.plan
+                                            .lapse_label})</span
+                                    >
+                                    <span class="text-color3 font-bold text-xs"
+                                        >{getSortIndicator(
+                                            "definitive",
+                                            sortState,
+                                        )}</span
+                                    >
                                 </button>
                             </th>
                         </tr>
@@ -1221,17 +1680,23 @@
                     <!-- CUERPO DE ESTUDIANTES Y CALIFICACIONES -->
                     <tbody class="divide-y divide-grayBlue/20">
                         {#each sortedStudents as student}
-                            {@const definitive = definitiveByStudent[student.id]}
+                            {@const definitive =
+                                definitiveByStudent[student.id]}
                             <tr class="hover:bg-slate-50/80 transition-colors">
                                 <!-- Celda Estudiante (Sticky) -->
-                                <td class={`px-5 py-3 sticky left-0 z-10 transition-colors shadow-[1px_0_0_rgba(199,210,218,0.4)] ${pendingVoiceStudentId === student.id ? 'bg-color4/10' : 'bg-white group-hover:bg-slate-50'}`}>
+                                <td
+                                    class={`px-5 py-3 sticky left-0 z-10 transition-colors shadow-[1px_0_0_rgba(199,210,218,0.4)] ${pendingVoiceStudentId === student.id ? "bg-color4/10" : "bg-white group-hover:bg-slate-50"}`}
+                                >
                                     <div class="flex items-center gap-3">
-                                       
                                         <div class="min-w-0">
-                                            <p class="font-bold text-color1 text-sm truncate capitalize">
+                                            <p
+                                                class="font-bold text-color1 text-sm truncate capitalize"
+                                            >
                                                 {student.last_name}, {student.name}
                                             </p>
-                                            <p class="text-[11px] font-mono text-gray-400 mt-0">
+                                            <p
+                                                class="text-[11px] font-mono text-gray-400 mt-0"
+                                            >
                                                 C.I. {student.ci}
                                             </p>
                                         </div>
@@ -1241,18 +1706,28 @@
                                 <!-- Celdas de Calificación por Tema -->
                                 {#each data.matrix.items as item}
                                     {@const gradeKey = `${student.id}_${item.id}`}
-                                    {@const isItemActive = String(selectedVoiceItemId) === String(item.id)}
-                                    <td class={`px-4 py-3 align-middle transition-colors ${isItemActive && voiceListening ? 'bg-color4/10' : ''}`}>
+                                    {@const isItemActive =
+                                        String(selectedVoiceItemId) ===
+                                        String(item.id)}
+                                    <td
+                                        class={`px-4 py-3 align-middle transition-colors ${isItemActive && voiceListening ? "bg-color4/10" : ""}`}
+                                    >
                                         <div class="flex items-center gap-2">
                                             {#if data.matrix.plan.literary_grading_enabled}
                                                 <select
                                                     class="w-12 h-9 rounded-xl border border-grayBlue/60 bg-white px-1 text-center font-bold text-xs text-color1 focus:border-color2 focus:ring-2 focus:ring-color2/20 focus:outline-none transition-all shadow-2xs"
                                                     aria-label={`Nota literaria de ${student.name} ${student.last_name} en ${item.name}`}
-                                                    value={letterForScore(editable[gradeKey])}
+                                                    value={letterForScore(
+                                                        editable[gradeKey],
+                                                    )}
                                                     on:change={(event) =>
                                                         updateGrade(
                                                             gradeKey,
-                                                            scoreForLetter(event.currentTarget.value),
+                                                            scoreForLetter(
+                                                                event
+                                                                    .currentTarget
+                                                                    .value,
+                                                            ),
                                                         )}
                                                 >
                                                     <option value="">—</option>
@@ -1273,9 +1748,19 @@
                                                     class={`w-16 h-9 rounded-xl border text-center focus:border-color2 font-bold text-sm text-color1 transition-all shadow-2xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-color2/20`}
                                                     inputmode="decimal"
                                                     on:wheel|preventDefault
-                                                    on:focus={(e) => e.currentTarget.select()}
+                                                    on:focus={(e) =>
+                                                        e.currentTarget.select()}
                                                     on:keydown={(e) => {
-                                                        if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"].includes(e.key)) {
+                                                        if (
+                                                            [
+                                                                "ArrowUp",
+                                                                "ArrowDown",
+                                                                "PageUp",
+                                                                "PageDown",
+                                                                "Home",
+                                                                "End",
+                                                            ].includes(e.key)
+                                                        ) {
                                                             e.stopPropagation();
                                                         }
                                                     }}
@@ -1284,7 +1769,8 @@
                                                     on:input={(event) =>
                                                         updateGrade(
                                                             gradeKey,
-                                                            event.currentTarget.value,
+                                                            event.currentTarget
+                                                                .value,
                                                         )}
                                                 />
                                             </div>
@@ -1294,7 +1780,9 @@
 
                                 <!-- Celda de Rasgos -->
                                 {#if planRasgosMax > 0}
-                                    <td class="px-4 py-3 text-center bg-gray-50/40">
+                                    <td
+                                        class="px-4 py-3 text-center bg-gray-50/40"
+                                    >
                                         <input
                                             type="number"
                                             min="0"
@@ -1317,36 +1805,63 @@
                                 <!-- Celda Definitiva y Estado -->
                                 <td class="px-5 py-3 bg-gray-50/40">
                                     {#if definitive !== null}
-                                        {@const medal = getDefinitiveMedal(student)}
+                                        {@const medal =
+                                            getDefinitiveMedal(student)}
                                         <div class="flex items-center gap-2">
                                             {#if medal}
-                                                <span class="text-base leading-none shrink-0" title={medal === "gold" ? "1er Lugar" : medal === "silver" ? "2do Lugar" : "3er Lugar"}>
-                                                    <iconify-icon icon={getMedalIcon(medal).icon} class={getMedalIcon(medal).class}></iconify-icon>
+                                                <span
+                                                    class="text-base leading-none shrink-0"
+                                                    title={medal === "gold"
+                                                        ? "1er Lugar"
+                                                        : medal === "silver"
+                                                          ? "2do Lugar"
+                                                          : "3er Lugar"}
+                                                >
+                                                    <iconify-icon
+                                                        icon={getMedalIcon(
+                                                            medal,
+                                                        ).icon}
+                                                        class={getMedalIcon(
+                                                            medal,
+                                                        ).class}
+                                                    ></iconify-icon>
                                                 </span>
                                             {/if}
                                             {#if data.matrix.plan.literary_grading_enabled}
-                                                {@const definitiveLetter = letterForScore(definitive)}
+                                                {@const definitiveLetter =
+                                                    letterForScore(definitive)}
                                                 {#if definitiveLetter}
-                                                    <span class="rounded-lg bg-color4/20 border border-color4/40 px-2 py-0.5 text-xs font-bold text-color2">
+                                                    <span
+                                                        class="rounded-lg bg-color4/20 border border-color4/40 px-2 py-0.5 text-xs font-bold text-color2"
+                                                    >
                                                         {definitiveLetter}
                                                     </span>
                                                 {/if}
                                             {/if}
                                             <!-- Píldora de Calificación Definitiva -->
-                                            <span class={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold border ${
-                                                definitive >= 10
-                                                    ? 'bg-green/15 text-color1 border-green/30'
-                                                    : 'bg-red/10 text-red border-red/20'
-                                            }`}>
+                                            <span
+                                                class={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold border ${
+                                                    definitive >= 10
+                                                        ? "bg-green/15 text-color1 border-green/30"
+                                                        : "bg-red/10 text-red border-red/20"
+                                                }`}
+                                            >
                                                 <span>{definitive}</span>
                                                 {#if definitive < 10}
-                                                    <span class="text-[10px] font-black uppercase tracking-tight text-red">Aplazado</span>
+                                                    <span
+                                                        class="text-[10px] font-black uppercase tracking-tight text-red"
+                                                        >Aplazado</span
+                                                    >
                                                 {/if}
                                             </span>
                                         </div>
                                     {:else}
-                                        <span class="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full bg-yellow/20 text-gray-800 border border-yellow/40">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-yellow animate-pulse"></span>
+                                        <span
+                                            class="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full bg-yellow/20 text-gray-800 border border-yellow/40"
+                                        >
+                                            <span
+                                                class="w-1.5 h-1.5 rounded-full bg-yellow animate-pulse"
+                                            ></span>
                                             En curso
                                         </span>
                                     {/if}
@@ -1388,7 +1903,6 @@
             {/if}
         </div>
     {/if}
-
 {:else if viewMode === "asistencia"}
     {#if !data.matrix}
         <div
@@ -1403,3 +1917,41 @@
         />
     {/if}
 {/if}
+
+<style>
+    @keyframes flash-nota {
+        0% {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+        }
+        50% {
+            box-shadow: 0 0 0 12px rgba(16, 185, 129, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+        }
+    }
+
+    @keyframes flash-estudiante {
+        0% {
+            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+        }
+        50% {
+            box-shadow: 0 0 0 12px rgba(59, 130, 246, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+        }
+    }
+
+    @keyframes flash-error {
+        0% {
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+        }
+        50% {
+            box-shadow: 0 0 0 12px rgba(239, 68, 68, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+        }
+    }
+</style>

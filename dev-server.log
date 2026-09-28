@@ -2981,3 +2981,1041 @@ See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
 19:19:29 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:976:8 A11y: A form label must be associated with a control.
 19:19:29 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:991:8 A11y: A form label must be associated with a control.
 19:19:29 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1006:8 A11y: A form label must be associated with a control.
+[2m20:27:21[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+20:27:22 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:976:8 A11y: A form label must be associated with a control.
+20:27:22 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:991:8 A11y: A form label must be associated with a control.
+20:27:22 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1006:8 A11y: A form label must be associated with a control.
+[2m20:30:56[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+20:30:57 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:976:8 A11y: A form label must be associated with a control.
+20:30:57 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:991:8 A11y: A form label must be associated with a control.
+20:30:57 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1006:8 A11y: A form label must be associated with a control.
+[2m20:31:51[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+20:31:51 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:976:8 A11y: A form label must be associated with a control.
+20:31:51 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:991:8 A11y: A form label must be associated with a control.
+20:31:51 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1006:8 A11y: A form label must be associated with a control.
+[2m20:32:17[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+20:32:18 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:976:8 A11y: A form label must be associated with a control.
+20:32:18 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:991:8 A11y: A form label must be associated with a control.
+20:32:18 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1006:8 A11y: A form label must be associated with a control.
+[2m20:54:47[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+20:54:48 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:976:8 A11y: A form label must be associated with a control.
+20:54:48 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:991:8 A11y: A form label must be associated with a control.
+20:54:48 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1006:8 A11y: A form label must be associated with a control.
+[2m20:58:40[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+[2m20:58:41[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+20:58:42 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1040:8 A11y: A form label must be associated with a control.
+20:58:42 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1055:8 A11y: A form label must be associated with a control.
+20:58:42 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1070:8 A11y: A form label must be associated with a control.
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+[2m20:59:11[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+20:59:12 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1054:8 A11y: A form label must be associated with a control.
+20:59:12 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1069:8 A11y: A form label must be associated with a control.
+20:59:12 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1084:8 A11y: A form label must be associated with a control.
+[2m21:00:17[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:00:18 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1054:8 A11y: A form label must be associated with a control.
+21:00:18 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1069:8 A11y: A form label must be associated with a control.
+21:00:18 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1084:8 A11y: A form label must be associated with a control.
+[2m21:00:39[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+21:00:40 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1054:8 A11y: A form label must be associated with a control.
+21:00:40 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1069:8 A11y: A form label must be associated with a control.
+21:00:40 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1084:8 A11y: A form label must be associated with a control.
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+[2m21:02:09[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct, /resources/js/Pages/Dashboard/MisEstudiantes.svelte?svelte&type=style&lang.css[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:02:10 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1054:8 A11y: A form label must be associated with a control.
+21:02:10 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1069:8 A11y: A form label must be associated with a control.
+21:02:10 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1084:8 A11y: A form label must be associated with a control.
+[2m21:03:39[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:03:39 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:03:39 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:03:39 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:06:50[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:06:51 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:06:51 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:06:51 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:06:55[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:06:56 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:06:56 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:06:56 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:07:01[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:07:02 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:07:02 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:07:02 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:07:27[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:07:28 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:07:28 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:07:28 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:07:35[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:07:35 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:07:35 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:07:35 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:07:41[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:07:42 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:07:42 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:07:42 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:07:43[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:07:44 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:07:44 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:07:44 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:07:51[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:07:52 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:07:52 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:07:52 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:07:54[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:07:54 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:07:54 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:07:54 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:08:59[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:09:00 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:09:00 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:09:00 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:09:04[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:09:05 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:09:05 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:09:05 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:09:06[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:09:07 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:09:07 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:09:07 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:11:23[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:11:24 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:11:24 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:11:24 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:12:32[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[2m21:12:33[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:12:35 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:12:35 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:12:35 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:13:40[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:13:41 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:13:41 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:13:41 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:13:59[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:14:00 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:14:00 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:14:00 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:14:02[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:14:03 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:14:03 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:14:03 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:14:07[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:14:08 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:14:08 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:14:08 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:14:11[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:14:12 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:14:12 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:14:12 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:19:27[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:19:28 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:19:28 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:19:28 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:19:29[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:19:30 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:19:30 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:19:30 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:19:44[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:19:45 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:19:45 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:19:45 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:19:51[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:19:51 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:19:51 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:19:51 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:20:01[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:20:02 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:20:02 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:20:02 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:20:03[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:20:04 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1077:8 A11y: A form label must be associated with a control.
+21:20:04 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1092:8 A11y: A form label must be associated with a control.
+21:20:04 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1107:8 A11y: A form label must be associated with a control.
+[2m21:33:38[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct, /resources/js/Pages/Dashboard/MisEstudiantes.svelte?svelte&type=style&lang.css[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:33:39 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1078:8 A11y: A form label must be associated with a control.
+21:33:39 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1093:8 A11y: A form label must be associated with a control.
+21:33:39 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1108:8 A11y: A form label must be associated with a control.
+[2m21:35:39[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct, /resources/js/Pages/Dashboard/MisEstudiantes.svelte?svelte&type=style&lang.css[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:35:40 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1054:8 A11y: A form label must be associated with a control.
+21:35:40 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1069:8 A11y: A form label must be associated with a control.
+21:35:40 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1084:8 A11y: A form label must be associated with a control.
+[2m21:35:43[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct, /resources/js/Pages/Dashboard/MisEstudiantes.svelte?svelte&type=style&lang.css[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:35:44 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1054:8 A11y: A form label must be associated with a control.
+21:35:44 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1069:8 A11y: A form label must be associated with a control.
+21:35:44 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1084:8 A11y: A form label must be associated with a control.
+[2m21:37:17[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+21:37:18 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1064:8 A11y: A form label must be associated with a control.
+21:37:18 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1079:8 A11y: A form label must be associated with a control.
+21:37:18 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1094:8 A11y: A form label must be associated with a control.
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+[2m21:37:55[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:37:56 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1063:8 A11y: A form label must be associated with a control.
+21:37:56 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1078:8 A11y: A form label must be associated with a control.
+21:37:56 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1093:8 A11y: A form label must be associated with a control.
+[2m21:39:28[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:39:29 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1063:8 A11y: A form label must be associated with a control.
+21:39:29 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1078:8 A11y: A form label must be associated with a control.
+21:39:29 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1093:8 A11y: A form label must be associated with a control.
+[2m21:42:44[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:597:8 A11y: A form label must be associated with a control.
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:612:8 A11y: A form label must be associated with a control.
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:627:8 A11y: A form label must be associated with a control.
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:664:12 'stopVoiceDictation' is not defined
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:772:14 'voiceFlashType' is not defined
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:773:14 'voiceFlashType' is not defined
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:774:14 'voiceFlashType' is not defined
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:775:15 'voiceFlashType' is not defined
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:783:20 'voiceFlashType' is not defined
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:785:26 'voiceFlashType' is not defined
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:792:20 'voiceFlashType' is not defined
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:794:26 'voiceFlashType' is not defined
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:805:24 'voiceFlashType' is not defined
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:807:30 'voiceFlashType' is not defined
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:812:21 'voiceFlashType' is not defined
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:814:26 'voiceFlashType' is not defined
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:818:21 'voiceFlashType' is not defined
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:824:21 'voiceFlashType' is not defined
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:830:21 'voiceFlashType' is not defined
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:839:20 'voiceFlashType' is not defined
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:841:26 'voiceFlashType' is not defined
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:843:28 'voiceFlashType' is not defined
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:856:22 'toggleVoiceDictation' is not defined
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:989:52 'toggleVoiceDictation' is not defined
+21:42:46 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:998:56 'toggleVoiceDictation' is not defined
+[2m21:43:12[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:43:12 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1063:8 A11y: A form label must be associated with a control.
+21:43:12 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1078:8 A11y: A form label must be associated with a control.
+21:43:12 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1093:8 A11y: A form label must be associated with a control.
+[2m21:43:26[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:43:27 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1153:8 A11y: A form label must be associated with a control.
+21:43:27 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1168:8 A11y: A form label must be associated with a control.
+21:43:27 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1183:8 A11y: A form label must be associated with a control.
+[2m21:43:47[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct, /resources/js/Pages/Dashboard/MisEstudiantes.svelte?svelte&type=style&lang.css[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:43:47 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1063:8 A11y: A form label must be associated with a control.
+21:43:47 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1078:8 A11y: A form label must be associated with a control.
+21:43:47 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1093:8 A11y: A form label must be associated with a control.
+[2m21:43:52[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:43:52 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1151:8 A11y: A form label must be associated with a control.
+21:43:52 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1166:8 A11y: A form label must be associated with a control.
+21:43:52 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1181:8 A11y: A form label must be associated with a control.
+[2m21:43:55[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:43:56 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1186:8 A11y: A form label must be associated with a control.
+21:43:56 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1201:8 A11y: A form label must be associated with a control.
+21:43:56 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1216:8 A11y: A form label must be associated with a control.
+[2m21:50:37[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:50:38 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1197:8 A11y: A form label must be associated with a control.
+21:50:38 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1212:8 A11y: A form label must be associated with a control.
+21:50:38 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1227:8 A11y: A form label must be associated with a control.
+[2m21:59:43[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:59:44 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1197:8 A11y: A form label must be associated with a control.
+21:59:44 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1212:8 A11y: A form label must be associated with a control.
+21:59:44 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1227:8 A11y: A form label must be associated with a control.
+[2m21:59:45[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+21:59:45 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1197:8 A11y: A form label must be associated with a control.
+21:59:45 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1212:8 A11y: A form label must be associated with a control.
+21:59:45 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1227:8 A11y: A form label must be associated with a control.
+[2m22:23:05[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+22:23:06 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1200:8 A11y: A form label must be associated with a control.
+22:23:06 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1215:8 A11y: A form label must be associated with a control.
+22:23:06 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1230:8 A11y: A form label must be associated with a control.
+[2m22:23:34[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+22:23:35 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1200:8 A11y: A form label must be associated with a control.
+22:23:35 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1215:8 A11y: A form label must be associated with a control.
+22:23:35 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1230:8 A11y: A form label must be associated with a control.
+[2m22:24:06[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+22:24:07 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1230:8 A11y: A form label must be associated with a control.
+22:24:07 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1245:8 A11y: A form label must be associated with a control.
+22:24:07 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1260:8 A11y: A form label must be associated with a control.
+[2m22:26:06[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+22:26:07 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1230:8 A11y: A form label must be associated with a control.
+22:26:07 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1245:8 A11y: A form label must be associated with a control.
+22:26:07 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1260:8 A11y: A form label must be associated with a control.
+[2m22:26:09[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+22:26:10 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1243:8 A11y: A form label must be associated with a control.
+22:26:10 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1258:8 A11y: A form label must be associated with a control.
+22:26:10 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1273:8 A11y: A form label must be associated with a control.
+[2m22:27:35[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+22:27:36 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1200:8 A11y: A form label must be associated with a control.
+22:27:36 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1215:8 A11y: A form label must be associated with a control.
+22:27:36 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1230:8 A11y: A form label must be associated with a control.
+[2m22:29:33[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+22:29:33 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1200:8 A11y: A form label must be associated with a control.
+22:29:33 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1215:8 A11y: A form label must be associated with a control.
+22:29:33 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1230:8 A11y: A form label must be associated with a control.
+[2m22:31:19[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct, /resources/js/Pages/Dashboard/MisEstudiantes.svelte?svelte&type=style&lang.css[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+22:31:20 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1200:8 A11y: A form label must be associated with a control.
+22:31:20 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1215:8 A11y: A form label must be associated with a control.
+22:31:20 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1230:8 A11y: A form label must be associated with a control.
+[2m22:31:27[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+22:31:27 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1200:8 A11y: A form label must be associated with a control.
+22:31:27 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1215:8 A11y: A form label must be associated with a control.
+22:31:27 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1230:8 A11y: A form label must be associated with a control.
+22:31:27 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1455:4 'Icon' is not defined
+[2m22:31:41[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+22:31:42 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1200:8 A11y: A form label must be associated with a control.
+22:31:42 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1215:8 A11y: A form label must be associated with a control.
+22:31:42 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1230:8 A11y: A form label must be associated with a control.
+[2m22:31:45[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+22:31:47 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1200:8 A11y: A form label must be associated with a control.
+22:31:47 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1215:8 A11y: A form label must be associated with a control.
+22:31:47 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1230:8 A11y: A form label must be associated with a control.
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+[2m22:31:49[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct, /resources/js/Pages/Dashboard/MisEstudiantes.svelte?svelte&type=style&lang.css[22m
+22:31:50 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1200:8 A11y: A form label must be associated with a control.
+22:31:50 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1215:8 A11y: A form label must be associated with a control.
+22:31:50 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1230:8 A11y: A form label must be associated with a control.
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+[2m22:32:41[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+22:32:42 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1200:8 A11y: A form label must be associated with a control.
+22:32:42 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1215:8 A11y: A form label must be associated with a control.
+22:32:42 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1230:8 A11y: A form label must be associated with a control.
+[2m22:32:54[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+22:32:55 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1200:8 A11y: A form label must be associated with a control.
+22:32:55 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1215:8 A11y: A form label must be associated with a control.
+22:32:55 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1230:8 A11y: A form label must be associated with a control.
+[2m22:33:01[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
+[33m[vite:css] Nested CSS was detected, but CSS nesting has not been configured correctly.
+Please enable a CSS nesting plugin *before* Tailwind in your configuration.
+See how here: https://tailwindcss.com/docs/using-with-preprocessors#nesting
+57 |           display only a plus icon. Keep existing iconify plus icons; for
+58 |           buttons that don't have a plus icon, add a '+' via ::after. */
+59 |      .fixed-bottom-mobile .text {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |          display: none !important;
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |      }
+   |  ^^^^^[39m
+22:33:02 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1200:8 A11y: A form label must be associated with a control.
+22:33:02 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1215:8 A11y: A form label must be associated with a control.
+22:33:02 [vite-plugin-svelte] C:/xampp/htdocs/VillaDonqV3/resources/js/Pages/Dashboard/MisEstudiantes.svelte:1230:8 A11y: A form label must be associated with a control.
+[2m22:33:14[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/resources/js/Pages/Dashboard/MisEstudiantes.svelte, /resources/css/app.css?direct[22m
