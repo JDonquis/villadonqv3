@@ -9,6 +9,7 @@ use App\Services\AttendanceService;
 use App\Services\EvaluationPlanService;
 use App\Services\StudentGradeService;
 use App\Support\ErrorTranslator;
+use App\Support\GradeAccess;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -44,15 +45,24 @@ class StudentGradeController extends Controller
 
         $lapseId = $defaultLapseId ? (int) $defaultLapseId : null;
 
-        $plans = $this->planService->getPlansForTeacher(auth()->id(), [
+        $filters = [
             'school_lapse_id' => $schoolLapseId,
             'lapse_id' => $lapseId,
             'status' => 'approved',
-        ]);
+        ];
+
+        // La administración ve todos los planes aprobados; el profesor solo los suyos.
+        $managesAll = GradeAccess::managesAllPlans(auth()->user());
+
+        $plans = $managesAll
+            ? $this->planService->getPlansForAdmin($filters)
+            : $this->planService->getPlansForTeacher((int) auth()->id(), $filters);
 
         $selectedPlanId = (int) ($request->input('plan_id') ?: ($plans[0]['id'] ?? null));
 
-        $matrix = $selectedPlanId ? $this->gradeService->getMatrixData($selectedPlanId) : null;
+        $matrix = $selectedPlanId && GradeAccess::canManagePlan(auth()->user(), EvaluationPlan::find($selectedPlanId))
+            ? $this->gradeService->getMatrixData($selectedPlanId)
+            : null;
 
         return inertia('Dashboard/MisEstudiantes', [
             'data' => [
@@ -62,17 +72,29 @@ class StudentGradeController extends Controller
                 'school_lapse_id' => $schoolLapseId,
                 'lapse_id' => $lapseId,
                 'school_lapses' => $this->planService->getSchoolLapses(),
+                'manages_all' => $managesAll,
             ],
         ]);
     }
 
+    /**
+     * Resuelve el plan solicitado y aborta con 404 si el usuario no puede calificarlo.
+     * Se usa 404 (y no 403) para no revelar la existencia de planes de otros profesores.
+     */
+    private function authorizePlan(int $planId): EvaluationPlan
+    {
+        $plan = EvaluationPlan::with('teacher')->findOrFail($planId);
+
+        abort_unless(GradeAccess::canManagePlan(auth()->user(), $plan), 404);
+
+        return $plan;
+    }
+
     public function attendanceMatrix(int $planId)
     {
-        $plan = EvaluationPlan::where('id', $planId)
-            ->where('user_id', auth()->id())
-            ->firstOrFail();
+        $plan = $this->authorizePlan($planId);
 
-        $data = $this->attendanceService->getAttendanceMatrix($planId);
+        $data = $this->attendanceService->getAttendanceMatrix($plan->id);
 
         return response()->json(['data' => $data]);
     }
@@ -84,9 +106,7 @@ class StudentGradeController extends Controller
             'date' => ['required', 'date'],
         ]);
 
-        $plan = EvaluationPlan::where('id', $request->input('plan_id'))
-            ->where('user_id', auth()->id())
-            ->firstOrFail();
+        $plan = $this->authorizePlan((int) $request->input('plan_id'));
 
         try {
             $session = $this->attendanceService->getOrCreateSession(
@@ -117,9 +137,7 @@ class StudentGradeController extends Controller
         $session = \App\Models\EvaluationPlanAttendanceSession::with('plan')
             ->findOrFail($sessionId);
 
-        if ($session->plan->user_id !== auth()->id()) {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
+        abort_unless(GradeAccess::canManagePlan(auth()->user(), $session->plan), 403);
 
         try {
             $this->attendanceService->deleteSession($sessionId);
@@ -141,9 +159,7 @@ class StudentGradeController extends Controller
             'records.*.status' => ['required', 'string', 'in:absent,present,excused'],
         ]);
 
-        $plan = EvaluationPlan::where('id', $request->input('plan_id'))
-            ->where('user_id', auth()->id())
-            ->firstOrFail();
+        $plan = $this->authorizePlan((int) $request->input('plan_id'));
 
         try {
             $saved = $this->attendanceService->saveAttendance(
@@ -165,12 +181,17 @@ class StudentGradeController extends Controller
     {
         $plan = EvaluationPlan::findOrFail($request->input('plan_id'));
 
-        if ($plan->user_id !== auth()->id()) {
+        if (! GradeAccess::canManagePlan(auth()->user(), $plan)) {
             return back()->withErrors(['message' => 'No tienes permisos para calificar este plan.']);
         }
 
         try {
-            $this->gradeService->saveGrades($plan->id, $request->input('grades', []), $request->input('rasgos', []));
+            $this->gradeService->saveGrades(
+                $plan->id,
+                $request->input('grades', []),
+                $request->input('rasgos', []),
+                (int) auth()->id()
+            );
 
             return back()->with(['status' => true, 'message' => 'Notas guardadas correctamente.']);
         } catch (Exception $e) {
@@ -184,8 +205,14 @@ class StudentGradeController extends Controller
     {
         $request->validate(['plan_id' => ['required', 'integer', 'exists:evaluation_plans,id']]);
 
+        $plan = EvaluationPlan::findOrFail($request->input('plan_id'));
+
+        if (! GradeAccess::canManagePlan(auth()->user(), $plan)) {
+            return back()->withErrors(['message' => 'No tienes permisos para publicar este plan.']);
+        }
+
         try {
-            $this->gradeService->publishGrades((int) $request->input('plan_id'), (int) auth()->id());
+            $this->gradeService->publishGrades($plan->id, (int) auth()->id());
 
             return back()->with(['status' => true, 'message' => 'Notas publicadas correctamente.']);
         } catch (Exception $e) {

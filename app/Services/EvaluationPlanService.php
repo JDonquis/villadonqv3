@@ -150,7 +150,7 @@ class EvaluationPlanService
 
     public function getPlansForTeacher(int $teacherId, array $filters = []): array
     {
-        $query = EvaluationPlan::with(['matter', 'schoolLapse', 'lapse', 'course', 'section', 'items'])
+        $query = EvaluationPlan::with(['matter', 'schoolLapse', 'lapse', 'course', 'section', 'items', 'teacher'])
             ->where('user_id', $teacherId);
 
         if (! empty($filters['status'])) {

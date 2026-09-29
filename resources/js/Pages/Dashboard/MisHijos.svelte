@@ -14,6 +14,13 @@
         sin_plan: "bg-gray-100 text-gray-500",
     };
 
+    // El backend ya devuelve solo las observaciones compartidas con el representante.
+    const observationClasses = {
+        positive: "bg-green/20 text-green border-green/30",
+        neutral: "bg-blue/20 text-color2 border-blue/40",
+        negative: "bg-red/20 text-red border-red/30",
+    };
+
     function openSubject(student, subject) {
         selectedSubject = { ...subject, student_name: student.name + " " + student.last_name };
         showModal = true;
@@ -193,6 +200,51 @@
                         </tr>
                     </tbody>
                 </table>
+
+                {#if selectedSubject.plan.observations?.length}
+                    <div class="mt-5">
+                        <h4
+                            class="text-sm font-bold text-color1 uppercase tracking-wide mb-2 flex items-center gap-1.5"
+                        >
+                            <iconify-icon
+                                icon="mdi:message-text-outline"
+                            ></iconify-icon>
+                            Observaciones del profesor
+                        </h4>
+
+                        <div class="space-y-2 max-h-56 overflow-y-auto pr-1">
+                            {#each selectedSubject.plan.observations as observation (observation.id)}
+                                <div
+                                    class="border-l-4 border-blue bg-slate-50/70 rounded-r-md px-3 py-2"
+                                >
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span
+                                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-semibold {observationClasses[
+                                                observation.type
+                                            ] ?? observationClasses.neutral}"
+                                        >
+                                            <iconify-icon
+                                                icon={observation.type_icon}
+                                            ></iconify-icon>
+                                            {observation.type_label}
+                                        </span>
+                                        <span
+                                            class="text-[11px] text-gray-400 ml-auto"
+                                        >
+                                            {observation.created_at_label}
+                                        </span>
+                                    </div>
+                                    <p class="text-sm text-gray-700 leading-snug">
+                                        {observation.body}
+                                    </p>
+                                    <p class="text-[11px] text-gray-400 mt-1">
+                                        {observation.author_name}
+                                    </p>
+                                </div>
+                            {/each}
+                        </div>
+                    </div>
+                {/if}
             {:else}
                 <p class="text-sm text-gray-500 mt-2">
                     No hay un plan de evaluación aprobado para esta materia en

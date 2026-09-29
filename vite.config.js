@@ -30,22 +30,22 @@ export default defineConfig({
                 orientation: "portrait",
                 icons: [
                     {
-                        src: "/img/Logo-villadonq-azul-oscuro.png",
-                        sizes: "292x66",
-                        type: "image/png",
-                        purpose: "any ",
-                    },
-                    {
-                        src: "/img/Isotipo-villadonq-blanco.png",
-                        sizes: "40x40",
-                        type: "image/png",
-                        purpose: "maskable",
-                    },
-                    {
-                        src: "/img/144_Isotipo-villadonq-blanco.png",
+                        src: "/img/icon-144x144.png",
                         sizes: "144x144",
                         type: "image/png",
                         purpose: "any",
+                    },
+                    {
+                        src: "/img/icon-192x192.png",
+                        sizes: "192x192",
+                        type: "image/png",
+                        purpose: "any",
+                    },
+                    {
+                        src: "/img/icon-512x512.png",
+                        sizes: "512x512",
+                        type: "image/png",
+                        purpose: "any maskable", // Permite adaptarlo a diferentes formas de iconos en Android
                     },
                 ],
                 screenshots: [
@@ -62,7 +62,7 @@ export default defineConfig({
                         type: "image/webp",
                         label: "Vista móvil del sistema escolar",
                     },
-                ], 
+                ],
             },
             workbox: {
                 maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB

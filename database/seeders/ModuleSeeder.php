@@ -21,6 +21,7 @@ class ModuleSeeder extends Seeder
         ['slug' => 'materias', 'name' => 'Materias', 'icon' => 'mdi:book-open-variant', 'order' => 7],
         ['slug' => 'planes-evaluacion', 'name' => 'Planes de Evaluación', 'icon' => 'mdi:clipboard-check-outline', 'order' => 8],
         ['slug' => 'horarios', 'name' => 'Horarios', 'icon' => 'mdi:calendar-clock', 'order' => 9],
+        ['slug' => 'notas', 'name' => 'Notas', 'icon' => 'fluent:quiz-24-filled', 'order' => 10],
     ];
 
     /**

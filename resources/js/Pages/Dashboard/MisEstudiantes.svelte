@@ -3,12 +3,53 @@
     import { useForm, router } from "@inertiajs/svelte";
     import Alert from "../../components/Alert.svelte";
     import AsistenciaMatrix from "../../components/AsistenciaMatrix.svelte";
+    import StudentObservationsDrawer from "../../components/StudentObservationsDrawer.svelte";
     import { displayAlert } from "../../stores/alertStore";
 
     export let data = [];
 
     // View mode: 'notas' | 'asistencia'
     let viewMode = "notas";
+
+    // Drawer de observaciones pedagógicas del estudiante seleccionado
+    let observationsStudent = null;
+    let showObservations = false;
+
+    // Total de observaciones por estudiante para el contador del botón. Pisa a
+    // `student.observations_count` (que trae la matriz) mientras la sesión viva,
+    // igual que `editable` / `rasgosEditable` con las notas en borrador.
+    let observationCounts = {};
+    let lastPlanId = null;
+
+    function obsTotal(student) {
+        return observationCounts[student.id] ?? student.observations_count ?? 0;
+    }
+
+    function obsLabel(student) {
+        const total = obsTotal(student);
+
+        if (total <= 0) {
+            return `Observaciones de ${student.last_name}, ${student.name}`;
+        }
+
+        return `${total} ${total === 1 ? "observación" : "observaciones"} de ${student.last_name}, ${student.name}`;
+    }
+
+    function onObservationsChanged(event) {
+        observationCounts = {
+            ...observationCounts,
+            [event.detail.studentId]: event.detail.total,
+        };
+    }
+
+    // El plan puede cambiar desde el selector o desde los filtros de período/
+    // momento, y todos llegan por `router.get` con `preserveState: true`, así que
+    // el componente sobrevive y este estado local hay que limpiarlo con una guarda
+    // reactiva (no sirve resetear dentro de selectPlan()).
+    $: if ((data.matrix?.plan?.id ?? null) !== lastPlanId) {
+        lastPlanId = data.matrix?.plan?.id ?? null;
+        observationCounts = {};
+    }
 
     // Grades state
     let editable = {};
@@ -151,6 +192,9 @@
 
     $: canPublish = data.matrix?.grade_state?.can_publish === true;
     $: planRasgosMax = data.matrix?.plan?.rasgos_points || 0;
+    // El personal de administración califica sobre planes de los profesores.
+    $: managesAll = data.manages_all === true;
+    $: planTeacherName = data.matrix?.plan?.teacher_name || null;
 
     function updateGrade(key, value) {
         editable[key] = value;
@@ -813,6 +857,17 @@
         }
     }
 
+    /**
+     * Abre el drawer de observaciones del estudiante. Se corta el dictado de notas
+     * para no dejar dos sesiones de micrófono activas a la vez.
+     */
+    function openObservations(student) {
+        stopVoiceDictation();
+        resetVoiceSelection();
+        observationsStudent = student;
+        showObservations = true;
+    }
+
     onMount(() => {
         const handleKeyboardShortcut = (event) => {
             const target = event.target;
@@ -1357,7 +1412,10 @@
         >
             {#each data.plans as plan}
                 <option value={plan.id}>
-                    {plan.matter_name} · {plan.course_name} · {plan.section_name}
+                    {plan.matter_name} · {plan.course_name} · {plan.section_name}{managesAll &&
+                        plan.teacher_name
+                        ? ` · ${plan.teacher_name}`
+                        : ""}
                 </option>
             {/each}
         </select>
@@ -1391,6 +1449,27 @@
         Asistencia
     </button>
 </div>
+{#if data.plans?.length}
+    {#if managesAll}
+        <div
+            class="flex items-start gap-2 mb-4 px-4 py-3 rounded-xl border border-orange/30 bg-orange/10 text-xs text-color1"
+        >
+            <iconify-icon
+                icon="mdi:information-outline"
+                class="text-orange shrink-0 mt-px"
+                width="16"
+                height="16"
+            ></iconify-icon>
+            <p>
+                Estás calificando en nombre del colegio. Los planes pertenecen a
+                los profesores; las notas que registres quedarán marcadas con tu
+                nombre. {#if planTeacherName}Plan actual:
+                    <b>{planTeacherName}</b>.{/if}
+            </p>
+        </div>
+    {/if}
+{/if}
+
 {#if !data.plans?.length}
     <div
         class="bg-white border border-gray-200 rounded-lg p-8 text-center text-gray-400"
@@ -1856,18 +1935,53 @@
                                 <td
                                     class={`px-2.5 py-2 md:px-5 md:py-3 sticky left-0 z-10 w-[125px] min-w-[120px] max-w-[140px] md:w-auto md:min-w-[220px] md:max-w-none transition-colors shadow-[1px_0_0_rgba(199,210,218,0.4)] ${pendingVoiceStudentId === student.id ? "bg-color4/10" : "bg-white group-hover:bg-slate-50"}`}
                                 >
-                                    <div class="min-w-0 pr-1">
-                                        <p
-                                            class="font-bold text-color1 text-xs md:text-sm truncate capitalize leading-tight"
-                                            title="{student.last_name}, {student.name}"
+                                    <div class="flex items-center gap-1.5 min-w-0">
+                                        <div class="min-w-0 flex-1">
+                                            <p
+                                                class="font-bold text-color1 text-xs md:text-sm truncate capitalize leading-tight"
+                                                title="{student.last_name}, {student.name}"
+                                            >
+                                                {student.last_name}, {student.name}
+                                            </p>
+                                            <p
+                                                class="text-[10px] md:text-[11px] font-mono text-gray-400 mt-0.5 leading-none truncate"
+                                            >
+                                                {student.ci}
+                                            </p>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            on:click={() =>
+                                                openObservations(student)}
+                                            class="relative flex-none w-6 h-6 md:w-7 md:h-7 rounded-md flex items-center justify-center {obsTotal(
+                                                student,
+                                            ) > 0
+                                                ? "text-color2"
+                                                : "text-gray-300"} hover:text-color2 hover:bg-blue/20 transition-colors"
+                                            title={obsLabel(student)}
+                                            aria-label={obsLabel(student)}
                                         >
-                                            {student.last_name}, {student.name}
-                                        </p>
-                                        <p
-                                            class="text-[10px] md:text-[11px] font-mono text-gray-400 mt-0.5 leading-none truncate"
-                                        >
-                                            {student.ci}
-                                        </p>
+                                            <iconify-icon
+                                                icon="mdi:comment-text-outline"
+                                                width="16"
+                                                height="16"
+                                            ></iconify-icon>
+
+                                            <!-- Contador sobrepuesto: no ocupa ancho,
+                                                 así el nombre sigue truncando en la
+                                                 celda angosta de móvil. -->
+                                            {#if obsTotal(student) > 0}
+                                                <span
+                                                    aria-hidden="true"
+                                                    class="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-[3px] inline-flex items-center justify-center rounded-full bg-color2 text-white text-[9px] font-bold leading-none border border-white"
+                                                >
+                                                    {obsTotal(student) > 99
+                                                        ? "99+"
+                                                        : obsTotal(student)}
+                                                </span>
+                                            {/if}
+                                        </button>
                                     </div>
                                 </td>
 
@@ -1877,6 +1991,8 @@
                                     {@const isItemActive =
                                         String(selectedVoiceItemId) ===
                                         String(item.id)}
+                                    {@const grader =
+                                        student.graders?.[item.id] || null}
                                     <td
                                         class={`px-4 py-3 align-middle transition-colors ${isItemActive && voiceListening ? "bg-color4/10" : ""}`}
                                     >
@@ -1912,6 +2028,9 @@
                                                     data-grade-input={gradeKey}
                                                     inputmode="decimal"
                                                     pattern="[0-9.,]*"
+                                                    title={grader
+                                                        ? `Registrado por: ${grader}`
+                                                        : undefined}
                                                     class={`w-16 h-9 mx-auto rounded-xl border text-center focus:border-color2 font-bold text-sm text-color1 transition-all shadow-2xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-color2/20`}
                                                     on:focus={(e) =>
                                                         e.currentTarget.select()}
@@ -2009,7 +2128,7 @@
                                             <span
                                                 class={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold border ${
                                                     definitive >= 10
-                                                        ? "bg-green/15 text-color1 border-green/30"
+                                                        ? "bg-green/20 text-color1 border-green/30"
                                                         : "bg-red/10 text-red border-red/20"
                                                 }`}
                                             >
@@ -2052,7 +2171,7 @@
                     {#if $form.processing}
                         <span class="text">Guardando...</span>
                     {:else}
-                        <span class="text">Guardar notas</span>
+                        <span class="text">Guardar cambios</span>
                         <span class="circle"></span>
                     {/if}
                 </button>
@@ -2086,6 +2205,13 @@
         />
     {/if}
 {/if}
+
+<StudentObservationsDrawer
+    bind:show={showObservations}
+    plan={data.matrix?.plan ?? null}
+    student={observationsStudent}
+    on:changed={onObservationsChanged}
+/>
 
 <style>
     @keyframes flash-nota {

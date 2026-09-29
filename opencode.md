@@ -700,3 +700,159 @@ En el modal de Pagos, replicar el patrón de MisPagos en el bloque móvil `<div 
   phoneNumber = phoneNumber.replace("+", "");
   ```
 - `041-234-5678` → strip → `0412345678` → prepend `58` → `580412345678` → URL: `https://wa.me/580412345678?text=...` ✓
+
+### 2026-09-28 — El personal administrador también puede registrar notas
+
+#### Objetivo
+Abrir la matriz de calificaciones (`/dashboard/mis-estudiantes`) al personal de administración, que hasta ahora solo podía usarla el profesor dueño de cada plan de evaluación.
+
+#### Hallazgo clave
+- **No existe tabla `teachers`.** Un profesor es un `users` con `type_user_id = 3` y la propiedad de un plan es `evaluation_plans.user_id`.
+- La autorización estaba **duplicada en 6 lugares** con el patrón `where('user_id', auth()->id())` (5 en `StudentGradeController`, 1 en `StudentGradeService::publishGrades`). No hay policies, `Gate` ni `$this->authorize()` en el proyecto.
+- El estado real de "publicado" **nunca** fue `evaluation_plan_items.published_at`: ese campo se escribía pero no lo leía ningún frontend. La publicación real vive en `student_grade_publications` (`version`, `published_by`, `published_at`), que solo escribe el botón "Publicar".
+
+#### Cambios
+
+##### Autorización centralizada (nuevo)
+- `app/Support/GradeAccess.php` · nueva clase con `canManage()`, `canManagePlan()` y `managesAllPlans()`. Es la única fuente de verdad.
+  - Profesor → solo planes propios (`plan.user_id === user.id`).
+  - Administrador → cualquier plan, si es `is_admin` **o** tiene el módulo `notas` (`MODULE` = `'notas'`).
+  - Representante / otros → siempre `false`.
+- `StudentGradeController::authorizePlan()` · helper privado que resuelve el plan y hace `abort_unless(..., 404)`. Se usa **404** (no 403) para no revelar la existencia de planes ajenos. Reemplaza los 5 chequeos duplicados.
+
+##### Rutas
+- Las 7 rutas de `mis-estudiantes` pasaron de `role:teacher` a `role:administrator,teacher` en `routes/web.php`. `mis-planes` y `mi-horario` siguen siendo solo de profesor.
+- **No se usó `module.access`**: ese middleware corta a los profesores (no son `is_admin` → busca en `modules()` → 403) y habría que romperlos. El módulo se resuelve en `GradeAccess`, donde ya se distingue profesor vs. administrador.
+
+##### Planes de lectura
+- `StudentGradeController::index` ramifica: el profesor usa `getPlansForTeacher()` (sin cambios) y la administración usa `getPlansForAdmin()`, que **ya existía** y ya soporta `school_lapse_id` / `lapse_id` / `status`.
+- Se añadió `teacher` al eager load de `getPlansForTeacher` para que `formatPlan()` devuelva `teacher_name` también en la vista del profesor (antes salía `null`).
+
+##### Auto-publicación eliminada (pedido explícito del usuario)
+- `StudentGradeService::syncPublishedAt()` **eliminada**, junto con su llamada en `saveGrades()` y con la key `items[].published_at` del payload (que nadie leía).
+- Ahora `saveGrades()` **nunca** publica, aunque la matriz quede completa. Publicar solo ocurre con el botón (o sea, `publishGrades()`).
+- `publishGrades(int $planId, int $actorId)` ya no filtra por `where('user_id', $actorId)`; el chequeo quedó en el controller vía `GradeAccess`.
+
+##### Auditoría
+- Migración `2026_09_28_120000_add_graded_by_to_student_grades_tables` · añade `graded_by` (FK `users`, nullable, `nullOnDelete`) a `student_grades` **y** a `student_plan_rasgos` (para no dejar el rasgo sin autor mientras la nota sí lo tiene).
+- `saveGrades()` recibe un `$actorId` explícito (4º parámetro, default 0) en vez de leer `auth()` dentro del service, y lo escribe en ambos `updateOrCreate`.
+- Modelos `StudentGrade` y `StudentPlanRasgo`: `graded_by` en `$fillable` + relación `gradedBy()`.
+- `getMatrixData()` hace `with('gradedBy')` / `with('rasgos.gradedBy')` y expone `student.graders[itemId]`, `student.rasgo_grader` y `plan.teacher_name`.
+
+##### Permisos
+- `ModuleSeeder::MODULES` · nuevo slug `['slug' => 'notas', 'name' => 'Notas', 'icon' => 'mdi:clipboard-check-outline', 'order' => 10]`. Usa `updateOrCreate`, así que es idempotente.
+- `Personal.svelte` **no se tocó**: ya dibuja los checkboxes desde el prop `modules` (línea 639), así que "Notas" aparece solo. Correr `php artisan db:seed --class=ModuleSeeder` para los existentes.
+
+##### Frontend
+- `LeftNav.svelte`: "Notas" agregado a `adminNavPages` con `slug: 'notas'`. El filtro existente (líneas 131-137) ya hace lo correcto sin lógica nueva: `is_admin` lo ve siempre, un admin con `is_admin = 0` solo si tiene `notas`, y en otro caso queda oculto. No colisiona con el dedup por `href` porque los profesores salen antes en la rama `isTeacher`.
+- `MisEstudiantes.svelte`:
+  - Reactivos `managesAll` y `planTeacherName`.
+  - El `<option>` del selector de plan incluye el nombre del profesor cuando `managesAll` (si no, dos planes idénticos serían indistinguibles).
+  - Banner naranja "Estás calificando en nombre del colegio..." solo para la administración.
+  - Cada input de nota lleva `title="Registrado por: {nombre}"` cuando existe autor.
+
+#### Verificado
+- Migración aplicada; módulo `notas` creado (`Module::pluck` lo devuelve).
+- `php -l` OK en los 9 archivos PHP tocados.
+- Build OK (`corepack yarn run build`, `Done in 35.12s`); los 3 warnings de a11y de `MisEstudiantes` (líneas 1323/1338/1353) son preexistentes, de los `<label>` del filtro.
+- Matriz de autorización (script de comprobación con bootstrap de Laravel, luego borrado):
+  ```
+  admin total -> cualquier plan             PERMITIDO
+  admin limitado (sin notas) -> plan        DENEGADO
+  admin limitado CON notas -> plan          PERMITIDO
+  representante -> cualquier plan            DENEGADO
+  usuario nulo -> cualquier plan            DENEGADO
+  profesor dueño -> su plan                 PERMITIDO
+  ```
+- Regresión de la auto-publicación (plan #1, 35 estudiantes × 5 temas = 175 notas):
+  ```
+  1) profesor guarda la matriz COMPLETA (todas > 0)
+     con graded_by: 175   publicaciones creadas: 0   items con published_at: 0
+  2) admin guarda el plan ajeno
+     notas con graded_by=admin: 175   publicaciones creadas: 0
+  3) admin pulsa Publicar
+     publicaciones ahora: 1   published_by: 1 (admin)   version: 1
+     can_publish antes: true  ->  después: false
+  ```
+
+#### Pendiente / notas
+- En la prueba se **borraron** las notas y publicaciones previas del plan #1 y se rellenaron con 15/20 (`graded_by` = admin 1), más una publicación. Se puede dejar como demo o limpiar para que el profesor cargue las reales.
+- Al admin con `is_admin = 0` se le concedió el módulo `notas` durante la prueba (para validar el caso positivo). Revocar desde Personal si no se quiere.
+- No se pudo probar "profesor → plan ajeno" porque la BD solo tiene 1 plan; la lógica es `plan.user_id === user.id`.
+- Gotcha de Powershell: `Add-Content` con here-string rompió los acentos (salieron entidades `<C3><A9>`). Para escribir texto con acentos en archivos, usar la herramienta de edición, no `Add-Content`.
+
+---
+
+## Sesión 2026-09-28 — Observaciones pedagógicas por estudiante (drawer en MisEstudiantes)
+
+### Objetivo
+Observaciones por estudiante dentro de la página de notas: botón junto al nombre, drawer lateral (diseño Stitch) y backend completo (persistencia, auditoría, historial, borrado lógico y visibilidad para el representante).
+
+Decisiones acordadas: la observación **es por materia** (`evaluation_plan_id` obligatorio), el toggle **Compartir con Representante** guarda el flag **y además se muestra en `MisHijos`**, hay **editar + soft delete**, y la autorización **reutiliza `App\Support\GradeAccess`** (profesor dueño del plan o admin con `is_admin`/módulo `notas`).
+
+### Base de datos
+- `database/migrations/2026_09_28_150000_create_student_observations_table.php` → `student_observations`: `evaluation_plan_id` (restrict), `student_id` (restrict), `created_by` (nullOnDelete), `type` (string 20, default `neutral`), `body` (text), `shared_with_representative` (bool), `shared_at` (timestamp null), timestamps + `softDeletes`. Índices compuestos `(evaluation_plan_id, student_id)` y `(student_id, shared_with_representative)`.
+- **Materia, curso, sección y profesor NO se duplican**: se derivan del plan vía relaciones. Igual el autor (`created_by`).
+- **Patrón nuevo en el proyecto**: es el **primer y único modelo con `SoftDeletes`**. Antes los pagos usaban `status`. Elegido porque el soft delete fue requisito explícito; si se prefiere no abrir ese patrón, cambiar a `status` + unscoped.
+- Migración ya aplicada. `php artisan migrate` si una BD nueva falla.
+
+### Backend
+- `app/Enums/StudentObservationTypeEnum.php`: `Positive|Neutral|Negative` (backed string) con `label()` e `icon()`. **No** lleva clases Tailwind: los colores se mapean en el Svelte.
+- `app/Models/StudentObservation.php`: `HasFactory, SoftDeletes`; cast `type => StudentObservationTypeEnum`, `shared_with_representative => bool`, `shared_at => datetime`; relaciones `plan()`, `student()`, `author()`.
+- `app/Http/Requests/ObservationRequest.php` (**abstracto**) + `StoreObservationRequest` + `UpdateObservationRequest`:
+  - `plan()` abstracto: cada subclase lo resuelve (input `evaluation_plan_id` en store, `$observation->plan` en update).
+  - `authorize()` devuelve `true` si el plan es `null` para que la falta de parámetros sea **422 de validación** y no un 403 que insinúe permisos.
+  - Regla de `student_id` con closure que llama a `StudentObservationService::planContainsStudent()` → 422 si el alumno no es del curso/sección del plan (mismo criterio que la matriz: `course_id` + `section_id` + `status != 0`).
+  - `UpdateObservationRequest` reemplaza la regla de `student_id` por una que **impide mover la observación a otro estudiante** (422).
+  - **Gotcha Laravel 10**: se usa `Rule::in(StudentObservationTypeEnum::values())` y **no** `Rule::enum`, porque `Enum::message()` tiene prioridad sobre `messages()` y el texto queda en inglés fijo. Por eso la clave del mensaje es `type.in`.
+- `app/Services/StudentObservationService.php`:
+  - `planContainsStudent(EvaluationPlan, int): bool` estático — lo comparten el request y el controller (fuente única).
+  - `listForStudent()` devuelve `{observations, counts}` con `counts` = `{positive, neutral, negative}` para el header del drawer.
+  - `create/update/delete`, `sharedByStudentGroupedByPlan()` (una sola consulta agrupada por plan, evita el N+1 de `formatSubjects`), `canModify()` y `formatObservation()`.
+  - `shared_at` se fija al compartir, **no se reinicia** al editar y se limpia al descompartir. `created_by` (autor) **no** se reescribe al editar.
+  - `canModify()`: solo el autor o la administración (un profesor que no es autor no puede editar).
+- `app/Http/Controllers/StudentObservationController.php`: `index` (GET con `plan_id`+`student_id`), `store`, `update`, `destroy`. `authorizePlan()` replica el `404` de `StudentGradeController` (no revela planes ajenos); `authorizeObservation()` da `403`. Todas las mutaciones devuelven el `listForStudent()` actualizado para que el drawer no recargue.
+- `routes/web.php`: 4 rutas nuevas dentro del grupo `role:administrator,teacher` (`observaciones`, `observaciones/{observation}` PUT/DELETE).
+- `RepresentativeService`: `formatSubjectPlan()` ahora recibe `$observations` y los cuelga en `plan.observations`; `formatSubjects()` resuelve **una** consulta con `sharedByStudentGroupedByPlan()`. `materiasHijo`/`MateriasHijo.svelte` **no** se tocaron (arman sus propios subjects) → queda como follow-up.
+- `resources/views/app.blade.php`: se agregó `<meta name="csrf-token">`. El proyecto **no lo tenía** y es obligatorio para las mutaciones por `fetch` (sin él salía 419).
+
+### Frontend
+- `resources/js/components/StudentObservationsDrawer.svelte` (nuevo, ~700 líneas). **No existía ningún drawer/slide-over en el proyecto** y `Modal.svelte` es centrado, así que se construyó desde cero: backdrop `fixed inset-0 z-[99999]` + panel `absolute right-0 h-full w-full sm:max-w-[560px]`, con `translate-x-full` para el slide (patrón siempre-montado de `Modal`, como `PlanesEvaluacion`).
+  - Estado del formulario/editor en un solo bloque (`editingId === null` → crear). Guardar hace POST o PUT; borrar hace DELETE; las tres devuelven la lista fresca.
+  - `fetch` + `displayAlert` de `alertStore`, sin recargar Inertia. Carga perezosa al abrir.
+  - Recarga con guardas reactivas: `$: if (show && student && loadedFor !== student.id)` carga, `$: if (!show) loadedFor = null` permite recargar al reabrir.
+  - **Dictado por voz propio**: Web Speech (`es-VE`, `continuous`, `interimResults`) que anexa el texto reconocido al textarea. Es una versión simplificada de `toggleVoiceDictation()` de `MisEstudiantes` (sin nombres ni notas). `MisEstudiantes.openObservations()` llama `stopVoiceDictation()` + `resetVoiceSelection()` para no dejar dos sesiones de micrófono.
+  - Menú contextual `⋮` (Editar/Eliminar) solo si `can_modify`. **En la última tarjeta abre hacia arriba** (`bottom-7`) porque el `overflow-y-auto` del cuerpo lo recortaría.
+  - Colores remapeados al paleta del proyecto: `sky-*`→`color3`/`blue`, `rose-*`→`red`, `amber-*`→`yellow`/`orange`, `#17223b`→`color1`. `emerald/slate/indigo` sí existen.
+- `resources/js/Pages/Dashboard/MisEstudiantes.svelte`: import del drawer, `observationsStudent`/`showObservations`, función `openObservations()`, botón `mdi:comment-text-outline` en el `<td>` del nombre (el `<div class="min-w-0 pr-1">` pasa a `flex items-center gap-1.5` con los `<p>` en un sub-div `min-w-0 flex-1` para que el nombre siga truncando) y el drawer al final de la plantilla.
+- `resources/js/Pages/Dashboard/MisHijos.svelte`: sección "Observaciones del profesor" dentro del `<Modal>` de la materia (debajo de la tabla de notas), solo con `plan.observations` (el backend ya filtró las privadas).
+
+### Verificado
+- `php artisan migrate` OK; `php artisan route:list --path=mis-estudiantes` muestra las 4 rutas.
+- Sondas PHP con bootstrap de Laravel (luego borradas) sobre service, autorización y payload de representante:
+  - Service: normalización de `body` (trim + colapsa espacios), `shared_at` (fija/no reinicia/limpia), contadores, autor conservado al editar, soft delete real (`withTrashed`=1 / sin trashed=0), `sharedByStudentGroupedByPlan` solo devuelve compartidas.
+  - HTTP (acting-as, 15 casos): GET 200 · POST 201 · body corto 422 · `type` inválido 422 (mensaje en español) · estudiante ajeno 422 · sin parámetros 422 · PUT autor 200 · PUT moviendo de estudiante 422 · DELETE 200 · DELETE repetido 404 · plan inexistente 422 · POST del admin en plan ajeno 201 · profesor editando observación del admin 403 · representante 403 por middleware.
+  - Representante (`misHijos`): llegan **2** compartidas; la privada y la de otro estudiante **no**.
+- Harness Svelte temporal con Vite dev server (luego borrado) validando por estilos computados: drawer `560px` en desktop y `390px` full-width sin overflow horizontal en móvil; backdrop `opacity 0` + `pointer-events none` al cerrar y `translate-x(560px)`; Escape cierra; backdrop click cierra; los 19 iconos renderizan `<path>`; toggle cambia de `slate-200` a `blue` y desplaza la perilla; menú contextual abre abajo en la primera tarjeta y arriba en la última, sin recortes; modo edición precarga textarea/tipo/toggle y renombra el botón a "Guardar cambios".
+- `corepack yarn run build` OK (`Done in 39.25s`), **sin warnings del componente nuevo**. Los de a11y restantes son preexistentes (`MisEstudiantes` 1339/1354/1369, `DateRange`, `PaymentCard`, `ForgotPassword`).
+- Datos de prueba borrados: la tabla `student_observations` quedó vacía.
+
+### Contador de observaciones en el botón (2026-09-29)
+Petición: mostrar un indicador pequeño en el botón de observaciones junto al nombre del estudiante con cuántas tiene. Decisiones: badge sobrepuesto en la esquina (no ocupa ancho), invisible cuando son 0 (solo cambia el color del icono a `color2`), y solo el total.
+
+- `StudentObservationService::countsByStudentForPlan(int $planId, array $studentIds): array` → `[student_id => total]` en **una** consulta `groupBy('student_id')` que usa el índice `(evaluation_plan_id, student_id)`. No filtra por `shared_with_representative`: el contador es del profesor y debe incluir las privadas, igual que el drawer. Las soft-deleted quedan fuera por el scope de `SoftDeletes`, así que el número siempre coincide con el historial.
+- **Gotcha Laravel**: hay que terminar en `->get()->mapWithKeys(...)`. Un `->pluck('total', 'student_id')` sobre el builder **reemplaza** las columnas del `selectRaw` (ver `onceWithColumns` en `Query\Builder::pluck`) y revienta el `COUNT(*)`.
+- `StudentGradeService::getMatrixData()` resuelve los conteos con `app(StudentObservationService::class)` (mismo namespace, sin import) y agrega `observations_count` a cada elemento de `students`. El plan se carga una sola vez por render de Inertia, así que el contador llega correcto sin peticiones extra.
+- `StudentObservationsDrawer.svelte`: `createEventDispatcher()` + `dispatch("changed", { studentId, total: observations.length })` en `save()` (solo si no es update) y en `remove()`. `observations` ya viene refrescado de la respuesta, así que `.length` es el total real. Editar no dispara nada porque no cambia el total.
+- `MisEstudiantes.svelte`: mapa local `observationCounts` que pisa al `observations_count` del payload — mismo patrón que `editable` y `rasgosEditable`. El reset va en una **guarda reactiva** sobre `data.matrix?.plan?.id`, NO dentro de `selectPlan()`: ese handler usa `router.get` con `preserveState: true` (y los filtros de período/momento también recargan), así que el componente sobrevive y un reset ahí se escaparía al cambiar de plan por otro control.
+- Badge: `<span aria-hidden="true">` con `absolute -top-1 -right-1 min-w-[15px] h-[15px]`, `bg-color2 text-white text-[9px]`, y tope de `99+`. El `title`/`aria-label` pasan a singular/plural ("3 observaciones de X, Y"); con 0 se queda el texto original. `aria-hidden` porque el `aria-label` del botón ya lleva la cuenta.
+- Verificado por estilos computados contra la celda real (`w-[125px] min-w-[120px] max-w-[140px] px-2.5` en móvil): badge de 15px con 1 dígito y 23px con `99+`, **nunca desborda** la celda (6px de margen en móvil, 16px en desktop), el nombre sigue truncando (`scrollWidth > clientWidth`) y el ancho de la celda no cambia → cero shift de layout. Icono gris `rgb(209,213,219)` sin observaciones y `rgb(31,66,135)` = `color2` con alguna. En `md` el botón pasa a 28px y `px-5`. `build` OK (65.57s), sin warnings nuevos (los 3 de a11y de `MisEstudiantes` son preexistentes, ahora en 1375/1390/1405).
+- **⚠ Datos reales en la tabla**: al sondear aparecieron observaciones que escribió el usuario (`created_by=315`, p. ej. "le pego a manuelito bien duro"). **Nunca usar `StudentObservation::forceDelete()` sin filtro para limpiar datos de prueba** — en la sesión anterior la tabla estaba vacía y salió limpio por suerte, pero hoy habría borrado trabajo real. Toda sonda debe capturar un baseline, sembrar con ids propios y borrar solo esos ids, y al final comparar que la tabla quedó idéntica al estado previo. Las sondas de esta sesión lo hicieron así.
+
+### Pendiente / notas
+- `MateriasHijo.svelte` (la vista profunda de "Sus materias") **no** muestra observaciones; solo `MisHijos`. Para agregarlo hay que extender el `subjects` de `materiasHijo` (`RepresentativeService` líneas ~283-296) con las compartidas.
+- No se verificó en navegador autenticado real (sin credenciales); toda la validación fue por HTTP acting-as + estilos computados.
+- No se pudo probar "profesor → plan ajeno" porque la BD solo tiene 1 plan.
+- **Este archivo no tiene acentos corruptos**: al leerlo con `Get-Content` en PowerShell los acentos se ven como `?`/`�` porque la consola usa otra codificación, pero el archivo es UTF-8 válido (se confirmó releyéndolo con la herramienta de edición). Para anexar texto, esta sesión usó PHP con `file_put_contents(..., FILE_APPEND)`; el `edit` normal también funciona siempre que el `oldString` copie el texto EXACTO — un fallo anterior fue por escribir "rompe" donde el archivo dice "rompió".
+- Corregido de paso: `MisEstudiantes.svelte` usaba `bg-green/15`, clase **inexistente** (15 no está en la escala de opacidad de Tailwind). Ahora `/20`. Ese bug-era preexistente en la barra de "Publicar notas". Ojo al escribir clases nuevas: revisar que el modificador de opacidad exista (10/20/25/30/40/50… sí; 15/35/45 no).
+- Limpio: se eliminaron `resources/_obs_test.html`, `resources/js/_obs_test.js` y el `public/_asistencia_test.html` que llevaba tiempo desde la sesión de asistencia.

@@ -15,6 +15,7 @@ class StudentPlanRasgo extends Model
         'evaluation_plan_id',
         'student_id',
         'rasgos_score',
+        'graded_by',
     ];
 
     public function plan()
@@ -25,5 +26,13 @@ class StudentPlanRasgo extends Model
     public function student()
     {
         return $this->belongsTo(Student::class);
+    }
+
+    /**
+     * Usuario que registró el rasgo (profesor o personal de administración).
+     */
+    public function gradedBy()
+    {
+        return $this->belongsTo(User::class, 'graded_by');
     }
 }

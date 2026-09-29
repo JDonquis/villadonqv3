@@ -282,26 +282,32 @@
         </div>
     {:else}
         <div class="overflow-x-auto">
-            <table class="w-fit text-sm">
+            <!-- table-fixed: respeta el ancho de la primera columna en vez de
+                 estirarla con el nombre más largo (truncate = white-space: nowrap
+                 convertía el min-content de la celda en el ancho completo del texto). -->
+            <table class="text-sm table-fixed">
                 <thead class="bg-gray-50">
                     <tr>
                         <th
-                            class="px-3 py-3 text-left sticky left-0 bg-gray-50 z-10"
+                            class="px-2 py-2.5 md:px-5 md:py-3.5 text-left sticky left-0 z-20 bg-gray-50/95 backdrop-blur-sm w-[104px] min-w-[104px] max-w-[104px] sm:w-[220px] sm:min-w-[220px] sm:max-w-[220px] shadow-[1px_0_0_rgba(199,210,218,0.4)]"
                         >
-                            <div class="font-semibold text-gray-800">
+                            <div
+                                class="font-semibold text-gray-800 text-[11px] md:text-sm truncate"
+                            >
                                 Estudiante
                             </div>
                         </th>
                         {#each attendanceSessions as session}
                             <th
-                                class="px-2 py-3 text-center justify-center relative group"
+                                class="px-1 py-3 w-[48px] min-w-[48px] max-w-[48px] md:px-2 text-center justify-center relative group"
                             >
                                 <div class="flex flex-col items-center gap-1">
-                                    <span class="font-semibold text-gray-800"
+                                    <span
+                                        class="font-semibold text-gray-800 text-[10px] md:text-sm leading-tight text-center"
                                         >{formatDate(session.date)}</span
                                     >
                                     <span
-                                        class="text-xs text-gray-500 capitalize"
+                                        class="text-[10px] md:text-xs text-gray-500 capitalize leading-tight"
                                         >{session.day_of_week}</span
                                     >
                                     <button
@@ -329,16 +335,18 @@
                 </thead>
                 <tbody>
                     {#each students as student}
-                        <tr class="border-t border-gray-100">
+                        <tr class="transition-colors border-b ">
                             <td
-                                class="px-3 py-2 sticky left-0 bg-white z-10"
+                                class="px-2 md:px-5 py-2 sticky left-0 bg-white z-10 w-[104px] min-w-[104px] max-w-[104px] sm:w-[220px] sm:min-w-[220px] sm:max-w-[220px] shadow-[1px_0_0_rgba(199,210,218,0.4)]"
                             >
                                 <p
-                                    class="font-semibold text-gray-800 capitalize"
+                                    class="font-semibold truncate text-gray-800 capitalize text-[11px] md:text-sm leading-tight"
                                 >
                                     {student.last_name}, {student.name}
                                 </p>
-                                <p class="text-xs text-gray-400">
+                                <p
+                                    class="text-[10px] md:text-xs text-gray-400 truncate"
+                                >
                                     C.I {student.ci}
                                 </p>
                             </td>
@@ -347,10 +355,10 @@
                                     attendanceData[session.id]?.[student.id] ||
                                     "absent"}
                                 <td
-                                    class="px-2 w-[44px] aspect-square h-[44px] min-h-[44px] py-2 text-center"
+                                    class="px-1 w-[48px] min-w-[48px] max-w-[48px] md:px-2 aspect-square h-[44px] min-h-[44px] py-2 text-center"
                                 >
                                     <button
-                                        class="w-[44px] hover:text-gray-400 hover:bg-gray-200 aspect-square h-[44px] min-h-[44px] flex items-center justify-center text-2xl transition-colors rounded {getAttendanceClass(
+                                        class="w-[44px] hover:text-gray-400 hover:bg-gray-200 aspect-square h-[44px] min-h-[44px] flex items-center justify-center text-xl md:text-2xl transition-colors rounded {getAttendanceClass(
                                             status,
                                         )}"
                                         on:click={() =>
@@ -382,7 +390,7 @@
 
 <!-- Save Button -->
 <div
-    class="mt-4 fixed bottom-8 right-10 gap-3 flex justify-end max-w-[600px] ml-auto items-center"
+    class="mt-4 fixed bottom-16 md:bottom-8 right-10 gap-3 flex justify-end max-w-[600px] ml-auto items-center"
 >
     {#if attendanceDirty}
         <button
@@ -408,18 +416,10 @@
                     width="20"
                     height="20"
                 ></iconify-icon>
-                <span class="text">Guardar asistencia</span>
+                <span class="text hidden md:inline px-2">Guardar asistencia</span>
             {/if}
             <span class="circle"></span>
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="arr-1"
-                viewBox="0 0 24 24"
-            >
-                <path
-                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-                ></path>
-            </svg>
+           
         </button>
     {/if}
 </div>

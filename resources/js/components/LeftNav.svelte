@@ -68,6 +68,12 @@
             name: "Horarios",
             slug: "horarios",
         },
+        {
+            icon: "fluent:quiz-24-filled",
+            href: "/dashboard/mis-estudiantes",
+            name: "Notas",
+            slug: "notas",
+        },
     ];
 
     const teacherNavPages = [

@@ -15,6 +15,7 @@ class StudentGrade extends Model
         'plan_item_id',
         'student_id',
         'score',
+        'graded_by',
     ];
 
     public function planItem()
@@ -25,5 +26,13 @@ class StudentGrade extends Model
     public function student()
     {
         return $this->belongsTo(Student::class);
+    }
+
+    /**
+     * Usuario que registró la nota (profesor o personal de administración).
+     */
+    public function gradedBy()
+    {
+        return $this->belongsTo(User::class, 'graded_by');
     }
 }

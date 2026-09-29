@@ -19,6 +19,7 @@ use App\Http\Controllers\SectionController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentGradeController;
 use App\Http\Controllers\StudentImportFailedController;
+use App\Http\Controllers\StudentObservationController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\TeacherImportFailedController;
 use App\Http\Controllers\UserController;
@@ -159,6 +160,12 @@ Route::middleware(['auth', 'role:teacher'])->group(function () {
     Route::put('/dashboard/mis-planes/{id}', [EvaluationPlanController::class, 'update']);
     Route::delete('/dashboard/mis-planes/{id}', [EvaluationPlanController::class, 'destroy']);
 
+    Route::get('/dashboard/mi-horario', [MyScheduleController::class, 'index']);
+});
+
+// La matriz de calificaciones también la usa la administración (módulo "notas").
+// El alcance real por plan lo resuelve App\Support\GradeAccess.
+Route::middleware(['auth', 'role:administrator,teacher'])->group(function () {
     Route::get('/dashboard/mis-estudiantes', [StudentGradeController::class, 'index']);
     Route::post('/dashboard/mis-estudiantes/guardar-notas', [StudentGradeController::class, 'saveGrades']);
     Route::post('/dashboard/mis-estudiantes/publicar-notas', [StudentGradeController::class, 'publishGrades']);
@@ -169,7 +176,11 @@ Route::middleware(['auth', 'role:teacher'])->group(function () {
     Route::delete('/dashboard/mis-estudiantes/asistencia/session/{sessionId}', [StudentGradeController::class, 'deleteAttendanceSession']);
     Route::post('/dashboard/mis-estudiantes/asistencia/save', [StudentGradeController::class, 'saveAttendance']);
 
-    Route::get('/dashboard/mi-horario', [MyScheduleController::class, 'index']);
+    // Observaciones pedagógicas por estudiante (compartidas con el representante)
+    Route::get('/dashboard/mis-estudiantes/observaciones', [StudentObservationController::class, 'index']);
+    Route::post('/dashboard/mis-estudiantes/observaciones', [StudentObservationController::class, 'store']);
+    Route::put('/dashboard/mis-estudiantes/observaciones/{observation}', [StudentObservationController::class, 'update']);
+    Route::delete('/dashboard/mis-estudiantes/observaciones/{observation}', [StudentObservationController::class, 'destroy']);
 });
 
 Route::middleware(['auth', 'role:administrator,representative,teacher'])->group(function () {

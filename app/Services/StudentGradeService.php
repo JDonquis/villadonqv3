@@ -21,7 +21,7 @@ class StudentGradeService
 
     public function getMatrixData(int $planId): array
     {
-        $plan = EvaluationPlan::with(['items', 'course', 'section', 'matter', 'lapse', 'schoolLapse', 'rasgos'])
+        $plan = EvaluationPlan::with(['items', 'course', 'section', 'matter', 'lapse', 'schoolLapse', 'rasgos.gradedBy', 'teacher'])
             ->findOrFail($planId);
 
         $students = Student::where('course_id', $plan->course_id)
@@ -32,11 +32,18 @@ class StudentGradeService
             ->get();
 
         $itemIds = $plan->items->pluck('id');
-        $grades = StudentGrade::whereIn('plan_item_id', $itemIds)->get();
+        $grades = StudentGrade::whereIn('plan_item_id', $itemIds)->with('gradedBy')->get();
 
         $gradesByItemStudent = [];
+        $gradersByItemStudent = [];
         foreach ($grades as $grade) {
             $gradesByItemStudent[$grade->plan_item_id][$grade->student_id] = (float) $grade->score;
+
+            if ($grade->gradedBy) {
+                $gradersByItemStudent[$grade->plan_item_id][$grade->student_id] = trim(
+                    $grade->gradedBy->name.' '.$grade->gradedBy->last_name
+                );
+            }
         }
 
         $units = $plan->items
@@ -76,20 +83,29 @@ class StudentGradeService
                 'unit_name' => $unit['name'] ?? ($item->unit_name ?? 'Unidad 1'),
                 'assessment_type' => $item->assessment_type ?? null,
                 'scheduled_date' => $item->scheduled_date ?? $item->date,
-                'published_at' => $item->published_at?->toISOString(),
             ];
         })->values()->all();
 
         $rasgosByStudent = $plan->rasgos->pluck('rasgos_score', 'student_id');
+        $rasgoGradersByStudent = $plan->rasgos
+            ->filter(fn ($rasgo) => $rasgo->gradedBy)
+            ->mapWithKeys(fn ($rasgo) => [
+                $rasgo->student_id => trim($rasgo->gradedBy->name.' '.$rasgo->gradedBy->last_name),
+            ]);
         $planRasgosPoints = (int) $plan->rasgos_points;
         $educationLevel = EducationLevel::forCourseId((int) $plan->course_id);
         $literaryGradingEnabled = $educationLevel === EducationLevel::PRIMARIA
             || ($educationLevel === EducationLevel::SECUNDARIA && (bool) $plan->matter?->literary_grading_secondary);
 
-        $studentsData = $students->map(function ($student) use ($gradesByItemStudent, $items, $rasgosByStudent, $planRasgosPoints) {
+        $observationCounts = app(StudentObservationService::class)
+            ->countsByStudentForPlan($plan->id, $students->modelKeys());
+
+        $studentsData = $students->map(function ($student) use ($gradesByItemStudent, $gradersByItemStudent, $items, $rasgosByStudent, $rasgoGradersByStudent, $planRasgosPoints, $observationCounts) {
             $scores = [];
+            $graders = [];
             foreach ($items as $item) {
                 $scores[$item['id']] = $gradesByItemStudent[$item['id']][$student->id] ?? null;
+                $graders[$item['id']] = $gradersByItemStudent[$item['id']][$student->id] ?? null;
             }
 
             $rasgos = $rasgosByStudent[$student->id] ?? null;
@@ -100,8 +116,11 @@ class StudentGradeService
                 'last_name' => $student->last_name,
                 'ci' => $student->ci,
                 'scores' => $scores,
+                'graders' => $graders,
                 'rasgos' => $rasgos !== null ? (int) $rasgos : null,
+                'rasgo_grader' => $rasgoGradersByStudent[$student->id] ?? null,
                 'definitive' => $this->computeDefinitive($items, $scores, $planRasgosPoints > 0 ? $rasgos : 0),
+                'observations_count' => $observationCounts[$student->id] ?? 0,
             ];
         })->values()->all();
 
@@ -138,6 +157,9 @@ class StudentGradeService
                 'course_name' => $plan->course?->name,
                 'literary_grading_enabled' => $literaryGradingEnabled,
                 'section_name' => $plan->section?->name,
+                'teacher_name' => $plan->teacher
+                    ? trim($plan->teacher->name.' '.$plan->teacher->last_name)
+                    : null,
                 'rasgos_points' => $planRasgosPoints,
             ],
             'items' => $items,
@@ -151,7 +173,13 @@ class StudentGradeService
         ];
     }
 
-    public function saveGrades(int $planId, array $grades, array $rasgos = []): int
+    /**
+     * Guarda las notas en borrador. NO publica: la publicación es explícita y solo
+     * ocurre en publishGrades() (botón "Publicar notas").
+     *
+     * @param  int  $actorId  Usuario que registra la nota (queda en graded_by).
+     */
+    public function saveGrades(int $planId, array $grades, array $rasgos = [], int $actorId = 0): int
     {
         $plan = EvaluationPlan::with(['items', 'rasgos'])->findOrFail($planId);
 
@@ -179,7 +207,7 @@ class StudentGradeService
 
             StudentGrade::updateOrCreate(
                 ['plan_item_id' => $itemId, 'student_id' => $studentId],
-                ['score' => $score]
+                ['score' => $score, 'graded_by' => $actorId ?: null]
             );
 
             $saved++;
@@ -203,39 +231,21 @@ class StudentGradeService
 
                 StudentPlanRasgo::updateOrCreate(
                     ['evaluation_plan_id' => $planId, 'student_id' => $studentId],
-                    ['rasgos_score' => $score]
+                    ['rasgos_score' => $score, 'graded_by' => $actorId ?: null]
                 );
 
                 $saved++;
             }
         }
 
-        $this->syncPublishedAt($plan, $studentIds);
-
         return $saved;
     }
 
-    protected function syncPublishedAt(EvaluationPlan $plan, $studentIds): void
+    public function publishGrades(int $planId, int $actorId): StudentGradePublication
     {
-        $studentCount = $studentIds->count();
-        foreach ($plan->items as $item) {
-            $positiveCount = StudentGrade::where('plan_item_id', $item->id)
-                ->where('score', '>', 0)
-                ->count();
-            $item->published_at =
-                ($positiveCount > 0 && $positiveCount === $studentCount)
-                    ? now()
-                    : null;
-            $item->save();
-        }
-    }
-
-    public function publishGrades(int $planId, int $teacherId): StudentGradePublication
-    {
-        return DB::transaction(function () use ($planId, $teacherId) {
+        return DB::transaction(function () use ($planId, $actorId) {
             $plan = EvaluationPlan::with('items')
                 ->where('id', $planId)
-                ->where('user_id', $teacherId)
                 ->lockForUpdate()
                 ->firstOrFail();
 
@@ -249,7 +259,7 @@ class StudentGradeService
 
             $publication = StudentGradePublication::create([
                 'evaluation_plan_id' => $plan->id,
-                'published_by' => $teacherId,
+                'published_by' => $actorId,
                 'version' => $version,
                 'published_at' => now(),
             ]);

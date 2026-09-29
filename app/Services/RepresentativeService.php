@@ -13,10 +13,12 @@ use Carbon\Carbon;
 class RepresentativeService
 {
     private StudentGradeService $gradeService;
+    private StudentObservationService $observationService;
 
     public function __construct()
     {
         $this->gradeService = new StudentGradeService;
+        $this->observationService = new StudentObservationService;
     }
 
     private const SCHOOL_MONTHS = [
@@ -109,7 +111,14 @@ class RepresentativeService
 
         $plansByMatter = $plans->groupBy('matter_id');
 
-        return $matters->map(function ($matter) use ($plansByMatter, $currentLapse, $student) {
+        // Una sola consulta para todas las materias: observaciones ya compartidas
+        // agrupadas por plan (el representante nunca ve las privadas).
+        $sharedObservations = $this->observationService->sharedByStudentGroupedByPlan(
+            (int) $student->id,
+            $plans->pluck('id')->all()
+        );
+
+        return $matters->map(function ($matter) use ($plansByMatter, $currentLapse, $student, $sharedObservations) {
             $plan = $plansByMatter->get($matter->id)?->first();
 
             if (! $plan) {
@@ -141,12 +150,12 @@ class RepresentativeService
                 },
                 'definitive' => $definitive,
                 'lapse_label' => $this->momentLabel($currentLapse),
-                'plan' => $this->formatSubjectPlan($plan, $student->id),
+                'plan' => $this->formatSubjectPlan($plan, $student->id, $sharedObservations[$plan->id] ?? []),
             ];
         })->values()->all();
     }
 
-    private function formatSubjectPlan(EvaluationPlan $plan, int $studentId): array
+    private function formatSubjectPlan(EvaluationPlan $plan, int $studentId, array $observations = []): array
     {
         $scores = $this->gradeService->publishedScoresForStudent($plan, $studentId);
         $items = $plan->items->map(function ($item) {
@@ -175,6 +184,7 @@ class RepresentativeService
             'items' => $items,
             'rasgos_points' => (int) $plan->rasgos_points,
             'rasgos_score' => $rasgosScore,
+            'observations' => $observations,
         ];
     }
 
