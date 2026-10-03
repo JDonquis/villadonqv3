@@ -114,8 +114,13 @@ class PaymentController extends Controller
 
     public function libroVentas(Request $request)
     {
-        $payments = $this->paymentService->getAllForExport($request->all());
+        $filters = $request->all();
+        $payments = $this->paymentService->getAllForExport($filters);
 
-        return (new SalesBookService)->export($payments, 'libro_ventas_'.now()->format('Y_m_d'));
+        return (new SalesBookService)->export(
+            $payments,
+            'libro_ventas_'.now()->format('Y_m_d'),
+            $filters
+        );
     }
 }

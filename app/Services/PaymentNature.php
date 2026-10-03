@@ -5,8 +5,12 @@ namespace App\Services;
 use App\Models\BalancePayment;
 use App\Models\BalanceStudent;
 use App\Models\MainConfig;
+use App\Models\SchoolLapse;
 use App\Models\Student;
+use App\Support\BalanceMonthStatus;
 use App\Support\EducationLevel;
+use App\Support\PaymentDeadline;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 /**
@@ -35,6 +39,12 @@ class PaymentNature
         'august' => 'Agosto',
     ];
 
+    public const MONTH_ORDER = [
+        'september', 'october', 'november', 'december',
+        'january', 'february', 'march', 'april',
+        'may', 'june', 'july', 'august',
+    ];
+
     /** @var array<int, float> Deuda restante antes de la aplicación. */
     private array $before = [];
 
@@ -50,7 +60,13 @@ class PaymentNature
     /** @var array<int, int> balance_student_id => student_id */
     private array $studentsById = [];
 
-    public function __construct(private ?MainConfig $config = null)
+    /** @var array<int, BalanceStudent> balance_student_id => BalanceStudent */
+    private array $balances = [];
+
+    /** @var MainConfig */
+    private MainConfig $config;
+
+    public function __construct(?MainConfig $config = null)
     {
         $this->config = $config ?: MainConfig::first();
     }
@@ -86,6 +102,11 @@ class PaymentNature
         }
 
         $balances = BalanceStudent::whereIn('id', $balanceIds)->get()->keyBy('id');
+
+        // Store balances for vencido checks later
+        foreach ($balances as $id => $balance) {
+            $nature->balances[$id] = $balance;
+        }
 
         $applications = BalancePayment::whereIn('balance_student_id', $balanceIds)
             ->with('payment:id,date')
@@ -177,6 +198,77 @@ class PaymentNature
     }
 
     /**
+     * Determina si el mes estaba VENCIDO en la fecha del pago.
+     * Usa la misma lógica que BalanceMonthStatus::isDue() pero con valores
+     * históricos en la fecha del pago (no "ahora").
+     */
+    private function wasVencidoAt(BalancePayment $application): bool
+    {
+        // Inscripción no tiene concepto de vencido/futuro
+        if ($application->is_inscription) {
+            return false;
+        }
+
+        $balance = $this->balances[$application->balance_student_id] ?? null;
+        $payment = $application->payment;
+
+        if (! $balance || ! $payment) {
+            return false;
+        }
+
+        // Fecha del pago (raw_date = Y-m-d)
+        $paymentDate = Carbon::parse($payment->raw_date ?? $payment->date);
+
+        // Configuración del colegio (usamos la actual; rara vez cambia en medio del año)
+        $dayOfMonthlyPayment = $this->config->day_of_monthly_payment ?? 1;
+        $gracePeriod = $this->config->grace_period ?? 0;
+
+        // Lapso escolar de este balance
+        $balanceLapse = $balance->schoolLapse;
+
+        if (! $balanceLapse) {
+            return false;
+        }
+
+        // Lapso "activo" en la fecha del pago: el que contiene esa fecha
+        // Si no hay ninguno, usamos el lapso del propio balance
+        $activeLapseAtPayment = SchoolLapse::where('start', '<=', $paymentDate)
+            ->where('end', '>=', $paymentDate)
+            ->first();
+
+        if (! $activeLapseAtPayment) {
+            $activeLapseAtPayment = $balanceLapse;
+        }
+
+        // Posición del lapso del balance respecto al lapso activo en la fecha del pago
+        $lapsePosition = BalanceMonthStatus::lapsePosition($balance, $activeLapseAtPayment);
+
+        // Índice del mes en el orden escolar (sept=0, oct=1, ...)
+        $monthIndex = array_search($application->month, self::MONTH_ORDER, true);
+        if ($monthIndex === false) {
+            $monthIndex = 0;
+        }
+
+        // Índice del mes "corriente" EN LA FECHA DEL PAGO (mes del pago)
+        $paymentMonth = strtolower($paymentDate->format('F'));
+        $currentMonthIndex = array_search($paymentMonth, self::MONTH_ORDER, true);
+        if ($currentMonthIndex === false) {
+            $currentMonthIndex = 0;
+        }
+
+        // ¿El mes corriente estaba vencido en la fecha del pago?
+        $currentMonthPastDue = PaymentDeadline::currentMonthPastDue($dayOfMonthlyPayment, $gracePeriod);
+
+        // Usamos la misma lógica de isDue() pero con valores históricos
+        return BalanceMonthStatus::isDue(
+            $monthIndex,
+            $currentMonthIndex,
+            $currentMonthPastDue,
+            $lapsePosition
+        );
+    }
+
+    /**
      * Etiqueta de una porción del pago aplicada al balance.
      */
     public function labelFor(BalancePayment $application): string
@@ -189,7 +281,8 @@ class PaymentNature
         }
 
         if ($application->is_inscription) {
-            return ($before > 0 && $after <= 0)
+            // Inscription: deuda es negativa. before < 0 = debía; after >= 0 = saldó.
+            return ($before < 0 && $after >= 0)
                 ? 'Pago de Inscripción'
                 : 'Abono a Inscripción';
         }
@@ -197,15 +290,25 @@ class PaymentNature
         $month = self::MONTH_ES[$application->month] ?? ucfirst((string) $application->month);
         $price = $this->monthlyPriceFor($this->studentIdFor((int) $application->balance_student_id));
 
-        if ($before > 0) {
-            return $after <= 0
+        // Determinar si el mes estaba VENCIDO en la fecha del pago
+        $vencido = $this->wasVencidoAt($application);
+
+        // after = deuda restante DESPUÉS del pago (negativo = todavía debe, 0 = saldado, positivo = crédito)
+        // before = deuda restante ANTES del pago
+
+        if ($vencido) {
+            // Mes vencido: pagar deuda
+            return $after >= 0
                 ? 'Pago de Mensualidad '.$month
                 : 'Abono a Mensualidad '.$month;
         }
 
-        return ($price > 0 && $after < $price)
-            ? 'Abono Anticipado - '.$month
-            : 'Pago Adelantado - Mensualidad '.$month;
+        // Mes futuro (no vencido): pago anticipado/adelantado
+        // after <= -price  => sobrepagó o cubrió completo el mes
+        // after > -price   => pago parcial
+        return ($after <= -$price)
+            ? 'Pago Adelantado - Mensualidad '.$month
+            : 'Abono Anticipado - '.$month;
     }
 
     /**
