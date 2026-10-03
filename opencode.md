@@ -870,3 +870,44 @@ Cambio (un solo archivo, `PlanUnitsView.svelte`): el bloque se movió a después
 - Verificado con SSR del componente (5 casos: rechazado con motivo visible; sin motivo, motivo vacío, aprobado con nota vieja y pendiente sin mostrar) y `corepack yarn run build` OK (43.19s, sin warnings nuevos). Scripts y harness temporales borrados.
 - Comportamiento esperado: cuando el profesor edita y reenvía, `updatePlan()` limpia `admin_note` (~363 y ~405) y el plan vuelve a pendiente, así que el aviso desaparece solo.
 - **Fuera de alcance**: la etiqueta "Rechazado" de la tabla en `MisPlanes.svelte:91` es `bg-red text-white` (~2.8:1, también apagada). Queda pendiente de decidir.
+
+---
+
+## Libro de ventas (Excel) + terminología unificada en BalanceBar
+
+Petición: exportar los pagos de `/dashboard/pagos` a un Excel con columnas Estudiante(s), Año, Concepto, Pagado (Bs), Referencia y Método de pago; una fila por pago, agrupado por fecha de transacción en orden descendente, con subtotal por día y total general arriba y abajo. El botón ya existía como botón inerte en `Pagos.svelte`.
+
+### Bug encontrado primero
+
+La primera versión del enlace quedó con sintaxis de PHP dentro de un atributo Svelte (`href="/dashboard/pagos/libro-ventas<?= ... ?>"`). El navegador pedía `/dashboard/pagos/libro-ventas%3C`, que no matchea la ruta GET y cae en `PUT/DELETE /dashboard/pagos/{id}`: **The GET method is not supported for route dashboard/pagos/libro-ventas%3C. Supported methods: PUT, DELETE.** La ruta sí estaba registrada; el problema era 100% el href. Ahora es `href={`/dashboard/pagos/libro-ventas${$page.url.search}`}`, que además arrastra los filtros vigentes.
+
+### Clasificación compartida (una sola fuente de verdad)
+
+`app/Services/PaymentNature.php` nuevo. Reconstruye el estado antes/después de cada aplicación de `balance_payments` **reproduciendo el historial hacia atrás desde el saldo actual** de `BalanceStudent`: `before = after + amount`. No necesita adivinar el precio para saber si la deuda quedó saldada.
+
+- `Pago de Inscripción` (salda la deuda) / `Abono a Inscripción` (parcial).
+- `Pago de Mensualidad <Mes>` / `Abono a Mensualidad <Mes>` / `Abono Anticipado - <Mes>` / `Pago Adelantado - Mensualidad <Mes>`, con `MONTH_ES` para el nombre en español.
+- Precio real = `MainConfig.monthly_payment` con el descuento de exención del estudiante; inscripción vía `EducationLevel::inscriptionPrice($config, $courseId)`.
+- `indexFor(...)` (desde pagos) y `indexForBalancePayments(...)` (desde aplicaciones) — el segundo carga **todas** las aplicaciones de esos balances, no solo las visibles, que es lo que hace correcto el antes/después.
+
+`AccountStatementService` ahora calcula el índice una vez por página y agrega `concept` a cada elemento de `balance_payments`; `BalanceBar.svelte` lo muestra en el tooltip (antes solo decía "Abonado"). **Ojo**: el closure externo `map(function ($balance) ...)` necesita `use ($nature)` — las arrow functions internas capturan del closure padre, no del scope externo.
+
+### Exportación
+
+- `PaymentService`: se extrajo `baseQuery(...)` de `getAll(...)` para que el export use **exactamente los mismos filtros**; `getAllForExport(...)` = baseQuery + `status = 1` + `balancePayments` + orden por `date desc`. No volver a escribir los filtros a mano en el controlador.
+- `SalesBookService`: layout = institución / LIBRO DE VENTAS / fecha de generación / TOTAL GENERAL (fórmula) / encabezados / por día: título con `translatedFormat('l j \d\e F \d\e Y')`, una fila por pago y `Subtotal del día` con `=SUM(D..:D..)` / TOTAL GENERAL final = `=SUM` de los subtotales.
+- Los montos van como `float` real (no `number_format`) para que las fórmulas sirvan; `Referencia` con `setCellValueExplicit(..., TYPE_STRING)` para conservar ceros a la izquierda.
+
+### Gotchas de PhpSpreadsheet
+
+- `getStyle('D1')->getNumberFormat()` devuelve `Style\NumberFormat`, cuyo método es **`setFormatCode()`** — no existen `setFormat()` ni `setFormatNumberFormatCode()`.
+- `getCell($col, $row)` con enteros no existe: hay que pasar la coordenada (`getCell('A1')`).
+- La columna real es `total_in_dolars` (con una sola "l"), no `total_in_dollars`.
+
+### Gotchas de JS / Inertia (el bug del 405)
+
+- **`String.prototype.search` SÍ existe** (método nativo legacy de Annex B): `typeof '/x'.search === 'function'`. Así que `` `${$page.url.search}` `` en un href produce `libro-ventasfunction search() { [native code] }` → el navegador pide `/dashboard/pagos/libro-ventasfunction%20search()...`, que no matchea la ruta GET y cae en `PUT/DELETE /dashboard/pagos/{id}` → *The GET method is not supported*. No es que la ruta faltara. `$page.url` es **string** (por eso `EstadosDeCuenta.svelte` usa `.split("?")`), no un `URL`.
+- La forma correcta es `` `${$page.url.includes('?') ? $page.url.slice($page.url.indexOf('?')) : ''}` ``.
+- Contexto: el mismo bug apareció dos veces por usar `<?= ?>` (PHP) y luego `.search`; al reescribir un `href` revisar la expresión con `typeof` antes de compilar.
+
+Verificado con `vendor/bin/phpunit` (6/6), `corepack yarn run build` (32.34s, solo el warning de chunk >500k de siempre) y descarga real desde el navegador con `?month=inscription&start_date=2026-09-01` (XLSX de 6963 bytes con solo las 2 inscripciones). Scripts y harness temporales borrados.

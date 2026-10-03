@@ -305,9 +305,10 @@
                 height="14"
                 class="text-dark absolute -top-2 z-10 inset-x-0 mx-auto w-max"
             />
-            {#each tooltipPayments as payment}
+{#each tooltipPayments as payment}
                 <div class="flex flex-col gap-0.5 items-center mb-2 p-1 relative">
                     <p class="text-xs">{payment.payment.date}</p>
+                    <p class="text-sm font-bold">{payment.concept || 'Abono'}</p>
                     <div class="flex items-center gap-1">
                         <p class="text-sm">Total: ${payment.payment.total_in_dolars}</p>
                         <p class="text-xs">Ref: {payment.payment.reference}</p>

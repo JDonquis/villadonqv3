@@ -1822,18 +1822,18 @@
                     | {formatFechaCorta(dateOfDolarPrice)}
             </p> -->
 
-            <button class="border mt-4 hover:shadow-xl hover:bg-gray-100 border-gray-300 rounded-xl flex items-center gap-3 py-2 md:py-3 px-4 md:px-7 bg-white">
+            <a
+                href={`/dashboard/pagos/libro-ventas${$page.url.includes('?') ? $page.url.slice($page.url.indexOf('?')) : ''}`}
+                class="border mt-4 hover:shadow-xl hover:bg-gray-100 border-gray-300 rounded-xl flex items-center gap-3 py-2 md:py-3 px-4 md:px-7 bg-white"
+            >
 
                 <iconify-icon
                     icon="fa6-solid:file-excel"
                     class="text-emerald-700"
                     width="19"
                     height="19"></iconify-icon>
-                <span class="text-slate-600 font-semibold">
-                    Libro de ventas
-
-                </span>
-            </button>
+                <span class="text-slate-600 font-semibold">Libro de ventas</span>
+            </a>
             <div class="hidden sm:block">
                 <button
                     class="animated-button ml-auto w-fitcontent"

@@ -2,7 +2,6 @@
     import BalanceBar from "../../components/BalanceBar.svelte";
     import Search from "../../components/Search.svelte";
     import Table from "../../components/Table.svelte";
-    import html2canvas from "html2canvas";
     import { page, router } from "@inertiajs/svelte";
     import { displayAlert } from "../../stores/alertStore";
 
@@ -134,42 +133,27 @@
         };
     }
 
-    async function sendToWhatsApp(student) {
-        const element = document.getElementById(`balance-bar-${student.id}`);
+    function sendToWhatsApp(student) {
+        let phoneNumber = student.representative.user.phone_number?.replace(
+            /[ -]/g,
+            "",
+        );
 
-        if (!element) return;
-
-        try {
-            const canvas = await html2canvas(element, {
-                scale: 2,
-                backgroundColor: "#ffffff",
-                logging: false,
-                useCORS: true,
+        if (!phoneNumber || phoneNumber.length < 9) {
+            displayAlert({
+                type: "error",
+                message: "No hay un número de WhatsApp válido para este representante.",
             });
+            return;
+        }
 
-            // Convert canvas to blob
-            const blob = await new Promise((resolve) =>
-                canvas.toBlob(resolve, "image/png"),
-            );
+        if (!phoneNumber.startsWith("+") && !phoneNumber.startsWith("58")) {
+            phoneNumber = "58" + phoneNumber;
+        }
 
-            // Copy image FIRST
-            const item = new ClipboardItem({ "image/png": blob });
-            await navigator.clipboard.write([item]);
+        phoneNumber = phoneNumber.replace("+", "");
 
-            let phoneNumber = student.representative.user.phone_number.replace(
-                /[ -]/g,
-                "",
-            );
-
-            if (!phoneNumber || phoneNumber.length < 9) return;
-
-            if (!phoneNumber.startsWith("+") && !phoneNumber.startsWith("58")) {
-                phoneNumber = "58" + phoneNumber;
-            }
-
-            phoneNumber = phoneNumber.replace("+", "");
-
-            const text = `🔹 *Recordatorio de Pago* 🔹
+        const text = `🔹 *Recordatorio de Pago* 🔹
 
 Hola ${student.representative.user.name} ${student.representative.user.last_name}, esperamos que se encuentre muy bien.
 
@@ -179,45 +163,17 @@ Le contactamos de la administración para informarle que la mensualidad de su re
 
 Le agradeceríamos ponerse al día a la brevedad posible para actualizar el estatus de su cuenta y recordando que la institución debe cumplir compromisos administrativos.
 
-ℹ️ *Nota importante sobre la imagen adjunta:*
-Por favor, *haga clic sobre la imagen para abrirla en pantalla completa*. Así podrá visualizar correctamente todo el calendario escolar, los meses solventes (en verde) y el desglose exacto de los montos pendientes (en rojo).
-
 Si ya realizó el pago, por favor ignore este mensaje o envíenos el comprobante. ¡Gracias por su apoyo continuo! ✨`;
 
-            // OPEN WHATSAPP AFTER clipboard succeeds
-            window.open(
-                `https://wa.me/${phoneNumber}?text=${encodeURIComponent(text)}`,
-                "_blank",
-            );
+        window.open(
+            `https://wa.me/${phoneNumber}?text=${encodeURIComponent(text)}`,
+            "_blank",
+        );
 
-            // alert(
-            //     "Imagen copiada al portapapeles. Solo pega la imagen en WhatsApp.",
-            // );
-            displayAlert({
-                type: "info",
-                message:
-                    "Imagen copiada al portapapeles. Solo pega la imagen en WhatsApp.",
-            });
-        } catch (err) {
-            console.error("Error al copiar al portapapeles:", err);
-
-            // Fallback download
-            const canvas = await html2canvas(element);
-
-            const link = document.createElement("a");
-            link.download = `balance-${student.name}-${student.last_name}.png`;
-            link.href = canvas.toDataURL();
-            link.click();
-
-            // displayInfoAlert(
-            //     "No se pudo copiar al portapapeles. Se ha descargado la imagen, por favor envíala manualmente por WhatsApp.",
-            // );
-            displayAlert({
-                type: "info",
-                message:
-                    "No se pudo copiar al portapapeles. Se ha descargado la imagen, por favor envíala manualmente por WhatsApp.",
-            });
-        }
+        displayAlert({
+            type: "info",
+            message: "Se abrió WhatsApp con el mensaje listo para enviar.",
+        });
     }
 </script>
 
@@ -435,7 +391,7 @@ Si ya realizó el pago, por favor ignore este mensaje o envíenos el comprobante
                     <button
                         title="Enviar por WhatsApp"
                         on:click={() => sendToWhatsApp(student)}
-                        class="text-green cursor-pointer p-1 hover:bg-gray-100 hidden group-hover:inline-flex"
+                        class="text-green cursor-pointer p-1 hover:bg-gray-100  group-hover:inline-flex"
                     >
                         <iconify-icon
                             icon="ic:baseline-whatsapp"

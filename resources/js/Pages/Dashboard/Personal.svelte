@@ -257,8 +257,8 @@
     <h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden mb-3">
         Personal
     </h2>
-    <div class=" mx-auto">
-        <div class="flex justify-end items-center gap-3 mb-3">
+    <div class=" mx-auto ">
+        <div class="flex  justify-end items-center gap-3 mb-3">
             <input
                 type="file"
                 accept=".xlsx"
@@ -266,34 +266,7 @@
                 bind:this={importFileInput}
                 on:change={handleImportFile}
             />
-            <!-- Desktop: show buttons -->
-            <div class="hidden md:flex items-center gap-3">
-                <button
-                    type="button"
-                    class="toolbar-secondary opacity-50 hover:opacity-100"
-                    on:click={() => importFileInput?.click()}
-                >
-                    <iconify-icon
-                        icon="material-symbols:upload"
-                        width="20"
-                        height="20"
-                    />
-                    Importar
-                </button>
-                <a
-                    href="/dashboard/personal/plantilla"
-                    class="toolbar-secondary opacity-50 hover:opacity-100"
-                >
-                    <iconify-icon
-                        icon="material-symbols:download "
-                        width="20"
-                        height="20"
-                    />
-                    Descargar plantilla
-                </a>
-            </div>
-            <!-- Mobile: small button opens modal with actions -->
-            <div class="md:hidden">
+            <div class="mt-4">
                 <button
                     class="toolbar-secondary p-2"
                     on:click={() => (showMobileActions = true)}
@@ -306,10 +279,10 @@
                     />
                 </button>
                 <Modal bind:showModal={showMobileActions} classes={"w-72"}>
-                    <div class="flex flex-col gap-3 p-2">
+                    <div class="flex flex-col gap-3 p-2 mt-7">
                         <button
                             type="button"
-                            class="toolbar-secondary"
+                            class="toolbar-secondary justify-center text-center mt-4 inline-block"
                             on:click={() => {
                                 importFileInput?.click();
                                 showMobileActions = false;
@@ -320,7 +293,7 @@
                                 width="20"
                                 height="20"
                             />
-                            <span class="ml-2">Importar</span>
+                            <span class="ml-2 text-center">Importar</span>
                         </button>
                         <a
                             href="/dashboard/personal/plantilla"
@@ -328,11 +301,11 @@
                             on:click={() => (showMobileActions = false)}
                         >
                             <iconify-icon
-                                icon="material-symbols:download "
+                                icon="material-symbols:download"
                                 width="20"
                                 height="20"
                             />
-                            <span class="ml-2">Descargar plantilla</span>
+                            <span class="ml-2 text-center">Descargar plantilla</span>
                         </a>
                     </div>
                 </Modal>
