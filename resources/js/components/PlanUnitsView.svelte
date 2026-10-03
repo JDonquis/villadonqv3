@@ -77,6 +77,29 @@
             </p>
         {/if}
     </div>
+    <!-- NOTA DE RECHAZO (SI APLICA) - ARRIBA DEL MODAL, ANTES DEL BALANCE -->
+    {#if plan.status === "rejected" && plan.admin_note}
+        <div
+            class="bg-red/10 border-2 border-red/40 rounded-2xl px-5 py-4 text-xs md:text-sm flex items-start gap-3 shadow-sm"
+        >
+            <span
+                class="shrink-0 mt-0.5 w-7 h-7 rounded-lg bg-red/20 flex items-center justify-center"
+            >
+                <iconify-icon
+                    icon="mdi:alert-circle-outline"
+                    class="text-lg text-[#B91C1C]"
+                ></iconify-icon>
+            </span>
+            <div class="min-w-0">
+                <strong class="font-bold block text-color1"
+                    >Motivo del rechazo de la coordinación:</strong
+                >
+                <p class="mt-1 text-[#B91C1C] whitespace-pre-line"
+                    >{plan.admin_note}</p
+                >
+            </div>
+        </div>
+    {/if}
     <!-- 2. TARJETA DE BALANCE Y PONDERACIÓN INSTITUCIONAL -->
     
     <!-- 3. UNIDADES Y DATA TABLE MODERNA -->
@@ -332,21 +355,4 @@
         </div>
     </div>
     </div>
-    <!-- 5. NOTA DE RECHAZO (SI APLICA) -->
-    {#if plan.status === "rejected" && plan.admin_note}
-        <div
-            class="bg-red/10 border border-red/30 text-red px-5 py-3.5 rounded-2xl text-xs md:text-sm flex items-start gap-3 shadow-sm"
-        >
-            <iconify-icon
-                icon="mdi:alert-circle-outline"
-                class="text-lg text-red shrink-0 mt-0.5"
-            ></iconify-icon>
-            <div>
-                <strong class="font-bold block"
-                    >Motivo del rechazo de la coordinación:</strong
-                >
-                <p class="mt-0.5 text-redLight">{plan.admin_note}</p>
-            </div>
-        </div>
-    {/if}
 </div>

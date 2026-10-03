@@ -1807,8 +1807,8 @@
             </div>
         {/if}
 
-        <div class=" items-center gap-5 ml-auto mb-2">
-            <p class="text-sm text-gray-500 bg-color3/10 px-2 py-1 rounded-xl">
+        <div class=" items-center gap-5 ml-auto mb-2 md:mb-4 flex">
+            <!-- <p class="text-sm text-gray-500 bg-color3/10 px-2 py-1 rounded-xl">
                  <span class="hidden md:inline font-semibold text-emerald-700"
                     >1 USD =</span
                 >
@@ -1820,7 +1820,20 @@
                     ></iconify-icon>{/if} 
 
                     | {formatFechaCorta(dateOfDolarPrice)}
-            </p>
+            </p> -->
+
+            <button class="border mt-4 hover:shadow-xl hover:bg-gray-100 border-gray-300 rounded-xl flex items-center gap-3 py-2 md:py-3 px-4 md:px-7 bg-white">
+
+                <iconify-icon
+                    icon="fa6-solid:file-excel"
+                    class="text-emerald-700"
+                    width="19"
+                    height="19"></iconify-icon>
+                <span class="text-slate-600 font-semibold">
+                    Libro de ventas
+
+                </span>
+            </button>
             <div class="hidden sm:block">
                 <button
                     class="animated-button ml-auto w-fitcontent"
