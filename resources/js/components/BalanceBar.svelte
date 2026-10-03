@@ -258,6 +258,12 @@
                                     {/if}
                                 </p>
 
+                                {#if balance[name + '_reminded']}
+                                    <span class="absolute top-0.5 right-0.5 w-3.5 h-3.5 bg-amber-500 text-white text-[7px] font-bold rounded-full flex items-center justify-center" title="Recordatorio enviado">
+                                        <iconify-icon icon="mdi:bell-ring" width="9" height="9"></iconify-icon>
+                                    </span>
+                                {/if}
+
                                 <!-- 5. Conditioned DOM Node: Completely unmounted on student list / read-only views -->
                                 <div
                                     class="text-xs months_to_pay absolute top-0.5 left-0 w-full text-black h-[95%] z-40
@@ -298,6 +304,12 @@
                                         ${Math.abs(balance[name])}
                                     {/if}
                                 </p>
+
+                                {#if balance[name + '_reminded']}
+                                    <span class="absolute top-0.5 right-0.5 w-3.5 h-3.5 bg-amber-500 text-white text-[7px] font-bold rounded-full flex items-center justify-center" title="Recordatorio enviado">
+                                        <iconify-icon icon="mdi:bell-ring" width="9" height="9"></iconify-icon>
+                                    </span>
+                                {/if}
                             </div>
                         {/each}
                     {/if}

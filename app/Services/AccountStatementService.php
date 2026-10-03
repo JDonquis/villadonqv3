@@ -189,7 +189,11 @@ class AccountStatementService
                     'inscription' => $balance->inscription,
                     'inscription_status' => $balance->inscription_status,
                     'months' => collect(self::MONTHS)->mapWithKeys(function ($month) use ($balance) {
-                        return [$month => $balance->$month, $month.'_status' => $balance->{$month.'_status'}];
+                        return [
+                            $month => $balance->$month,
+                            $month.'_status' => $balance->{$month.'_status'},
+                            $month.'_reminded' => $balance->{$month.'_reminded'},
+                        ];
                     }),
                     'total_debt' => $balanceDebt,
                     'total_income' => $balanceIncome,
