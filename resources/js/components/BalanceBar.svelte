@@ -163,6 +163,35 @@
     // Pago de Mensualidad Completo (Por defecto o exacto)
     return 'bg-emerald-50 text-emerald-700 border-emerald-100';
 }
+
+    // Texto corto del badge: quita el mes final (mensualidades) o la preposición
+    // (inscripción), para que se lea dentro de la tarjeta.
+    function shortConcept(concept = '') {
+        const value = (concept || 'Abono').trim();
+        if (!value) return 'Abono';
+
+        if (/inscripci/i.test(value)) {
+            return value
+                .replace(/\b(de|a)\b\s*/i, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        if (/adelantado/i.test(value)) {
+            return 'Pago Adelantado';
+        }
+
+        const words = value.split(' ').filter(Boolean);
+        if (words.length > 1) {
+            words.pop();
+        }
+
+        return words
+            .join(' ')
+            .replace(/\s*-\s*$/, '')
+            .replace(/\s+/g, ' ')
+            .trim() || 'Abono';
+    }
 </script>
 
 <div {id} class=" rounded-lg  {classes}">
@@ -341,7 +370,7 @@
                     <div class="flex items-center justify-between gap-2">
                         <span class="text-[11px] text-gray-400 font-medium">{payment.payment.date}</span>
                         <span class="px-2  text-[10px] font-semibold rounded-full border {getConceptBadgeStyle(payment.concept)}">
-                            {((payment.concept || 'Abono').split(' ').slice(0, -1).join(' ').replace("-", "") || 'Abono')}
+                            {shortConcept(payment.concept)}
                         </span>
                     </div>
 

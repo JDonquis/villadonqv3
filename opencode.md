@@ -968,3 +968,14 @@ Verificado con `vendor/bin/phpunit` (6/6), `corepack yarn run build` (32.34s, so
 - Renombres por redundancia: KPI "Tasa de Cobranza" → **"% Representantes al día"**; gráfico "Tendencia Tasa de Cobranza" → **"Recaudación anual (últimos 5 años)"**. "Ingresos del Mes" queda solo como KPI.
 - `Index.svelte`: `export let widgets = []`; cada KPI/tarjeta/gráfico dentro de `{#if has('clave')}` (helper `has`). Filas: KPIs principales (matrícula+dinero) y "Resumen institucional". `AttendanceSummaryCard` recibe `widgets` y renderiza sólo las tarjetas habilitadas. Estado vacío si no hay widgets.
 - **Ejemplo**: `juanvillans16@gmail.com` (type 1, is_admin 0, módulo `profesores`) sólo ve `kpi_teachers_total`. Si se le asigna `pagos` ve `payments_count` + ingresos + métodos; si se le asigna `estados-cuenta` ve deuda/morosidad y **no** ingresos. Sondas HTTP (luego borradas, `DatabaseTransactions`): pagos → `payments_count`/`this_month_income`, annual-flow y collection-by-channel 200, aging 403; estados-cuenta → deuda 200, collection-by-channel/annual-flow 403; profesores → sólo `total_teachers`, todo chart 403. `phpunit` 6/6, `yarn run build` OK.
+
+### Fix conceptos de pago / tooltip de Estados de Cuenta (2026-10-06)
+
+Dos bugs en `app/Services/PaymentNature.php` (afectaban el hover de meses en Estados de Cuenta y el Libro de Ventas vía `conceptFor`):
+
+1. **Reconstrucción del saldo con signo invertido** (`indexForBalancePayments`): el saldo guarda deuda en negativo y un pago **suma** al valor, así que al reconstruir hacia atrás debe ser `before = after - amount`. Estaba `+ amount`, por lo que `before` quedaba positivo y la inscripción nunca cumplía `$before < 0 && $after >= 0` → siempre "Abono a Inscripción".
+2. **"Pago Adelantado" nunca salía**: la condición de mes futuro era `$after <= -$price`; con el saldo normalizado el criterio correcto de mes completo es `$after >= 0`. Se eliminó la variable `$price` (quedó sin uso).
+
+Verificado con Faviana Sofia Acosta Molina (student 261, balance #261; pagos 170+50): Inscripción → `Pago de Inscripción`; Septiembre → `Pago de Mensualidad Septiembre`; Octubre 25 → `Abono Anticipado - Octubre`; Octubre 40 (completa el mes) → `Pago Adelantado - Mensualidad Octubre`; Noviembre 10 → `Abono Anticipado - Noviembre`.
+
+`resources/js/components/BalanceBar.svelte`: nuevo `shortConcept()` para el badge del tooltip (antes hacía `split(' ').slice(0,-1)` y la inscripción quedaba "Pago de"). Ahora: inscripción → "Pago Inscripción"/"Abono Inscripción" (quita la preposición); `adelantado` → "Pago Adelantado" (corto); mensualidad → quita el mes final. `phpunit` 6/6, `yarn run build` OK.

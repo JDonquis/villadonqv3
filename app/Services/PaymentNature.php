@@ -143,7 +143,7 @@ class PaymentNature
             $current = (float) ($last->is_inscription ? $balance->inscription : $balance->{$last->month});
 
             foreach (array_reverse($grouped) as $step) {
-                $before = $current + (float) $step->amount;
+                $before = $current - (float) $step->amount;
                 $nature->before[$step->id] = $before;
                 $nature->after[$step->id] = $current;
                 $current = $before;
@@ -288,7 +288,6 @@ class PaymentNature
         }
 
         $month = self::MONTH_ES[$application->month] ?? ucfirst((string) $application->month);
-        $price = $this->monthlyPriceFor($this->studentIdFor((int) $application->balance_student_id));
 
         // Determinar si el mes estaba VENCIDO en la fecha del pago
         $vencido = $this->wasVencidoAt($application);
@@ -303,10 +302,9 @@ class PaymentNature
                 : 'Abono a Mensualidad '.$month;
         }
 
-        // Mes futuro (no vencido): pago anticipado/adelantado
-        // after <= -price  => sobrepagó o cubrió completo el mes
-        // after > -price   => pago parcial
-        return ($after <= -$price)
+        // Mes futuro (no vencido): pago anticipado/adelantado.
+        // after >= 0 => el pago cubrió el mes completo.
+        return ($after >= 0)
             ? 'Pago Adelantado - Mensualidad '.$month
             : 'Abono Anticipado - '.$month;
     }
