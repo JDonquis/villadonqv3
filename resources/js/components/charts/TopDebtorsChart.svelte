@@ -27,10 +27,14 @@
     let myChart;
     let option = {};
 
-    async function fetchData() {
+    function handleResize() {
+        myChart?.resize();
+    }
+
+    async function fetchData(lapseId) {
         try {
-            const url = schoolLapseId
-                ? `/dashboard/graficos/top-debtors/${limit}/${schoolLapseId}`
+            const url = lapseId
+                ? `/dashboard/graficos/top-debtors/${limit}/${lapseId}`
                 : `/dashboard/graficos/top-debtors/${limit}`;
             const response = await axios.get(url);
             const data = response.data.data;
@@ -38,10 +42,8 @@
             const labels = data.map((d) => `${d.name} (${d.course} ${d.section})`);
             const debts = data.map((d) => d.debt);
 
-            const colors = MATTER_PASTELS.map((c) => c.bg);
-
             option = {
-                color: colors,
+                color: MATTER_PASTELS.map((c) => c.bg),
                 tooltip: {
                     trigger: "axis",
                     axisPointer: { type: "shadow" },
@@ -52,12 +54,7 @@
                             maximumFractionDigits: 2,
                         }),
                 },
-                grid: {
-                    left: "3%",
-                    right: "4%",
-                    bottom: "3%",
-                    containLabel: true,
-                },
+                grid: { left: "3%", right: "4%", bottom: "3%", containLabel: true },
                 xAxis: {
                     type: "value",
                     name: "Deuda ($)",
@@ -88,23 +85,27 @@
                     },
                 ],
             };
-
-            if (myChart) {
-                myChart.setOption(option);
-            }
         } catch (error) {
             console.error("Error fetching top debtors:", error);
         }
     }
 
+    $: if (myChart) {
+        fetchData(schoolLapseId);
+    }
+
+    $: if (myChart && option) {
+        myChart.setOption(option);
+    }
+
     onMount(() => {
         myChart = echarts.init(chartContainer);
-        fetchData();
-        window.addEventListener("resize", () => myChart?.resize());
+        window.addEventListener("resize", handleResize);
     });
 
     onDestroy(() => {
-        if (myChart) myChart.dispose();
+        window.removeEventListener("resize", handleResize);
+        myChart?.dispose();
     });
 </script>
 

@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
+use App\Enums\BalanceStudentStatusEnum;
 use App\Models\BalancePayment;
 use App\Models\BalanceStudent;
 use App\Models\MainConfig;
 use App\Models\Payment;
-use App\Models\Representative;
 use App\Models\SchoolLapse;
 use App\Models\Student;
 use Carbon\Carbon;
@@ -28,128 +28,282 @@ class DashboardService
         'august',
     ];
 
-    public function getKpiData(): array
+    /**
+     * Indicadores del panel administrativo. Todos los cálculos se acotan al
+     * período escolar indicado (o al activo) y usan consultas agregadas para
+     * evitar el N+1.
+     */
+    public function getKpiData(?int $schoolLapseId = null, bool $includeMoney = true): array
     {
-        $currentLapse = SchoolLapse::where('status', 1)->first();
+        $lapse = $this->resolveLapse($schoolLapseId);
+
+        $data = [
+            'school_lapse_id' => $lapse?->id,
+            'total_students' => Student::where('status', '!=', 0)->count(),
+            'total_representatives' => Student::where('status', '!=', 0)
+                ->whereNotNull('representative_id')
+                ->distinct('representative_id')
+                ->count('representative_id'),
+            'enrollment' => $this->enrollmentVariation($lapse),
+        ];
+
+        // Un administrador limitado (is_admin = 0) no recibe información de dinero.
+        if (! $includeMoney) {
+            return $data;
+        }
+
         $config = MainConfig::first();
         $monthlyPrice = (float) ($config->monthly_payment ?? 0);
 
-        $totalStudents = Student::where('status', '!=', 0)->count();
-        $totalRepresentatives = Student::where('status', '!=', 0)
-            ->whereNotNull('representative_id')
-            ->join('representatives', 'students.representative_id', '=', 'representatives.id')
-            ->distinct('representatives.user_id')
-            ->count('representatives.user_id');
-        $totalOutstandingDebt = $this->calculateTotalOutstandingDebt();
-        $studentsAtRisk = $this->calculateStudentsAtRisk();
-        $collectionRate = $this->calculateCollectionRate($currentLapse, $monthlyPrice);
-        $thisMonthIncome = $this->calculateThisMonthIncome($currentLapse);
-        $pendingPayments = Payment::where('status', 'pending')->count();
+        $debt = $this->outstandingDebt($lapse);
+        $collected = $this->collectedForLapse($lapse);
+        $billed = $debt + $collected;
 
-        return [
-            'total_students' => $totalStudents,
-            'total_representatives' => $totalRepresentatives,
-            'total_outstanding_debt' => (float) $totalOutstandingDebt,
-            'students_at_risk' => $studentsAtRisk,
-            'collection_rate' => $collectionRate,
-            'this_month_income' => (float) $thisMonthIncome,
-            'pending_payments' => $pendingPayments,
-        ];
+        $reps = $this->representativesUpToDate($lapse);
+        $target = $this->monthTarget($lapse, $monthlyPrice);
+        $income = $this->monthIncome($lapse);
+
+        return array_merge($data, [
+            'total_outstanding_debt' => round($debt, 2),
+            'total_billed' => round($billed, 2),
+            'debt_percentage' => $billed > 0 ? round(($debt / $billed) * 100, 1) : 0.0,
+
+            'collection_rate' => $reps['total'] > 0 ? round(($reps['up_to_date'] / $reps['total']) * 100, 1) : 0.0,
+            'representatives_up_to_date' => $reps['up_to_date'],
+            'representatives_total' => $reps['total'],
+
+            'this_month_income' => round($income, 2),
+            'month_target' => round($target, 2),
+            'income_percentage' => $target > 0 ? round(($income / $target) * 100, 1) : 0.0,
+        ]);
     }
 
-    private function calculateTotalOutstandingDebt(): float
+    public function resolveLapse(?int $schoolLapseId = null): ?SchoolLapse
     {
-        return (float) BalanceStudent::get()->sum(fn ($balance) => $balance->currentDebt());
-    }
-
-    private function calculateStudentsAtRisk(): int
-    {
-        return BalanceStudent::whereHas('student', function ($q) {
-            $q->where('status', '!=', 0);
-        })->get()->filter(function ($balance) {
-            return $this->isStudentAtRisk($balance);
-        })->count();
-    }
-
-    private function isStudentAtRisk($balance): bool
-    {
-        // Inscription debt
-        if ($balance->inscription < 0) {
-            return true;
-        }
-
-        // 2+ months debt
-        $debtMonths = 0;
-        foreach (self::MONTH_ORDER as $month) {
-            $monthValue = $balance->$month;
-            $monthStatus = $balance->{$month . '_status'};
-            if ($monthValue < 0 && in_array($monthStatus, ['debt', 'partially_paid'], true)) {
-                $debtMonths++;
+        if ($schoolLapseId) {
+            $lapse = SchoolLapse::find($schoolLapseId);
+            if ($lapse) {
+                return $lapse;
             }
         }
 
-        return $debtMonths >= 2;
+        return SchoolLapse::where('status', 1)->first()
+            ?? SchoolLapse::orderByDesc('start')->first();
     }
 
-    private function calculateCollectionRate(?SchoolLapse $currentLapse, float $monthlyPrice): float
+    /**
+     * Matrícula del período vs. el período inmediatamente anterior.
+     * Se cuenta un alumno por período usando los balances generados.
+     */
+    private function enrollmentVariation(?SchoolLapse $lapse): array
     {
-        if (!$currentLapse || $monthlyPrice <= 0) {
+        if (! $lapse) {
+            return ['current' => 0, 'previous' => 0, 'variation' => 0, 'percentage' => 0.0];
+        }
+
+        $current = BalanceStudent::where('school_lapse_id', $lapse->id)
+            ->whereHas('student', fn ($q) => $q->where('status', '!=', 0))
+            ->distinct('student_id')
+            ->count('student_id');
+
+        $previousLapse = SchoolLapse::where('id', '!=', $lapse->id)
+            ->where('start', '<', $lapse->start)
+            ->orderByDesc('start')
+            ->first();
+
+        $previous = $previousLapse
+            ? BalanceStudent::where('school_lapse_id', $previousLapse->id)
+                ->distinct('student_id')
+                ->count('student_id')
+            : 0;
+
+        $variation = $current - $previous;
+        $percentage = $previous > 0 ? round(($variation / $previous) * 100, 1) : 0.0;
+
+        return [
+            'current' => $current,
+            'previous' => $previous,
+            'variation' => $variation,
+            'percentage' => $percentage,
+        ];
+    }
+
+    /**
+     * Deuda vencida (inscripción + meses con status debt/partially_paid) del
+     * período. Una sola consulta por balances, sin cargar la relación student.
+     */
+    private function outstandingDebt(?SchoolLapse $lapse): float
+    {
+        if (! $lapse) {
             return 0.0;
         }
 
-        // Expected = sum of each active student's effective monthly price from their balance
-        $expected = BalanceStudent::whereHas('student', function ($q) {
-            $q->where('status', '!=', 0);
+        return (float) $this->balancesFor($lapse)
+            ->sum(fn (BalanceStudent $balance) => $balance->currentDebt());
+    }
+
+    /**
+     * Monto efectivamente cobrado e imputado a balances del período.
+     */
+    private function collectedForLapse(?SchoolLapse $lapse): float
+    {
+        if (! $lapse) {
+            return 0.0;
+        }
+
+        return (float) BalancePayment::whereHas('balanceStudent', function ($q) use ($lapse) {
+            $q->where('school_lapse_id', $lapse->id);
         })
-            ->where('school_lapse_id', $currentLapse->id)
-            ->with('student')
-            ->get()
-            ->sum(function ($balance) use ($monthlyPrice) {
-                $student = $balance->student;
-                if (!$student) {
-                    return 0;
-                }
+            ->whereHas('payment', fn ($q) => $q->where('status', '!=', 0))
+            ->sum('amount');
+    }
+
+    /**
+     * % de representantes "al día": todos sus alumnos activos sin deuda vencida.
+     */
+    private function representativesUpToDate(?SchoolLapse $lapse): array
+    {
+        if (! $lapse) {
+            return ['total' => 0, 'up_to_date' => 0];
+        }
+
+        $balances = $this->balancesFor($lapse);
+
+        if ($balances->isEmpty()) {
+            return ['total' => 0, 'up_to_date' => 0];
+        }
+
+        $studentIds = $balances->pluck('student_id')->unique()->values();
+
+        $repByStudent = Student::whereIn('id', $studentIds)
+            ->get(['id', 'representative_id'])
+            ->keyBy('id');
+
+        $repsWithDebt = [];
+
+        foreach ($balances as $balance) {
+            if ($balance->currentDebt() <= 0) {
+                continue;
+            }
+
+            $repId = $repByStudent->get($balance->student_id)?->representative_id;
+            if ($repId) {
+                $repsWithDebt[$repId] = true;
+            }
+        }
+
+        $totalReps = $repByStudent
+            ->pluck('representative_id')
+            ->filter()
+            ->unique()
+            ->count();
+
+        return [
+            'total' => $totalReps,
+            'up_to_date' => $totalReps - count($repsWithDebt),
+        ];
+    }
+
+    /**
+     * Meta de ingresos del mes en curso: mensualidad efectiva de cada alumno
+     * activo (con exención) + inscripciones cuando el mes es septiembre.
+     */
+    private function monthTarget(?SchoolLapse $lapse, float $monthlyPrice): float
+    {
+        if (! $lapse || $monthlyPrice <= 0) {
+            return 0.0;
+        }
+
+        $balances = $this->balancesFor($lapse);
+        $studentIds = $balances->pluck('student_id')->unique()->values();
+
+        $multipliers = Student::whereIn('id', $studentIds)
+            ->get(['id', 'is_exempt', 'exemption_percentage'])
+            ->mapWithKeys(function (Student $student) {
                 $multiplier = $student->is_exempt
                     ? (1 - (($student->exemption_percentage ?? 0) / 100))
                     : 1;
-                return $monthlyPrice * $multiplier;
+
+                return [$student->id => max(0, $multiplier)];
             });
 
-        // Current school month (moment)
-        $currentMoment = $currentLapse->lapses->first(function ($m) {
-            $now = Carbon::now();
-            return $now->between($m->start, $m->end);
-        }) ?? $currentLapse->lapses->last();
+        $target = $balances->sum(fn (BalanceStudent $balance) => $monthlyPrice * ($multipliers[$balance->student_id] ?? 1));
 
-        if (!$currentMoment) {
-            return 0.0;
+        $currentMonthIndex = $this->currentMonthIndex();
+
+        if ($currentMonthIndex === 0) {
+            $target += $this->expectedInscriptions($lapse);
         }
 
-        // Collected in current school month
-        $collected = Payment::where('status', '!=', 0)
-            ->whereBetween('date', [$currentMoment->start, $currentMoment->end])
-            ->sum('total_in_dolars');
-
-        return $expected > 0 ? round(($collected / $expected) * 100, 1) : 0.0;
+        return $target;
     }
 
-    private function calculateThisMonthIncome(?SchoolLapse $currentLapse): float
+    private function expectedInscriptions(?SchoolLapse $lapse): float
     {
-        if (!$currentLapse) {
+        if (! $lapse) {
             return 0.0;
         }
 
-        $currentMoment = $currentLapse->lapses->first(function ($m) {
-            $now = Carbon::now();
-            return $now->between($m->start, $m->end);
-        }) ?? $currentLapse->lapses->last();
+        $remaining = (float) BalanceStudent::where('school_lapse_id', $lapse->id)
+            ->where('inscription', '<', 0)
+            ->sum('inscription');
 
-        if (!$currentMoment) {
+        $paid = (float) BalancePayment::whereHas('balanceStudent', function ($q) use ($lapse) {
+            $q->where('school_lapse_id', $lapse->id);
+        })
+            ->where('is_inscription', true)
+            ->sum('amount');
+
+        return abs($remaining) + $paid;
+    }
+
+    private function monthIncome(?SchoolLapse $lapse): float
+    {
+        $moment = $this->currentMoment($lapse);
+
+        if (! $moment) {
             return 0.0;
         }
 
         return (float) Payment::where('status', '!=', 0)
-            ->whereBetween('date', [$currentMoment->start, $currentMoment->end])
+            ->whereBetween('date', [$moment->start, $moment->end])
             ->sum('total_in_dolars');
+    }
+
+    private function currentMoment(?SchoolLapse $lapse)
+    {
+        if (! $lapse) {
+            return null;
+        }
+
+        $now = Carbon::now();
+
+        return $lapse->lapses->first(fn ($m) => $now->between($m->start, $m->end))
+            ?? $lapse->lapses->sortByDesc('number')->first();
+    }
+
+    private function currentMonthIndex(): int
+    {
+        $index = array_search(strtolower(Carbon::now()->englishMonth), self::MONTH_ORDER, true);
+
+        return $index === false ? 0 : $index;
+    }
+
+    /**
+     * Balances del período de alumnos activos, con sólo las columnas usadas
+     * por currentDebt() para no hidratar la relación student.
+     */
+    private function balancesFor(SchoolLapse $lapse)
+    {
+        $columns = ['id', 'student_id', 'school_lapse_id', 'inscription', 'inscription_status'];
+
+        foreach (self::MONTH_ORDER as $month) {
+            $columns[] = $month;
+            $columns[] = $month.'_status';
+        }
+
+        return BalanceStudent::where('school_lapse_id', $lapse->id)
+            ->whereHas('student', fn ($q) => $q->where('status', '!=', 0))
+            ->get($columns);
     }
 }

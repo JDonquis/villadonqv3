@@ -856,3 +856,42 @@ Petición: mostrar un indicador pequeño en el botón de observaciones junto al 
 - **Este archivo no tiene acentos corruptos**: al leerlo con `Get-Content` en PowerShell los acentos se ven como `?`/`�` porque la consola usa otra codificación, pero el archivo es UTF-8 válido (se confirmó releyéndolo con la herramienta de edición). Para anexar texto, esta sesión usó PHP con `file_put_contents(..., FILE_APPEND)`; el `edit` normal también funciona siempre que el `oldString` copie el texto EXACTO — un fallo anterior fue por escribir "rompe" donde el archivo dice "rompió".
 - Corregido de paso: `MisEstudiantes.svelte` usaba `bg-green/15`, clase **inexistente** (15 no está en la escala de opacidad de Tailwind). Ahora `/20`. Ese bug-era preexistente en la barra de "Publicar notas". Ojo al escribir clases nuevas: revisar que el modificador de opacidad exista (10/20/25/30/40/50… sí; 15/35/45 no).
 - Limpio: se eliminaron `resources/_obs_test.html`, `resources/js/_obs_test.js` y el `public/_asistencia_test.html` que llevaba tiempo desde la sesión de asistencia.
+
+---
+
+## Sesión 2026-09-30 — Rediseño del Dashboard (admin) + dashboard del representante + comunicados/eventos
+
+### Fase 1 — Correcciones
+- Eliminado el KPI "Pagos Pendientes": `payments.status` es entero (1 activo / 0 borrado) y no existe estado `pending`, así que `where('status','pending')` contaba pagos borrados.
+- `ChartService::debtByCourse` ya no usa `abs()` del neto: suma inscripción (<0) y meses con status `debt`/`partially_paid` por curso.
+- `ChartService::topDebtors` corregido (`currentDebt()` ya devuelve positivo; antes `if ($debt >= 0) return null` descartaba todo).
+- `DashboardService` reescrito sin N+1 (carga balances sin relación `student`; un solo mapa de multiplicadores de exención).
+- `Index.svelte` tenía doble `onMount`/`onDestroy` de ECharts (init y listener duplicados); queda uno.
+- Charts `DebtByCourse`/`TopDebtors` ahora reaccionan al período (`$:` + `setOption`) en vez de solo `onMount`.
+- Logo de `LeftNav` usa `homeHref` según rol (antes `/dashboard` daba 403 al representante).
+
+### Fase 2 — KPIs y gráficos admin
+- KPIs en `DashboardService::getKpiData($lapse)`: Total Estudiantes (variación vs período anterior vía balances), Ingresos del mes vs meta (`monthly_payment × alumnos con exención` + inscripciones en septiembre), Deuda total (% del facturado = cobrado + deuda), Tasa de cobranza (% representantes al día).
+- Métodos nuevos en `ChartService`: `aging()` (al día / 1-30 / 31-60 / +60 usando `day_of_monthly_payment + grace_period`), `collectionByChannel()` (join `account_payments`+`payment_methods`, USD/Bs), `attendanceSummary()` (activos/retirados/graduados + % asistencia del día). `collectionRateTrend` compara contra 12 mensualidades esperadas.
+- Endpoints nuevos en `AppController`: `/dashboard/metricas/{lapse?}`, `/dashboard/graficos/aging|collection-by-channel|attendance-summary/{lapse?}`.
+- Frontend: `Index.svelte` rehecha (filtro de período que alimenta KPIs y todos los charts) + `AgingChart`, `CollectionByChannelChart`, `AttendanceSummaryCard`, `AcademicEvolutionChart`. `KpiCard` acepta `hint`.
+
+### Fase 3 — Dashboard del representante
+- Nueva ruta `/dashboard/inicio` (`role:administrator,representative`) → `RepresentativeDashboardController` → `Dashboard/Inicio.svelte`. `HomeRoute` del representante apunta ahí; ítem "Inicio" en `repNavPages`.
+- `RepresentativeDashboardService::getDashboardData($user)` (scoped a sus alumnos): estado de cuenta + próxima cuota, promedio académico (solo publicado y planes `approved`, promedio de definitivas por materia), asistencia acumulada (`AttendanceService::getAccumulatedForStudents`), próximas cuotas/conceptos, próximas evaluaciones (`scheduled_date`), comunicados y eventos.
+- "Reportar Pago" enlaza a `/dashboard/mis-pagos?student_id=...`; `MisPagos` lee `student_id` en `onMount` y activa la pestaña de pago. El submit real del pago regular sigue sin cablear (preexistente).
+- **Regla de dinero (2026-09-30):** sólo la administración total ve información financiera. `canSeeMoney()` = `is_admin` (NO alcanza con `type_user_id = 1`; un admin limitado con `is_admin = 0` y módulos acotados no debe ver dinero).
+  - `DashboardService::getKpiData($lapse, bool $includeMoney)`: si `$includeMoney = false` sólo devuelve `school_lapse_id`, `total_students`, `total_representatives`, `enrollment` (sin ingresos/deuda/cobranza).
+  - `AppController@dashboard` pasa `canSeeMoney` y los KPIs filtrados; `metrics()` respeta el flag. Los endpoints de dinero (`annual-vs-monthly-flow`, `debt-by-course`, `collection-rate-trend`, `top-debtors`, `aging`, `collection-by-channel`) hacen `abort_unless(auth()->user()->is_admin, 403)`. `attendance-summary` sí se permite (matrícula/asistencia, sin dinero).
+  - `Index.svelte` recibe `canSeeMoney`: si es `false` solo muestra "Total Estudiantes", "Representantes legales" y el resumen de matrícula/asistencia; oculta KPIs y gráficos de dinero y no inicializa ni consulta sus endpoints.
+  - `RepresentativeDashboardService::canSeeMoney()` también usa `is_admin`/type administrador; para el representante devuelve `false`, `account` va `null` y `upcoming.payments` vacío (`Inicio.svelte` oculta "Estado de Cuenta" y "Próximos Pagos").
+  - `/dashboard/mis-pagos` está en `role:administrator,representative` (los profesores no entran a pagos).
+
+### Fase 4 — Comunicados y eventos (módulos nuevos)
+- Migraciones `2026_09_30_000001_create_announcements_table` y `..._000002_create_school_events_table` (aplicadas). Modelos `Announcement` (audiencia all/course/section/student, scope `published`) y `SchoolEvent` (tipo general/exam/meeting/holiday).
+- `AnnouncementController` (index/store/update/destroy) y `SchoolEventController` (store/update/destroy); rutas admin `/dashboard/comunicados` y `/dashboard/eventos`. Página `Dashboard/Comunicados.svelte` con dos pestañas. Módulo `comunicados` en `ModuleSeeder` + `EnsureModuleAccess` (`eventos`→`comunicados`) + `LeftNav`.
+
+### Verificado
+- `php -l` en todos los PHP nuevos/tocados; `vendor/bin/phpunit` OK (6 tests; `HomeRouteTest` actualizado a `/dashboard/inicio`). `yarn run build` OK.
+- Sonda de humo temporal (luego borrada, 7 casos, `DatabaseTransactions`): admin `/dashboard` 200, `/dashboard/metricas` JSON, charts JSON, `/dashboard/comunicados` 200, rep `/dashboard/inicio` 200, rep `/dashboard` 403, comunicado creado por admin visible para el representante.
+- Se corrieron `php artisan migrate --force` y `db:seed --class=ModuleSeeder`; no se dejaron datos de prueba.

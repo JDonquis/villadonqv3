@@ -15,6 +15,8 @@
         "Dashboard/Configuracion": "Configuración",
         "Dashboard/MisHijos": "Mis Hijos",
         "Dashboard/MisPagos": "Mis Pagos",
+        "Dashboard/Inicio": "Inicio",
+        "Dashboard/Comunicados": "Comunicados",
         "Dashboard/Perfil": "Mi Perfil",
         "Dashboard/MiHorario": "Mi Horario",
         "Dashboard/HorarioHijo": "Horario del Estudiante",

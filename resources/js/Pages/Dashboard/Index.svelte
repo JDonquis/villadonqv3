@@ -7,44 +7,60 @@
     import DebtByCourseChart from "../../components/charts/DebtByCourseChart.svelte";
     import CollectionRateTrendChart from "../../components/charts/CollectionRateTrendChart.svelte";
     import TopDebtorsChart from "../../components/charts/TopDebtorsChart.svelte";
-    export let schoolLapses;
-    export let schoolCharges = [];
-    export let totalSchoolCharges = 0;
-    export let schoolChargesByLapse = [];
+    import AgingChart from "../../components/charts/AgingChart.svelte";
+    import CollectionByChannelChart from "../../components/charts/CollectionByChannelChart.svelte";
+    import AttendanceSummaryCard from "../../components/charts/AttendanceSummaryCard.svelte";
+
+    export let schoolLapses = [];
     export let kpiData = {};
+    export let canSeeMoney = false;
+
+    let kpi = kpiData;
+    let selectedLapse = kpiData.school_lapse_id
+        ? String(kpiData.school_lapse_id)
+        : schoolLapses[0]?.id?.toString() ?? "";
+
+    const MONTH_LABELS = [
+        "Sep", "Oct", "Nov", "Dic", "Ene", "Feb",
+        "Mar", "Abr", "May", "Jun", "Jul", "Ago",
+    ];
 
     function formatCurrency(value) {
-        return "$" + Number(value || 0).toLocaleString("en-US", {
+        return "$" + Number(value || 0).toLocaleString(undefined, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
         });
     }
 
-    $: totalStudents = kpiData.total_students?.toLocaleString() || "0";
-    $: totalRepresentatives = kpiData.total_representatives?.toLocaleString() || "0";
-    $: totalOutstandingDebt = kpiData.total_outstanding_debt?.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) || "0.00";
-    $: studentsAtRisk = kpiData.students_at_risk?.toLocaleString() || "0";
-    $: collectionRate = (kpiData.collection_rate?.toFixed(1) || "0") + "%";
-    $: thisMonthIncome = kpiData.this_month_income?.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) || "0.00";
-    $: pendingPayments = kpiData.pending_payments?.toLocaleString() || "0";
+    $: totalStudents = (kpi.enrollment?.current ?? kpi.total_students)?.toLocaleString() ?? "0";
+    $: enrollment = kpi.enrollment ?? null;
+    $: enrollmentTrend = enrollment
+        ? { up: enrollment.variation >= 0, value: Math.abs(enrollment.percentage) }
+        : null;
+    $: enrollmentHint = enrollment
+        ? `${enrollment.variation >= 0 ? "+" : ""}${enrollment.variation} vs. período anterior (${enrollment.previous})`
+        : "";
 
-    let annual_vs_monthly_flow_year_id;
-    let chartContainer;
-    let myChart;
+    $: thisMonthIncome = formatCurrency(kpi.this_month_income);
+    $: monthTarget = formatCurrency(kpi.month_target);
+    $: incomeHint = `Meta: ${monthTarget} (${kpi.income_percentage ?? 0}%)`;
 
-    // 1. SUPONGAMOS QUE ESTOS SON LOS DATOS CRUDOS QUE LLEGAN DE TU ENDPOINT
-    // (Convertimos strings a números y "" a null para que la matemática no falle)
+    $: totalDebt = formatCurrency(kpi.total_outstanding_debt);
+    $: collectedPct = Math.max(0, 100 - (kpi.debt_percentage ?? 0));
+    $: debtHint = `${collectedPct.toFixed(1)}% cobrado de ${formatCurrency(kpi.total_billed)}`;
 
-    let annual_vs_monthly_flow_data = {
+    $: collectionRate = (kpi.collection_rate ?? 0) + "%";
+    $: collectionHint = `${kpi.representatives_up_to_date ?? 0} de ${kpi.representatives_total ?? 0} representantes al día`;
+
+    // ---- Gráfico principal: proyección vs. recaudación real ----
+    let flowData = {
         pagado_mensual: [],
         esperado_mensual: [],
         real_acumulado: [],
         meta_acumulada: [],
     };
 
-    // 2. FUNCIÓN MATEMÁTICA PARA CALCULAR EL TOPE PERFECTO (Múltiplo de 5 para los saltos del eje)
     function calcularTopeEje(arraysCombinados) {
-        // Filtramos nulls, vacíos o cosas que no sean números y buscamos el valor más alto
         const maxValor = Math.max(
             ...arraysCombinados
                 .flat()
@@ -52,76 +68,41 @@
                 .filter((v) => !isNaN(v)),
         );
 
-        if (maxValor <= 0) return 5000; // Valor por defecto si no hay datos
+        if (!isFinite(maxValor) || maxValor <= 0) return 5000;
 
-        // Añadimos un 10% de margen superior para que las barras/líneas no toquen el techo del gráfico
-        const valorConMargen = maxValor * 1.1;
-
-        // Buscamos el próximo número más alto que sea divisible exactamente entre 5
-        // Esto garantiza que al dividir el eje en 5 tramos (interval), den números enteros limpios
-        return Math.ceil(valorConMargen / 5) * 5;
+        return Math.ceil((maxValor * 1.1) / 5) * 5;
     }
 
-    // 3. CÁLCULO REACTIVO DE LOS TOPES
-    // Evaluamos tanto lo real como lo esperado para asegurar que nada se desborde
-    $: maxMensual = calcularTopeEje([
-        annual_vs_monthly_flow_data.pagado_mensual,
-        annual_vs_monthly_flow_data.esperado_mensual,
-    ]);
-    $: maxAcumulado = calcularTopeEje([
-        annual_vs_monthly_flow_data.real_acumulado,
-        annual_vs_monthly_flow_data.meta_acumulada,
-    ]);
+    $: maxMensual = calcularTopeEje([flowData.pagado_mensual, flowData.esperado_mensual]);
+    $: maxAcumulado = calcularTopeEje([flowData.real_acumulado, flowData.meta_acumulada]);
 
-    // 4. EL OBJETO OPTION SE CONFIGURA DINÁMICAMENTE
-    // Usamos una declaración reactiva ($:) para que si los datos cambian, el gráfico se entere
+    let chartContainer;
+    let myChart;
+    let option = {};
+
     $: option = {
         color: ["#88d498", "#dddddd", "#1f4287", "#ff6b6b"],
         tooltip: {
             trigger: "axis",
             axisPointer: { type: "cross", crossStyle: { color: "#999" } },
+            valueFormatter: (value) =>
+                value === "" || value === null ? "-" : formatCurrency(value),
         },
         toolbox: {
-            feature: {
-                dataView: { show: true, readOnly: true, title: "Ver Datos" },
-            },
+            feature: { dataView: { show: true, readOnly: true, title: "Ver Datos" } },
         },
         legend: {
-            data: [
-                "Pagado",
-                "Esperado",
-                "Ingreso Real Acumulado",
-                "Meta Esperada Acumulada",
-            ],
+            data: ["Pagado", "Esperado", "Ingreso Real Acumulado", "Meta Esperada Acumulada"],
             bottom: 0,
         },
-        xAxis: [
-            {
-                type: "category",
-                data: [
-                    "Sep",
-                    "Oct",
-                    "Nov",
-                    "Dic",
-                    "Ene",
-                    "Feb",
-                    "Mar",
-                    "Abr",
-                    "May",
-                    "Jun",
-                    "Jul",
-                    "Ago",
-                ],
-                axisPointer: { type: "shadow" },
-            },
-        ],
+        xAxis: [{ type: "category", data: MONTH_LABELS, axisPointer: { type: "shadow" } }],
         yAxis: [
             {
                 type: "value",
                 name: "Flujo Mensual",
                 min: 0,
                 max: maxMensual,
-                interval: maxMensual / 5, // División perfecta en 5 partes
+                interval: maxMensual / 5,
                 axisLabel: { formatter: "${value}" },
             },
             {
@@ -129,39 +110,20 @@
                 name: "Histórico Anual",
                 min: 0,
                 max: maxAcumulado,
-                interval: maxAcumulado / 5, // División perfecta en 5 partes
+                interval: maxAcumulado / 5,
                 axisLabel: { formatter: "${value}" },
                 splitLine: { show: false },
             },
         ],
         series: [
-            {
-                name: "Pagado",
-                type: "bar",
-                tooltip: {
-                    valueFormatter: (value) =>
-                        "$" + (value ? value.toLocaleString() : 0),
-                },
-                data: annual_vs_monthly_flow_data.pagado_mensual,
-            },
-            {
-                name: "Esperado",
-                type: "bar",
-                tooltip: {
-                    valueFormatter: (value) => "$" + value.toLocaleString(),
-                },
-                data: annual_vs_monthly_flow_data.esperado_mensual,
-            },
+            { name: "Pagado", type: "bar", data: flowData.pagado_mensual },
+            { name: "Esperado", type: "bar", data: flowData.esperado_mensual },
             {
                 name: "Ingreso Real Acumulado",
                 type: "line",
                 yAxisIndex: 1,
                 smooth: true,
-                tooltip: {
-                    valueFormatter: (value) =>
-                        "$" + (value ? value.toLocaleString() : 0),
-                },
-                data: annual_vs_monthly_flow_data.real_acumulado,
+                data: flowData.real_acumulado,
             },
             {
                 name: "Meta Esperada Acumulada",
@@ -169,75 +131,62 @@
                 yAxisIndex: 1,
                 smooth: true,
                 lineStyle: { type: "dashed", width: 2 },
-                tooltip: {
-                    valueFormatter: (value) => "$" + value.toLocaleString(),
-                },
-                data: annual_vs_monthly_flow_data.meta_acumulada,
+                data: flowData.meta_acumulada,
             },
         ],
     };
 
-    // 5. OBSERVAR CAMBIOS EN OPTION PARA ACTUALIZAR EL GRÁFICO
-    // Si los datos llegan después de que el componente montó (frecuente con fetch), esto redibuja automáticamente
     $: if (myChart && option) {
         myChart.setOption(option);
     }
 
     function handleResize() {
-        if (myChart) myChart.resize();
+        myChart?.resize();
     }
 
-    onMount(() => {
-        myChart = echarts.init(chartContainer);
-        myChart.setOption(option);
-        window.addEventListener("resize", handleResize);
-    });
+    async function fetchKpis(lapseId) {
+        try {
+            const url = lapseId ? `/dashboard/metricas/${lapseId}` : `/dashboard/metricas`;
+            const response = await axios.get(url);
+            kpi = response.data.data;
+        } catch (error) {
+            console.error("Error fetching dashboard metrics:", error);
+        }
+    }
 
-    onMount(async () => {
-        // Inicializamos ECharts con la estructura base vacía
-        myChart = echarts.init(chartContainer);
-        myChart.setOption(option);
-        window.addEventListener("resize", handleResize);
-
-        // Llamamos a la función SIN parámetros la primera vez.
-        // Tu backend entenderá que es la carga inicial y buscará el último año.
-        await getAnnualVsMonthlyFlowData();
-    });
-
-    onDestroy(() => {
-        if (myChart) myChart.dispose();
-        window.removeEventListener("resize", handleResize);
-    });
-
-    // 7. FUNCIÓN ASÍNCRONA MODIFICADA
-    // Hacemos que el 'year_id' sea opcional (por defecto undefined)
-    async function getAnnualVsMonthlyFlowData(year_id = undefined) {
+    async function fetchFlow(lapseId) {
         try {
             if (myChart) myChart.showLoading();
-
-            // Si hay year_id construimos la ruta con el ID, si no, llamamos a la ruta base de carga inicial
-            const url = year_id
-                ? `/dashboard/graficos/annual-vs-monthly-flow/${year_id}`
-                : `/dashboard/graficos/annual-vs-monthly-flow`; // <-- Ajusta esta URL a tu ruta base si es distinta
-
+            const url = lapseId
+                ? `/dashboard/graficos/annual-vs-monthly-flow/${lapseId}`
+                : `/dashboard/graficos/annual-vs-monthly-flow`;
             const response = await axios.get(url);
-            const data = response.data.data;
-            console.log("Datos recibidos del backend:", data);
-            console.log(response);
-
-            annual_vs_monthly_flow_year_id =
-                response.data.schoolLapseID.toLocaleString();
-            annual_vs_monthly_flow_data = data;
+            flowData = response.data.data;
         } catch (error) {
-            console.error("Error al obtener datos:", error);
+            console.error("Error fetching annual vs monthly flow:", error);
         } finally {
             if (myChart) myChart.hideLoading();
         }
     }
 
+    let lastLapse = selectedLapse;
+    $: if (selectedLapse !== lastLapse) {
+        lastLapse = selectedLapse;
+        fetchKpis(selectedLapse || undefined);
+        if (canSeeMoney) fetchFlow(selectedLapse || undefined);
+    }
+
+    onMount(() => {
+        if (!canSeeMoney) return;
+        myChart = echarts.init(chartContainer);
+        myChart.setOption(option);
+        window.addEventListener("resize", handleResize);
+        fetchFlow(selectedLapse || undefined);
+    });
+
     onDestroy(() => {
-        if (myChart) myChart.dispose();
         window.removeEventListener("resize", handleResize);
+        myChart?.dispose();
     });
 </script>
 
@@ -245,161 +194,89 @@
     <title>Dashboard</title>
 </svelte:head>
 
-<h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden mb-3">
-    Panel de control
-</h2>
+<h2 class="text-xl md:text-2xl font-bold text-color1 sm:hidden mb-3">Panel de control</h2>
 
-<!-- KPI Cards Grid -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" role="region" aria-label="Indicadores clave">
-    <KpiCard
-        label="Total Estudiantes"
-        value={totalStudents}
-        icon="mdi:account-multiple"
-        color="blue"
-    />
-    <KpiCard
-        label="Representantes legales"
-        value={totalRepresentatives}
-        icon="mdi:account-group"
-        color="green"
-    />
-    <KpiCard
-        label="Deuda Pendiente"
-        value="$" + totalOutstandingDebt
-        icon="mdi:alert-circle"
-        color="red"
-    />
-    <KpiCard
-        label="Estudiantes en Riesgo"
-        value={studentsAtRisk}
-        icon="mdi:shield-alert"
-        color="orange"
-    />
-    <KpiCard
-        label="Tasa Cobranza Mes"
-        value={collectionRate}
-        icon="mdi:chart-line"
-        color="purple"
-    />
-    <KpiCard
-        label="Ingresos Este Mes"
-        value="$" + thisMonthIncome
-        icon="mdi:cash-multiple"
-        color="teal"
-    />
-    <KpiCard
-        label="Pagos Pendientes"
-        value={pendingPayments}
-        icon="mdi:clock-alert"
-        color="amber"
-    />
+<div class="flex justify-end mb-4">
+    {#if schoolLapses?.length}
+        <Input
+            id="filterYear"
+            type="select"
+            bind:value={selectedLapse}
+            classes={"max-w-[190px] mt-0 "}
+        >
+            {#each schoolLapses as lapse}
+                <option value={lapse.id.toString()}>
+                    {lapse.start.slice(0, 4)} - {lapse.end.slice(0, 4)}
+                </option>
+            {/each}
+        </Input>
+    {/if}
 </div>
 
 <div
-    class="w-full    p-6 rounded-md max-w-[1200px] flex flex-col gap-4"
+    class={`grid grid-cols-1 sm:grid-cols-2 ${canSeeMoney ? "lg:grid-cols-4" : "lg:grid-cols-2"} gap-4 mb-6`}
+    role="region"
+    aria-label="Indicadores clave"
 >
-    <div>
-        <div class="flex gap-10 items-start">
-            <h3 class="text-lg font-bold text-gray-800 tracking-tight">
-                Recaudación Anual vs. Flujo Mensual
-            </h3>
-            {#if schoolLapses}
-                <Input
-                    id="filterYear"
-                    type="select"
-                    on:change={(e) => {
-                        console.log("Cambiando año a:", e.target.value);
-                        getAnnualVsMonthlyFlowData(e.target.value);
-                    }}
-                    bind:value={annual_vs_monthly_flow_year_id}
-                    classes={"max-w-[170px] mt-0 "}
-                    style={"margin-top: 0"}
-                >
-                    {#each schoolLapses as lapse}
-                        <option class="bg-gray-50" value={lapse.id.toString()}
-                            >{lapse.start.slice(0, 4)} - {lapse.end.slice(
-                                0,
-                                4,
-                            )}</option
-                        >
-                    {/each}
-                </Input>
-            {/if}
-        </div>
-    </div>
-
-    
-
-    <!-- <div class="mt-6 border-t border-gray-200 pt-6 flex flex-col gap-4">
-        <div class="flex items-center justify-between">
-            <h3 class="text-lg font-bold text-gray-800 tracking-tight">
-                Deuda acumulada a favor (cobro de $1 por estudiante inscrito)
-            </h3>
-            <div class="bg-blue-50 text-blue-800 font-bold px-4 py-2 rounded-md text-xl">
-                {formatCurrency(totalSchoolCharges)}
-            </div>
-        </div>
-
-        {#if schoolChargesByLapse && schoolChargesByLapse.length > 0}
-            <div class="flex flex-wrap gap-3">
-                {#each schoolChargesByLapse as lapse}
-                    <div class="bg-gray-50 border border-gray-200 rounded-md px-4 py-2 flex items-center gap-3">
-                        <span class="text-sm font-medium text-gray-700">
-                            {lapse.school_lapse}
-                        </span>
-                        <span class="text-xs text-gray-500">
-                            {lapse.students} estudiantes
-                        </span>
-                        <span class="text-sm font-bold text-gray-800">
-                            {formatCurrency(lapse.total)}
-                        </span>
-                    </div>
-                {/each}
-            </div>
-        {/if}
-
-        <div class="overflow-x-auto">
-            <table class="min-w-full text-sm">
-                <thead>
-                    <tr class="border-b border-gray-200 text-left text-gray-500">
-                        <th class="py-2 pr-4 font-medium">Estudiante</th>
-                        <th class="py-2 pr-4 font-medium">Cédula</th>
-                        <th class="py-2 pr-4 font-medium">Periodo Escolar</th>
-                        <th class="py-2 font-medium text-right">Monto adeudado</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {#if schoolCharges && schoolCharges.length > 0}
-                        {#each schoolCharges as charge}
-                            <tr class="border-b border-gray-100">
-                                <td class="py-2 pr-4 text-gray-800">{charge.student}</td>
-                                <td class="py-2 pr-4 text-gray-600">{charge.ci}</td>
-                                <td class="py-2 pr-4 text-gray-600">{charge.school_lapse}</td>
-                                <td class="py-2 font-medium text-right text-gray-800">
-                                    {formatCurrency(charge.amount)}
-                                </td>
-                            </tr>
-                        {/each}
-                    {:else}
-                        <tr>
-                            <td colspan="4" class="py-4 text-center text-gray-400">
-                                Aún no hay cobros registrados. Se generan automáticamente al inscribir o reinscribir un estudiante.
-                            </td>
-                        </tr>
-                    {/if}
-                </tbody>
-            </table>
-        </div>
-    </div> -->
+    <KpiCard
+        label="Total Estudiantes Matriculados"
+        value={totalStudents}
+        icon="mdi:account-multiple"
+        color="blue"
+        hint={enrollmentHint}
+        trend={enrollmentTrend}
+    />
+    {#if canSeeMoney}
+        <KpiCard
+            label="Ingresos del Mes"
+            value={thisMonthIncome}
+            icon="mdi:cash-multiple"
+            color="teal"
+            hint={incomeHint}
+        />
+        <KpiCard
+            label="Deuda Total Pendiente"
+            value={totalDebt}
+            icon="mdi:alert-circle"
+            color="red"
+            hint={debtHint}
+        />
+        <KpiCard
+            label="Tasa de Cobranza"
+            value={collectionRate}
+            icon="mdi:chart-line"
+            color="purple"
+            hint={collectionHint}
+        />
+    {:else}
+        <KpiCard
+            label="Representantes legales"
+            value={kpi.total_representatives?.toLocaleString() ?? "0"}
+            icon="mdi:account-group"
+            color="green"
+        />
+    {/if}
 </div>
 
-<div bind:this={chartContainer} class="w-full h-[400px] neumorphism rounded-lg"></div>
+{#if canSeeMoney}
+    <div class="w-full p-6 rounded-md max-w-[1200px] flex flex-col gap-4">
+        <h3 class="text-lg font-bold text-gray-800 tracking-tight">
+            Proyección vs. Recaudación Real
+        </h3>
+    </div>
 
-    <!-- Additional Charts Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6  ">
-        <DebtByCourseChart schoolLapseId={annual_vs_monthly_flow_year_id} />
+    <div bind:this={chartContainer} class="w-full h-[400px] neumorphism rounded-lg"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        <DebtByCourseChart schoolLapseId={selectedLapse} />
+        <AgingChart schoolLapseId={selectedLapse} />
+        <CollectionByChannelChart schoolLapseId={selectedLapse} />
         <CollectionRateTrendChart years={5} />
     </div>
-    <div class="mt-6 ">
-        <TopDebtorsChart schoolLapseId={annual_vs_monthly_flow_year_id} limit={10} />
+
+    <div class="mt-6">
+        <TopDebtorsChart schoolLapseId={selectedLapse} limit={10} />
     </div>
+{/if}
+
+<AttendanceSummaryCard schoolLapseId={selectedLapse} />

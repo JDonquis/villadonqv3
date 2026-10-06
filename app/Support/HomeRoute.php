@@ -10,7 +10,7 @@ class HomeRoute
     public static function forUser(?User $user): string
     {
         return match ($user?->type_user_id) {
-            UserTypeEnum::Representative->value => '/dashboard/mis-hijos',
+            UserTypeEnum::Representative->value => '/dashboard/inicio',
             UserTypeEnum::Teacher->value => '/dashboard/mis-planes',
             default => '/dashboard',
         };

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountStatementController;
+use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AppController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EvaluationPlanController;
@@ -12,8 +13,10 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RepresentativeController;
+use App\Http\Controllers\RepresentativeDashboardController;
 use App\Http\Controllers\RepresentativePaymentController;
 use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\SchoolEventController;
 use App\Http\Controllers\SchoolLapseController;
 use App\Http\Controllers\SectionController;
 use App\Http\Controllers\StudentController;
@@ -55,6 +58,10 @@ Route::middleware(['auth', 'role:administrator', 'module.access'])->group(functi
     Route::get('/dashboard/graficos/debt-by-course/{schoolLapse?}', [AppController::class, 'debtByCourse']);
     Route::get('/dashboard/graficos/collection-rate-trend/{years?}', [AppController::class, 'collectionRateTrend']);
     Route::get('/dashboard/graficos/top-debtors/{limit?}/{schoolLapse?}', [AppController::class, 'topDebtors']);
+    Route::get('/dashboard/graficos/aging/{schoolLapse?}', [AppController::class, 'aging']);
+    Route::get('/dashboard/graficos/collection-by-channel/{schoolLapse?}', [AppController::class, 'collectionByChannel']);
+    Route::get('/dashboard/graficos/attendance-summary/{schoolLapse?}', [AppController::class, 'attendanceSummary']);
+    Route::get('/dashboard/metricas/{schoolLapse?}', [AppController::class, 'metrics']);
 
     Route::get('/dashboard/personal', [UserController::class, 'index'])->name('personal.index');
     Route::get('/dashboard/personal/plantilla', [UserController::class, 'downloadTemplate']);
@@ -150,6 +157,15 @@ Route::middleware(['auth', 'role:administrator', 'module.access'])->group(functi
     Route::get('/dashboard/reportes/certificado/{studentId}', [ReportController::class, 'certificado']);
     Route::get('/dashboard/horarios', [ScheduleController::class, 'index']);
     Route::post('/dashboard/horarios', [ScheduleController::class, 'store']);
+
+    Route::get('/dashboard/comunicados', [AnnouncementController::class, 'index']);
+    Route::post('/dashboard/comunicados', [AnnouncementController::class, 'store']);
+    Route::put('/dashboard/comunicados/{announcement}', [AnnouncementController::class, 'update']);
+    Route::delete('/dashboard/comunicados/{announcement}', [AnnouncementController::class, 'destroy']);
+
+    Route::post('/dashboard/eventos', [SchoolEventController::class, 'store']);
+    Route::put('/dashboard/eventos/{event}', [SchoolEventController::class, 'update']);
+    Route::delete('/dashboard/eventos/{event}', [SchoolEventController::class, 'destroy']);
 });
 
 Route::middleware(['auth', 'role:teacher'])->group(function () {
@@ -183,13 +199,20 @@ Route::middleware(['auth', 'role:administrator,teacher'])->group(function () {
     Route::delete('/dashboard/mis-estudiantes/observaciones/{observation}', [StudentObservationController::class, 'destroy']);
 });
 
+Route::middleware(['auth', 'role:administrator,representative'])->group(function () {
+    Route::get('/dashboard/inicio', [RepresentativeDashboardController::class, 'index']);
+
+    // Información financiera: sólo administración y representantes (sus propios
+    // cargos). Los profesores no acceden a pagos.
+    Route::get('/dashboard/mis-pagos', [RepresentativePaymentController::class, 'index']);
+    Route::post('/dashboard/mis-pagos', [RepresentativePaymentController::class, 'store']);
+    Route::post('/dashboard/mis-pagos/conceptos', [RepresentativePaymentController::class, 'storeCharges']);
+});
+
 Route::middleware(['auth', 'role:administrator,representative,teacher'])->group(function () {
     Route::get('/dashboard/mis-hijos', [RepresentativeController::class, 'misHijos']);
     Route::get('/dashboard/mis-hijos/{student}/horario', [RepresentativeController::class, 'horarioHijo']);
     Route::get('/dashboard/mis-hijos/{student}/materias', [RepresentativeController::class, 'materiasHijo']);
-    Route::get('/dashboard/mis-pagos', [RepresentativePaymentController::class, 'index']);
-    Route::post('/dashboard/mis-pagos', [RepresentativePaymentController::class, 'store']);
-    Route::post('/dashboard/mis-pagos/conceptos', [RepresentativePaymentController::class, 'storeCharges']);
 
     Route::get('/dashboard/perfil', [ProfileController::class, 'index']);
     Route::post('/dashboard/perfil', [ProfileController::class, 'update']);

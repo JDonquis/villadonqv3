@@ -4,6 +4,7 @@
     export let icon = "";
     export let color = "blue";
     export let trend = null;
+    export let hint = "";
 
     const colorClasses = {
         blue: "bg-blue-50 text-blue-700 border-blue-200",
@@ -27,6 +28,9 @@
         <div class="flex-1 min-w-0">
             <p class="text-sm font-medium text-gray-600 truncate">{label}</p>
             <p class="text-2xl md:text-3xl font-bold mt-1 truncate">{value}</p>
+            {#if hint}
+                <p class="text-xs mt-1 text-gray-400 truncate">{hint}</p>
+            {/if}
             {#if trend}
                 <p class="text-xs mt-1 flex items-center gap-1 {trendColorClass}">
                     <iconify-icon icon={trendIcon} width="12" height="12"></iconify-icon>

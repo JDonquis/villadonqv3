@@ -89,6 +89,12 @@
         if (saved) {
             $form.account_payment_id = +saved;
         }
+
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("student_id")) {
+            activeTab = "pagar";
+            showFormPay = true;
+        }
     });
 
     $: if ($form.account_payment_id) {

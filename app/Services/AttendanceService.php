@@ -74,6 +74,81 @@ class AttendanceService
         ];
     }
 
+    /**
+     * Asistencia acumulada por alumno dentro de un período/momento. Un alumno
+     * sin registro en una sesión que le aplica se considera ausente.
+     *
+     * @param  array<int>  $studentIds
+     * @return array<int, array{present:int,excused:int,absent:int,total:int,rate:?float}>
+     */
+    public function getAccumulatedForStudents(array $studentIds, ?int $schoolLapseId = null, ?int $lapseId = null): array
+    {
+        $studentIds = array_values(array_unique(array_filter($studentIds)));
+
+        if (empty($studentIds)) {
+            return [];
+        }
+
+        $students = Student::whereIn('id', $studentIds)->get(['id', 'course_id', 'section_id']);
+
+        $plans = EvaluationPlan::query()
+            ->where('status', 'approved')
+            ->when($schoolLapseId, fn ($q) => $q->where('school_lapse_id', $schoolLapseId))
+            ->when($lapseId, fn ($q) => $q->where('lapse_id', $lapseId))
+            ->get(['id', 'course_id', 'section_id']);
+
+        $sessionsByPlan = EvaluationPlanAttendanceSession::whereIn('evaluation_plan_id', $plans->pluck('id'))
+            ->get(['id', 'evaluation_plan_id'])
+            ->groupBy('evaluation_plan_id');
+
+        $planMeta = $plans->mapWithKeys(fn ($plan) => [
+            $plan->id => ['course_id' => $plan->course_id, 'section_id' => $plan->section_id],
+        ]);
+
+        $allSessionIds = $sessionsByPlan->flatten()->pluck('id');
+
+        $counts = StudentAttendance::whereIn('session_id', $allSessionIds)
+            ->whereIn('student_id', $studentIds)
+            ->selectRaw('student_id, status, COUNT(*) as total')
+            ->groupBy('student_id', 'status')
+            ->get()
+            ->groupBy('student_id');
+
+        $result = [];
+
+        foreach ($students as $student) {
+            $applicableSessions = 0;
+
+            foreach ($sessionsByPlan as $planId => $sessions) {
+                $meta = $planMeta[$planId] ?? null;
+
+                if (! $meta) {
+                    continue;
+                }
+
+                if ((int) $meta['course_id'] === (int) $student->course_id
+                    && (int) $meta['section_id'] === (int) $student->section_id) {
+                    $applicableSessions += $sessions->count();
+                }
+            }
+
+            $byStatus = $counts->get($student->id, collect());
+            $present = (int) ($byStatus->firstWhere('status', 'present')?->total ?? 0);
+            $excused = (int) ($byStatus->firstWhere('status', 'excused')?->total ?? 0);
+            $absent = max(0, $applicableSessions - $present - $excused);
+
+            $result[$student->id] = [
+                'present' => $present,
+                'excused' => $excused,
+                'absent' => $absent,
+                'total' => $applicableSessions,
+                'rate' => $applicableSessions > 0 ? round(($present / $applicableSessions) * 100, 1) : null,
+            ];
+        }
+
+        return $result;
+    }
+
     public function getOrCreateSession(int $planId, string $date): EvaluationPlanAttendanceSession
     {
         $session = EvaluationPlanAttendanceSession::where('evaluation_plan_id', $planId)

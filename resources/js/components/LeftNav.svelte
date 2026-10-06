@@ -74,6 +74,12 @@
             name: "Notas",
             slug: "notas",
         },
+        {
+            icon: "mdi:bullhorn-outline",
+            href: "/dashboard/comunicados",
+            name: "Comunicados",
+            slug: "comunicados",
+        },
     ];
 
     const teacherNavPages = [
@@ -102,6 +108,11 @@
 
     const repNavPages = [
         {
+            icon: "mdi:view-dashboard-outline",
+            href: "/dashboard/inicio",
+            name: "Inicio",
+        },
+        {
             icon: "mdi:school",
             href: "/dashboard/mis-hijos",
             name: "Mis Hijos",
@@ -118,6 +129,12 @@
     $: isAdmin = Number($page.props.auth?.is_admin) === 1;
     $: hasRepStudents = $page.props.auth?.has_rep_students === true;
     $: allowedModules = $page.props.auth?.modules || [];
+
+    $: homeHref = isTeacher
+        ? "/dashboard/mis-planes"
+        : isRep
+          ? "/dashboard/inicio"
+          : "/dashboard";
 
     $: navPages = (() => {
         if (isTeacher) {
@@ -162,7 +179,7 @@
     </button>
     <a
         use:inertia
-        href="/dashboard"
+        href={homeHref}
         class=" text-lg md:block p-4 text-center w-full flex"
     >
         <img

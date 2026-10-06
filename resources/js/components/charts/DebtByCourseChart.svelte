@@ -26,33 +26,27 @@
     let myChart;
     let option = {};
 
-    async function fetchData() {
+    function handleResize() {
+        myChart?.resize();
+    }
+
+    async function fetchData(lapseId) {
         try {
-            const url = schoolLapseId
-                ? `/dashboard/graficos/debt-by-course/${schoolLapseId}`
+            const url = lapseId
+                ? `/dashboard/graficos/debt-by-course/${lapseId}`
                 : `/dashboard/graficos/debt-by-course`;
             const response = await axios.get(url);
             const data = response.data.data;
 
-            const colors = MATTER_PASTELS.map((c) => c.bg);
-
             option = {
-                color: colors,
+                color: MATTER_PASTELS.map((c) => c.bg),
                 tooltip: {
                     trigger: "axis",
                     axisPointer: { type: "shadow" },
                     valueFormatter: (value) => "$" + value.toLocaleString(),
                 },
-                legend: {
-                    data: ["Inscripción", "Mensualidades"],
-                    bottom: 0,
-                },
-                grid: {
-                    left: "3%",
-                    right: "4%",
-                    bottom: "15%",
-                    containLabel: true,
-                },
+                legend: { data: ["Inscripción", "Mensualidades"], bottom: 0 },
+                grid: { left: "3%", right: "4%", bottom: "15%", containLabel: true },
                 xAxis: {
                     type: "category",
                     data: data.labels,
@@ -64,37 +58,31 @@
                     axisLabel: { formatter: "${value}" },
                 },
                 series: [
-                    {
-                        name: "Inscripción",
-                        type: "bar",
-                        stack: "total",
-                        data: data.inscription,
-                    },
-                    {
-                        name: "Mensualidades",
-                        type: "bar",
-                        stack: "total",
-                        data: data.monthly,
-                    },
+                    { name: "Inscripción", type: "bar", stack: "total", data: data.inscription },
+                    { name: "Mensualidades", type: "bar", stack: "total", data: data.monthly },
                 ],
             };
-
-            if (myChart) {
-                myChart.setOption(option);
-            }
         } catch (error) {
             console.error("Error fetching debt by course:", error);
         }
     }
 
+    $: if (myChart) {
+        fetchData(schoolLapseId);
+    }
+
+    $: if (myChart && option) {
+        myChart.setOption(option);
+    }
+
     onMount(() => {
         myChart = echarts.init(chartContainer);
-        fetchData();
-        window.addEventListener("resize", () => myChart?.resize());
+        window.addEventListener("resize", handleResize);
     });
 
     onDestroy(() => {
-        if (myChart) myChart.dispose();
+        window.removeEventListener("resize", handleResize);
+        myChart?.dispose();
     });
 </script>
 

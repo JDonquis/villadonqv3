@@ -17,12 +17,12 @@ class HomeRouteTest extends TestCase
         $this->assertSame('/dashboard', HomeRoute::forUser($user));
     }
 
-    public function test_representative_goes_to_mis_hijos(): void
+    public function test_representative_goes_to_inicio(): void
     {
         $user = new User;
         $user->type_user_id = UserTypeEnum::Representative->value;
 
-        $this->assertSame('/dashboard/mis-hijos', HomeRoute::forUser($user));
+        $this->assertSame('/dashboard/inicio', HomeRoute::forUser($user));
     }
 
     public function test_teacher_goes_to_mis_planes(): void
