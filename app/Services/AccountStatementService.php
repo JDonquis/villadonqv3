@@ -8,6 +8,7 @@ use App\Models\Course;
 use App\Models\SchoolLapse;
 use App\Models\Section;
 use App\Models\Student;
+use App\Services\PaymentNature;
 
 class AccountStatementService
 {
@@ -166,9 +167,17 @@ class AccountStatementService
             'balances.balancePayments.payment.accountPayment.method',
         ])->paginate($perPage)->withQueryString();
 
+        // Terminología de pagos compartida con el libro de ventas
+        $nature = PaymentNature::indexForBalancePayments(
+            $paginatedStudents->getCollection()
+                ->flatMap(fn ($student) => $student->balances)
+                ->flatMap(fn ($balance) => $balance->balancePayments)
+                ->values()
+        );
+
         // Transformation to match frontend expectation
-        $mappedItems = $paginatedStudents->getCollection()->map(function ($student) {
-            $transformedBalances = $student->balances->map(function ($balance) {
+        $mappedItems = $paginatedStudents->getCollection()->map(function ($student) use ($nature) {
+            $transformedBalances = $student->balances->map(function ($balance) use ($nature) {
                 $balanceDebt = $balance->currentDebt();
                 $hasRealDebt = $balanceDebt > 0;
                 $balanceIncome = $balance->balancePayments->sum('amount');
@@ -180,7 +189,11 @@ class AccountStatementService
                     'inscription' => $balance->inscription,
                     'inscription_status' => $balance->inscription_status,
                     'months' => collect(self::MONTHS)->mapWithKeys(function ($month) use ($balance) {
-                        return [$month => $balance->$month, $month.'_status' => $balance->{$month.'_status'}];
+                        return [
+                            $month => $balance->$month,
+                            $month.'_status' => $balance->{$month.'_status'},
+                            $month.'_reminded' => $balance->{$month.'_reminded'},
+                        ];
                     }),
                     'total_debt' => $balanceDebt,
                     'total_income' => $balanceIncome,
@@ -190,6 +203,7 @@ class AccountStatementService
                         ->map(fn ($bps) => $bps->map(fn ($bp) => [
                             'id' => $bp->id,
                             'amount' => $bp->amount,
+                            'concept' => $nature->labelFor($bp),
                             'payment' => $bp->payment ? [
                                 'id' => $bp->payment->id,
                                 'date' => $bp->payment->date,

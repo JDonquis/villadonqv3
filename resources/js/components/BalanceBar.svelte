@@ -147,9 +147,25 @@
             tooltipVisible = false;
         }, 150);
     }
+
+    function getConceptBadgeStyle(concept = '') {
+    const c = concept.toLowerCase();
+    
+    if (c.includes('pago adel') || c.includes('adelantado')) {
+        return 'bg-blue-100 text-blue-700 border-blue-200'; // Pago Adelantado (Mes Futuro Completo)
+    }
+    if (c.includes('anticipado')) {
+        return 'bg-blue/10 text-color2 border-color1/10'; // Abono Anticipado (Mes Futuro Parcial)
+    }
+    if (c.includes('abono')) {
+        return 'bg-yellow/20 text-brown border-yellow'; // Abono (Pago Parcial)
+    }
+    // Pago de Mensualidad Completo (Por defecto o exacto)
+    return 'bg-emerald-50 text-emerald-700 border-emerald-100';
+}
 </script>
 
-<div {id} class=" rounded-lg {classes}">
+<div {id} class=" rounded-lg  {classes}">
     {#each balances as balance, indexYear}
         <div class="flex gap-4 items-center mt-2 mb-2">
             {#if !balance.school_lapse?.status || balances.length > 1}
@@ -242,6 +258,12 @@
                                     {/if}
                                 </p>
 
+                                {#if balance[name + '_reminded']}
+                                    <span class="absolute top-0.5 right-0.5 w-3.5 h-3.5 bg-amber-500 text-white text-[7px] font-bold rounded-full flex items-center justify-center" title="Recordatorio enviado">
+                                        <iconify-icon icon="mdi:bell-ring" width="9" height="9"></iconify-icon>
+                                    </span>
+                                {/if}
+
                                 <!-- 5. Conditioned DOM Node: Completely unmounted on student list / read-only views -->
                                 <div
                                     class="text-xs months_to_pay absolute top-0.5 left-0 w-full text-black h-[95%] z-40
@@ -282,6 +304,12 @@
                                         ${Math.abs(balance[name])}
                                     {/if}
                                 </p>
+
+                                {#if balance[name + '_reminded']}
+                                    <span class="absolute top-0.5 right-0.5 w-3.5 h-3.5 bg-amber-500 text-white text-[7px] font-bold rounded-full flex items-center justify-center" title="Recordatorio enviado">
+                                        <iconify-icon icon="mdi:bell-ring" width="9" height="9"></iconify-icon>
+                                    </span>
+                                {/if}
                             </div>
                         {/each}
                     {/if}
@@ -292,29 +320,49 @@
 
     <!-- Shared Tooltip Portal -->
     {#if tooltipVisible}
-        <!-- svelte-ignore a11y-no-static-element-interactions -->
-        <div
-            class="min-h-[100px] w-fit bg-white text-dark border border-gray-200 p-2 shadow-lg rounded-md z-20"
-            style={tooltipStyle}
-            on:mouseenter={() => clearTimeout(tooltipHideTimeout)}
-            on:mouseleave={scheduleTooltipHide}
-        >
-            <iconify-icon
-                icon="teenyicons:up-solid"
-                width="14"
-                height="14"
-                class="text-dark absolute -top-2 z-10 inset-x-0 mx-auto w-max"
-            />
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <div
+        class="min-h-[100px] w-64 bg-white text-gray-800 border border-gray-200 p-3 shadow-xl rounded-lg z-20 text-left"
+        style={tooltipStyle}
+        on:mouseenter={() => clearTimeout(tooltipHideTimeout)}
+        on:mouseleave={scheduleTooltipHide}
+    >
+        <iconify-icon
+            icon="teenyicons:up-solid"
+            width="14"
+            height="14"
+            class="text-white drop-shadow-sm absolute -top-2 z-10 inset-x-0 mx-auto w-max"
+        />
+
+        <div class="space-y-3 divide-y divide-gray-100">
             {#each tooltipPayments as payment}
-                <div class="flex flex-col gap-0.5 items-center mb-2 p-1 relative">
-                    <p class="text-xs">{payment.payment.date}</p>
-                    <div class="flex items-center gap-1">
-                        <p class="text-sm">Total: ${payment.payment.total_in_dolars}</p>
-                        <p class="text-xs">Ref: {payment.payment.reference}</p>
+                <div class="pt-2 first:pt-0 flex flex-col gap-1.5">
+                    <!-- Fecha y Badge de Concepto -->
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-[11px] text-gray-400 font-medium">{payment.payment.date}</span>
+                        <span class="px-2  text-[10px] font-semibold rounded-full border {getConceptBadgeStyle(payment.concept)}">
+                            {((payment.concept || 'Abono').split(' ').slice(0, -1).join(' ').replace("-", "") || 'Abono')}
+                        </span>
                     </div>
-                    <p class="text-sm font-bold">Abonado: ${payment.amount}</p>
+
+                    <!-- Monto Aplicado al Mes -->
+                    <div class="bg-gray-50 rounded-md p-2 flex justify-between items-center border border-gray-100">
+                        <span class="text-xs text-gray-500 font-medium">Afectó a este mes:</span>
+                        <span class="text-sm font-bold text-gray-900">${payment.amount}</span>
+                    </div>
+
+                    <!-- Detalle del Pago Original/Transacción -->
+                    <div class="flex items-center justify-between text-xs text-gray-500 px-0.5">
+                        <span>Pago total TRX: <strong class="text-gray-700">${payment.payment.total_in_dolars}</strong></span>
+                        {#if payment.payment.reference}
+                            <span class="text-[11px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-mono">
+                                Ref: {payment.payment.reference}
+                            </span>
+                        {/if}
+                    </div>
                 </div>
             {/each}
         </div>
-    {/if}
+    </div>
+{/if}
 </div>

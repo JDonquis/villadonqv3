@@ -19,7 +19,35 @@ class PaymentService
 
     public function getAll($params = [], ?array $allowedStudentIds = null)
     {
-        $query = Payment::query()
+        $query = $this->baseQuery($params, $allowedStudentIds);
+
+        $totalIncome = (clone $query)->where('status', '!=', 0)->sum('total_in_dolars');
+
+        $query->orderBy('created_at', 'desc');
+
+        $payments = $query->paginate($params['per_page'] ?? 25)->withQueryString();
+
+        return [
+            'payments' => $payments,
+            'total_income' => $totalIncome,
+        ];
+    }
+
+    public function getAllForExport($params = [], ?array $allowedStudentIds = null)
+    {
+        return $this->baseQuery($params, $allowedStudentIds)
+            ->with('balancePayments')
+            ->where('status', 1)
+            ->orderBy('date', 'desc')
+            ->orderBy('id', 'desc')
+            ->get();
+    }
+
+    private function baseQuery($params, ?array $allowedStudentIds = null)
+    {
+        $params = is_array($params) ? $params : [];
+
+        return Payment::query()
             ->with(
                 'students.course',
                 'students.section',
@@ -140,18 +168,7 @@ class PaymentService
                         $sub->where('month', $month);
                     });
                 }
-            });
-
-        $totalIncome = (clone $query)->where('status', '!=', 0)->sum('total_in_dolars');
-
-        $query->orderBy('created_at', 'desc');
-
-        $payments = $query->paginate($params['per_page'] ?? 25)->withQueryString();
-
-        return [
-            'payments' => $payments,
-            'total_income' => $totalIncome,
-        ];
+});
     }
 
     public function create(array $data, ?array $allowedStudentIds = null): Payment

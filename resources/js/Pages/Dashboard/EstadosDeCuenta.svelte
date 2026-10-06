@@ -2,9 +2,10 @@
     import BalanceBar from "../../components/BalanceBar.svelte";
     import Search from "../../components/Search.svelte";
     import Table from "../../components/Table.svelte";
-    import html2canvas from "html2canvas";
     import { page, router } from "@inertiajs/svelte";
     import { displayAlert } from "../../stores/alertStore";
+    import { convertUsdToBs, getDolarRateByDate } from "../../utils/dolarApi";
+    import { formatBsInput } from "../../utils/formatters";
 
     export let data = [];
     export let config;
@@ -25,6 +26,9 @@
     ];
 
     let showTotalDebt = false;
+    let showConfirmModal = false;
+    let pendingBalanceId = null;
+    let pendingStudentName = '';
     $: urlParams = new URLSearchParams($page.url.split("?")[1] || "");
     $: tableData = {
         ...data?.students,
@@ -134,92 +138,186 @@
         };
     }
 
-    async function sendToWhatsApp(student) {
-        const element = document.getElementById(`balance-bar-${student.id}`);
+    const MONTH_LABELS = {
+        january: "Enero",
+        february: "Febrero",
+        march: "Marzo",
+        april: "Abril",
+        may: "Mayo",
+        june: "Junio",
+        july: "Julio",
+        august: "Agosto",
+        september: "Septiembre",
+        october: "Octubre",
+        november: "Noviembre",
+        december: "Diciembre",
+    };
 
-        if (!element) return;
+    function getOutstandingMonths(student) {
+        const balances = Array.isArray(student?.balances) ? student.balances : [];
+        const months = [];
 
-        try {
-            const canvas = await html2canvas(element, {
-                scale: 2,
-                backgroundColor: "#ffffff",
-                logging: false,
-                useCORS: true,
+        Object.entries(MONTH_LABELS).forEach(([key, label]) => {
+            const hasDebt = balances.some((balance) => {
+                const monthData = balance?.months ?? {};
+                const status = monthData[`${key}_status`] ?? balance?.[`${key}_status`];
+                const amount = Number(monthData[key] ?? balance?.[key] ?? 0);
+
+                return (
+                    status === "debt" ||
+                    status === "partially_paid" ||
+                    (status === "pending" && amount < 0)
+                );
             });
 
-            // Convert canvas to blob
-            const blob = await new Promise((resolve) =>
-                canvas.toBlob(resolve, "image/png"),
-            );
-
-            // Copy image FIRST
-            const item = new ClipboardItem({ "image/png": blob });
-            await navigator.clipboard.write([item]);
-
-            let phoneNumber = student.representative.user.phone_number.replace(
-                /[ -]/g,
-                "",
-            );
-
-            if (!phoneNumber || phoneNumber.length < 9) return;
-
-            if (!phoneNumber.startsWith("+") && !phoneNumber.startsWith("58")) {
-                phoneNumber = "58" + phoneNumber;
+            if (hasDebt) {
+                months.push(label);
             }
+        });
 
-            phoneNumber = phoneNumber.replace("+", "");
+        return months;
+    }
 
-            const text = `🔹 *Recordatorio de Pago* 🔹
+    async function sendToWhatsApp(student) {
+        let phoneNumber = student.representative.user.phone_number?.replace(
+            /[ -]/g,
+            "",
+        );
 
-Hola ${student.representative.user.name} ${student.representative.user.last_name}, esperamos que se encuentre muy bien.
-
-Le contactamos de la administración para informarle que la mensualidad de su representado se encuentra vencida:
-
-👤 *Estudiante:* ${student.name} ${student.last_name}
-
-Le agradeceríamos ponerse al día a la brevedad posible para actualizar el estatus de su cuenta y recordando que la institución debe cumplir compromisos administrativos.
-
-ℹ️ *Nota importante sobre la imagen adjunta:*
-Por favor, *haga clic sobre la imagen para abrirla en pantalla completa*. Así podrá visualizar correctamente todo el calendario escolar, los meses solventes (en verde) y el desglose exacto de los montos pendientes (en rojo).
-
-Si ya realizó el pago, por favor ignore este mensaje o envíenos el comprobante. ¡Gracias por su apoyo continuo! ✨`;
-
-            // OPEN WHATSAPP AFTER clipboard succeeds
-            window.open(
-                `https://wa.me/${phoneNumber}?text=${encodeURIComponent(text)}`,
-                "_blank",
-            );
-
-            // alert(
-            //     "Imagen copiada al portapapeles. Solo pega la imagen en WhatsApp.",
-            // );
+        if (!phoneNumber || phoneNumber.length < 9) {
             displayAlert({
-                type: "info",
-                message:
-                    "Imagen copiada al portapapeles. Solo pega la imagen en WhatsApp.",
+                type: "error",
+                message: "No hay un número de WhatsApp válido para este representante.",
             });
-        } catch (err) {
-            console.error("Error al copiar al portapapeles:", err);
+            return;
+        }
 
-            // Fallback download
-            const canvas = await html2canvas(element);
+        if (!phoneNumber.startsWith("+") && !phoneNumber.startsWith("58")) {
+            phoneNumber = "58" + phoneNumber;
+        }
 
-            const link = document.createElement("a");
-            link.download = `balance-${student.name}-${student.last_name}.png`;
-            link.href = canvas.toDataURL();
-            link.click();
+        phoneNumber = phoneNumber.replace("+", "");
 
-            // displayInfoAlert(
-            //     "No se pudo copiar al portapapeles. Se ha descargado la imagen, por favor envíala manualmente por WhatsApp.",
-            // );
+        const totalUsd = Number(
+            student?.total_debt ??
+                (Array.isArray(student?.balances)
+                    ? student.balances.reduce(
+                          (sum, balance) => sum + (Number(balance?.total_debt) || 0),
+                          0,
+                      )
+                    : 0),
+        );
+
+
+        const monthsText = getOutstandingMonths(student).join(", ") || "ningún mes";
+        const totalUsdText = `$${Number(totalUsd || 0).toFixed(2)}`;
+        const colegio = config?.name || "el colegio";
+        const repName = `${student.representative?.user?.name ?? ""} ${student.representative?.user?.last_name ?? ""}`.trim();
+        const studentName = `${student?.name ?? ""} ${student?.last_name ?? ""}`.trim();
+
+        const paymentLink = `${window.location.origin}/dashboard/mis-pagos`;
+
+        const text = `Hola ${repName}:
+
+Le escribimos desde ${colegio} para informarle que su representado ${studentName} tiene una deuda pendiente de ${totalUsdText}.
+
+Ingrese a este link para más información y proceder con el pago: ${paymentLink}`;
+
+        window.open(
+            `https://wa.me/${phoneNumber}?text=${encodeURIComponent(text)}`,
+            "_blank",
+        );
+
+        // Encontrar el balance del lapso activo (status = 1) o el más reciente
+        const activeBalance = student.balances?.find(b => b.school_lapse?.status === 1)
+            ?? student.balances?.[0];
+
+        if (activeBalance) {
+            pendingBalanceId = activeBalance.id;
+            pendingStudentName = studentName;
+            showConfirmModal = true;
+        } else {
             displayAlert({
                 type: "info",
-                message:
-                    "No se pudo copiar al portapapeles. Se ha descargado la imagen, por favor envíala manualmente por WhatsApp.",
+                message: "Se abrió WhatsApp con el mensaje listo para enviar.",
             });
         }
     }
+
+    async function confirmReminder(sent) {
+        if (!sent || !pendingBalanceId) {
+            showConfirmModal = false;
+            pendingBalanceId = null;
+            pendingStudentName = '';
+            return;
+        }
+
+        try {
+            const response = await fetch('/dashboard/estados-de-cuenta/marcar-recordatorio', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({ balance_student_id: pendingBalanceId }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                displayAlert({
+                    type: "success",
+                    message: `Recordatorio de ${data.month} guardado.`,
+                });
+            } else {
+                displayAlert({
+                    type: "error",
+                    message: data.message || "Error al guardar recordatorio",
+                });
+            }
+        } catch (error) {
+            displayAlert({
+                type: "error",
+                message: "Error de conexión al guardar recordatorio",
+            });
+        }
+
+        showConfirmModal = false;
+        pendingBalanceId = null;
+        pendingStudentName = '';
+    }
+
+    // Helper para saber si algún balance tiene recordatorio en el mes actual
+    function hasCurrentMonthReminder(student) {
+        const monthEn = new Date().toLocaleString('en-US', { month: 'long' }).toLowerCase(); // english month key
+        return student.balances?.some(b => b.months?.[`${monthEn}_reminded`]) ?? false;
+    }
 </script>
+
+{#if showConfirmModal}
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+        <h3 class="text-lg font-semibold text-color1 mb-3">Confirmar envío</h3>
+        <p class="text-gray-600 mb-4">
+            ¿Se envió el mensaje al representante de <strong>{pendingStudentName}</strong>?
+        </p>
+        <div class="flex gap-3 justify-end">
+            <button
+                on:click={() => confirmReminder(false)}
+                class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
+            >
+                No / Cancelar
+            </button>
+            <button
+                on:click={() => confirmReminder(true)}
+                class="px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg transition"
+            >
+                Sí, se envió
+            </button>
+        </div>
+    </div>
+</div>
+{/if}
 
 <svelte:head>
     <title>Estados de Cuenta</title>
@@ -432,17 +530,28 @@ Si ya realizó el pago, por favor ignore este mensaje o envíenos el comprobante
                     >{student.representative.user.name}
                     {student.representative.user.last_name}
 
+                    <div class="relative">
                     <button
                         title="Enviar por WhatsApp"
                         on:click={() => sendToWhatsApp(student)}
-                        class="text-green cursor-pointer p-1 hover:bg-gray-100 hidden group-hover:inline-flex"
+                        class="text-green cursor-pointer p-1 hover:bg-gray-100 group-hover:inline-flex
+                            {hasCurrentMonthReminder(student) ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : ''}"
                     >
                         <iconify-icon
                             icon="ic:baseline-whatsapp"
                             width="14"
                             height="14"
                         ></iconify-icon>
+                        {#if hasCurrentMonthReminder(student)}
+                            <span class="absolute -top-1 -right-1 w-5 h-5 bg-emerald-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center" title="Recordatorio enviado este mes">
+                                <iconify-icon icon="mdi:check" width="12" height="12"></iconify-icon>
+                            </span>
+                            <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-gray-800 text-white text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+                                Ya recordado este mes
+                            </span>
+                        {/if}
                     </button>
+</div>
                 </td>
             </tr>
         {/each}

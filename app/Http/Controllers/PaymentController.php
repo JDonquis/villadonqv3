@@ -7,6 +7,7 @@ use App\Models\MainConfig;
 use App\Models\PaymentConcept;
 use App\Services\MainConfigService;
 use App\Services\PaymentService;
+use App\Services\SalesBookService;
 use App\Support\ErrorTranslator;
 use Exception;
 use Illuminate\Http\Request;
@@ -109,5 +110,17 @@ class PaymentController extends Controller
 
             return redirect('/dashboard/pagos')->withErrors(['data' => ErrorTranslator::translate($e)]);
         }
+    }
+
+    public function libroVentas(Request $request)
+    {
+        $filters = $request->all();
+        $payments = $this->paymentService->getAllForExport($filters);
+
+        return (new SalesBookService)->export(
+            $payments,
+            'libro_ventas_'.now()->format('Y_m_d'),
+            $filters
+        );
     }
 }

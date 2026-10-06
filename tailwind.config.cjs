@@ -25,6 +25,7 @@ const colorClasses = {
     indigo: colors.indigo,
     orange: "#FFA552",
     blue: "#74b9ff",
+    brown: "#a0522d",
 };
 module.exports = {
     content: [
@@ -65,6 +66,7 @@ module.exports = {
             indigo: colors.indigo,
             orange: "#FFA552",
             blue: "#74b9ff",
+            brown: "#a0522d",
         },
         extend: {},
     },

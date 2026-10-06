@@ -895,3 +895,58 @@ Petición: mostrar un indicador pequeño en el botón de observaciones junto al 
 - `php -l` en todos los PHP nuevos/tocados; `vendor/bin/phpunit` OK (6 tests; `HomeRouteTest` actualizado a `/dashboard/inicio`). `yarn run build` OK.
 - Sonda de humo temporal (luego borrada, 7 casos, `DatabaseTransactions`): admin `/dashboard` 200, `/dashboard/metricas` JSON, charts JSON, `/dashboard/comunicados` 200, rep `/dashboard/inicio` 200, rep `/dashboard` 403, comunicado creado por admin visible para el representante.
 - Se corrieron `php artisan migrate --force` y `db:seed --class=ModuleSeeder`; no se dejaron datos de prueba.
+
+### Motivo de rechazo visible arriba del modal (2026-10-02)
+Reporte: al rechazar un plan con motivo, el profesor "no lo veía en ningún lado". **El dato nunca estuvo roto**: `EvaluationPlanService::reject()` (~668) guarda `admin_note`, `formatPlan()` (~50) lo manda en el payload y `getPlansForTeacher()` (~181-185) mapea la lista por `formatPlan`, así que cada fila de MisPlanes ya lo traía; `MisPlanes.svelte` resuelve `selectedPlan` desde `data.plans`. Eran dos problemas de UI en `PlanUnitsView.svelte`:
+- **Posición**: el bloque era el **quinto y último** (después de balance, unidades, tablas de topics y pie), y el modal es `max-h-[98vh] overflow-auto`, así que exigía varios scrolls.
+- **Contraste ilegible**: usaba `text-redLight` (`#ff6464`) y `text-red` (`#FF6B6B`) sobre `bg-red/10`. Compuesto sobre la tarjeta blanca el fondo real es `#FFF0F0`, o sea **2.62:1** de contraste, muy por debajo del 4.5:1 de WCAG AA: texto rosa pálido sobre rosa casi blanco.
+
+Cambio (un solo archivo, `PlanUnitsView.svelte`): el bloque se movió a después de la tarjeta del encabezado (justo bajo título/descripción) y antes de la de balance; el `space-y-5` del wrapper (línea 14) ya aporta el espaciado. Encabezado en `text-color1` (`#17223B`), icono y cuerpo en `text-[#B91C1C]`, chip circular del icono en `bg-red/20`, borde `border-2 border-red/40` y `whitespace-pre-line` en el `<p>` para que un motivo de varias líneas conserve los saltos. Se mantiene la guarda `{#if plan.status === "rejected" && plan.admin_note}`, así que aprobados y pendientes no cambian. Como el componente es compartido, el arreglo también mejora `PlanesEvaluacion` (admin) y `MateriasHijo` (representante) sin tocar otros archivos.
+
+- **No poner el aviso antes del encabezado**: `Modal.svelte:58` pone el botón de cerrar en `absolute right-4 top-4`, así que encima de la tarjeta de encabezado se solaparía. Bajo el encabezado es lo más alto posible sin chocar.
+- **Contraste verificado con estilos computados en el navegador**, componiendo el alfa a mano (usar el `rgba` crudo engaña: `bg-red/10` sobre blanco da `#FFF0F0`, no `#FF6B6B`): motivo `#B91C1C` sobre `#FFF0F0` = **5.85:1** (cumple AA), encabezado 14.3:1. Antes era 2.62:1. `whitespace-pre-line` confirmado con 2 cajas de línea para un motivo de 2 líneas.
+- **Ojo con los rojos**: `tailwind.config.cjs` **reemplaza** `theme.colors`, así que `red` es un color plano (`#FF6B6B`) sin matices. `text-red-700`, `bg-red-50`, `text-red-600`, `bg-red-100` **no existen** en el CSS compilado y salen como clases muertas en varios archivos (`KpiCard`, `PaymentCard`, `FilterControls`, `AsistenciaMatrix`). Para un rojo legible hay que usar hex arbitrario (`text-[#B91C1C]`, precedente en `ImportResultModal.svelte`) o `color1`.
+- Verificado con SSR del componente (5 casos: rechazado con motivo visible; sin motivo, motivo vacío, aprobado con nota vieja y pendiente sin mostrar) y `corepack yarn run build` OK (43.19s, sin warnings nuevos). Scripts y harness temporales borrados.
+- Comportamiento esperado: cuando el profesor edita y reenvía, `updatePlan()` limpia `admin_note` (~363 y ~405) y el plan vuelve a pendiente, así que el aviso desaparece solo.
+- **Fuera de alcance**: la etiqueta "Rechazado" de la tabla en `MisPlanes.svelte:91` es `bg-red text-white` (~2.8:1, también apagada). Queda pendiente de decidir.
+
+---
+
+## Libro de ventas (Excel) + terminología unificada en BalanceBar
+
+Petición: exportar los pagos de `/dashboard/pagos` a un Excel con columnas Estudiante(s), Año, Concepto, Pagado (Bs), Referencia y Método de pago; una fila por pago, agrupado por fecha de transacción en orden descendente, con subtotal por día y total general arriba y abajo. El botón ya existía como botón inerte en `Pagos.svelte`.
+
+### Bug encontrado primero
+
+La primera versión del enlace quedó con sintaxis de PHP dentro de un atributo Svelte (`href="/dashboard/pagos/libro-ventas<?= ... ?>"`). El navegador pedía `/dashboard/pagos/libro-ventas%3C`, que no matchea la ruta GET y cae en `PUT/DELETE /dashboard/pagos/{id}`: **The GET method is not supported for route dashboard/pagos/libro-ventas%3C. Supported methods: PUT, DELETE.** La ruta sí estaba registrada; el problema era 100% el href. Ahora es `href={`/dashboard/pagos/libro-ventas${$page.url.search}`}`, que además arrastra los filtros vigentes.
+
+### Clasificación compartida (una sola fuente de verdad)
+
+`app/Services/PaymentNature.php` nuevo. Reconstruye el estado antes/después de cada aplicación de `balance_payments` **reproduciendo el historial hacia atrás desde el saldo actual** de `BalanceStudent`: `before = after + amount`. No necesita adivinar el precio para saber si la deuda quedó saldada.
+
+- `Pago de Inscripción` (salda la deuda) / `Abono a Inscripción` (parcial).
+- `Pago de Mensualidad <Mes>` / `Abono a Mensualidad <Mes>` / `Abono Anticipado - <Mes>` / `Pago Adelantado - Mensualidad <Mes>`, con `MONTH_ES` para el nombre en español.
+- Precio real = `MainConfig.monthly_payment` con el descuento de exención del estudiante; inscripción vía `EducationLevel::inscriptionPrice($config, $courseId)`.
+- `indexFor(...)` (desde pagos) y `indexForBalancePayments(...)` (desde aplicaciones) — el segundo carga **todas** las aplicaciones de esos balances, no solo las visibles, que es lo que hace correcto el antes/después.
+
+`AccountStatementService` ahora calcula el índice una vez por página y agrega `concept` a cada elemento de `balance_payments`; `BalanceBar.svelte` lo muestra en el tooltip (antes solo decía "Abonado"). **Ojo**: el closure externo `map(function ($balance) ...)` necesita `use ($nature)` — las arrow functions internas capturan del closure padre, no del scope externo.
+
+### Exportación
+
+- `PaymentService`: se extrajo `baseQuery(...)` de `getAll(...)` para que el export use **exactamente los mismos filtros**; `getAllForExport(...)` = baseQuery + `status = 1` + `balancePayments` + orden por `date desc`. No volver a escribir los filtros a mano en el controlador.
+- `SalesBookService`: layout = institución / LIBRO DE VENTAS / fecha de generación / TOTAL GENERAL (fórmula) / encabezados / por día: título con `translatedFormat('l j \d\e F \d\e Y')`, una fila por pago y `Subtotal del día` con `=SUM(D..:D..)` / TOTAL GENERAL final = `=SUM` de los subtotales.
+- Los montos van como `float` real (no `number_format`) para que las fórmulas sirvan; `Referencia` con `setCellValueExplicit(..., TYPE_STRING)` para conservar ceros a la izquierda.
+
+### Gotchas de PhpSpreadsheet
+
+- `getStyle('D1')->getNumberFormat()` devuelve `Style\NumberFormat`, cuyo método es **`setFormatCode()`** — no existen `setFormat()` ni `setFormatNumberFormatCode()`.
+- `getCell($col, $row)` con enteros no existe: hay que pasar la coordenada (`getCell('A1')`).
+- La columna real es `total_in_dolars` (con una sola "l"), no `total_in_dollars`.
+
+### Gotchas de JS / Inertia (el bug del 405)
+
+- **`String.prototype.search` SÍ existe** (método nativo legacy de Annex B): `typeof '/x'.search === 'function'`. Así que `` `${$page.url.search}` `` en un href produce `libro-ventasfunction search() { [native code] }` → el navegador pide `/dashboard/pagos/libro-ventasfunction%20search()...`, que no matchea la ruta GET y cae en `PUT/DELETE /dashboard/pagos/{id}` → *The GET method is not supported*. No es que la ruta faltara. `$page.url` es **string** (por eso `EstadosDeCuenta.svelte` usa `.split("?")`), no un `URL`.
+- La forma correcta es `` `${$page.url.includes('?') ? $page.url.slice($page.url.indexOf('?')) : ''}` ``.
+- Contexto: el mismo bug apareció dos veces por usar `<?= ?>` (PHP) y luego `.search`; al reescribir un `href` revisar la expresión con `typeof` antes de compilar.
+
+Verificado con `vendor/bin/phpunit` (6/6), `corepack yarn run build` (32.34s, solo el warning de chunk >500k de siempre) y descarga real desde el navegador con `?month=inscription&start_date=2026-09-01` (XLSX de 6963 bytes con solo las 2 inscripciones). Scripts y harness temporales borrados.

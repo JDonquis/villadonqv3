@@ -1192,34 +1192,9 @@
             bind:this={importFileInput}
             on:change={handleImportFile}
         />
-        <!-- Desktop: show buttons -->
-        <div class="hidden md:flex md:flex-row items-center gap-3">
-            <button
-                type="button"
-                class="toolbar-secondary opacity-50 hover:opacity-100"
-                on:click={() => importFileInput?.click()}
-            >
-                <iconify-icon
-                    icon="material-symbols:upload"
-                    width="20"
-                    height="20"
-                />
-                Importar
-            </button>
-            <a
-                href="/dashboard/matricula/plantilla"
-                class="toolbar-secondary opacity-50 hover:opacity-100"
-            >
-                <iconify-icon
-                    icon="material-symbols:download"
-                    width="20"
-                    height="20"
-                />
-                Descargar plantilla
-            </a>
-        </div>
+      
         <!-- Mobile: show a small button that opens a Modal with the two actions -->
-        <div class="md:hidden">
+        <div class="">
             <button
                 class="toolbar-secondary p-2"
                 on:click={() => (showMobileActions = true)}
@@ -1232,10 +1207,10 @@
                 />
             </button>
             <Modal bind:showModal={showMobileActions} classes={"w-72"}>
-                <div class="flex flex-col gap-3 p-2">
+                <div class="flex flex-col gap-3 p-2 mt-7">
                     <button
                         type="button"
-                        class="toolbar-secondary"
+                        class="toolbar-secondary  justify-center text-center mt-4 inline-block"
                         on:click={() => {
                             importFileInput?.click();
                             showMobileActions = false;
@@ -1246,7 +1221,7 @@
                             width="20"
                             height="20"
                         />
-                        <span class="ml-2">Importar</span>
+                        <span class="ml-2 text-center">Importar</span>
                     </button>
                     <a
                         href="/dashboard/matricula/plantilla"
@@ -1258,7 +1233,7 @@
                             width="20"
                             height="20"
                         />
-                        <span class="ml-2">Descargar plantilla</span>
+                        <span class="ml-2 text-center">Descargar plantilla</span>
                     </a>
                 </div>
             </Modal>
