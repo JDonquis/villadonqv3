@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\SchoolLapse;
 use App\Services\ChartService;
 use App\Services\DashboardService;
+use App\Support\DashboardWidgets;
 use App\Support\HomeRoute;
 use Inertia\Response;
 use Illuminate\Http\RedirectResponse;
@@ -22,25 +23,21 @@ class AppController
     {
         $schoolLapse = SchoolLapse::orderByDesc('start')->get();
 
-        $canSeeMoney = $this->canSeeMoney();
+        $widgets = DashboardWidgets::enabledFor(auth()->user());
         $dashboardService = new DashboardService;
 
         return inertia('Dashboard/Index', [
             'schoolLapses' => $schoolLapse,
-            'canSeeMoney' => $canSeeMoney,
-            'kpiData' => $dashboardService->getKpiData(null, $canSeeMoney),
+            'widgets' => $widgets,
+            'kpiData' => $dashboardService->getKpiData(null, $widgets),
         ]);
     }
 
     public function annualVsMonthlyFlow($schoolLapse = null)
     {
-        $this->authorizeMoney();
+        $this->authorizeWidgetKey('chart_projection_vs_real');
 
-        if (! $schoolLapse) {
-            $schoolLapse = SchoolLapse::where('status', 1)->first();
-        } else {
-            $schoolLapse = SchoolLapse::where('id', $schoolLapse)->first();
-        }
+        $schoolLapse = $this->resolveLapse($schoolLapse);
 
         $chartService = new ChartService;
         $data = $chartService->annualVsMonthlyFlow($schoolLapse);
@@ -50,13 +47,9 @@ class AppController
 
     public function debtByCourse($schoolLapse = null)
     {
-        $this->authorizeMoney();
+        $this->authorizeWidgetKey('chart_debt_by_course');
 
-        if (! $schoolLapse) {
-            $schoolLapse = SchoolLapse::where('status', 1)->first();
-        } else {
-            $schoolLapse = SchoolLapse::where('id', $schoolLapse)->first();
-        }
+        $schoolLapse = $this->resolveLapse($schoolLapse);
 
         $chartService = new ChartService;
         $data = $chartService->debtByCourse($schoolLapse);
@@ -66,7 +59,7 @@ class AppController
 
     public function collectionRateTrend($years = 5)
     {
-        $this->authorizeMoney();
+        $this->authorizeWidgetKey('chart_revenue_trend');
 
         $chartService = new ChartService;
         $data = $chartService->collectionRateTrend($years);
@@ -76,7 +69,7 @@ class AppController
 
     public function aging($schoolLapse = null)
     {
-        $this->authorizeMoney();
+        $this->authorizeWidgetKey('chart_aging');
 
         $chartService = new ChartService;
         $data = $chartService->aging($schoolLapse);
@@ -86,7 +79,7 @@ class AppController
 
     public function collectionByChannel($schoolLapse = null)
     {
-        $this->authorizeMoney();
+        $this->authorizeWidgetKey('chart_collection_by_channel');
 
         $chartService = new ChartService;
         $data = $chartService->collectionByChannel($schoolLapse);
@@ -96,18 +89,32 @@ class AppController
 
     public function attendanceSummary($schoolLapse = null)
     {
+        $widgets = DashboardWidgets::enabledFor(auth()->user());
+
+        $canWithdrawn = in_array('stat_withdrawn', $widgets, true);
+        $canGraduated = in_array('stat_graduated', $widgets, true);
+        $canAttendance = in_array('stat_attendance_today', $widgets, true);
+
+        abort_unless($canWithdrawn || $canGraduated || $canAttendance, 403);
+
         $chartService = new ChartService;
         $data = $chartService->attendanceSummary($schoolLapse);
 
-        return response()->json(['data' => $data]);
+        return response()->json(['data' => [
+            'active' => $data['active'] ?? null,
+            'withdrawn' => $canWithdrawn ? $data['withdrawn'] : null,
+            'graduated' => $canGraduated ? $data['graduated'] : null,
+            'attendance' => $canAttendance ? $data['attendance'] : null,
+        ]]);
     }
 
     public function metrics($schoolLapse = null)
     {
+        $widgets = DashboardWidgets::enabledFor(auth()->user());
         $dashboardService = new DashboardService;
         $data = $dashboardService->getKpiData(
             $schoolLapse ? (int) $schoolLapse : null,
-            $this->canSeeMoney()
+            $widgets
         );
 
         return response()->json(['data' => $data]);
@@ -115,13 +122,9 @@ class AppController
 
     public function topDebtors($limit = 10, $schoolLapse = null)
     {
-        $this->authorizeMoney();
+        $this->authorizeWidgetKey('chart_top_debtors');
 
-        if (! $schoolLapse) {
-            $schoolLapse = SchoolLapse::where('status', 1)->first();
-        } else {
-            $schoolLapse = SchoolLapse::where('id', $schoolLapse)->first();
-        }
+        $schoolLapse = $this->resolveLapse($schoolLapse);
 
         $chartService = new ChartService;
         $data = $chartService->topDebtors($limit, $schoolLapse);
@@ -134,16 +137,17 @@ class AppController
         return inertia('Dashboard/Maquinas');
     }
 
-    /**
-     * Sólo el administrador total (is_admin = 1) ve información financiera.
-     */
-    private function canSeeMoney(): bool
+    private function resolveLapse($schoolLapse): ?SchoolLapse
     {
-        return (bool) (auth()->user()->is_admin ?? false);
+        if (! $schoolLapse) {
+            return SchoolLapse::where('status', 1)->first();
+        }
+
+        return SchoolLapse::where('id', $schoolLapse)->first();
     }
 
-    private function authorizeMoney(): void
+    private function authorizeWidgetKey(string $key): void
     {
-        abort_unless($this->canSeeMoney(), 403);
+        abort_unless(DashboardWidgets::enabled(auth()->user(), $key), 403);
     }
 }

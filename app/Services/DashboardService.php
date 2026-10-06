@@ -3,13 +3,20 @@
 namespace App\Services;
 
 use App\Enums\BalanceStudentStatusEnum;
+use App\Enums\UserTypeEnum;
 use App\Models\BalancePayment;
 use App\Models\BalanceStudent;
+use App\Models\EvaluationPlan;
 use App\Models\MainConfig;
+use App\Models\Matter;
 use App\Models\Payment;
+use App\Models\Schedule;
 use App\Models\SchoolLapse;
 use App\Models\Student;
+use App\Models\User;
+use App\Support\DashboardWidgets;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DashboardService
 {
@@ -31,51 +38,98 @@ class DashboardService
     /**
      * Indicadores del panel administrativo. Todos los cálculos se acotan al
      * período escolar indicado (o al activo) y usan consultas agregadas para
-     * evitar el N+1.
+     * evitar el N+1. Sólo se calculan los widgets habilitados para el usuario.
+     *
+     * @param  array<int, string>|null  $widgets  Claves de DashboardWidgets habilitadas.
      */
-    public function getKpiData(?int $schoolLapseId = null, bool $includeMoney = true): array
+    public function getKpiData(?int $schoolLapseId = null, ?array $widgets = null): array
     {
         $lapse = $this->resolveLapse($schoolLapseId);
+        $widgets = $widgets ?? array_keys(DashboardWidgets::WIDGETS);
+        $has = fn (string $key): bool => in_array($key, $widgets, true);
 
-        $data = [
-            'school_lapse_id' => $lapse?->id,
-            'total_students' => Student::where('status', '!=', 0)->count(),
-            'total_representatives' => Student::where('status', '!=', 0)
+        $data = ['school_lapse_id' => $lapse?->id];
+
+        if ($has('kpi_enrollment') || $has('kpi_representatives')) {
+            $data['total_students'] = Student::where('status', '!=', 0)->count();
+            $data['total_representatives'] = Student::where('status', '!=', 0)
                 ->whereNotNull('representative_id')
                 ->distinct('representative_id')
-                ->count('representative_id'),
-            'enrollment' => $this->enrollmentVariation($lapse),
-        ];
-
-        // Un administrador limitado (is_admin = 0) no recibe información de dinero.
-        if (! $includeMoney) {
-            return $data;
+                ->count('representative_id');
         }
 
-        $config = MainConfig::first();
-        $monthlyPrice = (float) ($config->monthly_payment ?? 0);
+        if ($has('kpi_enrollment')) {
+            $data['enrollment'] = $this->enrollmentVariation($lapse);
+        }
 
-        $debt = $this->outstandingDebt($lapse);
-        $collected = $this->collectedForLapse($lapse);
-        $billed = $debt + $collected;
+        if ($has('kpi_representatives')) {
+            $data['representatives'] = $this->representativeVariation($lapse);
+        }
 
-        $reps = $this->representativesUpToDate($lapse);
-        $target = $this->monthTarget($lapse, $monthlyPrice);
-        $income = $this->monthIncome($lapse);
+        if ($has('kpi_staff_total')) {
+            $data['total_staff'] = User::where('type_user_id', UserTypeEnum::Administrator->value)->count();
+        }
 
-        return array_merge($data, [
-            'total_outstanding_debt' => round($debt, 2),
-            'total_billed' => round($billed, 2),
-            'debt_percentage' => $billed > 0 ? round(($debt / $billed) * 100, 1) : 0.0,
+        if ($has('kpi_teachers_total')) {
+            $data['total_teachers'] = User::where('type_user_id', UserTypeEnum::Teacher->value)->count();
+        }
 
-            'collection_rate' => $reps['total'] > 0 ? round(($reps['up_to_date'] / $reps['total']) * 100, 1) : 0.0,
-            'representatives_up_to_date' => $reps['up_to_date'],
-            'representatives_total' => $reps['total'],
+        if ($has('kpi_matters_total')) {
+            $data['total_matters'] = Matter::count();
+        }
 
-            'this_month_income' => round($income, 2),
-            'month_target' => round($target, 2),
-            'income_percentage' => $target > 0 ? round(($income / $target) * 100, 1) : 0.0,
-        ]);
+        if ($has('kpi_schedules')) {
+            $data['schedules'] = $this->schedulesSummary($lapse);
+        }
+
+        if ($has('kpi_active_period')) {
+            $data['active_period'] = $this->activePeriod();
+        }
+
+        if ($has('kpi_plans_approved') || $has('kpi_plans_pending') || $has('kpi_plans_rejected')) {
+            $data['plans'] = $this->plansSummary($lapse);
+        }
+
+        // ---- Información financiera ----
+        $moneyKeys = ['kpi_month_income', 'kpi_total_debt', 'kpi_reps_on_track', 'kpi_payments_count'];
+        $hasMoney = collect($moneyKeys)->contains(fn ($key) => $has($key));
+
+        if ($hasMoney) {
+            $config = MainConfig::first();
+            $monthlyPrice = (float) ($config->monthly_payment ?? 0);
+
+            if ($has('kpi_payments_count')) {
+                $data['payments_count'] = $this->paymentsCount($lapse);
+            }
+
+            if ($has('kpi_total_debt')) {
+                $debt = $this->outstandingDebt($lapse);
+                $collected = $this->collectedForLapse($lapse);
+                $billed = $debt + $collected;
+
+                $data['total_outstanding_debt'] = round($debt, 2);
+                $data['total_billed'] = round($billed, 2);
+                $data['debt_percentage'] = $billed > 0 ? round(($debt / $billed) * 100, 1) : 0.0;
+            }
+
+            if ($has('kpi_reps_on_track')) {
+                $reps = $this->representativesUpToDate($lapse);
+                $data['collection_rate'] = $reps['total'] > 0 ? round(($reps['up_to_date'] / $reps['total']) * 100, 1) : 0.0;
+                $data['representatives_up_to_date'] = $reps['up_to_date'];
+                $data['representatives_total'] = $reps['total'];
+            }
+
+            if ($has('kpi_month_income')) {
+                $target = $this->monthTarget($lapse, $monthlyPrice);
+                $income = $this->monthIncome($lapse);
+
+                $data['this_month_income'] = round($income, 2);
+                $data['month_target'] = round($target, 2);
+                $data['income_percentage'] = $target > 0 ? round(($income / $target) * 100, 1) : 0.0;
+            }
+        }
+
+        return $data;
     }
 
     public function resolveLapse(?int $schoolLapseId = null): ?SchoolLapse
@@ -89,6 +143,84 @@ class DashboardService
 
         return SchoolLapse::where('status', 1)->first()
             ?? SchoolLapse::orderByDesc('start')->first();
+    }
+
+    /**
+     * Secciones (curso + sección) con horario cargado vs. total, ya que el
+     * horario se crea para una sección de un año/curso específico.
+     */
+    private function schedulesSummary(?SchoolLapse $lapse): array
+    {
+        $withSchedule = $lapse
+            ? Schedule::where('school_lapse_id', $lapse->id)
+                ->select('course_id', 'section_id')
+                ->distinct()
+                ->get()
+                ->count()
+            : 0;
+
+        $totalSections = DB::table('course_sections')
+            ->select('course_id', 'section_id')
+            ->distinct()
+            ->get()
+            ->count();
+
+        return [
+            'with_schedule' => (int) $withSchedule,
+            'total_sections' => (int) $totalSections,
+        ];
+    }
+
+    /**
+     * Período escolar activo (texto, sin dinero).
+     */
+    private function activePeriod(): ?array
+    {
+        $lapse = SchoolLapse::where('status', 1)->with('lapses')->first();
+
+        if (! $lapse) {
+            return null;
+        }
+
+        return [
+            'label' => Carbon::parse($lapse->start)->year.' - '.Carbon::parse($lapse->end)->year,
+            'moments' => $lapse->lapses->count(),
+        ];
+    }
+
+    /**
+     * Cantidad de pagos registrados (no borrados) dentro del período.
+     */
+    private function paymentsCount(?SchoolLapse $lapse): int
+    {
+        return Payment::where('status', '!=', 0)
+            ->when($lapse, fn ($q) => $q->whereBetween('date', [$lapse->start, $lapse->end]))
+            ->count();
+    }
+
+    /**
+     * Conteo de planes de evaluación por estado dentro del período.
+     */
+    private function plansSummary(?SchoolLapse $lapse): array
+    {
+        $counts = EvaluationPlan::query()
+            ->when($lapse, fn ($q) => $q->where('school_lapse_id', $lapse->id))
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $approved = (int) ($counts['approved'] ?? 0);
+        $pending = (int) ($counts['pending'] ?? 0);
+        $rejected = (int) ($counts['rejected'] ?? 0);
+        $draft = (int) ($counts['draft'] ?? 0);
+
+        return [
+            'approved' => $approved,
+            'pending' => $pending,
+            'rejected' => $rejected,
+            'draft' => $draft,
+            'total' => $approved + $pending + $rejected + $draft,
+        ];
     }
 
     /**
@@ -126,6 +258,46 @@ class DashboardService
             'variation' => $variation,
             'percentage' => $percentage,
         ];
+    }
+
+    /**
+     * Cantidad de representantes (distintos) del período vs. el anterior.
+     * Se cuentan los representantes de los alumnos con balance en cada período.
+     */
+    private function representativeVariation(?SchoolLapse $lapse): array
+    {
+        if (! $lapse) {
+            return ['current' => 0, 'previous' => 0, 'variation' => 0, 'percentage' => 0.0];
+        }
+
+        $current = $this->representativesForLapse($lapse->id);
+
+        $previousLapse = SchoolLapse::where('id', '!=', $lapse->id)
+            ->where('start', '<', $lapse->start)
+            ->orderByDesc('start')
+            ->first();
+
+        $previous = $previousLapse ? $this->representativesForLapse($previousLapse->id) : 0;
+
+        $variation = $current - $previous;
+        $percentage = $previous > 0 ? round(($variation / $previous) * 100, 1) : 0.0;
+
+        return [
+            'current' => $current,
+            'previous' => $previous,
+            'variation' => $variation,
+            'percentage' => $percentage,
+        ];
+    }
+
+    private function representativesForLapse(int $lapseId): int
+    {
+        return (int) BalanceStudent::where('balance_students.school_lapse_id', $lapseId)
+            ->join('students', 'balance_students.student_id', '=', 'students.id')
+            ->where('students.status', '!=', 0)
+            ->whereNotNull('students.representative_id')
+            ->distinct('students.representative_id')
+            ->count('students.representative_id');
     }
 
     /**
