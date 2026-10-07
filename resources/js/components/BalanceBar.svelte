@@ -128,6 +128,25 @@
   ? calculatePaymentDistribution(amountToPay) 
   : { endMonthIndex: 0, endYearIndex: 0, partialToPay: 0 };
 
+    function hasVisiblePaymentForMonth(yearIndex, monthIndex) {
+        if (amountToPay <= 0) return false;
+
+        const paying = payingBalances[yearIndex];
+        if (!paying) return false;
+
+        const startMonth = Number(paying.startMonth ?? -1);
+        const endMonth = Number(paying.endMonthIndex ?? -1);
+
+        if (monthIndex < startMonth || monthIndex > endMonth) return false;
+
+        // Solo mostrar el borde si este mes realmente tiene un tramo de pago visible.
+        if (monthIndex === startMonth || monthIndex === endMonth) {
+            return true;
+        }
+
+        return monthIndex > startMonth && monthIndex < endMonth;
+    }
+
     // Tooltip event handlers
     function showBalancePaymentsTooltip(event, payments) {
         if (!payments || payments.length === 0) {
@@ -296,8 +315,8 @@
                                 <!-- 5. Conditioned DOM Node: Completely unmounted on student list / read-only views -->
                                 <div
                                     class="text-xs months_to_pay absolute top-0.5 left-0 w-full text-black h-[95%] z-40
-                                    {indexMonth === startPointToPay.month && startPointToPay.school_lapse_index === indexYear  ? 'border-l-2 md:border-l-4 border-black/50' : ''}
-                                    {indexMonth === endPointToPay.endMonthIndex - 1 && endPointToPay.endYearIndex === indexYear && amountToPay > 0 ? 'border-r-2 md:border-r-4 border-black/50' : ''}
+                                    {hasVisiblePaymentForMonth(indexYear, indexMonth) && indexMonth === (payingBalances[indexYear]?.startMonth ?? -1) ? 'border-l-2 md:border-l-4 border-black/50' : ''}
+                                    {hasVisiblePaymentForMonth(indexYear, indexMonth) && indexMonth === (payingBalances[indexYear]?.endMonthIndex ?? -1) ? 'border-r-2 md:border-r-4 border-black/50' : ''}
                                     {startPointToPay.school_lapse_index <= indexYear && payingBalances[indexYear]?.startMonth <= indexMonth && indexMonth <= payingBalances[indexYear]?.endMonthIndex ? 'bg-purple/30 top-[1.2px] border-y-2  md:border-y-4 border-black/50' : ''}
                                     {indexMonth === 11 && startPointToPay.school_lapse_index <= indexYear && payingBalances[indexYear]?.startMonth <= indexMonth && indexMonth <= payingBalances[indexYear]?.endMonthIndex ? 'rounded-r-3xl' : ''}"
                                     style={((indexMonth === endPointToPay.endMonthIndex - 1 && endPointToPay.endYearIndex === indexYear) || indexMonth === 11) && endPointToPay.partialToPay > 0

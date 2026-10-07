@@ -489,7 +489,7 @@
                     </button>
                     <button
                         on:click={() => downloadReport("certificado")}
-                        class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-zelle px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-purple700 sm:flex-initial"
+                        class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-purple700  px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-purple700 sm:flex-initial"
                     >
                         <iconify-icon
                             icon="mdi:certificate-outline"

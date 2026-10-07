@@ -28,7 +28,7 @@
     let showTotalDebt = false;
     let showConfirmModal = false;
     let pendingBalanceId = null;
-    let pendingStudentName = '';
+    let pendingStudentName = "";
     $: urlParams = new URLSearchParams($page.url.split("?")[1] || "");
     $: tableData = {
         ...data?.students,
@@ -115,9 +115,7 @@
             0,
         );
 
-        const hasPartial = unpaid.some(
-            (c) => (Number(c.paid_amount) || 0) > 0,
-        );
+        const hasPartial = unpaid.some((c) => (Number(c.paid_amount) || 0) > 0);
 
         const cls = hasPartial
             ? "bg-yellow/30 text-yellow-900 border-yellow-300"
@@ -154,13 +152,16 @@
     };
 
     function getOutstandingMonths(student) {
-        const balances = Array.isArray(student?.balances) ? student.balances : [];
+        const balances = Array.isArray(student?.balances)
+            ? student.balances
+            : [];
         const months = [];
 
         Object.entries(MONTH_LABELS).forEach(([key, label]) => {
             const hasDebt = balances.some((balance) => {
                 const monthData = balance?.months ?? {};
-                const status = monthData[`${key}_status`] ?? balance?.[`${key}_status`];
+                const status =
+                    monthData[`${key}_status`] ?? balance?.[`${key}_status`];
                 const amount = Number(monthData[key] ?? balance?.[key] ?? 0);
 
                 return (
@@ -187,7 +188,8 @@
         if (!phoneNumber || phoneNumber.length < 9) {
             displayAlert({
                 type: "error",
-                message: "No hay un número de WhatsApp válido para este representante.",
+                message:
+                    "No hay un número de WhatsApp válido para este representante.",
             });
             return;
         }
@@ -202,18 +204,21 @@
             student?.total_debt ??
                 (Array.isArray(student?.balances)
                     ? student.balances.reduce(
-                          (sum, balance) => sum + (Number(balance?.total_debt) || 0),
+                          (sum, balance) =>
+                              sum + (Number(balance?.total_debt) || 0),
                           0,
                       )
                     : 0),
         );
 
-
-        const monthsText = getOutstandingMonths(student).join(", ") || "ningún mes";
+        const monthsText =
+            getOutstandingMonths(student).join(", ") || "ningún mes";
         const totalUsdText = `$${Number(totalUsd || 0).toFixed(2)}`;
         const colegio = config?.name || "el colegio";
-        const repName = `${student.representative?.user?.name ?? ""} ${student.representative?.user?.last_name ?? ""}`.trim();
-        const studentName = `${student?.name ?? ""} ${student?.last_name ?? ""}`.trim();
+        const repName =
+            `${student.representative?.user?.name ?? ""} ${student.representative?.user?.last_name ?? ""}`.trim();
+        const studentName =
+            `${student?.name ?? ""} ${student?.last_name ?? ""}`.trim();
 
         const paymentLink = `${window.location.origin}/dashboard/mis-pagos`;
 
@@ -229,8 +234,9 @@ Ingrese a este link para más información y proceder con el pago: ${paymentLink
         );
 
         // Encontrar el balance del lapso activo (status = 1) o el más reciente
-        const activeBalance = student.balances?.find(b => b.school_lapse?.status === 1)
-            ?? student.balances?.[0];
+        const activeBalance =
+            student.balances?.find((b) => b.school_lapse?.status === 1) ??
+            student.balances?.[0];
 
         if (activeBalance) {
             pendingBalanceId = activeBalance.id;
@@ -248,19 +254,27 @@ Ingrese a este link para más información y proceder con el pago: ${paymentLink
         if (!sent || !pendingBalanceId) {
             showConfirmModal = false;
             pendingBalanceId = null;
-            pendingStudentName = '';
+            pendingStudentName = "";
             return;
         }
 
         try {
-            const response = await fetch('/dashboard/estados-de-cuenta/marcar-recordatorio', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+            const response = await fetch(
+                "/dashboard/estados-de-cuenta/marcar-recordatorio",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN":
+                            document
+                                .querySelector('meta[name="csrf-token"]')
+                                ?.getAttribute("content") || "",
+                    },
+                    body: JSON.stringify({
+                        balance_student_id: pendingBalanceId,
+                    }),
                 },
-                body: JSON.stringify({ balance_student_id: pendingBalanceId }),
-            });
+            );
 
             const data = await response.json();
 
@@ -284,39 +298,50 @@ Ingrese a este link para más información y proceder con el pago: ${paymentLink
 
         showConfirmModal = false;
         pendingBalanceId = null;
-        pendingStudentName = '';
+        pendingStudentName = "";
     }
 
     // Helper para saber si algún balance tiene recordatorio en el mes actual
     function hasCurrentMonthReminder(student) {
-        const monthEn = new Date().toLocaleString('en-US', { month: 'long' }).toLowerCase(); // english month key
-        return student.balances?.some(b => b.months?.[`${monthEn}_reminded`]) ?? false;
+        const monthEn = new Date()
+            .toLocaleString("en-US", { month: "long" })
+            .toLowerCase(); // english month key
+        return (
+            student.balances?.some((b) => b.months?.[`${monthEn}_reminded`]) ??
+            false
+        );
     }
 </script>
 
 {#if showConfirmModal}
-<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-        <h3 class="text-lg font-semibold text-color1 mb-3">Confirmar envío</h3>
-        <p class="text-gray-600 mb-4">
-            ¿Se envió el mensaje al representante de <strong>{pendingStudentName}</strong>?
-        </p>
-        <div class="flex gap-3 justify-end">
-            <button
-                on:click={() => confirmReminder(false)}
-                class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
-            >
-                No / Cancelar
-            </button>
-            <button
-                on:click={() => confirmReminder(true)}
-                class="px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg transition"
-            >
-                Sí, se envió
-            </button>
+    <div
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    >
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <h3 class="text-lg font-semibold text-color1 mb-3">
+                Confirmar envío
+            </h3>
+            <p class="text-gray-600 mb-4">
+                ¿Se envió el mensaje al representante de <strong
+                    >{pendingStudentName}</strong
+                >?
+            </p>
+            <div class="flex gap-3 justify-end">
+                <button
+                    on:click={() => confirmReminder(false)}
+                    class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                >
+                    No / Cancelar
+                </button>
+                <button
+                    on:click={() => confirmReminder(true)}
+                    class="px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg transition"
+                >
+                    Sí, se envió
+                </button>
+            </div>
         </div>
     </div>
-</div>
 {/if}
 
 <svelte:head>
@@ -336,9 +361,8 @@ Ingrese a este link para más información y proceder con el pago: ${paymentLink
             <b class="text-sm text-red transition-all duration-200">
                 ${data.total_debt}
             </b>
-  
         {/if}
-      
+
         <button
             type="button"
             class="inline-flex items-center justify-center bg-white/10 p-2 text-gray-700 transition hover:bg-red/10 focus:outline-none"
@@ -409,89 +433,89 @@ Ingrese a este link para más información y proceder con el pago: ${paymentLink
     </thead>
     <tbody slot="tbody">
         {#each tableData.data as student}
-            <tr style="content-visibility: auto; contain-intrinsic-size: 0 350px;">
+            <tr
+                style="content-visibility: auto; contain-intrinsic-size: 0 350px;"
+            >
                 <td class=" space-y-2">
                     <div class="flex items-center gap-2">
-
                         <div class="flex flex-col gap-1 text-sm">
-                                <!-- Línea Superior: Nombre completo del estudiante -->
-                                <div
-                                    class="font-semibold text-gray-800 capitalize leading-snug max-w-[220px] sm:max-w-[260px] md:max-w-[320px] truncate"
-                                >
-                                    {student.name}
-                                    {student.last_name}
-                                </div>
-
-                                <!-- Línea Inferior: Metadatos organizados en chips/badges -->
-                                <div
-                                    class="flex items-center gap-1.5 flex-wrap text-xs text-gray-500"
-                                >
-                                   
-                                    <div
-                                        class="group relative inline-flex items-center"
-                                    >
-                                        <span
-                                            class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
-                                        >
-                                            {#if student.document_type}
-                                                <span class="uppercase"
-                                                    >{student.document_type}-</span
-                                                >
-                                            {/if}
-                                            {student.ci}
-                                        </span>
-                                        <button
-                                            type="button"
-                                            class="absolute -right-1 top-1/2 -translate-y-1/2 rounded border border-gray-200 bg-white p-1 text-[10px] text-gray-500 opacity-0 shadow-sm transition-all duration-200 group-hover:opacity-100 hover:text-color1"
-                                            aria-label="Copiar cédula"
-                                            title="Copiar cédula"
-                                            on:click|stopPropagation={() =>
-                                                copyToClipboard(
-                                                    `${student.document_type ? `${student.document_type}-` : ""}${student.ci}`,
-                                                    "Cédula",
-                                                )}
-                                        >
-                                            <iconify-icon
-                                                icon="mdi:content-copy"
-                                            ></iconify-icon>
-                                        </button>
-                                    </div>
-
-                                    <span class="text-gray-300">•</span>
-
-                                    <span
-                                        class="text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200/40 text-[11px]"
-                                    >
-                                        {student.course?.name} - {student
-                                            .section?.name}
-                                    </span>
-
-                                    {#if Number(config?.ame_price) > 0}
-                                        {@const ameInfo = chargeInfo(student, "ame")}
-                                        <span
-                                            class="px-1.5 py-0.5 rounded border text-[11px] font-semibold {ameInfo.cls}"
-                                            title={ameInfo.title}
-                                        >
-                                            AME: {ameInfo.text}
-                                        </span>
-                                    {/if}
-
-                                    {#if Number(config?.investment_plan_price) > 0}
-                                        {@const planInfo = chargeInfo(
-                                            student,
-                                            "investment_plan",
-                                        )}
-                                        <span
-                                            class="px-1.5 py-0.5 rounded border text-[11px] font-semibold {planInfo.cls}"
-                                            title={planInfo.title}
-                                        >
-                                            Plan: {planInfo.text}
-                                        </span>
-                                    {/if}
-                                </div>
+                            <!-- Línea Superior: Nombre completo del estudiante -->
+                            <div
+                                class="font-semibold text-gray-800 capitalize leading-snug max-w-[220px] sm:max-w-[260px] md:max-w-[320px] truncate"
+                            >
+                                {student.name}
+                                {student.last_name}
                             </div>
 
-                 
+                            <!-- Línea Inferior: Metadatos organizados en chips/badges -->
+                            <div
+                                class="flex items-center gap-1.5 flex-wrap text-xs text-gray-500"
+                            >
+                                <div
+                                    class="group relative inline-flex items-center"
+                                >
+                                    <span
+                                        class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200/50 font-mono text-xs"
+                                    >
+                                        {#if student.document_type}
+                                            <span class="uppercase"
+                                                >{student.document_type}-</span
+                                            >
+                                        {/if}
+                                        {student.ci}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        class="absolute -right-1 top-1/2 -translate-y-1/2 rounded border border-gray-200 bg-white p-1 text-[10px] text-gray-500 opacity-0 shadow-sm transition-all duration-200 group-hover:opacity-100 hover:text-color1"
+                                        aria-label="Copiar cédula"
+                                        title="Copiar cédula"
+                                        on:click|stopPropagation={() =>
+                                            copyToClipboard(
+                                                `${student.document_type ? `${student.document_type}-` : ""}${student.ci}`,
+                                                "Cédula",
+                                            )}
+                                    >
+                                        <iconify-icon icon="mdi:content-copy"
+                                        ></iconify-icon>
+                                    </button>
+                                </div>
+
+                                <span class="text-gray-300">•</span>
+
+                                <span
+                                    class="text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200/40 text-[11px]"
+                                >
+                                    {student.course?.name} - {student.section
+                                        ?.name}
+                                </span>
+
+                                {#if Number(config?.ame_price) > 0}
+                                    {@const ameInfo = chargeInfo(
+                                        student,
+                                        "ame",
+                                    )}
+                                    <span
+                                        class="px-1.5 py-0.5 rounded border text-[11px] font-semibold {ameInfo.cls}"
+                                        title={ameInfo.title}
+                                    >
+                                        AME: {ameInfo.text}
+                                    </span>
+                                {/if}
+
+                                {#if Number(config?.investment_plan_price) > 0}
+                                    {@const planInfo = chargeInfo(
+                                        student,
+                                        "investment_plan",
+                                    )}
+                                    <span
+                                        class="px-1.5 py-0.5 rounded border text-[11px] font-semibold {planInfo.cls}"
+                                        title={planInfo.title}
+                                    >
+                                        Plan: {planInfo.text}
+                                    </span>
+                                {/if}
+                            </div>
+                        </div>
                     </div>
                     <!-- Mobile BalanceBar: shown under student info -->
                     <div class="mt-2 md:hidden min-w-[300px]">
@@ -523,35 +547,39 @@ Ingrese a este link para más información y proceder con el pago: ${paymentLink
                             ? student.exemption_percentage
                             : false}
                         dayOfPayment={config.day_of_monthly_payment}
-                            gracePeriod={config.grace_period}
+                        gracePeriod={config.grace_period}
                     />
                 </td>
-                <td class="group"
+                <td class="group flex"
                     >{student.representative.user.name}
                     {student.representative.user.last_name}
 
-                    <div class="relative">
-                    <button
-                        title="Enviar por WhatsApp"
-                        on:click={() => sendToWhatsApp(student)}
-                        class="text-green cursor-pointer p-1 hover:bg-gray-100 group-hover:inline-flex
-                            {hasCurrentMonthReminder(student) ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : ''}"
-                    >
-                        <iconify-icon
-                            icon="ic:baseline-whatsapp"
-                            width="14"
-                            height="14"
-                        ></iconify-icon>
-                        {#if hasCurrentMonthReminder(student)}
-                            <span class="absolute -top-1 -right-1 w-5 h-5 bg-emerald-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center" title="Recordatorio enviado este mes">
-                                <iconify-icon icon="mdi:check" width="12" height="12"></iconify-icon>
-                            </span>
-                            <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-gray-800 text-white text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-                                Ya recordado este mes
-                            </span>
-                        {/if}
-                    </button>
-</div>
+                    <div class="relative flex items-center gap-2 mt-1 ">
+                        <button
+                            title="Enviar por WhatsApp"
+                            on:click={() => sendToWhatsApp(student)}
+                            class="text-green cursor-pointer flex  hover:bg-gray-100 group-hover:inline-flex
+                           }"
+                        >
+                            <iconify-icon
+                                icon="ic:baseline-whatsapp"
+                                width="14"
+                                height="14"
+                               class=" ml-2
+                            {hasCurrentMonthReminder(student)
+                                ? 'text-emerald-700 rounded-full p-0.5 '
+                                : ''}"
+                            ></iconify-icon>
+                            {#if hasCurrentMonthReminder(student)}
+                              
+                                <span
+                                    class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-gray-800 text-white text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    Ya recordado este mes
+                                </span>
+                            {/if}
+                        </button>
+                    </div>
                 </td>
             </tr>
         {/each}
