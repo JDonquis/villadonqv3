@@ -21,31 +21,50 @@ class SalesBookService
 {
     private const HEADERS = [
         'Estudiante(s)',
-        'Año',
-        'Concepto',
+        'Año / Grado',
+        'Concepto de Pago',
         'Pagado (Bs)',
         'Referencia',
-        'Método de pago',
+        'Método de Pago',
     ];
 
     private const MONEY_FORMAT = '#,##0.00';
+
+    // 🎨 Paleta de colores ejecutiva (Slate & Navy Modern)
+    private const COLOR_PRIMARY_DARK  = '0F172A'; // Slate 900 (Cabecera principal)
+    private const COLOR_PRIMARY_LIGHT = 'F8FAFC'; // Slate 50
+    private const COLOR_HEADER_BG     = '1E293B'; // Slate 800 (Columnas de la tabla)
+    private const COLOR_DAY_HEADER_BG = 'F1F5F9'; // Slate 100 (Banda de día)
+    private const COLOR_DAY_HEADER_TXT= '334155'; // Slate 700
+    private const COLOR_ZEBRA         = 'FBFCFD'; // Gris ultra suave
+    private const COLOR_BORDER_LIGHT  = 'E2E8F0'; // Slate 200 (Borde tenue)
+    private const COLOR_SUBTOTAL_BG   = 'F8FAFC'; // Subtotales
+    private const COLOR_TOTAL_BG      = '0F766E'; // Teal 700 elegante para el gran total
+    private const COLOR_MUTED_TXT     = '64748B'; // Slate 500
 
     public function export(Collection $payments, string $filename = 'libro_ventas', array $filters = []): StreamedResponse
     {
         $nature = PaymentNature::indexFor($payments);
         $days = $this->groupByDay($payments);
 
-        $spreadsheet = new Spreadsheet;
+        $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Libro de Ventas');
+
+        // Mostrar líneas de cuadrícula para acabado pulcro
+        $sheet->setShowGridLines(true);
 
         $this->prepareColumns($sheet);
         $this->styleBaseSheet($sheet);
 
+        // Encabezado del reporte
         $row = $this->writeHeader($sheet, $filters);
-        $totalRow = $this->writeTotal($sheet, $row, null);
-        $row++;
+        
+        // Fila de resumen superior (KPI Total)
+        $totalRow = $this->writeTotalCard($sheet, $row);
+        $row += 2;
 
+        // Cabecera de columnas de la tabla
         $this->styleTableHeader($sheet, $row);
         foreach (self::HEADERS as $index => $header) {
             $sheet->setCellValue($this->cell($index, $row), $header);
@@ -58,9 +77,8 @@ class SalesBookService
         $subtotalRows = [];
 
         foreach ($days as $date => $dayPayments) {
-            $sheet->setCellValue('A'.$row, $this->dayTitle($date));
-            $sheet->mergeCells('A'.$row.':F'.$row);
-            $sheet->getStyle('A'.$row.':F'.$row)->getFont()->setBold(true);
+            // Banda divisoria del día
+            $this->writeDayHeader($sheet, $row, $this->dayTitle($date));
             $row++;
 
             $firstPaymentRow = $row;
@@ -72,19 +90,22 @@ class SalesBookService
 
             $lastPaymentRow = max($firstPaymentRow, $row - 1);
 
-            $sheet->setCellValue('A'.$row, 'Subtotal del día');
+            // Fila de subtotal del día
+            $sheet->setCellValue('A'.$row, 'SUBTOTAL DEL DÍA');
             $sheet->setCellValue('D'.$row, '=SUM(D'.$firstPaymentRow.':D'.$lastPaymentRow.')');
             $this->styleSubtotalRow($sheet, $row);
             $subtotalRows[] = $row;
-            $row += 2;
+            $row += 2; // Espacio entre grupos de días
         }
 
+        // Gran Total al final
         if ($subtotalRows) {
             $formula = '=SUM('.implode(',', array_map(fn ($r) => 'D'.$r, $subtotalRows)).')';
-            $this->writeTotal($sheet, $row, $formula);
-            $this->writeTotal($sheet, $totalRow, $formula);
+            $this->writeFinalTotal($sheet, $row, $formula);
+            $sheet->setCellValue('D'.$totalRow, $formula); // Actualizar KPI superior
         } else {
-            $this->writeTotal($sheet, $row, null);
+            $this->writeFinalTotal($sheet, $row, '0.00');
+            $sheet->setCellValue('D'.$totalRow, 0.00);
         }
 
         $writer = new Xlsx($spreadsheet);
@@ -108,74 +129,167 @@ class SalesBookService
     private function dayTitle(string $date): string
     {
         $carbon = Carbon::parse($date);
-
-        return $carbon->translatedFormat('l j \d\e F \d\e Y');
+        return mb_strtoupper($carbon->translatedFormat('l, d \d\e F \d\e Y'), 'UTF-8');
     }
 
     private function writeHeader($sheet, array $filters = []): int
     {
-        $institution = MainConfig::first()?->name;
+        $institution = MainConfig::first()?->name ?? 'INSTITUCIÓN EDUCATIVA';
         $row = 1;
 
-        if ($institution) {
-            $sheet->setCellValue('A'.$row, $institution);
-            $sheet->mergeCells('A'.$row.':F'.$row);
-            $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
-                'font' => ['bold' => true, 'size' => 14, 'color' => ['argb' => Color::COLOR_DARKGREEN]],
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'D9F2E6']],
-            ]);
-            $row++;
-        }
-
-        $sheet->setCellValue('A'.$row, 'LIBRO DE VENTAS');
+        // Fila 1: Nombre de la Institución
+        $sheet->getRowDimension($row)->setRowHeight(28);
+        $sheet->setCellValue('A'.$row, $institution);
         $sheet->mergeCells('A'.$row.':F'.$row);
         $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
-            'font' => ['bold' => true, 'size' => 12, 'color' => ['argb' => Color::COLOR_WHITE]],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => '1F4E78']],
+            'font' => [
+                'name' => 'Segoe UI',
+                'bold' => true,
+                'size' => 14,
+                'color' => ['argb' => self::COLOR_PRIMARY_DARK],
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_LEFT,
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'indent' => 1,
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['argb' => self::COLOR_PRIMARY_LIGHT],
+            ],
+            'borders' => [
+                'bottom' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => self::COLOR_BORDER_LIGHT]],
+            ],
         ]);
         $row++;
 
-        $generatedText = 'Generado el '.Carbon::now()->translatedFormat('d/m/Y H:i');
+        // Fila 2: Título del Documento
+        $sheet->getRowDimension($row)->setRowHeight(24);
+        $sheet->setCellValue('A'.$row, 'LIBRO DE VENTAS E INGRESOS');
+        $sheet->mergeCells('A'.$row.':F'.$row);
+        $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
+            'font' => [
+                'name' => 'Segoe UI',
+                'bold' => true,
+                'size' => 11,
+                'color' => ['argb' => '0284C7'], // Cyan/Blue corporativo
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_LEFT,
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'indent' => 1,
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['argb' => self::COLOR_PRIMARY_LIGHT],
+            ],
+        ]);
+        $row++;
+
+        // Fila 3: Metadatos y Filtros
+        $sheet->getRowDimension($row)->setRowHeight(20);
+        $generatedText = 'Emitido el '.Carbon::now()->translatedFormat('d/m/Y \a \l\a\s H:i');
         $filterSummary = $this->formatFiltersForExport($filters);
         if ($filterSummary !== '') {
-            $generatedText .= ' | Filtros: '.$filterSummary;
+            $generatedText .= '  •  Criterios aplicados: '.$filterSummary;
         }
 
         $sheet->setCellValue('A'.$row, $generatedText);
         $sheet->mergeCells('A'.$row.':F'.$row);
         $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
-            'font' => ['italic' => true, 'color' => ['argb' => '4B5563']],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'wrapText' => true],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'F3F4F6']],
+            'font' => [
+                'name' => 'Segoe UI',
+                'size' => 9,
+                'color' => ['argb' => self::COLOR_MUTED_TXT],
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_LEFT,
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'indent' => 1,
+                'wrapText' => true,
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['argb' => self::COLOR_PRIMARY_LIGHT],
+            ],
+            'borders' => [
+                'bottom' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['argb' => 'CBD5E1']],
+            ],
         ]);
-        $row++;
+        $row += 2; // Espacio respirador
 
         return $row;
     }
 
-    private function writeTotal($sheet, int $row, ?string $formula): int
+    private function writeTotalCard($sheet, int $row): int
     {
-        $sheet->setCellValue('A'.$row, 'TOTAL GENERAL');
-        $sheet->setCellValue('D'.$row, $formula ?? 0);
-        $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
-            'font' => ['bold' => true, 'size' => 12, 'color' => ['argb' => Color::COLOR_WHITE]],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => '0F766E']],
+        // Tarjeta resumen moderna de TOTAL GENERAL en el encabezado
+        $sheet->getRowDimension($row)->setRowHeight(32);
+        
+        $sheet->setCellValue('A'.$row, 'TOTAL GENERAL FACTURADO');
+        $sheet->mergeCells('A'.$row.':C'.$row);
+        $sheet->getStyle('A'.$row.':C'.$row)->applyFromArray([
+            'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 11, 'color' => ['argb' => '065F46']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'ECFDF5']], // Emerald 50
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER, 'indent' => 1],
             'borders' => [
-                'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'D1D5DB']],
+                'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'A7F3D0']],
             ],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
         ]);
-        $sheet->getStyle('A'.$row)->applyFromArray([
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
-        ]);
+
+        $sheet->setCellValue('D'.$row, 0.00);
         $sheet->getStyle('D'.$row)->applyFromArray([
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT],
+            'font' => ['name' => 'Consolas', 'bold' => true, 'size' => 13, 'color' => ['argb' => '047857']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'ECFDF5']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT, 'vertical' => Alignment::VERTICAL_CENTER],
             'numberFormat' => ['formatCode' => self::MONEY_FORMAT],
+            'borders' => [
+                'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'A7F3D0']],
+            ],
+        ]);
+
+        $sheet->mergeCells('E'.$row.':F'.$row);
+        $sheet->setCellValue('E'.$row, 'Bs. VES');
+        $sheet->getStyle('E'.$row.':F'.$row)->applyFromArray([
+            'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 10, 'color' => ['argb' => '065F46']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'ECFDF5']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'borders' => [
+                'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'A7F3D0']],
+            ],
         ]);
 
         return $row;
+    }
+
+    private function writeDayHeader($sheet, int $row, string $title): void
+    {
+        $sheet->getRowDimension($row)->setRowHeight(24);
+        $sheet->setCellValue('A'.$row, '📅  '.$title);
+        $sheet->mergeCells('A'.$row.':F'.$row);
+        $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
+            'font' => [
+                'name' => 'Segoe UI',
+                'bold' => true,
+                'size' => 9.5,
+                'color' => ['argb' => self::COLOR_DAY_HEADER_TXT],
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['argb' => self::COLOR_DAY_HEADER_BG],
+            ],
+            'borders' => [
+                'left' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['argb' => '0284C7']], // Acento lateral izquierdo
+                'top' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => self::COLOR_BORDER_LIGHT]],
+                'bottom' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => self::COLOR_BORDER_LIGHT]],
+                'right' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => self::COLOR_BORDER_LIGHT]],
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_LEFT,
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'indent' => 1,
+            ],
+        ]);
     }
 
     private function writePaymentRow($sheet, int $row, Payment $payment, PaymentNature $nature): void
@@ -196,37 +310,148 @@ class SalesBookService
 
         $methods = $payment->accountPayment?->method?->name;
 
+        $sheet->getRowDimension($row)->setRowHeight(24);
+
         $sheet->setCellValue('A'.$row, $names->implode(', '));
-        $sheet->setCellValue('B'.$row, $courses->implode(', '));
+        $sheet->setCellValue('B'.$row, $courses->implode(', ') ?: '—');
         $sheet->setCellValue('C'.$row, $nature->conceptFor($payment));
         $sheet->setCellValue('D'.$row, (float) $payment->total_in_bs);
-        $sheet->setCellValueExplicit('E'.$row, (string) $payment->reference, DataType::TYPE_STRING);
+        $sheet->setCellValueExplicit('E'.$row, (string) ($payment->reference ?: 'S/R'), DataType::TYPE_STRING);
         $sheet->setCellValue('F'.$row, $methods ?: 'Efectivo');
 
-        $fill = ($row % 2 === 0) ? 'F9FAFB' : 'FFFFFF';
+        // Alternancia suave (Zebra striping)
+        $fill = ($row % 2 === 0) ? self::COLOR_ZEBRA : 'FFFFFF';
         $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
+            'font' => ['name' => 'Segoe UI', 'size' => 9.5, 'color' => ['argb' => '1E293B']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => $fill]],
             'borders' => [
-                'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'E5E7EB']],
+                'bottom' => ['borderStyle' => Border::BORDER_HAIR, 'color' => ['argb' => self::COLOR_BORDER_LIGHT]],
+                'left' => ['borderStyle' => Border::BORDER_HAIR, 'color' => ['argb' => self::COLOR_BORDER_LIGHT]],
+                'right' => ['borderStyle' => Border::BORDER_HAIR, 'color' => ['argb' => self::COLOR_BORDER_LIGHT]],
             ],
             'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
         ]);
-        $sheet->getStyle('D'.$row)->getNumberFormat()->setFormatCode(self::MONEY_FORMAT);
+
+        // Formatos específicos por columna
         $sheet->getStyle('A'.$row)->getAlignment()->setWrapText(true);
+        $sheet->getStyle('B'.$row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('C'.$row)->getAlignment()->setWrapText(true);
+        
+        // Columna Monto en fuente monoespaciada limpia
+        $sheet->getStyle('D'.$row)->applyFromArray([
+            'font' => ['name' => 'Consolas', 'size' => 9.5, 'color' => ['argb' => '0F172A']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT],
+            'numberFormat' => ['formatCode' => self::MONEY_FORMAT],
+        ]);
+
+        // Referencia centrada y monoespaciada
+        $sheet->getStyle('E'.$row)->applyFromArray([
+            'font' => ['name' => 'Consolas', 'size' => 9, 'color' => ['argb' => '475569']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+        ]);
+
+        $sheet->getStyle('F'.$row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+    }
+
+    private function styleSubtotalRow($sheet, int $row): void
+    {
+        $sheet->getRowDimension($row)->setRowHeight(24);
+        $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
+            'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9.5, 'color' => ['argb' => '334155']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => self::COLOR_SUBTOTAL_BG]],
+            'borders' => [
+                'top' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => '94A3B8']],
+                'bottom' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => '94A3B8']],
+            ],
+        ]);
+        $sheet->getStyle('A'.$row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle('A'.$row.':C'.$row)->getAlignment()->setIndent(1);
+
+        $sheet->getStyle('D'.$row)->applyFromArray([
+            'font' => ['name' => 'Consolas', 'bold' => true, 'size' => 10, 'color' => ['argb' => '0F172A']],
+            'numberFormat' => ['formatCode' => self::MONEY_FORMAT],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT],
+        ]);
+    }
+
+    private function writeFinalTotal($sheet, int $row, string $formula): void
+    {
+        $sheet->getRowDimension($row)->setRowHeight(30);
+        $sheet->setCellValue('A'.$row, 'TOTAL CONSOLIDADO GENERAL');
+        $sheet->mergeCells('A'.$row.':C'.$row);
+        $sheet->setCellValue('D'.$row, $formula);
+
+        $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
+            'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 11, 'color' => ['argb' => Color::COLOR_WHITE]],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => self::COLOR_PRIMARY_DARK]],
+            'borders' => [
+                'top' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['argb' => '0284C7']],
+                'bottom' => ['borderStyle' => Border::BORDER_DOUBLE, 'color' => ['argb' => '0284C7']],
+            ],
+            'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
+        ]);
+
+        $sheet->getStyle('A'.$row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setIndent(1);
+        $sheet->getStyle('D'.$row)->applyFromArray([
+            'font' => ['name' => 'Consolas', 'bold' => true, 'size' => 12, 'color' => ['argb' => '38BDF8']],
+            'numberFormat' => ['formatCode' => self::MONEY_FORMAT],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT],
+        ]);
     }
 
     private function prepareColumns($sheet): void
     {
-        $widths = ['A' => 38, 'B' => 16, 'C' => 46, 'D' => 16, 'E' => 22, 'F' => 20];
+        // Proporciones ergonómicas para evitar cortes de texto
+        $widths = [
+            'A' => 36, // Estudiantes
+            'B' => 16, // Año / Grado
+            'C' => 44, // Concepto
+            'D' => 18, // Pagado (Bs)
+            'E' => 18, // Referencia
+            'F' => 18, // Método de pago
+        ];
 
         foreach ($widths as $column => $width) {
             $sheet->getColumnDimension($column)->setWidth($width);
         }
+    }
 
-        $sheet->getStyle('A:F')->applyFromArray([
+    private function styleBaseSheet($sheet): void
+    {
+        $sheet->getDefaultRowDimension()->setRowHeight(22);
+        $sheet->getStyle('A1:F500')->applyFromArray([
+            'font' => ['name' => 'Segoe UI', 'size' => 10],
             'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
         ]);
+    }
+
+    private function styleTableHeader($sheet, int $row): void
+    {
+        $sheet->getRowDimension($row)->setRowHeight(26);
+        $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
+            'font' => [
+                'name' => 'Segoe UI',
+                'bold' => true,
+                'size' => 10,
+                'color' => ['argb' => Color::COLOR_WHITE],
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['argb' => self::COLOR_HEADER_BG],
+            ],
+            'borders' => [
+                'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => '334155']],
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+            ],
+        ]);
+    }
+
+    private function cell(int $index, int $row): string
+    {
+        return chr(65 + $index).$row;
     }
 
     private function formatFiltersForExport(array $filters): string
@@ -334,45 +559,5 @@ class SalesBookService
         } catch (\Throwable $e) {
             return (string) $date;
         }
-    }
-
-    private function styleBaseSheet($sheet): void
-    {
-        $sheet->getDefaultRowDimension()->setRowHeight(22);
-        $sheet->getStyle('A1:F1000')->applyFromArray([
-            'font' => ['name' => 'Calibri', 'size' => 10],
-            'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
-        ]);
-    }
-
-    private function styleTableHeader($sheet, int $row): void
-    {
-        $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
-            'font' => ['bold' => true, 'color' => ['argb' => Color::COLOR_WHITE]],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => '1F4E78']],
-            'borders' => [
-                'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => '1F4E78']],
-            ],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-        ]);
-    }
-
-    private function styleSubtotalRow($sheet, int $row): void
-    {
-        $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
-            'font' => ['bold' => true, 'color' => ['argb' => '1F2937']],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'E5E7EB']],
-            'borders' => [
-                'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'D1D5DB']],
-            ],
-        ]);
-        $sheet->getStyle('D'.$row)->getNumberFormat()->setFormatCode(self::MONEY_FORMAT);
-        $sheet->getStyle('A'.$row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
-        $sheet->getStyle('D'.$row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-    }
-
-    private function cell(int $index, int $row): string
-    {
-        return chr(65 + $index).$row;
     }
 }
