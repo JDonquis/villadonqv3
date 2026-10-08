@@ -15,6 +15,7 @@
     import { onMount, onDestroy, tick } from "svelte";
     import { page } from "@inertiajs/svelte";
     import PaymentCard from "../../components/PaymentCard.svelte";
+    import ExportSalesBookModal from "../../components/ExportSalesBookModal.svelte";
 
     export let data = { students: { data: [] }, accounts: { data: [] } };
     export let config = {
@@ -51,6 +52,7 @@
 
     let showModal = false;
     let showTotalIncome = false;
+    let showSalesBookModal = false;
     $: showModalFormEdit = false;
     let selectedRow = { status: false, data: null };
     let currentPayment = null;
@@ -81,6 +83,30 @@
 
     function savePaymentMethod(methodId) {
         localStorage.setItem("lastPaymentMethod", methodId);
+    }
+
+    function handleSalesBookExport(event) {
+        const { columns = [], format = "xlsx" } = event.detail || {};
+
+        const params = new URLSearchParams(
+            $page.url.includes("?") ? $page.url.slice($page.url.indexOf("?")) : "",
+        );
+        params.set("columns", columns.join(","));
+        params.set("format", format);
+
+        const link = document.createElement("a");
+        link.href = `/dashboard/pagos/libro-ventas?${params.toString()}`;
+        link.rel = "noopener";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        showSalesBookModal = false;
+
+        displayAlert({
+            type: "info",
+            message: "Generando el libro de ventas, espere unos segundos...",
+        });
     }
 
     let concepts = [...(data?.concepts ?? [])];
@@ -1822,18 +1848,18 @@
                     | {formatFechaCorta(dateOfDolarPrice)}
             </p> -->
 
-            <a
-                href={`/dashboard/pagos/libro-ventas${$page.url.includes('?') ? $page.url.slice($page.url.indexOf('?')) : ''}`}
-                class="border mt-4 hover:shadow-xl hover:bg-gray-100 border-gray-300 rounded-xl flex items-center gap-3 py-2 md:py-3 px-4 md:px-7 bg-white"
+            <button
+                type="button"
+                on:click={() => (showSalesBookModal = true)}
+                class="border mt-4 hover:shadow-xl hover:bg-gray-100 border-gray-300 rounded-xl flex items-center gap-3 py-2 md:py-3 px-4 md:px-7 bg-white cursor-pointer"
             >
-
                 <iconify-icon
                     icon="fa6-solid:file-excel"
                     class="text-emerald-700"
                     width="19"
                     height="19"></iconify-icon>
                 <span class="text-slate-600 font-semibold">Libro de ventas</span>
-            </a>
+            </button>
             <div class="hidden sm:block">
                 <button
                     class="animated-button ml-auto w-fitcontent"
@@ -2001,7 +2027,7 @@
     edit={false}
     pagination={true}
 >
-    <thead slot="thead" class="sticky top-0 z-40">
+    <thead slot="thead" class="sticky top-0 z-30">
         <tr>
             <th>ID</th>
             <th>Fec. Transacción</th>
@@ -2123,27 +2149,29 @@
                         tasa: {row.exchange_rate}
                     </p>
                 </td>
-                <td class="flex gap-3 items-center h-full">
-                    <!-- <ColorsPayMethods
-                        payment_method_id={row.account_payment.method.name}
-                        accounts={data.accounts.data}
-                    /> -->
-                    <span
-                        class={`h-full text-[1px] text-${ColorsPayMethods()[row.account_payment.method.name]}  bg-${ColorsPayMethods()[row.account_payment.method.name]} w-1  rounded  left-0 top-0`}
-                        >|</span
-                    >
-                    <div>
-                        <span class="font-semibold text-gray-800">
-                            {row.account_payment.method.name}
-                        </span>
-                        <p class="text-gray-500 text-sm">
-                            {#if row.account_payment.bank}
-                                {row.account_payment.bank}{/if}
-                            {#if row.account_payment.cash_currency}
-                                {row.account_payment.cash_currency}{/if}
-                            {#if row.account_payment.username}
-                                {row.account_payment.username}{/if}
-                        </p>
+                <td class="align-middle">
+                    <div class="flex items-center justify-start gap-3 h-full min-h-[52px]">
+                        <!-- <ColorsPayMethods
+                            payment_method_id={row.account_payment.method.name}
+                            accounts={data.accounts.data}
+                        /> -->
+                        <span
+                            class={`h-10 text-[1px] text-${ColorsPayMethods()[row.account_payment.method.name]} bg-${ColorsPayMethods()[row.account_payment.method.name]} w-1 rounded left-0 top-0`}
+                            >|</span
+                        >
+                        <div class="flex flex-col justify-center">
+                            <span class="font-semibold text-gray-800 leading-tight">
+                                {row.account_payment.method.name}
+                            </span>
+                            <p class="text-gray-500 text-sm leading-tight">
+                                {#if row.account_payment.bank}
+                                    {row.account_payment.bank}{/if}
+                                {#if row.account_payment.cash_currency}
+                                    {row.account_payment.cash_currency}{/if}
+                                {#if row.account_payment.username}
+                                    {row.account_payment.username}{/if}
+                            </p>
+                        </div>
                     </div>
                 </td>
                 <td>
@@ -2190,6 +2218,13 @@
         {/each}
     </tbody>
 </Table>
+
+<ExportSalesBookModal
+    isOpen={showSalesBookModal}
+    totalRecords={data?.payments?.total ?? 0}
+    on:close={() => (showSalesBookModal = false)}
+    on:export={handleSalesBookExport}
+/>
 
 <style>
     .grid-container > div:first-child .months_to_pay {

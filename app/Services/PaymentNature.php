@@ -39,6 +39,21 @@ class PaymentNature
         'august' => 'Agosto',
     ];
 
+    public const MONTH_ES_SHORT = [
+        'september' => 'Sep',
+        'october' => 'Oct',
+        'november' => 'Nov',
+        'december' => 'Dic',
+        'january' => 'Ene',
+        'february' => 'Feb',
+        'march' => 'Mar',
+        'april' => 'Abr',
+        'may' => 'May',
+        'june' => 'Jun',
+        'july' => 'Jul',
+        'august' => 'Ago',
+    ];
+
     public const MONTH_ORDER = [
         'september', 'october', 'november', 'december',
         'january', 'february', 'march', 'april',
@@ -277,17 +292,19 @@ class PaymentNature
         $after = $this->after[$application->id] ?? null;
 
         if ($before === null || $after === null) {
-            return $application->is_inscription ? 'Abono a Inscripción' : '';
+            return $application->is_inscription ? 'Abono Inscripción' : '';
         }
 
         if ($application->is_inscription) {
             // Inscription: deuda es negativa. before < 0 = debía; after >= 0 = saldó.
             return ($before < 0 && $after >= 0)
-                ? 'Pago de Inscripción'
-                : 'Abono a Inscripción';
+                ? 'Inscripción pagada'
+                : 'Abono Inscripción';
         }
 
-        $month = self::MONTH_ES[$application->month] ?? ucfirst((string) $application->month);
+        $month = self::MONTH_ES_SHORT[$application->month]
+            ?? self::MONTH_ES[$application->month]
+            ?? ucfirst((string) $application->month);
 
         // Determinar si el mes estaba VENCIDO en la fecha del pago
         $vencido = $this->wasVencidoAt($application);
@@ -298,15 +315,15 @@ class PaymentNature
         if ($vencido) {
             // Mes vencido: pagar deuda
             return $after >= 0
-                ? 'Pago de Mensualidad '.$month
-                : 'Abono a Mensualidad '.$month;
+                ? 'Pago '.$month
+                : 'Abono '.$month;
         }
 
-        // Mes futuro (no vencido): pago anticipado/adelantado.
+        // Mes futuro (no vencido): pago adelantado.
         // after >= 0 => el pago cubrió el mes completo.
         return ($after >= 0)
-            ? 'Pago Adelantado - Mensualidad '.$month
-            : 'Abono Anticipado - '.$month;
+            ? 'Pago Adelantado '.$month
+            : 'Abono Adelantado '.$month;
     }
 
     /**
@@ -317,6 +334,37 @@ class PaymentNature
         $parts = [];
 
         foreach ($payment->balancePayments as $application) {
+            $label = $this->labelFor($application);
+
+            if ($label !== '' && ! in_array($label, $parts, true)) {
+                $parts[] = $label;
+            }
+        }
+
+        $conceptName = $payment->paymentConcept?->name;
+
+        if ($conceptName && ! in_array($conceptName, $parts, true)) {
+            $parts[] = $conceptName;
+        }
+
+        return implode(', ', $parts);
+    }
+
+    /**
+     * Concepto del pago correspondiente a UN estudiante concreto: sólo las
+     * aplicaciones al balance cuyo `balance_student` pertenece a ese estudiante,
+     * más el concepto del recibo (compartido por todo el pago).
+     */
+    public function conceptForStudent($payment, $student): string
+    {
+        $parts = [];
+        $studentId = (int) $student->id;
+
+        foreach ($payment->balancePayments as $application) {
+            if ($this->studentIdFor((int) $application->balance_student_id) !== $studentId) {
+                continue;
+            }
+
             $label = $this->labelFor($application);
 
             if ($label !== '' && ! in_array($label, $parts, true)) {

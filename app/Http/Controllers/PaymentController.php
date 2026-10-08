@@ -115,12 +115,22 @@ class PaymentController extends Controller
     public function libroVentas(Request $request)
     {
         $filters = $request->all();
+
+        $columns = $request->input('columns', []);
+        if (is_string($columns)) {
+            $columns = array_filter(array_map('trim', explode(',', $columns)));
+        }
+
+        $format = (string) $request->input('format', 'xlsx');
+
         $payments = $this->paymentService->getAllForExport($filters);
 
         return (new SalesBookService)->export(
             $payments,
             'libro_ventas_'.now()->format('Y_m_d'),
-            $filters
+            $filters,
+            (array) $columns,
+            $format
         );
     }
 }

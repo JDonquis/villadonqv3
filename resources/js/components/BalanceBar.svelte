@@ -167,49 +167,43 @@
         }, 150);
     }
 
-    function getConceptBadgeStyle(concept = '') {
-    const c = concept.toLowerCase();
-    
-    if (c.includes('pago adel') || c.includes('adelantado')) {
-        return 'bg-blue-100 text-blue-700 border-blue-200'; // Pago Adelantado (Mes Futuro Completo)
-    }
-    if (c.includes('anticipado')) {
-        return 'bg-blue/10 text-color2 border-color1/10'; // Abono Anticipado (Mes Futuro Parcial)
-    }
-    if (c.includes('abono')) {
-        return 'bg-yellow/20 text-brown border-yellow'; // Abono (Pago Parcial)
-    }
-    // Pago de Mensualidad Completo (Por defecto o exacto)
-    return 'bg-emerald-50 text-emerald-700 border-emerald-100';
-}
+    const MONTHS_SHORT = [
+        "sep", "oct", "nov", "dic", "ene", "feb",
+        "mar", "abr", "may", "jun", "jul", "ago",
+    ];
 
-    // Texto corto del badge: quita el mes final (mensualidades) o la preposición
-    // (inscripción), para que se lea dentro de la tarjeta.
+    function getConceptBadgeStyle(concept = '') {
+        const c = concept.toLowerCase();
+
+        // Adelantado (mes futuro): completo = azul, parcial (abono) = azul claro
+        if (c.includes('adelantado')) {
+            return c.includes('abono')
+                ? 'bg-blue/10 text-color2 border-color1/10' // Abono Adelantado (futuro parcial)
+                : 'bg-emerald-100 text-dark border-indigo-300'; // Pago Adelantado (futuro completo)
+        }
+
+        if (c.includes('abono')) {
+            return 'bg-yellow/20 text-brown border-yellow'; // Abono (parcial)
+        }
+
+        // Pago (vencido completo) o Inscripción pagada
+        return 'bg-emerald-50 text-emerald-700 border-emerald-100';
+    }
+
+    // Texto corto del badge: quita el mes abreviado final (ya se conoce por la
+    // celda/celda del tooltip) y deja el resto de la etiqueta tal cual.
     function shortConcept(concept = '') {
         const value = (concept || 'Abono').trim();
         if (!value) return 'Abono';
 
-        if (/inscripci/i.test(value)) {
-            return value
-                .replace(/\b(de|a)\b\s*/i, ' ')
-                .replace(/\s+/g, ' ')
-                .trim();
-        }
-
-        if (/adelantado/i.test(value)) {
-            return 'Pago Adelantado';
-        }
-
         const words = value.split(' ').filter(Boolean);
-        if (words.length > 1) {
+        const last = (words[words.length - 1] || '').toLowerCase();
+
+        if (words.length > 1 && MONTHS_SHORT.includes(last)) {
             words.pop();
         }
 
-        return words
-            .join(' ')
-            .replace(/\s*-\s*$/, '')
-            .replace(/\s+/g, ' ')
-            .trim() || 'Abono';
+        return words.join(' ').replace(/\s+/g, ' ').trim() || 'Abono';
     }
 </script>
 

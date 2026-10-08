@@ -1374,7 +1374,7 @@
             {/if}
         {/if}
     </div>
-    <thead slot="thead" class="sticky top-0 z-40">
+    <thead slot="thead" class="sticky top-0 z-30">
         <tr>
             <th>N°</th>
             <th>Nombres</th>
