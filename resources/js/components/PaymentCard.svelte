@@ -58,8 +58,45 @@
     }
 
     const isDeleted = payment.status === 0;
-    const conceptName =
-        payment.payment_concept?.name || "Mensualidad / Inscripciones";
+
+    $: conceptNames = (() => {
+        const allocations = Array.isArray(payment?.allocations)
+            ? payment.allocations
+            : [];
+        const names = [];
+
+        // Porción regular (mensualidad / inscripción) en pagos combinados.
+        if (payment?.payment_concept_id == null) {
+            const allocByStudent = {};
+            allocations.forEach((a) => {
+                allocByStudent[a.student_id] =
+                    (allocByStudent[a.student_id] || 0) +
+                    (parseFloat(a.amount) || 0);
+            });
+
+            const hasRegular = (payment?.students || []).some((s) => {
+                const total = parseFloat(s.pivot?.amount_in_dolars) || 0;
+                const alloc = allocByStudent[s.id] || 0;
+                return total - alloc > 0.005;
+            });
+
+            if (hasRegular) names.push("Mensualidad / Inscripciones");
+        }
+
+        if (allocations.length > 0) {
+            allocations
+                .map((a) => a.payment_concept?.name)
+                .filter(Boolean)
+                .forEach((name) => {
+                    if (!names.includes(name)) names.push(name);
+                });
+        } else if (payment?.payment_concept) {
+            names.push(payment.payment_concept.name);
+        }
+
+        return names.length > 0 ? names : ["Mensualidad / Inscripciones"];
+    })();
+
     const methodName = payment.account_payment?.method?.name || "";
     const methodColor = methodName ? ColorsPayMethods()[methodName] : "gray";
     const studentsCount = payment.students?.length || 0;
@@ -92,12 +129,14 @@
         class="px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
     >
         <div class="flex-1 min-w-0 flex-wrap items-center gap-2">
-            <!-- Concepto badge -->
-            <span
-                class="inline-flex items-center px-2 mb-2 py-1 rounded text-xs font-medium bg-color4/10 truncate max-w-[200px]"
-            >
-                {conceptName}
-            </span>
+            <!-- Concepto(s) badge -->
+            {#each conceptNames as conceptName}
+                <span
+                    class="inline-flex items-center px-2 mb-2 mr-1 py-1 rounded text-xs font-medium bg-color4/10 truncate max-w-[200px]"
+                >
+                    {conceptName}
+                </span>
+            {/each}
 
             <!-- Método de pago con punto de color -->
             <div class="flex items-center gap-1.5 text-sm text-gray-700">

@@ -32,18 +32,20 @@ class BalanceService
         'august',
     ];
 
-    public function updateStudentBalance(Payment $payment, Student $student, array $balances): void
+    public function updateStudentBalance(Payment $payment, Student $student, array $balances, ?float $amount = null): void
     {
         $sortedBalances = collect($balances)
             ->sortBy('id')
             ->values();
 
-        $amount = $payment->students()
-            ->where('student_id', $student->id)
-            ->first()
-            ->pivot->amount_in_dolars;
+        if ($amount === null) {
+            $amount = (float) $payment->students()
+                ->where('student_id', $student->id)
+                ->first()
+                ->pivot->amount_in_dolars;
+        }
 
-        $remainingAmount = $amount;
+        $remainingAmount = (float) $amount;
 
         $config = MainConfig::select('monthly_payment', 'day_of_monthly_payment', 'grace_period')->first();
         $basePrice = (float) ($config->monthly_payment ?? 0);

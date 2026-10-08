@@ -75,6 +75,11 @@ class Payment extends Model
         return $this->hasMany(StudentChargePayment::class);
     }
 
+    public function allocations()
+    {
+        return $this->hasMany(PaymentAllocation::class);
+    }
+
     public function deletedBy()
     {
         return $this->belongsTo(User::class, 'deleted_by');

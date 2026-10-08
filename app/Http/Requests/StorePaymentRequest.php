@@ -34,7 +34,8 @@ class StorePaymentRequest extends FormRequest
             'students' => [
                 'required', 'array', 'min:1',
                 function ($attribute, $value, $fail) {
-                    $hasConcept = ! empty($this->input('payment_concept_id'));
+                    $hasConcept = ! empty($this->input('payment_concept_id'))
+                        || ! empty($this->input('concepts'));
                     if ($hasConcept) {
                         return;
                     }
@@ -48,8 +49,14 @@ class StorePaymentRequest extends FormRequest
             ],
             'students.*.id' => 'required|exists:students,id',
             'students.*.amount_in_dolars' => 'required|numeric|min:0',
+            'students.*.regular_amount' => 'nullable|numeric|min:0',
             'students.*.balances' => 'array',
             'students.*.balances.*.id' => 'exists:balance_students,id',
+            'concepts' => 'nullable|array',
+            'concepts.*.payment_concept_id' => 'required|exists:payment_concepts,id',
+            'concepts.*.students' => 'required|array|min:1',
+            'concepts.*.students.*.id' => 'required|exists:students,id',
+            'concepts.*.students.*.amount_in_dolars' => 'required|numeric|min:0',
             'reported_date' => 'nullable|date',
         ];
     }

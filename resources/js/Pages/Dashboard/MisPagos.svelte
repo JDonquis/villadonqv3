@@ -94,6 +94,7 @@
         if (params.get("student_id")) {
             activeTab = "pagar";
             showFormPay = true;
+            initPaymentForm();
         }
     });
 
@@ -237,8 +238,11 @@
         reported_date: currentDateString,
         students: [],
         account_payment_id: "",
+        payment_concept_id: "",
+        concepts: [],
         total_in_dolars: "",
         total_in_bs: "",
+        exchange_rate: "",
         reference: "",
         observations: "",
     };
@@ -269,6 +273,299 @@
         (sum, item) => sum + (parseFloat(item.amount_in_dolars) || 0),
         0,
     );
+
+    // ------------------------------------------------------------------
+    // Conceptos especiales (combinables con Mensualidad / Inscripciones)
+    // ------------------------------------------------------------------
+    let concepts = [...(data?.concepts ?? [])];
+    let selectedConceptIds = [];
+    let includeMonthly = true;
+    $: selectedConcepts = concepts.filter((c) =>
+        selectedConceptIds.includes(c.id),
+    );
+    $: isConceptPayment = selectedConceptIds.length > 0;
+
+    function chargeAccumulated(student, type) {
+        if (!type) return 0;
+        return (student?.charges || [])
+            .filter((c) => c.type === type)
+            .reduce((sum, c) => sum + (Number(c.remaining) || 0), 0);
+    }
+
+    // Un concepto tiene precio fijo (no editable) si define un precio > 0.
+    function isFixedPriceConcept(concept) {
+        return concept != null && Number(concept.price) > 0;
+    }
+
+    function defaultConceptAmount(student, concept) {
+        if (isFixedPriceConcept(concept)) {
+            return Number(concept.price).toFixed(2);
+        }
+
+        const accumulated = chargeAccumulated(student, concept.type);
+        return accumulated.toFixed(2);
+    }
+
+    function buildConceptAmounts(student) {
+        const amounts = {};
+        selectedConceptIds.forEach((id) => {
+            const concept = concepts.find((c) => c.id === id);
+            if (concept) {
+                amounts[id] = defaultConceptAmount(student, concept);
+            }
+        });
+        return amounts;
+    }
+
+    function recomputeStudent(student) {
+        if (selectedConceptIds.length === 0) {
+            const dolars = parseFloat(student.amount_in_dolars) || 0;
+            return {
+                ...student,
+                amount_in_bs:
+                    dolarPrice > 0
+                        ? (dolars * dolarPrice).toFixed(2)
+                        : student.amount_in_bs,
+            };
+        }
+
+        const amounts = student.concept_amounts || {};
+        const conceptTotal = selectedConceptIds.reduce(
+            (sum, id) => sum + (parseFloat(amounts[id]) || 0),
+            0,
+        );
+        const regular = includeMonthly
+            ? parseFloat(student.regular_amount) || 0
+            : 0;
+        const total = regular + conceptTotal;
+
+        return {
+            ...student,
+            amount_in_dolars: total.toFixed(2),
+            amount_in_bs:
+                dolarPrice > 0 ? (total * dolarPrice).toFixed(2) : "0.00",
+        };
+    }
+
+    function recomputeFormTotals() {
+        $form.students = $form.students.map(recomputeStudent);
+        $form.total_in_dolars = $form.students
+            .reduce((total, s) => total + (parseFloat(s.amount_in_dolars) || 0), 0)
+            .toFixed(2);
+        $form.total_in_bs =
+            dolarPrice > 0
+                ? ($form.total_in_dolars * dolarPrice).toFixed(2)
+                : $form.total_in_bs;
+    }
+
+    // Siembra el formulario con los estudiantes del representante.
+    function initPaymentForm() {
+        $form.students = (data?.students || []).map((s) => {
+            const debt = (s.balances || []).reduce(
+                (sum, b) => sum + (Number(b.total_debt) || 0),
+                0,
+            );
+            const debtStr = debt.toFixed(2);
+
+            return {
+                id: s.id,
+                name: s.name,
+                last_name: s.last_name,
+                ci: s.ci,
+                document_type: s.document_type,
+                course_name: s.course || "",
+                section_name: s.section || "",
+                is_exempt: s.is_exempt,
+                balances: s.balances || [],
+                charges: s.charges || [],
+                total_debt: debtStr,
+                amount_in_dolars: debtStr,
+                amount_in_bs:
+                    dolarPrice > 0 ? (debt * dolarPrice).toFixed(2) : "0.00",
+                regular_amount: debtStr,
+                concept_amounts: buildConceptAmounts(s),
+            };
+        });
+
+        recomputeFormTotals();
+    }
+
+    // Vuelve al modo Mensualidad / Inscripciones tomando la deuda de cada estudiante.
+    function resetStudentsToDebt() {
+        $form.students = $form.students.map((s) => {
+            const debt = s.total_debt ?? 0;
+            return {
+                ...s,
+                amount_in_dolars: String(debt),
+                amount_in_bs:
+                    dolarPrice > 0
+                        ? (Number(debt) * dolarPrice).toFixed(2)
+                        : "0.00",
+                regular_amount: String(debt),
+                concept_amounts: {},
+            };
+        });
+    }
+
+    function toggleConcept(id) {
+        const concept = concepts.find((c) => c.id === id);
+        if (!concept) return;
+
+        const removing = selectedConceptIds.includes(id);
+
+        if (removing) {
+            selectedConceptIds = selectedConceptIds.filter((c) => c !== id);
+        } else {
+            selectedConceptIds = [...selectedConceptIds, id];
+        }
+
+        if (selectedConceptIds.length === 0) {
+            resetStudentsToDebt();
+            recomputeFormTotals();
+            return;
+        }
+
+        $form.students = $form.students.map((s) => {
+            const amounts = { ...(s.concept_amounts || {}) };
+            if (removing) {
+                delete amounts[id];
+            } else if (amounts[id] === undefined) {
+                amounts[id] = defaultConceptAmount(s, concept);
+            }
+            const regular_amount =
+                s.regular_amount ??
+                String(s.total_debt ?? s.amount_in_dolars ?? 0);
+            return recomputeStudent({
+                ...s,
+                concept_amounts: amounts,
+                regular_amount,
+            });
+        });
+
+        recomputeFormTotals();
+    }
+
+    function setIncludeMonthly(value) {
+        if (!value && selectedConceptIds.length === 0) return;
+        includeMonthly = value;
+        recomputeFormTotals();
+    }
+
+    function updateConceptAmount(studentIndex, conceptId, value) {
+        const concept = concepts.find((c) => c.id === conceptId);
+        if (isFixedPriceConcept(concept)) return;
+
+        $form.students[studentIndex] = recomputeStudent({
+            ...$form.students[studentIndex],
+            concept_amounts: {
+                ...($form.students[studentIndex].concept_amounts || {}),
+                [conceptId]: value,
+            },
+        });
+        recomputeFormTotals();
+    }
+
+    function updateRegularAmount(studentIndex, value) {
+        $form.students[studentIndex] = recomputeStudent({
+            ...$form.students[studentIndex],
+            regular_amount: value,
+        });
+        recomputeFormTotals();
+    }
+
+    function conceptSubtotal(conceptId) {
+        return $form.students.reduce(
+            (sum, s) => sum + (parseFloat(s.concept_amounts?.[conceptId]) || 0),
+            0,
+        );
+    }
+
+    function regularSubtotal() {
+        if (!includeMonthly) return 0;
+        return $form.students.reduce(
+            (sum, s) => sum + (parseFloat(s.regular_amount) || 0),
+            0,
+        );
+    }
+
+    function resetConceptSelection() {
+        selectedConceptIds = [];
+        includeMonthly = true;
+    }
+
+    function submitPayment(event) {
+        if (event) event.preventDefault();
+
+        if (($form.students || []).length === 0) {
+            displayAlert({
+                type: "error",
+                message: "No hay estudiantes para pagar.",
+            });
+            return;
+        }
+
+        $form.clearErrors();
+        $form.exchange_rate =
+            Number(dolarPrice) > 0 ? Number(dolarPrice).toFixed(2) : null;
+
+        const isMultiConcept = selectedConceptIds.length > 0;
+        const conceptIds = [...selectedConceptIds];
+        const monthlyIncluded = includeMonthly;
+
+        $form.transform((d) => {
+            const students = (d.students || []).map((s) => ({
+                id: s.id,
+                amount_in_dolars: parseFloat(s.amount_in_dolars) || 0,
+                regular_amount: isMultiConcept
+                    ? monthlyIncluded
+                        ? parseFloat(s.regular_amount) || 0
+                        : 0
+                    : parseFloat(s.amount_in_dolars) || 0,
+                balances: s.balances || [],
+            }));
+
+            if (!isMultiConcept) {
+                return { ...d, concepts: [], students };
+            }
+
+            return {
+                ...d,
+                payment_concept_id: "",
+                students,
+                concepts: conceptIds.map((id) => ({
+                    payment_concept_id: id,
+                    students: (d.students || []).map((s) => ({
+                        id: s.id,
+                        amount_in_dolars:
+                            parseFloat(s.concept_amounts?.[id]) || 0,
+                    })),
+                })),
+            };
+        });
+
+        $form.post("/dashboard/mis-pagos", {
+            preserveScroll: true,
+            onSuccess: () => {
+                showFormPay = false;
+                $form.reset();
+                resetConceptSelection();
+                displayAlert({
+                    type: "success",
+                    message: "Pago registrado correctamente",
+                });
+            },
+            onError: (errors) => {
+                displayAlert({
+                    type: "error",
+                    message:
+                        errors?.message ||
+                        errors?.data ||
+                        errors?.students ||
+                        "No se pudo registrar el pago.",
+                });
+            },
+        });
+    }
 
     function buildChargesItems() {
         const grouped = new Map();
@@ -544,7 +841,7 @@
                                     {student.course}-{student.section}
                                 </span>
                             </div>
-                            {#if showFormPay}
+                            {#if showFormPay && !isConceptPayment}
                                 <div class="mt-3 md:mt-0 flex gap-4">
                                     <div class="flex flex-col items-start">
                                         <b class="pr-1 text-xs">$. USD</b>
@@ -690,8 +987,9 @@
                                     ...b,
                                     ...b.months,
                                 }))}
-                                amountToPay={$form.students[i]
-                                    ?.amount_in_dolars}
+                                amountToPay={isConceptPayment
+                                    ? $form.students[i]?.regular_amount
+                                    : $form.students[i]?.amount_in_dolars}
                                 is_exempt={student.is_exempt
                                     ? student.exemption_percentage
                                     : false}
@@ -701,6 +999,109 @@
                             />
                         </div>
                     {/each}
+
+                    <!-- Desglose por concepto (combinable con mensualidad) -->
+                    {#if isConceptPayment && showFormPay}
+                        <div
+                            class="mt-2 mb-3 rounded-xl border border-gray-200 bg-gray-50 p-2 md:p-3 space-y-1.5"
+                        >
+                            <p
+                                class="text-[10px] font-bold uppercase tracking-wider text-gray-400"
+                            >
+                                Monto por concepto
+                            </p>
+                            {#if includeMonthly}
+                                <div
+                                    class="flex items-center justify-between gap-3 rounded-lg border border-color1/30 bg-color1/5 px-3 py-1.5"
+                                >
+                                    <span
+                                        class="text-xs font-semibold text-gray-700 truncate"
+                                    >
+                                        Mensualidad / Inscripciones
+                                    </span>
+                                    <div class="relative w-32 shrink-0">
+                                        <span
+                                            class="absolute left-2 top-1.5 text-xs font-bold text-gray-400 pointer-events-none"
+                                            >$</span
+                                        >
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            placeholder="0.00"
+                                            class="w-full pl-6 pr-2 py-1 text-xs md:text-sm font-semibold text-color1 bg-white border border-grayBlue/50 rounded-lg focus:outline-none focus:border-color2 focus:ring-2 focus:ring-color2/20"
+                                            value={$form.students[i]
+                                                ?.regular_amount || ""}
+                                            on:input={(e) =>
+                                                updateRegularAmount(
+                                                    i,
+                                                    e.target.value,
+                                                )}
+                                        />
+                                    </div>
+                                </div>
+                            {/if}
+                            {#each selectedConcepts as concept}
+                                <div
+                                    class="flex items-center justify-between gap-3 rounded-lg border border-grayBlue/40 bg-white px-3 py-1.5"
+                                >
+                                    <span
+                                        class="text-xs font-semibold text-gray-700 truncate"
+                                    >
+                                        {concept.name}
+                                    </span>
+                                    <div class="relative w-32 shrink-0">
+                                        <span
+                                            class="absolute left-2 top-1.5 text-xs font-bold text-gray-400 pointer-events-none"
+                                            >$</span
+                                        >
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            placeholder="0.00"
+                                            title={isFixedPriceConcept(concept)
+                                                ? "Precio fijo del concepto"
+                                                : ""}
+                                            class="w-full pl-6 pr-2 py-1 text-xs md:text-sm font-semibold border rounded-lg focus:outline-none {isFixedPriceConcept(
+                                                concept,
+                                            )
+                                                ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed'
+                                                : 'text-color1 bg-white border-grayBlue/50 focus:border-color2 focus:ring-2 focus:ring-color2/20'}"
+                                            value={$form.students[i]
+                                                ?.concept_amounts?.[
+                                                concept.id
+                                            ] || ""}
+                                            readonly={isFixedPriceConcept(
+                                                concept,
+                                            )}
+                                            on:input={(e) =>
+                                                updateConceptAmount(
+                                                    i,
+                                                    concept.id,
+                                                    e.target.value,
+                                                )}
+                                        />
+                                    </div>
+                                </div>
+                            {/each}
+                            <div
+                                class="flex items-center justify-between pt-1 border-t border-grayBlue/30 text-xs"
+                            >
+                                <span class="font-bold text-gray-500"
+                                    >Total del estudiante</span
+                                >
+                                <span class="font-bold text-color1">
+                                    ${$form.students[i]?.amount_in_dolars}
+                                    <span class="text-gray-400 font-semibold"
+                                        >· Bs {formatBsInput(
+                                            $form.students[i]?.amount_in_bs,
+                                        )}</span
+                                    >
+                                </span>
+                            </div>
+                        </div>
+                    {/if}
                 {/each}
             </div>
             <div class="col-span-4 mb-4">
@@ -711,9 +1112,8 @@
                             // ensure hidden first to replay animation
                             showFormPay = false;
                             await tick();
-                            // set amounts
-                            const totalDebt = computeRepresentativeDebt();
-                            syncSingleStudentTotals("usd", totalDebt);
+                            // sembrar montos de cada estudiante
+                            initPaymentForm();
 
                             // restore saved selection or focus select
                             const saved =
@@ -728,7 +1128,7 @@
                             await tick();
                             document
                                 .querySelector("#amount_in_dolars_0")
-                                .focus();
+                                ?.focus();
                         }}
                     >
                         <svg
@@ -758,6 +1158,7 @@
                         class="formPay col-span-4 w grid grid-cols-2 gap-3 md:gap-x-5"
                         in:fade={{ duration: 180 }}
                         out:fade={{ duration: 120 }}
+                        on:submit={submitPayment}
                     >
                         <Input
                             bind:this={paymentSelectRef}
@@ -787,6 +1188,46 @@
                             error={$form.errors?.date}
                             max={currentDateString}
                         />
+
+                        {#if concepts.length > 0}
+                            <div class="col-span-2 space-y-1">
+                                <p class="text-[11px] text-gray-400 leading-snug">
+                                    Puedes combinar
+                                    <b>Mensualidad / Inscripciones</b> con uno o
+                                    varios conceptos especiales.
+                                </p>
+                                <div class="flex flex-wrap gap-1.5">
+                                    <button
+                                        type="button"
+                                        class="px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-colors {includeMonthly ||
+                                        selectedConceptIds.length === 0
+                                            ? 'bg-color1 text-white border-color1'
+                                            : 'bg-white text-gray-600 border-grayBlue/50 hover:border-color2'}"
+                                        on:click={() =>
+                                            setIncludeMonthly(!includeMonthly)}
+                                    >
+                                        Mensualidad / Inscripciones
+                                    </button>
+                                    {#each concepts as concept}
+                                        {@const checked =
+                                            selectedConceptIds.includes(
+                                                concept.id,
+                                            )}
+                                        <button
+                                            type="button"
+                                            class="px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-colors {checked
+                                                ? 'bg-color2 text-white border-color2'
+                                                : 'bg-white text-gray-600 border-grayBlue/50 hover:border-color2'}"
+                                            on:click={() =>
+                                                toggleConcept(concept.id)}
+                                        >
+                                            {concept.name}{#if concept.price != null && Number(concept.price) > 0}
+                                                · ${concept.price}{/if}
+                                        </button>
+                                    {/each}
+                                </div>
+                            </div>
+                        {/if}
 
                         {#if selectedPaymentAccount}
                             <div
@@ -836,7 +1277,7 @@
                             </div>
                         {/if}
 
-                        {#if data.students.length > 1}
+                        {#if data.students.length > 1 || isConceptPayment}
                             <Input
                                 type="hidden"
                                 label={"Total en Dólares ($)"}
@@ -916,16 +1357,9 @@
                             />
                         {/if}
                         <button
+                            type="submit"
                             class="animated-button col-span-2"
-                            on:click={(e) => {
-                                // e.preventDefault();
-                                // showModal = true;
-                                // searchInputRef.focus();
-                                // if (submitStatus === "Solo lectura") {
-                                //     $form.reset();
-                                //     submitStatus = "Registrar";
-                                // }
-                            }}
+                            disabled={$form.processing}
                         >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"

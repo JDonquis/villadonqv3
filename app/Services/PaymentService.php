@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\BalanceStudentStatusEnum;
 use App\Models\Payment;
+use App\Models\PaymentAllocation;
 use App\Models\PaymentConcept;
 use App\Models\Student;
 use App\Models\StudentCharge;
@@ -36,7 +37,7 @@ class PaymentService
     public function getAllForExport($params = [], ?array $allowedStudentIds = null)
     {
         return $this->baseQuery($params, $allowedStudentIds)
-            ->with('balancePayments')
+            ->with('balancePayments', 'allocations.paymentConcept')
             ->where('status', 1)
             ->orderBy('date', 'desc')
             ->orderBy('id', 'desc')
@@ -55,7 +56,8 @@ class PaymentService
                 'accountPayment.method',
                 'user',
                 'deletedBy',
-                'paymentConcept'
+                'paymentConcept',
+                'allocations.paymentConcept'
             )
             ->when($allowedStudentIds, function ($q) use ($allowedStudentIds) {
                 $q->whereHas('students', function ($query) use ($allowedStudentIds) {
@@ -76,6 +78,9 @@ class PaymentService
                             $q->where('name', 'like', '%'.$search.'%');
                         })
                         ->orWhereHas('paymentConcept', function ($q) use ($search) {
+                            $q->where('name', 'like', '%'.$search.'%');
+                        })
+                        ->orWhereHas('allocations.paymentConcept', function ($q) use ($search) {
                             $q->where('name', 'like', '%'.$search.'%');
                         })
                         ->orWhereHas('students', function ($q) use ($search) {
@@ -125,14 +130,19 @@ class PaymentService
                         }
                     }
 
-                    if ($regular && ! $ids) {
-                        $query->whereNull('payment_concept_id');
-                    } elseif ($ids && ! $regular) {
-                        $query->whereIn('payment_concept_id', $ids);
-                    } else {
-                        $query->where(function ($sub) use ($ids) {
+                    if ($regular) {
+                        $query->orWhere(function ($sub) {
                             $sub->whereNull('payment_concept_id')
-                                ->orWhereIn('payment_concept_id', $ids);
+                                ->whereDoesntHave('allocations');
+                        });
+                    }
+
+                    if ($ids) {
+                        $query->orWhere(function ($sub) use ($ids) {
+                            $sub->whereIn('payment_concept_id', $ids)
+                                ->orWhereHas('allocations', function ($a) use ($ids) {
+                                    $a->whereIn('payment_concept_id', $ids);
+                                });
                         });
                     }
                 });
@@ -203,39 +213,184 @@ class PaymentService
 
         $studentsData = collect($data['students']);
 
-        $hasConcept = ! empty($data['payment_concept_id']);
-
-        $concept = $hasConcept ? PaymentConcept::find($data['payment_concept_id']) : null;
-        $chargeType = $concept?->type;
-        $isChargePayment = in_array($chargeType, self::CHARGE_TYPES, true);
-
         $balanceService = new BalanceService;
 
-        foreach ($studentsData as $studentData) {
-            $student = Student::where('id', $studentData['id'])
-                ->when($allowedStudentIds, function ($q) use ($allowedStudentIds) {
-                    $q->whereIn('id', $allowedStudentIds);
-                })
-                ->where(function ($q) {
-                    $q->where('status', '!=', 0)
-                        ->orWhere('graduate', 1);
-                })
-                ->firstOrFail();
+        if (! empty($data['concepts'])) {
+            $this->applyConceptAllocations($payment, $data['concepts'], $studentsData->all(), $allowedStudentIds);
+        } else {
+            $hasConcept = ! empty($data['payment_concept_id']);
 
-            $payment->students()->attach($studentData['id'], [
-                'amount_in_dolars' => $studentData['amount_in_dolars'],
-            ]);
+            $concept = $hasConcept ? PaymentConcept::find($data['payment_concept_id']) : null;
+            $chargeType = $concept?->type;
+            $isChargePayment = in_array($chargeType, self::CHARGE_TYPES, true);
 
-            if ($isChargePayment) {
-                $this->applyToStudentCharge($payment, $student, $studentData['amount_in_dolars'], $chargeType);
-            } elseif (! $hasConcept) {
-                $balanceService->updateStudentBalance($payment, $student, $studentData['balances']);
+            foreach ($studentsData as $studentData) {
+                $student = Student::where('id', $studentData['id'])
+                    ->when($allowedStudentIds, function ($q) use ($allowedStudentIds) {
+                        $q->whereIn('id', $allowedStudentIds);
+                    })
+                    ->where(function ($q) {
+                        $q->where('status', '!=', 0)
+                            ->orWhere('graduate', 1);
+                    })
+                    ->firstOrFail();
+
+                $payment->students()->attach($studentData['id'], [
+                    'amount_in_dolars' => $studentData['amount_in_dolars'],
+                ]);
+
+                if ($isChargePayment) {
+                    $this->applyToStudentCharge($payment, $student, $studentData['amount_in_dolars'], $chargeType);
+                } elseif (! $hasConcept) {
+                    $balanceService->updateStudentBalance($payment, $student, $studentData['balances']);
+                }
             }
         }
 
         $payment->load('students', 'accountPayment', 'paymentConcept');
 
         return $payment;
+    }
+
+    /**
+     * Asocia un pago a varios conceptos especiales (AME / Plan / personalizados).
+     * Registra el desglose por estudiante y concepto en `payment_allocations` y
+     * aplica los abonos a los cargos separados cuando el concepto lo requiere.
+     *
+     * @param  array<int, array{payment_concept_id: int, students: array<int, array{id: int, amount_in_dolars: float|string}>}>  $concepts
+     * @param  array<int, array<string, mixed>>  $studentsData  Estudiantes con su porción regular (`regular_amount`) y `balances`.
+     */
+    public function applyConceptAllocations(Payment $payment, array $concepts, array $studentsData = [], ?array $allowedStudentIds = null): void
+    {
+        $concepts = collect($concepts)->filter(fn ($c) => ! empty($c['payment_concept_id']))->values();
+
+        $conceptModels = PaymentConcept::whereIn('id', $concepts->pluck('payment_concept_id')->unique())
+            ->get()
+            ->keyBy('id');
+
+        $balanceService = new BalanceService;
+
+        // Porción regular (mensualidad / inscripción) por estudiante.
+        $regularByStudent = [];
+        $balancesByStudent = [];
+
+        foreach ($studentsData as $studentData) {
+            $studentId = (int) $studentData['id'];
+            $regularByStudent[$studentId] = (float) ($studentData['regular_amount'] ?? 0);
+            $balancesByStudent[$studentId] = $studentData['balances'] ?? [];
+        }
+
+        // Total por concepto por estudiante.
+        $conceptTotals = [];
+
+        foreach ($concepts as $conceptData) {
+            foreach ($conceptData['students'] ?? [] as $studentData) {
+                $amount = (float) ($studentData['amount_in_dolars'] ?? 0);
+
+                if ($amount <= 0) {
+                    continue;
+                }
+
+                $studentId = (int) $studentData['id'];
+                $conceptTotals[$studentId] = ($conceptTotals[$studentId] ?? 0) + $amount;
+            }
+        }
+
+        $studentIds = array_values(array_unique(array_merge(
+            array_keys($regularByStudent),
+            array_keys($conceptTotals),
+        )));
+
+        $studentIds = array_filter(
+            $studentIds,
+            fn ($id) => ($regularByStudent[$id] ?? 0) > 0 || ($conceptTotals[$id] ?? 0) > 0,
+        );
+
+        if (empty($studentIds)) {
+            return;
+        }
+
+        $students = Student::whereIn('id', $studentIds)
+            ->when($allowedStudentIds, function ($q) use ($allowedStudentIds) {
+                $q->whereIn('id', $allowedStudentIds);
+            })
+            ->where(function ($q) {
+                $q->where('status', '!=', 0)
+                    ->orWhere('graduate', 1);
+            })
+            ->get()
+            ->keyBy('id');
+
+        // Asociar cada estudiante al pago con su total (regular + conceptos) y
+        // aplicar la porción regular al balance.
+        foreach ($studentIds as $studentId) {
+            $student = $students->get($studentId);
+
+            if (! $student) {
+                continue;
+            }
+
+            $regular = $regularByStudent[$studentId] ?? 0;
+            $total = $regular + ($conceptTotals[$studentId] ?? 0);
+
+            $payment->students()->attach($studentId, [
+                'amount_in_dolars' => round($total, 2),
+            ]);
+
+            if ($regular > 0 && ! empty($balancesByStudent[$studentId])) {
+                $balanceService->updateStudentBalance(
+                    $payment,
+                    $student,
+                    $balancesByStudent[$studentId],
+                    $regular,
+                );
+            }
+        }
+
+        // Registrar el desglose por concepto y estudiante.
+        foreach ($concepts as $conceptData) {
+            $concept = $conceptModels->get($conceptData['payment_concept_id']);
+
+            if (! $concept) {
+                continue;
+            }
+
+            $isCharge = in_array($concept->type, self::CHARGE_TYPES, true);
+
+            foreach ($conceptData['students'] ?? [] as $studentData) {
+                $amount = (float) ($studentData['amount_in_dolars'] ?? 0);
+
+                if ($amount <= 0) {
+                    continue;
+                }
+
+                $student = $students->get((int) $studentData['id']);
+
+                if (! $student) {
+                    continue;
+                }
+
+                PaymentAllocation::create([
+                    'payment_id' => $payment->id,
+                    'student_id' => $student->id,
+                    'payment_concept_id' => $concept->id,
+                    'amount' => round($amount, 2),
+                ]);
+
+                if ($isCharge) {
+                    $this->applyToStudentCharge($payment, $student, $amount, $concept->type);
+                }
+            }
+        }
+
+        // Si sólo se eligió un concepto y no hay porción regular, mantener el
+        // concepto principal del recibo.
+        $hasRegular = array_sum(array_values($regularByStudent)) > 0;
+
+        if ($concepts->count() === 1 && ! $hasRegular) {
+            $payment->payment_concept_id = $concepts->first()['payment_concept_id'];
+            $payment->save();
+        }
     }
 
     /**
@@ -379,6 +534,8 @@ class PaymentService
 
         $this->revertStudentChargePayments($payment);
 
+        $payment->allocations()->delete();
+
         $payment->status = 0;
         $payment->deleted_by = Auth::id();
         $payment->save();
@@ -398,6 +555,8 @@ class PaymentService
         }
 
         $this->revertStudentChargePayments($existingPayment);
+
+        $existingPayment->allocations()->delete();
 
         $existingPayment->status = 0;
         $existingPayment->deleted_by = Auth::id();

@@ -7,6 +7,7 @@ use App\Http\Requests\StoreChargePaymentRequest;
 use App\Http\Requests\StorePaymentRequest;
 use App\Models\BalanceStudent;
 use App\Models\MainConfig;
+use App\Models\PaymentConcept;
 use App\Services\MainConfigService;
 use App\Services\PaymentService;
 use App\Services\RepresentativeService;
@@ -54,6 +55,7 @@ class RepresentativePaymentController extends Controller
                 'payments' => $result['payments'],
                 'prices' => $prices,
                 'total_income' => $result['total_income'],
+                'concepts' => PaymentConcept::active()->orderBy('name')->get(),
             ],
             'config' => $config,
         ]);

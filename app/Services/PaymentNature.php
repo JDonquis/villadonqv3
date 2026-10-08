@@ -341,6 +341,14 @@ class PaymentNature
             }
         }
 
+        foreach ($payment->allocations ?? [] as $allocation) {
+            $name = $allocation->paymentConcept?->name;
+
+            if ($name && ! in_array($name, $parts, true)) {
+                $parts[] = $name;
+            }
+        }
+
         $conceptName = $payment->paymentConcept?->name;
 
         if ($conceptName && ! in_array($conceptName, $parts, true)) {
@@ -369,6 +377,18 @@ class PaymentNature
 
             if ($label !== '' && ! in_array($label, $parts, true)) {
                 $parts[] = $label;
+            }
+        }
+
+        foreach ($payment->allocations ?? [] as $allocation) {
+            if ((int) $allocation->student_id !== $studentId) {
+                continue;
+            }
+
+            $name = $allocation->paymentConcept?->name;
+
+            if ($name && ! in_array($name, $parts, true)) {
+                $parts[] = $name;
             }
         }
 
