@@ -4,6 +4,7 @@
 
     export let payment;
     export let onSelect;
+    export let onInvoice;
     export let dolarPrice = 0;
 
     async function copyToClipboard(value, label = "Texto") {
@@ -207,6 +208,19 @@
                         Eliminado
                     </span>
                 {/if}
+                <button
+                    type="button"
+                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition"
+                    on:click|stopPropagation={() => onInvoice?.(payment)}
+                    title="Generar factura"
+                >
+                    <iconify-icon
+                        icon="fa6-solid:file-invoice"
+                        width="13"
+                        height="13"
+                    ></iconify-icon>
+                    Factura
+                </button>
             </div>
         </div>
         <!-- Totales alineados a la derecha -->

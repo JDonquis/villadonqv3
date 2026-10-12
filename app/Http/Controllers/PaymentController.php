@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePaymentRequest;
 use App\Models\MainConfig;
+use App\Models\Payment;
 use App\Models\PaymentConcept;
 use App\Services\MainConfigService;
+use App\Services\PaymentInvoiceService;
 use App\Services\PaymentService;
 use App\Services\SalesBookService;
 use App\Support\ErrorTranslator;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -132,5 +135,32 @@ class PaymentController extends Controller
             (array) $columns,
             $format
         );
+    }
+
+    public function factura(Request $request, $id)
+    {
+        $payment = Payment::with([
+            'students.course',
+            'students.section',
+            'students.representative.user',
+            'accountPayment.method',
+            'paymentConcept',
+            'balancePayments',
+            'allocations.paymentConcept',
+        ])->findOrFail($id);
+
+        $repStudentId = $request->input('rep_student_id');
+        $repType = $request->input('rep_type', 'legal');
+
+        $data = (new PaymentInvoiceService)->buildData(
+            $payment,
+            $repStudentId ? (int) $repStudentId : null,
+            (string) $repType
+        );
+
+        return Pdf::loadView('reportes.factura-pago', $data)
+            ->setPaper('letter')
+            ->setOption('isRemoteEnabled', true)
+            ->download('factura_'.$payment->id.'.pdf');
     }
 }

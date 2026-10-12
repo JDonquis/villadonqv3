@@ -16,6 +16,7 @@
     import { page } from "@inertiajs/svelte";
     import PaymentCard from "../../components/PaymentCard.svelte";
     import ExportSalesBookModal from "../../components/ExportSalesBookModal.svelte";
+    import PaymentInvoiceModal from "../../components/PaymentInvoiceModal.svelte";
 
     export let data = { students: { data: [] }, accounts: { data: [] } };
     export let config = {
@@ -54,6 +55,8 @@
     let showModal = false;
     let showTotalIncome = false;
     let showSalesBookModal = false;
+    let showInvoiceModal = false;
+    let invoicePayment = null;
     $: showModalFormEdit = false;
     let selectedRow = { status: false, data: null };
     let currentPayment = null;
@@ -109,6 +112,29 @@
             type: "info",
             message: "Generando el libro de ventas, espere unos segundos...",
         });
+    }
+
+    function openInvoiceModal(payment = null) {
+        // Si viene como handler de evento, ignoramos el Event.
+        if (
+            payment &&
+            (payment instanceof Event || payment.currentTarget || payment.target)
+        ) {
+            payment = null;
+        }
+
+        const data = payment || selectedRow?.data;
+
+        if (!data?.id) {
+            displayAlert({
+                type: "error",
+                message: "No se pudo identificar el pago seleccionado.",
+            });
+            return;
+        }
+
+        invoicePayment = data;
+        showInvoiceModal = true;
     }
 
     let concepts = [...(data?.concepts ?? [])];
@@ -2536,6 +2562,7 @@
                         <PaymentCard
                             {payment}
                             onSelect={() => fillFormToEdit(payment)}
+                            onInvoice={() => openInvoiceModal(payment)}
                             {dolarPrice}
                         />
                     {/each}
@@ -2562,6 +2589,12 @@
         handleDelete(selectedRow.data?.id);
     }}
     otherSelectOptions={[
+        {
+            label: "Factura",
+            icon: "fa6-solid:file-invoice",
+            classes: "bg-emerald-600 text-white",
+            onClick: openInvoiceModal,
+        },
         {
             label: "Ver detalles",
             icon: "mdi:eye",
@@ -2779,6 +2812,12 @@
     totalRecords={data?.payments?.total ?? 0}
     on:close={() => (showSalesBookModal = false)}
     on:export={handleSalesBookExport}
+/>
+
+<PaymentInvoiceModal
+    isOpen={showInvoiceModal}
+    payment={invoicePayment}
+    on:close={() => (showInvoiceModal = false)}
 />
 
 <style>

@@ -113,6 +113,7 @@ Route::middleware(['auth', 'role:administrator', 'module.access'])->group(functi
     Route::put('/dashboard/pagos/{id}', [PaymentController::class, 'update']);
     Route::delete('/dashboard/pagos/{id}', [PaymentController::class, 'destroy']);
 Route::get('/dashboard/pagos/libro-ventas', [PaymentController::class, 'libroVentas']);
+    Route::get('/dashboard/pagos/{id}/factura', [PaymentController::class, 'factura']);
 
     Route::get('/dashboard/estados-de-cuenta', [AccountStatementController::class, 'index']);
     Route::post('/dashboard/estados-de-cuenta/marcar-recordatorio', [AccountStatementController::class, 'marcarRecordatorio']);
