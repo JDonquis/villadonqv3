@@ -96,6 +96,7 @@
         if (!confirm("¿Está seguro de guardar los datos del plantel?")) return;
 
         const formData = new FormData();
+        formData.append('_method', 'PUT');
         formData.append('name', $institution.name);
         formData.append('code', $institution.code);
         formData.append('municipality', $institution.municipality);
@@ -107,17 +108,21 @@
         formData.append('address', $institution.address);
         formData.append('latitude', $institution.latitude);
         formData.append('longitude', $institution.longitude);
-        if ($institution.entity_shield) {
+        if ($institution.entity_shield instanceof File) {
             formData.append('entity_shield', $institution.entity_shield);
         }
 
         $institution.processing = true;
-        $institution.defaults();
 
-        router.put("/dashboard/configuracion/institucion", formData, {
+        router.post("/dashboard/configuracion/institucion", formData, {
             preserveScroll: true,
-            onSuccess: () => {
+            onSuccess: (page) => {
                 $institution.processing = false;
+                const shield = page?.props?.data?.institution?.entity_shield;
+                if (typeof shield === "string") {
+                    $institution.entity_shield = shield;
+                }
+                $institution.defaults();
                 displayAlert({
                     type: "success",
                     message: "Datos del plantel guardados",
@@ -531,30 +536,51 @@
                                 Escudo de la entidad
                             </label>
                             <input
+                                id="entity-shield-input"
                                 type="file"
                                 accept="image/*"
+                                class="hidden"
                                 on:change={(e) => {
                                     const file = e.target.files[0];
                                     if (file) {
                                         $institution.entity_shield = file;
                                     }
                                 }}
-                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-color1 file:text-white hover:file:bg-color1/90"
                             />
-                            {#if entityShieldPreview}
-                                <div class="mt-3 flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                            <label
+                                for="entity-shield-input"
+                                class="cursor-pointer inline-flex items-center gap-4 rounded-xl border border-gray-300 bg-white p-3 transition hover:border-color1"
+                            >
+                                {#if entityShieldPreview}
                                     <img
                                         src={entityShieldPreview}
                                         alt="Escudo del plantel"
-                                        class="h-20 w-20 object-contain rounded-lg border border-gray-200 bg-white"
+                                        class="h-24 w-24 object-contain rounded-lg border border-gray-200 bg-white"
                                     />
-                                    <p class="text-sm text-gray-600">
-                                        {($institution.entity_shield instanceof File)
-                                            ? "Nueva imagen seleccionada"
-                                            : "Imagen actual guardada"}
+                                {:else}
+                                    <div
+                                        class="h-24 w-24 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400 text-4xl"
+                                    >
+                                        <iconify-icon icon="mdi:image-plus"></iconify-icon>
+                                    </div>
+                                {/if}
+                                <div class="text-left">
+                                    <p class="text-sm font-semibold text-gray-700">
+                                        {entityShieldPreview
+                                            ? "Cambiar imagen"
+                                            : "Seleccionar imagen"}
+                                    </p>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        {#if $institution.entity_shield instanceof File}
+                                            Nueva imagen seleccionada
+                                        {:else if entityShieldPreview}
+                                            Imagen actual en uso
+                                        {:else}
+                                            PNG o JPG (máx. 2 MB)
+                                        {/if}
                                     </p>
                                 </div>
-                            {/if}
+                            </label>
                         </div>
                     </div>
 
