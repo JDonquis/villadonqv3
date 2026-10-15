@@ -41,6 +41,7 @@
         pending: "bg-yellow text-gray-800",
         approved: "bg-green-100 text-green-700",
         rejected: "bg-red text-white",
+        revision: "bg-orange text-white",
     };
 
     function schoolLapseForToday() {
@@ -229,6 +230,7 @@
                 onSuccess: () => {
                     if (!next) {
                         showModal = false;
+                        selectedRow = { status: false, data: null };
                     }
                     displayAlert({
                         type: "success",
@@ -255,6 +257,7 @@
                 onSuccess: () => {
                     if (!next) {
                         showModal = false;
+                        selectedRow = { status: false, data: null };
                     }
                     displayAlert({
                         type: "success",
@@ -271,6 +274,38 @@
         );
     }
 
+    // Devuelve el plan a revisión para que el profesor pueda editarlo de nuevo.
+    function sendToRevision(plan) {
+        const note = window.prompt(
+            "Motivo por el que se envía a revisión (opcional):",
+            plan.admin_note || "",
+        );
+        if (note === null) return;
+
+        router.post(
+            `/dashboard/planes-evaluacion/${plan.id}/revision`,
+            { ...buildParams(), admin_note: note },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    showModal = false;
+                    selectedRow = { status: false, data: null };
+                    displayAlert({
+                        type: "success",
+                        message: "Plan enviado a revisión correctamente",
+                    });
+                },
+                onError: (errors) => {
+                    displayAlert({
+                        type: "error",
+                        message:
+                            errors.message || "Error al enviar a revisión",
+                    });
+                },
+            },
+        );
+    }
+
     // Auto-abre el siguiente plan pendiente cuando el servidor indica uno tras
     // aprobar/rechazar en modo "swipe" (el componente se conserva entre la
     // redirección, por lo que esto debe reaccionar a las props, no a onMount).
@@ -281,6 +316,12 @@
         if (target) {
             openPlanFor(target);
         }
+    }
+
+    // Al cerrar el modal de detalle (aprobar, rechazar, Escape, clic fuera, X)
+    // se limpia la selección para que no queden flotando los botones de la fila.
+    $: if (!showModal && selectedRow.status) {
+        selectedRow = { status: false, data: null };
     }
 </script>
 
@@ -555,6 +596,17 @@
                                 class="px-4 py-2 text-sm bg-color1 text-white rounded-md"
                             >
                                 Aprobar
+                            </button>
+                        </div>
+                    {:else if plan.status === "approved"}
+                        <div class="mt-5 flex justify-center">
+                            <button
+                                on:click={() => sendToRevision(plan)}
+                                title="Permite al profesor volver a editar este plan"
+                                class="hover:shadow-xl hover:bg-orange hover:text-white px-8 py-2 text-sm flex items-center bg-gray-100 text-gray-700 border border-gray-200 rounded-md"
+                            >
+                                <iconify-icon icon="mdi:backup-restore" class="mr-1" width="18" height="18" />
+                                Enviar a revisión
                             </button>
                         </div>
                     {/if}

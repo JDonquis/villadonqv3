@@ -89,6 +89,7 @@
         pending: "bg-yellow text-gray-800",
         approved: "bg-green-100 text-green-700",
         rejected: "bg-red text-white",
+        revision: "bg-orange text-white",
     };
 
     document.addEventListener("keydown", ({ key }) => {
@@ -100,12 +101,7 @@
     });
 
     function canEdit(plan) {
-        return (
-            plan.status === "draft" ||
-            plan.status === "pending" ||
-            plan.status === "rejected" ||
-            plan.status === "approved"
-        );
+        return plan.status !== "approved";
     }
 
     function fillFormToEdit() {
@@ -113,16 +109,10 @@
         if (!plan || !canEdit(plan)) {
             displayAlert({
                 type: "error",
-                message: "Un plan aprobado no puede editarse.",
+                message:
+                    "Plan aprobado. Contacta a un administrador para obtener acceso y editarlo.",
             });
             return;
-        }
-        if (plan.status === "approved") {
-            displayAlert({
-                type: "info",
-                message:
-                    "Este plan está aprobado. Al guardar se creará una versión pendiente que no reemplaza la versión aprobada hasta su publicación.",
-            });
         }
         planModal?.openForEdit(plan);
     }

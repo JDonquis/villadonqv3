@@ -161,6 +161,7 @@ class EvaluationPlanService
                 EvaluationPlanStatusEnum::Pending->value,
                 EvaluationPlanStatusEnum::Draft->value,
                 EvaluationPlanStatusEnum::Rejected->value,
+                EvaluationPlanStatusEnum::Revision->value,
             ]);
         }
 
@@ -328,11 +329,30 @@ class EvaluationPlanService
         return $plan;
     }
 
-    public function updatePlan(EvaluationPlan $plan, array $data, ?int $ownerId = null): EvaluationPlan
+    public function updatePlan(EvaluationPlan $plan, array $data, ?int $ownerId = null, bool $preserveApproval = false): EvaluationPlan
     {
         $sectionIds = $data['section_id'] ?? null;
         $unitsOrItems = $data['units'] ?? $data['items'] ?? [];
         $ownerId = $ownerId ?? $plan->user_id;
+
+        // Al editar en sitio (admin) se conserva el estado y los datos de
+        // aprobación del plan; al editar el profesor, la edición vuelve el plan
+        // a 'pending' y limpia la aprobación previa.
+        $status = $preserveApproval
+            ? $plan->status
+            : ($data['status'] ?? EvaluationPlanStatusEnum::Pending->value);
+
+        $approvalFields = $preserveApproval
+            ? [
+                'admin_note' => $plan->admin_note,
+                'approved_by' => $plan->approved_by,
+                'approved_at' => $plan->approved_at,
+            ]
+            : [
+                'admin_note' => null,
+                'approved_by' => null,
+                'approved_at' => null,
+            ];
 
         // Normalize 'all' into actual section ids for the course
         if (is_array($sectionIds) && in_array('all', $sectionIds, true)) {
@@ -359,10 +379,8 @@ class EvaluationPlanService
                 'name' => $this->buildPlanName($data),
                 'description' => $data['description'] ?? null,
                 'rasgos_points' => (int) ($data['rasgos_points'] ?? 0),
-                'status' => $data['status'] ?? EvaluationPlanStatusEnum::Pending->value,
-                'admin_note' => null,
-                'approved_by' => null,
-                'approved_at' => null,
+                'status' => $status,
+                ...$approvalFields,
             ]);
 
             $this->registerCourseMatter($data['course_id'] ?? null, $data['matter_id']);
@@ -380,7 +398,8 @@ class EvaluationPlanService
                     'name' => $this->buildPlanName($data),
                     'description' => $data['description'] ?? null,
                     'rasgos_points' => (int) ($data['rasgos_points'] ?? 0),
-                    'status' => $data['status'] ?? EvaluationPlanStatusEnum::Pending->value,
+                    'status' => $status,
+                    ...$approvalFields,
                 ]);
 
                 $this->registerCourseMatter($data['course_id'] ?? null, $data['matter_id']);
@@ -401,10 +420,8 @@ class EvaluationPlanService
             'name' => $this->buildPlanName($data),
             'description' => $data['description'] ?? null,
             'rasgos_points' => (int) ($data['rasgos_points'] ?? 0),
-            'status' => $data['status'] ?? EvaluationPlanStatusEnum::Pending->value,
-            'admin_note' => null,
-            'approved_by' => null,
-            'approved_at' => null,
+            'status' => $status,
+            ...$approvalFields,
         ]);
 
         $this->registerCourseMatter($data['course_id'] ?? null, $data['matter_id']);
@@ -497,6 +514,7 @@ class EvaluationPlanService
                 }
 
                 $items[] = [
+                    'id' => $this->normalizeItemId($topic['id'] ?? null),
                     'unit_name' => $unit['name'] ?? null,
                     'unit_number' => $unit['unit_number'] ?? ($unitIndex + 1),
                     'name' => $topic['name'] ?? '',
@@ -514,6 +532,7 @@ class EvaluationPlanService
         if (! $sawTopics) {
             foreach (array_values($units) as $index => $item) {
                 $items[] = [
+                    'id' => $this->normalizeItemId($item['id'] ?? null),
                     'unit_name' => null,
                     'unit_number' => null,
                     'name' => $item['name'] ?? '',
@@ -531,6 +550,23 @@ class EvaluationPlanService
         return $items;
     }
 
+    private function normalizeItemId($raw): ?int
+    {
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+
+        if (is_numeric($raw)) {
+            return (int) $raw;
+        }
+
+        if (preg_match('/topic_(\d+)/', (string) $raw, $matches)) {
+            return (int) $matches[1];
+        }
+
+        return null;
+    }
+
     private function isBlankTopic(array $topic): bool
     {
         $name = trim((string) ($topic['name'] ?? ''));
@@ -545,12 +581,11 @@ class EvaluationPlanService
 
     private function syncItems(EvaluationPlan $plan, array $units): void
     {
-        $plan->items()->delete();
         $items = $this->flattenUnitsToItems($units);
+        $keptIds = [];
 
         foreach (array_values($items) as $index => $item) {
-            EvaluationPlanItem::create([
-                'evaluation_plan_id' => $plan->id,
+            $payload = [
                 'unit_name' => $item['unit_name'],
                 'unit_number' => $item['unit_number'],
                 'name' => $item['name'],
@@ -561,8 +596,25 @@ class EvaluationPlanService
                 'scheduled_date' => $item['scheduled_date'] ?? $item['date'] ?? null,
                 'description' => $item['description'] ?? null,
                 'order' => $item['order'] ?? $index,
-            ]);
+            ];
+
+            // Se conservan los ítems existentes (y por tanto las notas y
+            // publicaciones asociadas, que tienen FK cascade) cuando el
+            // formulario reenvía su id. Solo se eliminan los ítems quitados.
+            $existing = ! empty($item['id'])
+                ? $plan->items()->whereKey($item['id'])->first()
+                : null;
+
+            if ($existing) {
+                $existing->update($payload);
+                $keptIds[] = $existing->id;
+            } else {
+                $created = EvaluationPlanItem::create($payload + ['evaluation_plan_id' => $plan->id]);
+                $keptIds[] = $created->id;
+            }
         }
+
+        $plan->items()->whereNotIn('id', $keptIds)->delete();
     }
 
     public function deletePlan(EvaluationPlan $plan): void
@@ -668,6 +720,20 @@ class EvaluationPlanService
             'admin_note' => $note,
             'approved_by' => $adminId,
             'approved_at' => now(),
+        ]);
+    }
+
+    /**
+     * Devuelve un plan aprobado a revisión para que el profesor pueda editarlo
+     * de nuevo. Deja de estar aprobado y se limpia la aprobación previa.
+     */
+    public function sendToRevision(EvaluationPlan $plan, int $adminId, ?string $note = null): void
+    {
+        $plan->update([
+            'status' => EvaluationPlanStatusEnum::Revision->value,
+            'admin_note' => $note,
+            'approved_by' => null,
+            'approved_at' => null,
         ]);
     }
 

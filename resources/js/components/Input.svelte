@@ -16,6 +16,7 @@
     export let pattern = "";
 
     export let max = "";
+    export let maxlength = "";
     export let name = "";
     export let style = "";
     export let error = false;
@@ -76,6 +77,7 @@
                  {step}
                  {readonly}
                  {inputmode}
+                 {maxlength}
                 pattern={pattern || undefined}
                  on:change
                  on:input

@@ -22,6 +22,8 @@
     let lastShowPickerAt = 0;
     let editingPlanId = null;
     let submitStatus = "Crear"; // "Crear" | "Editar"
+    let editingStatus = null;
+    let editingNote = null;
     let showDateErrors = false;
     const totalPoints = 20;
 
@@ -245,6 +247,8 @@
         allowedWeekdays = null;
         openTooltip = null;
         showDateErrors = false;
+        editingStatus = null;
+        editingNote = null;
         $form.school_lapse_id = activeLapse?.id || "";
         $form.lapse_id = isTeacher
             ? initialMomentIdFor(activeLapse)
@@ -261,10 +265,19 @@
         showFormModal = true;
     }
 
+    // Conserva el id del ítem existente para poder actualizarlo en sitio (y no
+    // perder las notas asociadas) al editar el plan.
+    function topicIdFrom(raw) {
+        const match = String(raw ?? "").match(/(\d+)/);
+        return match ? Number(match[1]) : null;
+    }
+
     export function openForEdit(plan) {
         editingPlanId = plan.id;
         submitStatus = "Editar";
         showDateErrors = false;
+        editingStatus = plan.status;
+        editingNote = plan.admin_note || null;
         if (!isTeacher) {
             $form.teacher_id = plan.teacher_id || "";
         }
@@ -288,6 +301,7 @@
                       topics:
                           Array.isArray(unit.topics) && unit.topics.length
                               ? unit.topics.map((topic) => ({
+                                    id: topicIdFrom(topic.id),
                                     name: topic.name || "",
                                     assessment_type:
                                         topic.assessment_type || "",
@@ -526,6 +540,31 @@
                 Ponderación base: 20 pts (100%)
             </div>
         </div>
+
+        {#if submitStatus === "Editar" && editingNote && (editingStatus === "revision" || editingStatus === "rejected")}
+            <div
+                class="bg-orange/10 border-2 border-orange/40 rounded-2xl px-5 py-4 text-xs md:text-sm flex items-start gap-3 shadow-sm"
+            >
+                <span
+                    class="shrink-0 mt-0.5 w-7 h-7 rounded-lg bg-orange/20 flex items-center justify-center"
+                >
+                    <iconify-icon
+                        icon="mdi:alert-circle-outline"
+                        class="text-lg text-orange"
+                    ></iconify-icon>
+                </span>
+                <div class="min-w-0">
+                    <strong class="font-bold block text-color1">
+                        {editingStatus === "revision"
+                            ? "Observaciones de la coordinación (en revisión):"
+                            : "Motivo del rechazo de la coordinación:"}
+                    </strong>
+                    <p class="mt-1 text-gray-700 whitespace-pre-line">
+                        {editingNote}
+                    </p>
+                </div>
+            </div>
+        {/if}
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             <!-- COLUMNA IZQUIERDA: Parámetros del Curso & Balance -->

@@ -16,6 +16,9 @@
     const institution = useForm({
         name: data.institution?.name ?? "",
         code: data.institution?.code ?? "",
+        email: data.institution?.email ?? "",
+        rif: data.institution?.rif ?? "",
+        motto: data.institution?.motto ?? "",
         municipality: data.institution?.municipality ?? "",
         federal_entity: data.institution?.federal_entity ?? "",
         cdcee: data.institution?.cdcee ?? "",
@@ -99,6 +102,9 @@
         formData.append('_method', 'PUT');
         formData.append('name', $institution.name);
         formData.append('code', $institution.code);
+        formData.append('email', $institution.email);
+        formData.append('rif', $institution.rif);
+        formData.append('motto', $institution.motto);
         formData.append('municipality', $institution.municipality);
         formData.append('federal_entity', $institution.federal_entity);
         formData.append('cdcee', $institution.cdcee);
@@ -118,6 +124,7 @@
             preserveScroll: true,
             onSuccess: (page) => {
                 $institution.processing = false;
+                $institution.clearErrors();
                 const shield = page?.props?.data?.institution?.entity_shield;
                 if (typeof shield === "string") {
                     $institution.entity_shield = shield;
@@ -130,6 +137,8 @@
             },
             onError: (errors) => {
                 $institution.processing = false;
+                $institution.clearErrors();
+                $institution.setError(errors);
                 if (errors.data) {
                     displayAlert({ type: "error", message: errors.data });
                 }
@@ -472,6 +481,7 @@
                             bind:value={$institution.code}
                             maxlength="20"
                             placeholder="Ej: 12345"
+                            error={$institution.errors?.code}
                         />
                         <Input
                             label="CDCEE"
@@ -479,6 +489,15 @@
                             bind:value={$institution.cdcee}
                             maxlength="20"
                             placeholder="Código CDCEE"
+                            error={$institution.errors?.cdcee}
+                        />
+                        <Input
+                            label="RIF"
+                            type="text"
+                            bind:value={$institution.rif}
+                            maxlength="20"
+                            placeholder="Ej: J-12345678-9"
+                            error={$institution.errors?.rif}
                         />
                         <Input
                             label="Nombre del plantel"
@@ -487,6 +506,16 @@
                             maxlength="100"
                             class="md:col-span-2 lg:col-span-3"
                             placeholder="Nombre oficial del plantel"
+                            error={$institution.errors?.name}
+                        />
+                        <Input
+                            label="Lema del plantel"
+                            type="text"
+                            bind:value={$institution.motto}
+                            maxlength="255"
+                            class="md:col-span-2 lg:col-span-3"
+                            placeholder="Ej: La escuela del futuro"
+                            error={$institution.errors?.motto}
                         />
                         <Input
                             label="Director(a)"
@@ -494,6 +523,7 @@
                             bind:value={$institution.director_name}
                             maxlength="100"
                             placeholder="Nombre completo del director/a"
+                            error={$institution.errors?.director_name}
                         />
                         <Input
                             label="Cédula del Director(a)"
@@ -501,13 +531,23 @@
                             bind:value={$institution.director_ci}
                             maxlength="20"
                             placeholder="Cédula de identidad"
+                            error={$institution.errors?.director_ci}
                         />
                         <Input
                             label="Teléfono"
                             type="tel"
                             bind:value={$institution.phone_number}
-                            maxlength="11"
-                            placeholder="Ej: 02125551234"
+                            maxlength="30"
+                            placeholder="Ej: (0268) 253.09.56"
+                            error={$institution.errors?.phone_number}
+                        />
+                        <Input
+                            label="Correo del plantel"
+                            type="email"
+                            bind:value={$institution.email}
+                            maxlength="100"
+                            placeholder="Ej: colegio@ejemplo.com"
+                            error={$institution.errors?.email}
                         />
                         <Input
                             label="Municipio"
@@ -515,6 +555,7 @@
                             bind:value={$institution.municipality}
                             maxlength="100"
                             placeholder="Ej: Libertador"
+                            error={$institution.errors?.municipality}
                         />
                         <Input
                             label="Entidad Federal"
@@ -522,6 +563,7 @@
                             bind:value={$institution.federal_entity}
                             maxlength="100"
                             placeholder="Ej: Distrito Capital"
+                            error={$institution.errors?.federal_entity}
                         />
                         <Input
                             label="Dirección"
@@ -530,6 +572,7 @@
                             maxlength="255"
                             class="md:col-span-2 lg:col-span-3"
                             placeholder="Dirección completa del plantel"
+                            error={$institution.errors?.address}
                         />
                         <div class="md:col-span-2 lg:col-span-3">
                             <label class="block text-sm font-medium text-gray-700 mb-2">

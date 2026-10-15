@@ -1448,6 +1448,17 @@
     >
         Asistencia
     </button>
+
+    {#if managesAll}
+        <button
+            type="button"
+            class="px-4 py-2 rounded-lg font-medium transition bg-color1 text-white hover:opacity-90 ml-auto"
+            on:click={() => router.visit("/dashboard/sabana-notas")}
+            title="Sábana de notas (solo administración)"
+        >
+            Sábana de Notas
+        </button>
+    {/if}
 </div>
 {#if data.plans?.length}
     {#if managesAll}

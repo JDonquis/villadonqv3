@@ -60,6 +60,9 @@ class MainConfigService
         return [
             'name' => $this->mainConfigModel->name,
             'code' => $this->mainConfigModel->code,
+            'email' => $this->mainConfigModel->email,
+            'rif' => $this->mainConfigModel->rif,
+            'motto' => $this->mainConfigModel->motto,
             'municipality' => $this->mainConfigModel->municipality,
             'federal_entity' => $this->mainConfigModel->federal_entity,
             'cdcee' => $this->mainConfigModel->cdcee,

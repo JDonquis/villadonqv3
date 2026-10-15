@@ -160,23 +160,6 @@ class EvaluationPlanController extends Controller
         try {
             $data = $request->validated();
 
-            // If the existing plan is approved, do not modify it directly.
-            // Instead create a new plan in 'pending' state that contains
-            // the teacher's edits. The already-approved plan remains active
-            // for everyone until the teacher publishes the new version.
-            if ($plan->status === EvaluationPlanStatusEnum::Approved->value) {
-                $data['status'] = EvaluationPlanStatusEnum::Pending->value;
-                // Ensure the plan is created for the same section/course/matter
-                // if the frontend did not include them in the payload.
-                $data['course_id'] = $data['course_id'] ?? $plan->course_id;
-                $data['section_id'] = $data['section_id'] ?? $plan->section_id;
-                $data['matter_id'] = $data['matter_id'] ?? $plan->matter_id;
-
-                $newPlan = $this->planService->createPlan(auth()->id(), $data);
-
-                return back()->with(['status' => true, 'message' => 'Se creó una versión pendiente del plan; la versión aprobada sigue vigente hasta publicación.']);
-            }
-
             $this->planService->updatePlan($plan, $data);
 
             return back()->with(['status' => true, 'message' => 'Plan de evaluación actualizado correctamente.']);
@@ -189,8 +172,8 @@ class EvaluationPlanController extends Controller
 
     /**
      * El administrador puede editar cualquier plan (contenido y/o profesor,
-     * materia, año, sección y momento destino). Si el plan está aprobado, se
-     * crea una versión pendiente para conservar la aprobada vigente.
+     * materia, año, sección y momento destino). La edición se aplica sobre el
+     * mismo plan conservando su estado y su aprobación vigente.
      */
     public function updateByAdmin(UpdateAdminEvaluationPlanRequest $request, $id)
     {
@@ -200,18 +183,7 @@ class EvaluationPlanController extends Controller
             $data = $request->validated();
             $teacherId = (int) $data['teacher_id'];
 
-            if ($plan->status === EvaluationPlanStatusEnum::Approved->value) {
-                $data['status'] = EvaluationPlanStatusEnum::Pending->value;
-                $data['course_id'] = $data['course_id'] ?? $plan->course_id;
-                $data['section_id'] = $data['section_id'] ?? ($plan->section_id ? [$plan->section_id] : []);
-                $data['matter_id'] = $data['matter_id'] ?? $plan->matter_id;
-
-                $this->planService->createPlan($teacherId, $data);
-
-                return back()->with(['status' => true, 'message' => 'Se creó una versión pendiente del plan; la versión aprobada sigue vigente hasta publicación.']);
-            }
-
-            $this->planService->updatePlan($plan, $data, $teacherId);
+            $this->planService->updatePlan($plan, $data, $teacherId, true);
 
             return back()->with(['status' => true, 'message' => 'Plan de evaluación actualizado correctamente.']);
         } catch (Exception $e) {
@@ -288,6 +260,25 @@ class EvaluationPlanController extends Controller
             return $this->redirectBackToPlans($request, 'Plan rechazado correctamente.');
         } catch (Exception $e) {
             Log::error('Error al rechazar plan ID '.$id.': '.$e->getMessage());
+
+            return back()->withErrors(['message' => ErrorTranslator::translate($e)]);
+        }
+    }
+
+    /**
+     * El administrador devuelve un plan (normalmente aprobado) a revisión para
+     * que el profesor pueda volver a editarlo.
+     */
+    public function sendToRevision(RejectEvaluationPlanRequest $request, $id)
+    {
+        $plan = EvaluationPlan::findOrFail($id);
+
+        try {
+            $this->planService->sendToRevision($plan, auth()->id(), $request->input('admin_note'));
+
+            return $this->redirectBackToPlans($request, 'Plan enviado a revisión correctamente.');
+        } catch (Exception $e) {
+            Log::error('Error al enviar a revisión plan ID '.$id.': '.$e->getMessage());
 
             return back()->withErrors(['message' => ErrorTranslator::translate($e)]);
         }
@@ -382,7 +373,7 @@ class EvaluationPlanController extends Controller
             EvaluationPlanStatusEnum::Draft->value,
             EvaluationPlanStatusEnum::Pending->value,
             EvaluationPlanStatusEnum::Rejected->value,
-            EvaluationPlanStatusEnum::Approved->value,
+            EvaluationPlanStatusEnum::Revision->value,
         ], true);
     }
 }

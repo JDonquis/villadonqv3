@@ -38,6 +38,12 @@
                 >
                     <span class="w-2 h-2 rounded-full bg-red"></span> Rechazado
                 </span>
+            {:else if plan.status === "revision"}
+                <span
+                    class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-orange/20 text-orange border border-orange/40"
+                >
+                    <span class="w-2 h-2 rounded-full bg-orange"></span> En revisión
+                </span>
             {:else if plan.status === "approved"}
                 <span
                     class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-green/20 text-color1 border border-green/40"
@@ -77,8 +83,8 @@
             </p>
         {/if}
     </div>
-    <!-- NOTA DE RECHAZO (SI APLICA) - ARRIBA DEL MODAL, ANTES DEL BALANCE -->
-    {#if plan.status === "rejected" && plan.admin_note}
+    <!-- NOTA DE RECHAZO / REVISIÓN (SI APLICA) - ARRIBA DEL MODAL, ANTES DEL BALANCE -->
+    {#if (plan.status === "rejected" || plan.status === "revision") && plan.admin_note}
         <div
             class="bg-red/10 border-2 border-red/40 rounded-2xl px-5 py-4 text-xs md:text-sm flex items-start gap-3 shadow-sm"
         >
@@ -92,7 +98,9 @@
             </span>
             <div class="min-w-0">
                 <strong class="font-bold block text-color1"
-                    >Motivo del rechazo de la coordinación:</strong
+                    >{plan.status === "revision"
+                        ? "Observaciones de la coordinación (en revisión):"
+                        : "Motivo del rechazo de la coordinación:"}</strong
                 >
                 <p class="mt-1 text-[#B91C1C] whitespace-pre-line"
                     >{plan.admin_note}</p

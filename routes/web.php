@@ -5,6 +5,7 @@ use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AppController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EvaluationPlanController;
+use App\Http\Controllers\GradeSheetController;
 use App\Http\Controllers\MainConfigController;
 use App\Http\Controllers\MatterController;
 use App\Http\Controllers\MyScheduleController;
@@ -153,6 +154,7 @@ Route::get('/dashboard/pagos/libro-ventas', [PaymentController::class, 'libroVen
     Route::post('/dashboard/planes-evaluacion/copiar', [EvaluationPlanController::class, 'copy']);
     Route::post('/dashboard/planes-evaluacion/{id}/aprobar', [EvaluationPlanController::class, 'approve']);
     Route::post('/dashboard/planes-evaluacion/{id}/rechazar', [EvaluationPlanController::class, 'reject']);
+    Route::post('/dashboard/planes-evaluacion/{id}/revision', [EvaluationPlanController::class, 'sendToRevision']);
     Route::put('/dashboard/planes-evaluacion/{id}', [EvaluationPlanController::class, 'updateByAdmin']);
     Route::delete('/dashboard/planes-evaluacion/{id}', [EvaluationPlanController::class, 'destroyByAdmin']);
 
@@ -200,6 +202,14 @@ Route::middleware(['auth', 'role:administrator,teacher'])->group(function () {
     Route::post('/dashboard/mis-estudiantes/observaciones', [StudentObservationController::class, 'store']);
     Route::put('/dashboard/mis-estudiantes/observaciones/{observation}', [StudentObservationController::class, 'update']);
     Route::delete('/dashboard/mis-estudiantes/observaciones/{observation}', [StudentObservationController::class, 'destroy']);
+});
+
+// Sábana de notas: solo administración con módulo "notas" (se valida en el controlador).
+Route::middleware(['auth', 'role:administrator'])->group(function () {
+    Route::get('/dashboard/sabana-notas', [GradeSheetController::class, 'index']);
+    Route::post('/dashboard/sabana-notas', [GradeSheetController::class, 'store']);
+    Route::post('/dashboard/sabana-notas/{id}/puntos', [GradeSheetController::class, 'savePoints']);
+    Route::delete('/dashboard/sabana-notas/{id}', [GradeSheetController::class, 'destroy']);
 });
 
 Route::middleware(['auth', 'role:administrator,representative'])->group(function () {

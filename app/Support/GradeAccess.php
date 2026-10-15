@@ -64,6 +64,25 @@ class GradeAccess
     }
 
     /**
+     * ¿El usuario puede gestionar la sábana de notas (solo administración)?
+     * Profesor: no. Administrador: sí si es administrador total o tiene el
+     * módulo "notas" asignado.
+     */
+    public static function canManageSheets(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        if ((int) $user->type_user_id !== UserTypeEnum::Administrator->value) {
+            return false;
+        }
+
+        return (bool) $user->is_admin
+            || $user->modules()->where('slug', self::MODULE)->exists();
+    }
+
+    /**
      * ¿El usuario está operando sobre planes ajenos (es decir, es administración)?
      * Lo usa la UI para indicar "en nombre de {profesor}".
      */
