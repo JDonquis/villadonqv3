@@ -169,10 +169,10 @@ class SalesBookService
 
                 foreach ($columns as $col) {
                     if ($col['scope'] === 'student') {
-                        $lines = array_map(
+                        $lines = array_values(array_unique(array_map(
                             fn ($value) => ($value === null || $value === '') ? '—' : (string) $value,
                             $studentLines[$col['id']] ?? []
-                        );
+                        )));
                         $values[$col['id']] = $lines ? implode("\n", $lines) : '—';
                     } else {
                         $values[$col['id']] = $this->paymentValue($col['id'], $payment);
@@ -627,8 +627,10 @@ class SalesBookService
                 $body .= '<tr>';
                 foreach ($report['columns'] as $col) {
                     $value = $paymentRow['values'][$col['id']] ?? '';
+                    $cell = $esc($this->formatValueForText($value, $col['type']));
+                    $cell = str_replace("\n", '<br>', $cell);
                     $body .= '<td class="'.($col['type'] === 'money' || $col['type'] === 'rate' ? 'num' : '').'">'
-                        .$esc($this->formatValueForText($value, $col['type'], true)).'</td>';
+                        .$cell.'</td>';
                 }
                 $body .= '</tr>';
             }
