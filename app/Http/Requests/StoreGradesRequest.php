@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\EvaluationPlan;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreGradesRequest extends FormRequest
@@ -13,6 +14,9 @@ class StoreGradesRequest extends FormRequest
 
     public function rules(): array
     {
+        $maxRasgos = (int) EvaluationPlan::whereKey($this->input('plan_id'))
+            ->value('rasgos_points');
+
         return [
             'plan_id' => ['required', 'integer', 'exists:evaluation_plans,id'],
             'grades' => ['required', 'array'],
@@ -21,7 +25,12 @@ class StoreGradesRequest extends FormRequest
             'grades.*.score' => ['nullable', 'numeric', 'min:0', 'max:20'],
             'rasgos' => ['nullable', 'array'],
             'rasgos.*.student_id' => ['required', 'integer'],
-            'rasgos.*.rasgos_score' => ['nullable', 'integer', 'min:0', 'max:10'],
+            'rasgos.*.rasgos_score' => [
+                'nullable',
+                'integer',
+                'min:0',
+                'max:'.max(0, $maxRasgos),
+            ],
         ];
     }
 }

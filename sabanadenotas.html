@@ -1,0 +1,678 @@
+<!DOCTYPE html><html class="h-full bg-slate-50" lang="es" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>VILLADONQ - Sábana de Notas</title>
+<!-- Tailwind CSS CDN with Forms & Container Queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Inter & Plus Jakarta Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<!-- Tailwind Configuration -->
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+            },
+            sidebar: {
+              DEFAULT: '#0f172a',
+              hover: '#1e293b',
+              active: '#1e3a8a',
+              border: '#334155'
+            }
+          }
+        }
+      }
+    }
+  </script>
+<!-- CSS: Layout & Scrollbar Enhancements -->
+<style data-purpose="custom-scrollbars">
+    /* Subtle custom scrollbar for large matrix table */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    .sticky-col-left-1 {
+      position: sticky;
+      left: 0;
+      z-index: 20;
+    }
+    .sticky-col-left-2 {
+      position: sticky;
+      left: 48px;
+      z-index: 20;
+    }
+    .sticky-col-left-3 {
+      position: sticky;
+      left: 148px;
+      z-index: 20;
+    }
+  </style>
+</head>
+<body class="h-full flex overflow-hidden text-slate-800 antialiased selection:bg-brand-500 selection:text-white">
+<!-- BEGIN: Sidebar -->
+<aside class="w-64 bg-slate-950 flex flex-col flex-shrink-0 z-30 transition-all duration-300 select-none border-r border-slate-800/80" data-purpose="main-sidebar">
+<!-- Brand Logo Header -->
+<div class="h-16 flex items-center justify-between px-5 border-b border-slate-800/70">
+<div class="flex items-center space-x-3">
+<!-- Modernized Geometric Logo matching VILLADONQ mark -->
+<div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-sky-400 flex items-center justify-center shadow-lg shadow-blue-900/30">
+<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewBox="0 0 24 24">
+<path d="M4 4l7 16 2-5 7-11-9 5z"></path>
+</svg>
+</div>
+<div class="flex flex-col">
+<span class="text-white font-extrabold tracking-wider text-base font-sans">VILLADONQ</span>
+<span class="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">Campus Digital</span>
+</div>
+</div>
+<button class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800/70 transition-colors" title="Colapsar menú">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+<path d="M11 19l-7-7 7-7m8 14l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</div>
+<!-- Navigation Menu Items -->
+<nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1 text-sm font-medium">
+<div class="px-3 pb-2 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Módulos Escolares</div>
+<a class="flex items-center px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors group" href="#">
+<svg class="w-5 h-5 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Configuración</span>
+</a>
+<a class="flex items-center px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors group" href="#">
+<svg class="w-5 h-5 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M12 14l9-5-9-5-9 5 9 5z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Matrícula</span>
+</a>
+<a class="flex items-center px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors group" href="#">
+<svg class="w-5 h-5 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Pagos</span>
+</a>
+<a class="flex items-center px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors group" href="#">
+<svg class="w-5 h-5 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Estados de Cuenta</span>
+</a>
+<div class="px-3 pt-4 pb-2 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Académico &amp; Gestión</div>
+<a class="flex items-center px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors group" href="#">
+<svg class="w-5 h-5 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Personal</span>
+</a>
+<a class="flex items-center px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors group" href="#">
+<svg class="w-5 h-5 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Profesores</span>
+</a>
+<a class="flex items-center px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors group" href="#">
+<svg class="w-5 h-5 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Materias</span>
+</a>
+<a class="flex items-center px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors group" href="#">
+<svg class="w-5 h-5 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Planes de Evaluación</span>
+</a>
+<a class="flex items-center px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors group" href="#">
+<svg class="w-5 h-5 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Horarios</span>
+</a>
+<!-- Active Menu Item: Notas -->
+<a class="flex items-center justify-between px-3 py-2.5 rounded-xl bg-blue-600/15 text-blue-400 font-semibold border-l-4 border-blue-500 transition-all shadow-sm" href="#">
+<div class="flex items-center">
+<svg class="w-5 h-5 mr-3 text-blue-400" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+<path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Notas</span>
+</div>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300">Activo</span>
+</a>
+<a class="flex items-center px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors group" href="#">
+<svg class="w-5 h-5 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Comunicados</span>
+</a>
+</nav>
+<!-- Sidebar Footer / Academic Cycle Badge -->
+<div class="p-3 border-t border-slate-800/80 bg-slate-950/60">
+<div class="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center space-x-3">
+<div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-semibold text-slate-200 truncate">Período Activo 2026-2027</p>
+<p class="text-[11px] text-slate-400 truncate">1er Momento Pedagógico</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- END: Sidebar -->
+<!-- BEGIN: Main Area -->
+<div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-50/75">
+<!-- BEGIN: Topbar -->
+<header class="h-16 bg-white border-b border-slate-200/90 px-6 flex items-center justify-between z-20 shadow-xs" data-purpose="topbar">
+<!-- Breadcrumb & Title Section -->
+<div class="flex items-center space-x-4">
+<button class="w-9 h-9 rounded-lg border border-slate-200 hover:border-slate-300 text-slate-600 hover:text-slate-900 flex items-center justify-center transition-all bg-white hover:bg-slate-50 shadow-xs">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+<path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+<div class="flex items-center space-x-2.5">
+<span class="inline-block w-2.5 h-2.5 rounded-full bg-blue-600 ring-4 ring-blue-100"></span>
+<h1 class="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            SÁBANA DE NOTAS
+
+</h1>
+<span class="text-slate-300">/</span>
+<span class="text-xs text-slate-500 font-medium">Bachillerato General • Calificaciones Parciales</span>
+</div>
+</div>
+<!-- Action Buttons & User Profile -->
+<div class="flex items-center space-x-3">
+<!-- Quick Action Buttons -->
+
+
+<!-- Divider -->
+
+<!-- User Profile Pill Widget matching Juan Donquis / Control de Estudios -->
+<div class="flex items-center space-x-3 pl-2 py-1 pr-1.5 rounded-full hover:bg-slate-100/80 transition-colors cursor-pointer border border-transparent hover:border-slate-200">
+<div class="text-right hidden sm:block">
+<div class="text-xs font-bold text-slate-800 leading-tight">Juan Donquis</div>
+<div class="text-[11px] text-slate-500 leading-tight">Control de Estudios</div>
+</div>
+<div class="relative">
+<div class="w-9 h-9 rounded-full bg-slate-800 text-blue-200 font-bold flex items-center justify-center text-xs tracking-wider border-2 border-white shadow-sm">
+              JD
+            </div>
+<!-- Online Indicator -->
+<span class="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-white bg-emerald-500"></span>
+</div>
+<svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+</header>
+<!-- END: Topbar -->
+<!-- BEGIN: Main Scrollable Content -->
+<main class="flex-1 overflow-y-auto px-6 py-5 space-y-5" data-purpose="primary-workspace">
+<!-- BEGIN: Filter & Configuration Bar -->
+<section class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-sm" data-purpose="filter-bar">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+<!-- Filters Group -->
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 flex-1">
+<!-- Selector 1: Periodo Escolar -->
+<div>
+<label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" for="periodo">Período escolar</label>
+<div class="relative">
+<select class="w-full text-xs font-semibold bg-slate-50 border border-slate-200 text-slate-800 rounded-xl py-2 px-3 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer" id="periodo">
+<option selected="">2026 - 2027</option>
+<option>2025 - 2026</option>
+<option>2024 - 2025</option>
+</select>
+</div>
+</div>
+<!-- Selector 2: Año / Nivel -->
+<div>
+<label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" for="anio">Año / Grado</label>
+<div class="relative">
+<select class="w-full text-xs font-semibold bg-slate-50 border border-slate-200 text-slate-800 rounded-xl py-2 px-3 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer" id="anio">
+<option selected="">4to Año</option>
+<option>1er Año</option>
+<option>2do Año</option>
+<option>3er Año</option>
+<option>5to Año</option>
+</select>
+</div>
+</div>
+<!-- Selector 3: Sección -->
+<div>
+<label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" for="seccion">Sección</label>
+<div class="relative">
+<select class="w-full text-xs font-semibold bg-slate-50 border border-slate-200 text-slate-800 rounded-xl py-2 px-3 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer" id="seccion">
+<option selected="">Sección "A" (Ciencias)</option>
+<option>Sección "B" (Humanidades)</option>
+<option>Sección "C" (General)</option>
+</select>
+</div>
+</div>
+<!-- Selector 4: Momento / Lapso -->
+<div>
+<label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1" for="momento">Momento / Lapso</label>
+<div class="relative">
+<select class="w-full text-xs font-semibold bg-slate-50 border border-slate-200 text-slate-800 rounded-xl py-2 px-3 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer" id="momento">
+<option selected="">1er Momento (Corte I)</option>
+<option>2do Momento (Corte II)</option>
+<option>3er Momento (Corte III)</option>
+<option>Definitiva de Lapso</option>
+</select>
+</div>
+</div>
+</div>
+<!-- CTA Buttons -->
+<div class="flex items-center gap-2 pt-2 lg:pt-4 self-end lg:self-center">
+<div class="inline-flex items-center px-3 py-1.5 rounded-xl bg-slate-100 text-slate-600 text-xs font-semibold border border-slate-200 shadow-xs">
+<span class="relative flex h-2 w-2 mr-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+</span>
+Sincronización activa
+</div>
+</div>
+</div>
+</section>
+<!-- END: Filter & Configuration Bar -->
+<!-- BEGIN: Key Academic Metrics Summary -->
+
+<!-- END: Key Academic Metrics Summary -->
+<!-- BEGIN: Interactive Matrix Table Section -->
+<section class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col" data-purpose="grade-sheet-container">
+<!-- Table Toolbar -->
+<div class="p-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white">
+<div class="flex items-center space-x-3">
+<!-- Search bar -->
+<div class="relative w-72">
+<svg class="w-4 h-4 absolute left-3 top-2.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<input class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Buscar por alumno o cédula..." type="text">
+</div>
+
+</div>
+<!-- Table Actions -->
+<div class="flex items-center space-x-2"><!-- Legend Indicators with breathing room and badge styling -->
+<div class="hidden md:flex items-center space-x-3 text-xs mr-1">
+  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-100 font-medium">
+    <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+    Aprobado (10-20)
+  </span>
+  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-100 font-medium">
+    <span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>
+    Aplazado (01-09)
+  </span>
+</div>
+<!-- Compact & Refined Generar Acta Button -->
+<button class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-xs gap-1.5">
+  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <path d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" stroke-linecap="round" stroke-linejoin="round"></path>
+  </svg>
+  Generar Acta Oficial
+</button></div>
+</div>
+<!-- Matrix Table with Sticky Columns -->
+<div class="overflow-x-auto relative max-h-[580px]">
+<table class="w-full border-collapse text-left text-xs">
+<!-- Header Row -->
+<thead class="bg-slate-100 text-slate-700 uppercase tracking-wider text-[11px] font-bold sticky top-0 z-30 shadow-xs border-b border-slate-200">
+<tr>
+<th class="py-3.5 px-3 text-center sticky-col-left-1 bg-slate-100 w-12 border-r border-slate-200" scope="col">Nº</th>
+<th class="py-3.5 px-3 sticky-col-left-2 bg-slate-100 w-28 border-r border-slate-200" scope="col">Cédula</th>
+<th class="py-3.5 px-4 sticky-col-left-3 bg-slate-100 min-w-[220px] border-r border-slate-200" scope="col">Estudiante</th>
+<!-- Subjects Headers -->
+<th class="py-3.5 px-2 text-center w-20 bg-slate-100/90 border-r border-slate-200" scope="col">
+<div class="font-bold">MAT</div>
+<span class="text-[9px] font-normal text-slate-500">Matemáticas</span>
+</th>
+<th class="py-3.5 px-2 text-center w-20 bg-slate-100/90 border-r border-slate-200" scope="col">
+<div class="font-bold">FIS</div>
+<span class="text-[9px] font-normal text-slate-500">Física</span>
+</th>
+<th class="py-3.5 px-2 text-center w-20 bg-slate-100/90 border-r border-slate-200" scope="col">
+<div class="font-bold">QUI</div>
+<span class="text-[9px] font-normal text-slate-500">Química</span>
+</th>
+<th class="py-3.5 px-2 text-center w-20 bg-slate-100/90 border-r border-slate-200" scope="col">
+<div class="font-bold">BIO</div>
+<span class="text-[9px] font-normal text-slate-500">Biología</span>
+</th>
+<th class="py-3.5 px-2 text-center w-20 bg-slate-100/90 border-r border-slate-200" scope="col">
+<div class="font-bold">CAS</div>
+<span class="text-[9px] font-normal text-slate-500">Castellano</span>
+</th>
+<th class="py-3.5 px-2 text-center w-20 bg-slate-100/90 border-r border-slate-200" scope="col">
+<div class="font-bold">ING</div>
+<span class="text-[9px] font-normal text-slate-500">Inglés</span>
+</th>
+<th class="py-3.5 px-2 text-center w-20 bg-slate-100/90 border-r border-slate-200" scope="col">
+<div class="font-bold">HIS</div>
+<span class="text-[9px] font-normal text-slate-500">Historia</span>
+</th>
+<th class="py-3.5 px-2 text-center w-20 bg-slate-100/90 border-r border-slate-200" scope="col">
+<div class="font-bold">EDF</div>
+<span class="text-[9px] font-normal text-slate-500">Ed. Física</span>
+</th>
+<th class="py-3.5 px-2 text-center w-20 bg-slate-100/90 border-r border-slate-200" scope="col">
+<div class="font-bold">GHC</div>
+<span class="text-[9px] font-normal text-slate-500">G.H.C.</span>
+</th>
+<!-- Performance Summary Columns -->
+<th class="py-3.5 px-3 text-center bg-blue-50/70 text-blue-900 border-r border-blue-200 w-24" scope="col">Promedio</th>
+<th class="py-3.5 px-3 text-center bg-slate-100 w-28 border-r border-slate-200" scope="col">Estado</th>
+<th class="py-3.5 px-3 text-center bg-slate-100 w-20" scope="col">Boletín</th>
+</tr>
+</thead>
+<!-- Table Body -->
+<tbody class="divide-y divide-slate-200 font-medium">
+<!-- Student Row 1 -->
+<tr class="hover:bg-blue-50/40 transition-colors group">
+<td class="py-3 px-3 text-center sticky-col-left-1 bg-white group-hover:bg-slate-50 border-r border-slate-200 font-bold text-slate-500">01</td>
+<td class="py-3 px-3 font-mono sticky-col-left-2 bg-white group-hover:bg-slate-50 border-r border-slate-200 text-slate-600">V-30.849.201</td>
+<td class="py-3 px-4 sticky-col-left-3 bg-white group-hover:bg-slate-50 border-r border-slate-200">
+<div class="flex items-center space-x-2.5">
+<div class="w-7 h-7 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs flex-shrink-0">
+                      AA
+                    </div>
+<div>
+<div class="font-bold text-slate-900 leading-tight">Alvarado Mendoza, Alejandro</div>
+<div class="text-[10px] text-slate-400">Regular • 4to "A"</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">19</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">18</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">17</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">20</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">18</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">19</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">17</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">20</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">18</td>
+<td class="py-3 px-3 text-center border-r border-blue-200 bg-blue-50/40 font-black text-blue-700 text-sm">18.44</td>
+<td class="py-3 px-3 text-center border-r border-slate-100">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                    Aprobado
+                  </span>
+</td>
+<td class="py-3 px-2 text-center">
+<button class="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Ver Detalle / Boletín">
+<svg class="w-4 h-4 inline" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+</td>
+</tr>
+<!-- Student Row 2 (With Low Grade Alert) -->
+<tr class="hover:bg-blue-50/40 transition-colors group">
+<td class="py-3 px-3 text-center sticky-col-left-1 bg-white group-hover:bg-slate-50 border-r border-slate-200 font-bold text-slate-500">02</td>
+<td class="py-3 px-3 font-mono sticky-col-left-2 bg-white group-hover:bg-slate-50 border-r border-slate-200 text-slate-600">V-31.205.118</td>
+<td class="py-3 px-4 sticky-col-left-3 bg-white group-hover:bg-slate-50 border-r border-slate-200">
+<div class="flex items-center space-x-2.5">
+<div class="w-7 h-7 rounded-full bg-violet-100 text-violet-700 font-bold flex items-center justify-center text-xs flex-shrink-0">
+                      CB
+                    </div>
+<div>
+<div class="font-bold text-slate-900 leading-tight">Castillo Blanco, Sofía Valentina</div>
+<div class="text-[10px] text-slate-400">Regular • 4to "A"</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-rose-600 bg-rose-50/60" title="Aplazado">08</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">12</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-rose-600 bg-rose-50/60" title="Aplazado">09</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">14</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">15</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">16</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">13</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">19</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">14</td>
+<td class="py-3 px-3 text-center border-r border-blue-200 bg-blue-50/40 font-bold text-amber-700 text-sm">13.33</td>
+<td class="py-3 px-3 text-center border-r border-slate-100">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                    2 Pendientes
+                  </span>
+</td>
+<td class="py-3 px-2 text-center">
+<button class="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Ver Detalle / Boletín">
+<svg class="w-4 h-4 inline" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+</td>
+</tr>
+<!-- Student Row 3 -->
+<tr class="hover:bg-blue-50/40 transition-colors group">
+<td class="py-3 px-3 text-center sticky-col-left-1 bg-white group-hover:bg-slate-50 border-r border-slate-200 font-bold text-slate-500">03</td>
+<td class="py-3 px-3 font-mono sticky-col-left-2 bg-white group-hover:bg-slate-50 border-r border-slate-200 text-slate-600">V-30.998.441</td>
+<td class="py-3 px-4 sticky-col-left-3 bg-white group-hover:bg-slate-50 border-r border-slate-200">
+<div class="flex items-center space-x-2.5">
+<div class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-xs flex-shrink-0">
+                      DG
+                    </div>
+<div>
+<div class="font-bold text-slate-900 leading-tight">Duarte Gómez, Carlos Eduardo</div>
+<div class="text-[10px] text-slate-400">Regular • 4to "A"</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">16</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">17</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">15</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">18</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">17</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">18</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">16</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">20</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">17</td>
+<td class="py-3 px-3 text-center border-r border-blue-200 bg-blue-50/40 font-bold text-blue-700 text-sm">17.11</td>
+<td class="py-3 px-3 text-center border-r border-slate-100">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                    Aprobado
+                  </span>
+</td>
+<td class="py-3 px-2 text-center">
+<button class="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Ver Detalle / Boletín">
+<svg class="w-4 h-4 inline" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+</td>
+</tr>
+<!-- Student Row 4 -->
+<tr class="hover:bg-blue-50/40 transition-colors group">
+<td class="py-3 px-3 text-center sticky-col-left-1 bg-white group-hover:bg-slate-50 border-r border-slate-200 font-bold text-slate-500">04</td>
+<td class="py-3 px-3 font-mono sticky-col-left-2 bg-white group-hover:bg-slate-50 border-r border-slate-200 text-slate-600">V-31.442.890</td>
+<td class="py-3 px-4 sticky-col-left-3 bg-white group-hover:bg-slate-50 border-r border-slate-200">
+<div class="flex items-center space-x-2.5">
+<div class="w-7 h-7 rounded-full bg-amber-100 text-amber-700 font-bold flex items-center justify-center text-xs flex-shrink-0">
+                      FM
+                    </div>
+<div>
+<div class="font-bold text-slate-900 leading-tight">Fernández Morán, Isabella</div>
+<div class="text-[10px] text-slate-400">Regular • 4to "A"</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">20</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">19</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">19</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">20</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">20</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">20</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">19</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">20</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">19</td>
+<td class="py-3 px-3 text-center border-r border-blue-200 bg-blue-50/40 font-black text-emerald-700 text-sm">19.55</td>
+<td class="py-3 px-3 text-center border-r border-slate-100">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                    Excelente
+                  </span>
+</td>
+<td class="py-3 px-2 text-center">
+<button class="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Ver Detalle / Boletín">
+<svg class="w-4 h-4 inline" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+</td>
+</tr>
+<!-- Student Row 5 -->
+<tr class="hover:bg-blue-50/40 transition-colors group">
+<td class="py-3 px-3 text-center sticky-col-left-1 bg-white group-hover:bg-slate-50 border-r border-slate-200 font-bold text-slate-500">05</td>
+<td class="py-3 px-3 font-mono sticky-col-left-2 bg-white group-hover:bg-slate-50 border-r border-slate-200 text-slate-600">V-30.718.002</td>
+<td class="py-3 px-4 sticky-col-left-3 bg-white group-hover:bg-slate-50 border-r border-slate-200">
+<div class="flex items-center space-x-2.5">
+<div class="w-7 h-7 rounded-full bg-rose-100 text-rose-700 font-bold flex items-center justify-center text-xs flex-shrink-0">
+                      GR
+                    </div>
+<div>
+<div class="font-bold text-slate-900 leading-tight">Gutiérrez Rivas, Mateo</div>
+<div class="text-[10px] text-slate-400">Regular • 4to "A"</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">14</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">15</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">13</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">16</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">14</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">15</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">15</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">18</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">16</td>
+<td class="py-3 px-3 text-center border-r border-blue-200 bg-blue-50/40 font-bold text-blue-700 text-sm">15.11</td>
+<td class="py-3 px-3 text-center border-r border-slate-100">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                    Aprobado
+                  </span>
+</td>
+<td class="py-3 px-2 text-center">
+<button class="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Ver Detalle / Boletín">
+<svg class="w-4 h-4 inline" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+</td>
+</tr>
+<!-- Student Row 6 -->
+<tr class="hover:bg-blue-50/40 transition-colors group">
+<td class="py-3 px-3 text-center sticky-col-left-1 bg-white group-hover:bg-slate-50 border-r border-slate-200 font-bold text-slate-500">06</td>
+<td class="py-3 px-3 font-mono sticky-col-left-2 bg-white group-hover:bg-slate-50 border-r border-slate-200 text-slate-600">V-31.054.331</td>
+<td class="py-3 px-4 sticky-col-left-3 bg-white group-hover:bg-slate-50 border-r border-slate-200">
+<div class="flex items-center space-x-2.5">
+<div class="w-7 h-7 rounded-full bg-cyan-100 text-cyan-700 font-bold flex items-center justify-center text-xs flex-shrink-0">
+                      LL
+                    </div>
+<div>
+<div class="font-bold text-slate-900 leading-tight">López Lucena, Gabriel Ignacio</div>
+<div class="text-[10px] text-slate-400">Regular • 4to "A"</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">17</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">16</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">18</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">17</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">16</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">19</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">18</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">19</td>
+<td class="py-3 px-2 text-center border-r border-slate-100 font-bold text-slate-800">17</td>
+<td class="py-3 px-3 text-center border-r border-blue-200 bg-blue-50/40 font-bold text-blue-700 text-sm">17.44</td>
+<td class="py-3 px-3 text-center border-r border-slate-100">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                    Aprobado
+                  </span>
+</td>
+<td class="py-3 px-2 text-center">
+<button class="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Ver Detalle / Boletín">
+<svg class="w-4 h-4 inline" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+</td>
+</tr>
+</tbody>
+<!-- Average by Subject Summary Row -->
+<tfoot class="bg-slate-50 border-t-2 border-slate-200 font-bold text-slate-800">
+<tr>
+<td class="py-3 px-4 text-right uppercase tracking-wider text-[11px] text-slate-500 bg-slate-50 sticky-col-left-1 border-r border-slate-200" colspan="3">
+                  Promedio por Asignatura:
+                </td>
+<td class="py-3 px-2 text-center border-r border-slate-200 text-blue-700">15.6</td>
+<td class="py-3 px-2 text-center border-r border-slate-200 text-blue-700">16.1</td>
+<td class="py-3 px-2 text-center border-r border-slate-200 text-blue-700">15.8</td>
+<td class="py-3 px-2 text-center border-r border-slate-200 text-blue-700">17.5</td>
+<td class="py-3 px-2 text-center border-r border-slate-200 text-blue-700">16.6</td>
+<td class="py-3 px-2 text-center border-r border-slate-200 text-blue-700">17.8</td>
+<td class="py-3 px-2 text-center border-r border-slate-200 text-blue-700">16.3</td>
+<td class="py-3 px-2 text-center border-r border-slate-200 text-blue-700">19.3</td>
+<td class="py-3 px-2 text-center border-r border-slate-200 text-blue-700">16.8</td>
+<td class="py-3 px-3 text-center border-r border-blue-200 bg-blue-100 text-blue-900 font-extrabold text-sm">16.48</td>
+<td class="py-3 px-3 text-center text-xs text-slate-500 font-semibold bg-slate-50" colspan="2">
+                  Lapso en Progreso
+                </td>
+</tr>
+</tfoot>
+</table>
+</div>
+<!-- Table Pagination & Footer Status -->
+<div class="px-5 py-3.5 border-t border-slate-200/80 bg-white flex flex-col sm:flex-row items-center justify-between gap-3">
+<div class="text-xs text-slate-500 font-medium">
+            Mostrando <span class="font-bold text-slate-800">6</span> de <span class="font-bold text-slate-800">32</span> estudiantes cargados en la sábana
+          </div>
+<div class="flex items-center space-x-2">
+<button class="px-3 py-1.5 text-xs font-semibold text-slate-500 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-50" disabled="">
+              Anterior
+            </button>
+<div class="flex items-center space-x-1">
+<button class="w-7 h-7 text-xs font-bold rounded-lg bg-blue-600 text-white">1</button>
+<button class="w-7 h-7 text-xs font-semibold rounded-lg text-slate-600 hover:bg-slate-100">2</button>
+<button class="w-7 h-7 text-xs font-semibold rounded-lg text-slate-600 hover:bg-slate-100">3</button>
+</div>
+<button class="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
+              Siguiente
+            </button>
+</div>
+</div>
+</section>
+<!-- END: Interactive Matrix Table Section -->
+<!-- BEGIN: Bottom Configuration & Audit Log Section -->
+
+<!-- END: Bottom Configuration & Audit Log Section -->
+</main>
+<!-- END: Main Scrollable Content -->
+</div>
+<!-- END: Main Area -->
+<!-- Small Interaction Script: Auto-select filter simulation -->
+<script data-purpose="interactive-enhancements">
+    document.addEventListener('DOMContentLoaded', () => {
+      // Small visual feedback on button clicks
+      const buttons = document.querySelectorAll('button');
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          btn.classList.add('scale-95');
+          setTimeout(() => btn.classList.remove('scale-95'), 120);
+        });
+      });
+    });
+  </script>
+
+
+</body></html>

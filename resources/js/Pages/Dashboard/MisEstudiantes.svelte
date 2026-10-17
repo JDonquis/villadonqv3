@@ -197,9 +197,35 @@
     $: planTeacherName = data.matrix?.plan?.teacher_name || null;
 
     function updateGrade(key, value) {
-        editable[key] = value;
+        // Normaliza el valor y limita la nota al rango 0 - 20.
+        const cleaned = String(value ?? "")
+            .replace(",", ".")
+            .replace(/[^0-9.]/g, "");
+
+        if (cleaned === "") {
+            editable[key] = "";
+        } else {
+            const [intPart, ...decParts] = cleaned.split(".");
+            const normalized =
+                decParts.length > 0
+                    ? `${intPart}.${decParts.join("")}`
+                    : intPart;
+            const num = parseFloat(normalized);
+
+            if (!Number.isFinite(num)) {
+                editable[key] = "";
+            } else if (num > 20) {
+                editable[key] = "20";
+            } else if (num < 0) {
+                editable[key] = "0";
+            } else {
+                editable[key] = normalized;
+            }
+        }
+
         editable = { ...editable };
         $form.grades = getGradesFromEditable();
+        return editable[key];
     }
 
     function letterForScore(value) {
@@ -1002,7 +1028,24 @@
     onDestroy(stopVoiceDictation);
 
     function updateRasgos(studentId, value) {
-        rasgosEditable[studentId] = value;
+        // Solo enteros, nunca negativos y máximo = puntos de rasgos del plan.
+        const cleaned = String(value ?? "").replace(/[^0-9]/g, "");
+        let clamped;
+
+        if (cleaned === "") {
+            clamped = "";
+        } else {
+            const num = parseInt(cleaned, 10);
+            if (!Number.isFinite(num)) {
+                clamped = "";
+            } else if (num > planRasgosMax) {
+                clamped = String(planRasgosMax);
+            } else {
+                clamped = String(num);
+            }
+        }
+
+        rasgosEditable[studentId] = clamped;
         rasgosEditable = { ...rasgosEditable };
         const planId = data.matrix?.plan?.id;
         $form.rasgos = (data.matrix?.students || []).map((s) => {
@@ -1012,10 +1055,11 @@
                 student_id: s.id,
                 rasgos_score:
                     raw === "" || raw === null || raw === undefined
-                        ? null
-                        : parseInt(raw, 10),
-            };
-        });
+                         ? null
+                         : parseInt(raw, 10),
+             };
+         });
+        return clamped;
     }
 
     function getActiveMomentId(schoolLapse) {
@@ -2063,12 +2107,19 @@
                                                         editable[gradeKey],
                                                     )}
                                                     placeholder="—"
-                                                    on:input={(event) =>
-                                                        updateGrade(
-                                                            gradeKey,
-                                                            event.currentTarget
-                                                                .value,
-                                                        )}
+                                                    on:input={(event) => {
+                                                        const input =
+                                                            event.currentTarget;
+                                                        const clamped =
+                                                            updateGrade(
+                                                                gradeKey,
+                                                                input.value,
+                                                            );
+                                                        input.value =
+                                                            formatGrade(
+                                                                clamped,
+                                                            );
+                                                    }}
                                                 />
                                             </div>
                                         </div>
@@ -2090,11 +2141,20 @@
                                             title={`Puntos de rasgos (0-${planRasgosMax})`}
                                             value={rasgosEditable[student.id]}
                                             placeholder="0"
-                                            on:input={(event) =>
-                                                updateRasgos(
+                                            on:input={(event) => {
+                                                const input =
+                                                    event.currentTarget;
+                                                const clamped = updateRasgos(
                                                     student.id,
-                                                    event.currentTarget.value,
-                                                )}
+                                                    input.value,
+                                                );
+                                                input.value =
+                                                    clamped === "" ||
+                                                    clamped === null ||
+                                                    clamped === undefined
+                                                        ? ""
+                                                        : String(clamped);
+                                            }}
                                         />
                                     </td>
                                 {/if}

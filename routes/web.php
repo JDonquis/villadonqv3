@@ -207,6 +207,7 @@ Route::middleware(['auth', 'role:administrator,teacher'])->group(function () {
 // Sábana de notas: solo administración con módulo "notas" (se valida en el controlador).
 Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::get('/dashboard/sabana-notas', [GradeSheetController::class, 'index']);
+    Route::get('/dashboard/sabana-notas/pdf', [GradeSheetController::class, 'pdf']);
     Route::post('/dashboard/sabana-notas', [GradeSheetController::class, 'store']);
     Route::post('/dashboard/sabana-notas/{id}/puntos', [GradeSheetController::class, 'savePoints']);
     Route::delete('/dashboard/sabana-notas/{id}', [GradeSheetController::class, 'destroy']);
