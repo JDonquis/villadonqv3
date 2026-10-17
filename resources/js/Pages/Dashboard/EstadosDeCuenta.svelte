@@ -434,7 +434,13 @@ Ingrese a este link para más información y proceder con el pago: ${paymentLink
 </script>
 
 {#if showAnnulModal}
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <div
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+        role="presentation"
+        on:click|self={() => (showAnnulModal = false)}
+    >
         <div
             class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-4"
         >
@@ -673,7 +679,7 @@ Ingrese a este link para más información y proceder con el pago: ${paymentLink
         <button
             type="button"
             on:click={openAnnulModal}
-            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border  bg-white text-xs font-semibold text-gray-600 hover:bg-gray-100"
+            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border  bg-white/70 text-xs font-semibold text-gray-600 hover:bg-gray-100"
             title="Anular meses pasados para todos"
         >
             <iconify-icon icon="mdi:calendar-remove-outline" width="16" height="16"
@@ -683,7 +689,7 @@ Ingrese a este link para más información y proceder con el pago: ${paymentLink
         <button
             type="button"
             on:click={() => (showHistory = !showHistory)}
-            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border  bg-white text-xs font-semibold text-gray-600 hover:bg-gray-100"
+            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border  bg-white/70 text-xs font-semibold text-gray-600 hover:bg-gray-100"
             title="Historial de anulaciones"
         >
             <iconify-icon icon="mdi:history" width="16" height="16"></iconify-icon>

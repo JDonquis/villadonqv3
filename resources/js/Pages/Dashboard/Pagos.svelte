@@ -2653,7 +2653,7 @@
                                     class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-gray-100 text-gray-800"
                                 >
                                     {chip.name}
-                                    {#if chip.amount != null}
+                                    {#if chip.amount != null && conceptChips.length > 1}
                                         <span class="text-emerald-600 font-semibold"
                                             >${chip.amount.toFixed(2)}</span
                                         >

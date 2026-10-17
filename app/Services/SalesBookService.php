@@ -416,7 +416,7 @@ class SalesBookService
     private function writeDayHeader($sheet, int $row, string $title, string $lastCol): void
     {
         $sheet->getRowDimension($row)->setRowHeight(24);
-        $sheet->setCellValue('A'.$row, '📅  '.$title);
+        $sheet->setCellValue('A'.$row, $title);
         $sheet->mergeCells('A'.$row.':'.$lastCol.$row);
         $sheet->getStyle('A'.$row.':'.$lastCol.$row)->applyFromArray([
             'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9.5, 'color' => ['argb' => self::COLOR_DAY_HEADER_TXT]],
