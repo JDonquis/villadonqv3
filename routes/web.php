@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountStatementController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AppController;
+use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EvaluationPlanController;
 use App\Http\Controllers\GradeSheetController;
@@ -163,6 +164,26 @@ Route::get('/dashboard/pagos/libro-ventas', [PaymentController::class, 'libroVen
 
     Route::get('/dashboard/reportes/boleta/{studentId}', [ReportController::class, 'boleta']);
     Route::get('/dashboard/reportes/certificado/{studentId}', [ReportController::class, 'certificado']);
+
+    Route::get('/dashboard/documentos', [DocumentController::class, 'index']);
+
+    Route::get('/dashboard/documentos/sabana-academica', [DocumentController::class, 'sabanaAcademica']);
+    Route::get('/dashboard/documentos/sabana-academica/excel', [DocumentController::class, 'sabanaAcademicaExcel']);
+    Route::get('/dashboard/documentos/sabana-academica/pdf', [DocumentController::class, 'sabanaAcademicaPdf']);
+
+    Route::get('/dashboard/documentos/resumen-final', [DocumentController::class, 'resumenFinal']);
+    Route::get('/dashboard/documentos/resumen-final/excel', [DocumentController::class, 'resumenFinalExcel']);
+    Route::get('/dashboard/documentos/resumen-final/pdf', [DocumentController::class, 'resumenFinalPdf']);
+
+    Route::get('/dashboard/documentos/certificado-notas', [DocumentController::class, 'certificadoNotas']);
+    Route::get('/dashboard/documentos/certificado-notas/excel', [DocumentController::class, 'certificadoNotasExcel']);
+    Route::get('/dashboard/documentos/certificado-notas/pdf', [DocumentController::class, 'certificadoNotasPdf']);
+
+    Route::get('/dashboard/documentos/registro-titulos', [DocumentController::class, 'registroTitulos']);
+    Route::get('/dashboard/documentos/registro-titulos/excel', [DocumentController::class, 'registroTitulosExcel']);
+    Route::get('/dashboard/documentos/registro-titulos/pdf', [DocumentController::class, 'registroTitulosPdf']);
+    Route::post('/dashboard/documentos/registro-titulos/generar-seriales', [DocumentController::class, 'generarSeriales']);
+    Route::patch('/dashboard/documentos/registro-titulos/{student}/serial', [DocumentController::class, 'actualizarSerial']);
     Route::get('/dashboard/horarios', [ScheduleController::class, 'index']);
     Route::post('/dashboard/horarios', [ScheduleController::class, 'store']);
 

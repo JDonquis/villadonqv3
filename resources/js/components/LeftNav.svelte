@@ -80,6 +80,12 @@
             name: "Comunicados",
             slug: "comunicados",
         },
+        {
+            icon: "mdi:file-document-multiple-outline",
+            href: "/dashboard/documentos",
+            name: "Documentos",
+            slug: "documentos",
+        },
     ];
 
     const teacherNavPages = [

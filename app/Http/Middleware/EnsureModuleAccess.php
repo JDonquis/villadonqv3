@@ -28,6 +28,7 @@ class EnsureModuleAccess
         'horarios' => 'horarios',
         'comunicados' => 'comunicados',
         'eventos' => 'comunicados',
+        'documentos' => 'documentos',
     ];
 
     public function handle(Request $request, Closure $next): Response

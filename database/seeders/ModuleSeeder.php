@@ -23,6 +23,7 @@ class ModuleSeeder extends Seeder
         ['slug' => 'horarios', 'name' => 'Horarios', 'icon' => 'mdi:calendar-clock', 'order' => 9],
         ['slug' => 'notas', 'name' => 'Notas', 'icon' => 'fluent:quiz-24-filled', 'order' => 10],
         ['slug' => 'comunicados', 'name' => 'Comunicados', 'icon' => 'mdi:bullhorn-outline', 'order' => 11],
+        ['slug' => 'documentos', 'name' => 'Documentos', 'icon' => 'mdi:file-document-multiple-outline', 'order' => 12],
     ];
 
     /**

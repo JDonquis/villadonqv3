@@ -34,12 +34,16 @@ class Student extends Model
         'apply_to_past_debts',
         'document_type',
         'is_repeating',
+        'title_serial',
+        'title_issued_at',
+        'title_observations',
     ];
 
     public $timestamps = false;
 
     protected $casts = [
         'is_repeating' => 'boolean',
+        'title_issued_at' => 'date',
     ];
 
     public function representative()
