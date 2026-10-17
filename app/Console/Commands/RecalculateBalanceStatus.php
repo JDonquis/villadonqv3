@@ -93,7 +93,7 @@ class RecalculateBalanceStatus extends Command
                 $value = (float) $balance->$month;
 
                 $isDue = BalanceMonthStatus::isDue($index, $currentMonthIndex, $isPastDueDate, $lapsePosition);
-                $newStatus = BalanceMonthStatus::determine($value, $effectivePrice, $isDue);
+                $newStatus = BalanceMonthStatus::determine($value, $effectivePrice, $isDue, $balance->isMonthAnnulled($month));
 
                 $oldValue = $balance->$statusField instanceof BalanceStudentStatusEnum
                     ? $balance->$statusField->value

@@ -8,6 +8,7 @@ enum BalanceStudentStatusEnum: string
     case Paid = 'paid';
     case Debt = 'debt';
     case PartiallyPaid = 'partially_paid';
+    case Annulled = 'annulled';
 
     public function label(): string
     {
@@ -16,6 +17,7 @@ enum BalanceStudentStatusEnum: string
             self::Paid => 'Pagado',
             self::Debt => 'Deuda',
             self::PartiallyPaid => 'Pago Parcial',
+            self::Annulled => 'No aplica',
         };
     }
 }

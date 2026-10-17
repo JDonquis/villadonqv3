@@ -124,7 +124,7 @@ class BalanceService
                         $currentMonthPastDue,
                         BalanceMonthStatus::lapsePosition($balance, $currentLapse)
                     );
-                    $balance->{$month.'_status'} = BalanceMonthStatus::determine($monthValue, $effectivePrice, $isDue);
+                    $balance->{$month.'_status'} = BalanceMonthStatus::determine($monthValue, $effectivePrice, $isDue, $balance->isMonthAnnulled($month));
 
                     BalancePayment::create([
                         'payment_id' => $payment->id,
@@ -200,7 +200,7 @@ class BalanceService
                     $currentMonthPastDue,
                     BalanceMonthStatus::lapsePosition($balance, $currentLapse)
                 );
-                $balance->{$month.'_status'} = BalanceMonthStatus::determine($monthValue, $effectivePrice, $isDue);
+                $balance->{$month.'_status'} = BalanceMonthStatus::determine($monthValue, $effectivePrice, $isDue, $balance->isMonthAnnulled($month));
             }
 
             $this->updateGeneralStatus($balance);
@@ -250,7 +250,7 @@ class BalanceService
                     $currentMonthPastDue,
                     BalanceMonthStatus::lapsePosition($balance, $currentLapse)
                 );
-                $balance->{$month.'_status'} = BalanceMonthStatus::determine((float) $balance->$month, $newEffectiveMonthlyPrice, $isDue);
+                $balance->{$month.'_status'} = BalanceMonthStatus::determine((float) $balance->$month, $newEffectiveMonthlyPrice, $isDue, $balance->isMonthAnnulled($month));
             }
 
             // Inscripción (solo si aplica a deudas pasadas o si aún no está pagada totalmente y queremos ajustarla)

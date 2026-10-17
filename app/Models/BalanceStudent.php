@@ -65,8 +65,8 @@ class BalanceStudent extends Model
         'november_reminded',
         'december',
         'december_status',
-        'december_reminded',
         'school_lapse_id',
+        'start_month',
     ];
 
     protected $casts = [
@@ -114,8 +114,39 @@ class BalanceStudent extends Model
     }
 
     /**
+     * Índice del mes de inicio de deuda dentro del orden escolar, o null si no
+     * hay restricción.
+     */
+    public function startMonthIndex(): ?int
+    {
+        if (! $this->start_month) {
+            return null;
+        }
+
+        $index = array_search($this->start_month, self::MONTHS, true);
+
+        return $index === false ? null : $index;
+    }
+
+    /**
+     * Indica si un mes queda antes del mes de inicio (por lo tanto anulado).
+     */
+    public function isMonthAnnulled(string $month): bool
+    {
+        $start = $this->startMonthIndex();
+
+        if ($start === null) {
+            return false;
+        }
+
+        $index = array_search($month, self::MONTHS, true);
+
+        return $index !== false && $index < $start;
+    }
+
+    /**
      * Deuda efectivamente vencida: inscripción + meses con status debt/partially_paid.
-     * Los meses futuros (pending) no cuentan.
+     * Los meses futuros (pending) y los anulados no cuentan.
      */
     public function currentDebt(): float
     {

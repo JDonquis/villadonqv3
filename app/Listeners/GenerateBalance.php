@@ -88,7 +88,8 @@ class GenerateBalance
                 $this->monthStatuses[$monthName] = BalanceStudentStatusEnum::Pending->value;
                 $this->months[$monthName] = $this->months[$monthName] - $effectiveMonthlyPayment;
             } else {
-                $this->monthStatuses[$monthName] = BalanceStudentStatusEnum::Paid->value;
+                // Meses anteriores al mes de ingreso: no aplican (anulados).
+                $this->monthStatuses[$monthName] = BalanceStudentStatusEnum::Annulled->value;
             }
         }
 
@@ -101,6 +102,7 @@ class GenerateBalance
                 'status' => $generalStatus,
                 'student_id' => $student->id,
                 'school_lapse_id' => $schoolLapseActive->id,
+                'start_month' => $currentMonthName,
                 'inscription' => -$effectiveInscriptionPrice,
                 'september' => $this->months['september'],
                 'september_status' => $this->monthStatuses['september'],
