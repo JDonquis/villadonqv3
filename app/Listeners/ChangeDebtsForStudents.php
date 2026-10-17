@@ -85,7 +85,7 @@ class ChangeDebtsForStudents
 
                 $balance->$month = $newBalanceValue;
                 $isDue = BalanceMonthStatus::isDue($index, $currentMonthIndex, $currentMonthPastDue, BalanceMonthStatus::CURRENT);
-                $balance->{$month.'_status'} = BalanceMonthStatus::determine($newBalanceValue, $effectivePrice, $isDue);
+                $balance->{$month.'_status'} = BalanceMonthStatus::determine($newBalanceValue, $effectivePrice, $isDue, $balance->isMonthAnnulled($month));
             }
 
             $this->updateGeneralStatus($balance);

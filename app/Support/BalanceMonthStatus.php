@@ -18,9 +18,15 @@ class BalanceMonthStatus
      * Determina el estatus de un mes según su valor, el precio efectivo del
      * estudiante y si el mes ya venció. Un mes no vencido nunca es deuda:
      * como mucho queda "pending" (aunque tenga un abono parcial).
+     * Si el mes está anulado (antes del mes de inicio del estudiante), se
+     * marca como "annulled" y no cuenta como deuda.
      */
-    public static function determine(float $monthValue, float $effectivePrice, bool $isDue): string
+    public static function determine(float $monthValue, float $effectivePrice, bool $isDue, bool $isAnnulled = false): string
     {
+        if ($isAnnulled) {
+            return BalanceStudentStatusEnum::Annulled->value;
+        }
+
         if ($monthValue >= 0) {
             return BalanceStudentStatusEnum::Paid->value;
         }

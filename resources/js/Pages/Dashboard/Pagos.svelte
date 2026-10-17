@@ -537,26 +537,18 @@
     async function focusBolivaresTarget() {
         await tick();
 
-        const totalInput = document.getElementById("payment-total-bs");
-        if ($form.students.length === 1) {
-            if (totalInput) {
-                totalInput.focus();
-                totalInput.select();
-            }
-            return;
-        }
+        const lastIndex = $form.students.length - 1;
+        const lastStudent = $form.students[lastIndex];
 
-        const lastStudent = $form.students[$form.students.length - 1];
-        const targetId = lastStudent
-            ? `student-bs-${lastStudent.id ?? $form.students.length - 1}`
-            : "";
-        const studentInput = targetId
-            ? document.getElementById(targetId)
-            : null;
+        if (!lastStudent) return;
 
-        if (studentInput) {
-            studentInput.focus();
-            studentInput.select();
+        // Foco en el input de Bs. de Mensualidad / Inscripciones del estudiante agregado.
+        const targetId = `student-monthly-bs-${lastStudent.id ?? lastIndex}`;
+        const input = document.getElementById(targetId);
+
+        if (input) {
+            input.focus();
+            input.select();
         }
     }
 
@@ -1624,7 +1616,7 @@
                                     </p>
                                     {#if student.include_monthly !== false}
                                         <div
-                                            class="flex items-center justify-between gap-3 rounded-lg border border-color1/30 bg-color1/5 px-3 py-1.5"
+                                            class="flex items-center justify-between gap-3 rounded-lg border  bg-color1/5 px-3 py-1.5"
                                         >
                                             <span
                                                 class="text-xs font-semibold text-gray-700 truncate"
@@ -1647,6 +1639,8 @@
                                                             ""}
                                                         readonly={submitStatus ===
                                                             "Solo lectura"}
+                                                        on:focus={(e) =>
+                                                            e.target.select()}
                                                         on:input={(e) =>
                                                             updateRegularAmount(
                                                                 i,
@@ -1663,6 +1657,7 @@
                                                         type="text"
                                                         inputmode="numeric"
                                                         placeholder="0,00"
+                                                        id={`student-monthly-bs-${student.id ?? i}`}
                                                         class="w-full pl-8 pr-2 py-1 text-xs md:text-sm font-semibold text-color1 bg-white border border-grayBlue/50 rounded-lg focus:outline-none focus:border-color2 focus:ring-2 focus:ring-color2/20"
                                                         value={formatBsInput(
                                                             bsFromUsd(
@@ -1747,6 +1742,8 @@
                                                         readonly={submitStatus ===
                                                             "Solo lectura" ||
                                                             fixed}
+                                                        on:focus={(e) =>
+                                                            e.target.select()}
                                                         on:input={(e) =>
                                                             updateConceptAmount(
                                                                 i,

@@ -250,7 +250,8 @@
                     class="hover:brightness-125 relative col-span-1 z-10 text-[9px] md:text-xs text-gray-700 p-1 capitalize text-center font-bold
                     {balance.inscription_status === 'pending' || balance.inscription_status === 'debt' ? 'bg-red/70' : ''}
                     {balance.inscription_status === 'paid' ? 'bg-green/50' : ''}
-                    {balance.inscription_status === 'partially_paid' ? 'bg-yellow/70' : ''}"
+                    {balance.inscription_status === 'partially_paid' ? 'bg-yellow/70' : ''}
+                    {balance.inscription_status === 'annulled' ? 'bg-gray-200/70 opacity-60' : ''}"
                     on:mouseenter={(e) => balance.balance_payments?.inscription && showBalancePaymentsTooltip(e, balance.balance_payments.inscription)}
                     on:mouseleave={scheduleTooltipHide}
                 >
@@ -283,6 +284,7 @@
                                 {balance[name + '_status'] === 'paid' ? 'bg-green/50' : ''}
                                 {balance[name + '_status'] === 'partially_paid' ? 'bg-yellow/70' : ''}
                                 {balance[name + '_status'] === 'pending' && hasMonthPayment(balance, name) ? 'bg-blue/60' : ''}
+                                {balance[name + '_status'] === 'annulled' ? 'bg-gray-200/70 opacity-60' : ''}
                                 {!balance[name + '_status'] ? 'bg-gray-50' : ''}"
                                 title={balance[name + '_status'] === 'pending' ? 'Pendiente de pago: $' + Math.abs(balance[name]) : ''}
                                 on:mouseenter={(e) => balance.balance_payments?.[name] && showBalancePaymentsTooltip(e, balance.balance_payments[name])}
@@ -330,6 +332,7 @@
                                 {balance[name + '_status'] === 'paid' ? 'bg-green/50' : ''}
                                 {balance[name + '_status'] === 'partially_paid' ? 'bg-yellow/70' : ''}
                                 {balance[name + '_status'] === 'pending' && hasMonthPayment(balance, name) ? 'bg-blue/60' : ''}
+                                {balance[name + '_status'] === 'annulled' ? 'bg-gray-200/70 opacity-60' : ''}
                                 {!balance[name + '_status'] ? 'bg-gray-50' : ''}"
                                 title={balance[name + '_status'] === 'pending' ? 'Pendiente de pago: $' + Math.abs(balance[name]) : ''}
                                 on:mouseenter={(e) => balance.balance_payments?.[name] && showBalancePaymentsTooltip(e, balance.balance_payments[name])}
