@@ -44,7 +44,7 @@ class BalanceMaintenanceService
     /**
      * Calcula (sin persistir) qué se anularía.
      */
-    public function preview(?int $lapseId, string $upToMonth, bool $includeInscription, array $filters = []): array
+    public function preview(?int $lapseId, ?string $upToMonth, bool $includeInscription, array $filters = []): array
     {
         [$upToIndex, $balances] = $this->collect($lapseId, $upToMonth, $filters);
 
@@ -105,7 +105,7 @@ class BalanceMaintenanceService
         }
 
         return [
-            'up_to_month' => $upToMonth,
+            'up_to_month' => $upToMonth ?: 'none',
             'include_inscription' => $includeInscription,
             'affected_count' => $affected,
             'skipped_count' => $skipped,
@@ -115,9 +115,10 @@ class BalanceMaintenanceService
     }
 
     /**
-     * Anula los meses <= corte para los balances del lapso, guardando snapshot.
+     * Anula los meses <= corte (o solo la inscripción si $upToMonth es null)
+     * para los balances del lapso, guardando snapshot para poder deshacer.
      */
-    public function annul(?int $lapseId, string $upToMonth, bool $includeInscription, array $filters = []): array
+    public function annul(?int $lapseId, ?string $upToMonth, bool $includeInscription, array $filters = []): array
     {
         DB::beginTransaction();
 
@@ -129,7 +130,9 @@ class BalanceMaintenanceService
             $affected = 0;
             $skipped = 0;
 
-            $nextMonth = $upToIndex < (count(self::MONTHS) - 1) ? self::MONTHS[$upToIndex + 1] : null;
+            $nextMonth = $upToIndex >= 0
+                ? ($upToIndex < (count(self::MONTHS) - 1) ? self::MONTHS[$upToIndex + 1] : null)
+                : null;
 
             foreach ($balances as $balance) {
                 $paidMonths = $balance->balancePayments
@@ -145,6 +148,7 @@ class BalanceMaintenanceService
                 ];
 
                 $changed = false;
+                $monthChanged = false;
 
                 for ($i = 0; $i <= $upToIndex; $i++) {
                     $month = self::MONTHS[$i];
@@ -167,6 +171,7 @@ class BalanceMaintenanceService
                     $balance->$month = 0;
                     $balance->{$month.'_status'} = BalanceStudentStatusEnum::Annulled->value;
                     $changed = true;
+                    $monthChanged = true;
                 }
 
                 if ($includeInscription) {
@@ -188,18 +193,21 @@ class BalanceMaintenanceService
                     continue;
                 }
 
-                $balance->start_month = $nextMonth;
+                if ($monthChanged) {
+                    $balance->start_month = $nextMonth;
+                }
+
                 $this->recomputeGeneralStatus($balance);
                 $balance->save();
 
-                $entry['new_start_month'] = $nextMonth;
+                $entry['new_start_month'] = $balance->start_month;
                 $snapshot[] = $entry;
                 $affected++;
             }
 
             $annulment = BalanceAnnulment::create([
                 'school_lapse_id' => $lapseId,
-                'up_to_month' => $upToMonth,
+                'up_to_month' => $upToMonth ?: 'none',
                 'include_inscription' => $includeInscription,
                 'filters' => $filters,
                 'snapshot' => $snapshot,
@@ -287,7 +295,9 @@ class BalanceMaintenanceService
                 'id' => $a->id,
                 'school_lapse_id' => $a->school_lapse_id,
                 'up_to_month' => $a->up_to_month,
-                'up_to_month_label' => self::MONTHS_ES[$a->up_to_month] ?? $a->up_to_month,
+                'up_to_month_label' => ($a->up_to_month && $a->up_to_month !== 'none')
+                    ? (self::MONTHS_ES[$a->up_to_month] ?? $a->up_to_month)
+                    : 'Solo inscripción',
                 'include_inscription' => $a->include_inscription,
                 'affected_count' => $a->affected_count,
                 'total_annulled' => (float) $a->total_annulled,
@@ -303,9 +313,9 @@ class BalanceMaintenanceService
     /**
      * @return array{0:int,1:\Illuminate\Support\Collection<int,BalanceStudent>}
      */
-    private function collect(?int $lapseId, string $upToMonth, array $filters): array
+    private function collect(?int $lapseId, ?string $upToMonth, array $filters): array
     {
-        $upToIndex = array_search($upToMonth, self::MONTHS, true);
+        $upToIndex = $upToMonth ? array_search($upToMonth, self::MONTHS, true) : false;
 
         if ($upToIndex === false) {
             $upToIndex = -1;

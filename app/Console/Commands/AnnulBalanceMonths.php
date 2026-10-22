@@ -9,7 +9,7 @@ class AnnulBalanceMonths extends Command
 {
     protected $signature = 'balances:annul-months
         {--lapse= : ID del periodo escolar (por defecto el activo)}
-        {--up-to= : Mes hasta el cual anular (september..august)}
+        {--up-to= : Mes hasta el cual anular (september..august) o "none" para solo inscripción}
         {--with-inscription : Anular también la inscripción}
         {--course= : Filtro por curso}
         {--section= : Filtro por sección}
@@ -19,10 +19,17 @@ class AnnulBalanceMonths extends Command
 
     public function handle(): int
     {
-        $upTo = $this->option('up-to');
+        $upToOption = $this->option('up-to');
+        $upTo = $upToOption === 'none' ? null : $upToOption;
 
-        if (! $upTo || ! in_array($upTo, BalanceMaintenanceService::MONTHS, true)) {
-            $this->error('Debe indicar --up-to con un mes válido: '.implode(', ', BalanceMaintenanceService::MONTHS));
+        if ($upTo !== null && ! in_array($upTo, BalanceMaintenanceService::MONTHS, true)) {
+            $this->error('Debe indicar --up-to con un mes válido ('.implode(', ', BalanceMaintenanceService::MONTHS).') o "none" para solo inscripción.');
+
+            return self::FAILURE;
+        }
+
+        if ($upTo === null && ! $this->option('with-inscription')) {
+            $this->error('Si --up-to es "none", debe indicar --with-inscription.');
 
             return self::FAILURE;
         }
@@ -46,7 +53,9 @@ class AnnulBalanceMonths extends Command
             return self::SUCCESS;
         }
 
-        if (! $this->confirm("¿Anular meses hasta {$upTo}?".($includeInscription ? ' (incluye inscripción)' : ''), false)) {
+        $scope = $upTo !== null ? "hasta {$upTo}" : 'solo inscripción';
+
+        if (! $this->confirm("¿Anular {$scope}?".($includeInscription && $upTo !== null ? ' (incluye inscripción)' : ''), false)) {
             return self::SUCCESS;
         }
 

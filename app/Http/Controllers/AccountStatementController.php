@@ -27,7 +27,7 @@ class AccountStatementController extends Controller
     {
         $data = $request->validate([
             'school_lapse_id' => 'nullable|exists:school_lapses,id',
-            'up_to_month' => 'required|string',
+            'up_to_month' => 'nullable|string',
             'include_inscription' => 'boolean',
             'course_id' => 'nullable|integer',
             'section_id' => 'nullable|integer',
@@ -36,9 +36,13 @@ class AccountStatementController extends Controller
 
         $preview = (new BalanceMaintenanceService)->preview(
             $data['school_lapse_id'] ?? null,
-            $data['up_to_month'],
+            $data['up_to_month'] ?? null,
             (bool) ($data['include_inscription'] ?? false),
-            ['course_id' => $data['course_id'] ?? null, 'section_id' => $data['section_id'] ?? null, 'student_id' => $data['student_id'] ?? null],
+            [
+                'course_id' => $data['course_id'] ?? null,
+                'section_id' => $data['section_id'] ?? null,
+                'student_id' => $data['student_id'] ?? null,
+            ],
         );
 
         return response()->json($preview);
@@ -48,7 +52,7 @@ class AccountStatementController extends Controller
     {
         $data = $request->validate([
             'school_lapse_id' => 'nullable|exists:school_lapses,id',
-            'up_to_month' => 'required|string',
+            'up_to_month' => 'nullable|string',
             'include_inscription' => 'boolean',
             'course_id' => 'nullable|integer',
             'section_id' => 'nullable|integer',
@@ -57,9 +61,13 @@ class AccountStatementController extends Controller
 
         $result = (new BalanceMaintenanceService)->annul(
             $data['school_lapse_id'] ?? null,
-            $data['up_to_month'],
+            $data['up_to_month'] ?? null,
             (bool) ($data['include_inscription'] ?? false),
-            ['course_id' => $data['course_id'] ?? null, 'section_id' => $data['section_id'] ?? null, 'student_id' => $data['student_id'] ?? null],
+            [
+                'course_id' => $data['course_id'] ?? null,
+                'section_id' => $data['section_id'] ?? null,
+                'student_id' => $data['student_id'] ?? null,
+            ],
         );
 
         return response()->json(['success' => true] + $result);

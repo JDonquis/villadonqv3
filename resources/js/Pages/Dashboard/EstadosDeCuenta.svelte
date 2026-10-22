@@ -460,8 +460,14 @@ Ingrese a este link para más información y proceder con el pago: ${paymentLink
                     Anular hasta
                     <select
                         bind:value={annulForm.up_to_month}
+                        on:change={(e) => {
+                            if (e.target.value === "none") {
+                                annulForm.include_inscription = true;
+                            }
+                        }}
                         class="mt-1 w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
                     >
+                        <option value="none">Solo inscripción (sin meses)</option>
                         {#each SCHOOL_MONTHS as [id, label]}
                             <option value={id}>{label}</option>
                         {/each}
