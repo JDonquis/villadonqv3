@@ -96,10 +96,17 @@
                                             {subject.status_label}
                                         </span>
                                     </div>
-                                    <div class="mt-2 flex items-center justify-between">
-                                        <span class="text-xs text-gray-400">
-                                            {subject.lapse_label || "—"}
-                                        </span>
+                                    <div class="mt-2 flex items-end justify-between gap-2">
+                                        <div class="min-w-0">
+                                            <p class="text-xs text-gray-400">
+                                                {subject.lapse_label || "—"}
+                                            </p>
+                                            {#if subject.plan?.published_at_label}
+                                                <p class="text-[11px] text-gray-400 mt-0.5">
+                                                    Publicado: {subject.plan.published_at_label}
+                                                </p>
+                                            {/if}
+                                        </div>
                                         {#if subject.definitive !== null}
                                             <span class="text-sm font-bold text-gray-700">
                                                 {subject.definitive} / 20
@@ -140,13 +147,21 @@
                     <span class="font-semibold">Profesor:</span>
                     {selectedSubject.plan.teacher_name || "—"}
                 </p>
-                <p class="text-sm text-gray-600 mb-3">
-                    <span class="font-semibold">Período:</span>
-                    {selectedSubject.plan.school_lapse_label}
-                    {#if selectedSubject.plan.lapse_label}
-                        · {selectedSubject.plan.lapse_label}
+                <div class="mb-3">
+                    <p class="text-sm text-gray-600 mb-1">
+                        <span class="font-semibold">Período:</span>
+                        {selectedSubject.plan.school_lapse_label}
+                        {#if selectedSubject.plan.lapse_label}
+                            · {selectedSubject.plan.lapse_label}
+                        {/if}
+                    </p>
+                    {#if selectedSubject.plan.published_at_label}
+                        <p class="text-sm text-gray-600">
+                            <span class="font-semibold">Publicado:</span>
+                            {selectedSubject.plan.published_at_label}
+                        </p>
                     {/if}
-                </p>
+                </div>
 
                 <table class="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
                     <thead class="bg-gray-50">

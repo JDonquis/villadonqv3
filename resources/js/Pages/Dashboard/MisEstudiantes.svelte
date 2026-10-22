@@ -191,6 +191,8 @@
     });
 
     $: canPublish = data.matrix?.grade_state?.can_publish === true;
+    $: canUnpublish = data.matrix?.grade_state?.can_unpublish === true;
+    $: publishedAtLabel = data.matrix?.grade_state?.published_at_label || null;
     $: planRasgosMax = data.matrix?.plan?.rasgos_points || 0;
     // El personal de administración califica sobre planes de los profesores.
     $: managesAll = data.manages_all === true;
@@ -1350,6 +1352,35 @@
         });
     }
 
+    function handleUnpublish() {
+        if (!data.matrix?.plan?.id || !canUnpublish) return;
+
+        if (
+            !confirm(
+                "¿Despublicar las notas de este plan? Los representantes dejarán de ver esta versión. Si existe una publicación anterior, volverá a mostrarse.",
+            )
+        ) {
+            return;
+        }
+
+        $form.plan_id = data.matrix.plan.id;
+        $form.post("/dashboard/mis-estudiantes/despublicar-notas", {
+            preserveScroll: true,
+            onSuccess: () => {
+                displayAlert({
+                    type: "success",
+                    message: "Notas despublicadas correctamente",
+                });
+            },
+            onError: (errors) => {
+                displayAlert({
+                    type: "error",
+                    message: errors.message || "Error al despublicar las notas",
+                });
+            },
+        });
+    }
+
     let voiceProgressVisible = false;
     let voiceProgressMessage = "";
     let voiceProgressType = "progreso"; // "progreso" | "casi" | "completo"
@@ -1776,6 +1807,21 @@
                             height="18"
                         ></iconify-icon>
                     </button>
+                </div>
+            {/if}
+
+            {#if publishedAtLabel}
+                <div
+                    class="flex items-center gap-1.5 border-b border-grayBlue/30 bg-white px-5 py-2 text-xs text-gray-500"
+                >
+                    <iconify-icon
+                        icon="mdi:calendar-check-outline"
+                        class="text-color3 text-sm"
+                    ></iconify-icon>
+                    <span>
+                        Última publicación:
+                        <b class="text-color1">{publishedAtLabel}</b>
+                    </span>
                 </div>
             {/if}
 
@@ -2245,6 +2291,18 @@
                         <span class="text">Guardar cambios</span>
                         <span class="circle"></span>
                     {/if}
+                </button>
+            {/if}
+
+            {#if !$form.isDirty && canUnpublish}
+                <button
+                    type="button"
+                    on:click={handleUnpublish}
+                    disabled={$form.processing}
+                    class="bg-white border-2 border-red/40 text-[#B91C1C] flex items-center gap-2 shadow-md hover:bg-red/10 hover:shadow-lg rounded-full min-w-fit font-bold py-3 px-4 mt-5"
+                >
+                    <iconify-icon icon="mdi:eye-off-outline" class="text-lg" />
+                    Despublicar notas
                 </button>
             {/if}
 

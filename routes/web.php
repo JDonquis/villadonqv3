@@ -214,6 +214,7 @@ Route::middleware(['auth', 'role:administrator,teacher'])->group(function () {
     Route::get('/dashboard/mis-estudiantes', [StudentGradeController::class, 'index']);
     Route::post('/dashboard/mis-estudiantes/guardar-notas', [StudentGradeController::class, 'saveGrades']);
     Route::post('/dashboard/mis-estudiantes/publicar-notas', [StudentGradeController::class, 'publishGrades']);
+    Route::post('/dashboard/mis-estudiantes/despublicar-notas', [StudentGradeController::class, 'unpublishGrades']);
 
     // Attendance routes
     Route::get('/dashboard/mis-estudiantes/asistencia/{planId}', [StudentGradeController::class, 'attendanceMatrix']);

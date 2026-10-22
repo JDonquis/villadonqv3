@@ -168,7 +168,9 @@ class StudentGradeService
             'grade_state' => [
                 'published_version_id' => $latestPublication?->id,
                 'published_at' => $latestPublication?->published_at?->toISOString(),
+                'published_at_label' => $latestPublication?->published_at?->locale('es')?->isoFormat('D [de] MMMM [de] YYYY'),
                 'can_publish' => $canPublish,
+                'can_unpublish' => $latestPublication !== null,
             ],
         ];
     }
@@ -283,6 +285,54 @@ class StudentGradeService
                 ]));
 
             return $publication;
+        });
+    }
+
+    /**
+     * Fecha de la última publicación por plan, ya formateada para mostrar.
+     *
+     * @param  array<int,int>  $planIds
+     * @return array<int,string>
+     */
+    public function publishedAtLabelsForPlans(array $planIds): array
+    {
+        if ($planIds === []) {
+            return [];
+        }
+
+        return StudentGradePublication::query()
+            ->whereIn('evaluation_plan_id', $planIds)
+            ->orderBy('evaluation_plan_id')
+            ->orderByDesc('version')
+            ->get(['evaluation_plan_id', 'published_at'])
+            ->unique('evaluation_plan_id')
+            ->mapWithKeys(fn (StudentGradePublication $publication) => [
+                (int) $publication->evaluation_plan_id => $publication->published_at
+                    ?->locale('es')
+                    ?->isoFormat('D [de] MMMM [de] YYYY'),
+            ])
+            ->all();
+    }
+
+    /**
+     * Despublica la última versión de notas del plan. Si existía una versión
+     * anterior, esa vuelve a ser la visible para los representantes.
+     */
+    public function unpublishLatestGrades(int $planId): bool
+    {
+        return DB::transaction(function () use ($planId) {
+            $publication = StudentGradePublication::where('evaluation_plan_id', $planId)
+                ->latest('version')
+                ->lockForUpdate()
+                ->first();
+
+            if (! $publication) {
+                return false;
+            }
+
+            $publication->delete();
+
+            return true;
         });
     }
 

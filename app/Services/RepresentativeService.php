@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\BalanceStudentStatusEnum;
 use App\Models\Course;
 use App\Models\EvaluationPlan;
 use App\Models\Representative;
@@ -13,6 +14,7 @@ use Carbon\Carbon;
 class RepresentativeService
 {
     private StudentGradeService $gradeService;
+
     private StudentObservationService $observationService;
 
     public function __construct()
@@ -117,8 +119,9 @@ class RepresentativeService
             (int) $student->id,
             $plans->pluck('id')->all()
         );
+        $publishedLabels = $this->gradeService->publishedAtLabelsForPlans($plans->pluck('id')->all());
 
-        return $matters->map(function ($matter) use ($plansByMatter, $currentLapse, $student, $sharedObservations) {
+        return $matters->map(function ($matter) use ($plansByMatter, $currentLapse, $student, $sharedObservations, $publishedLabels) {
             $plan = $plansByMatter->get($matter->id)?->first();
 
             if (! $plan) {
@@ -150,13 +153,22 @@ class RepresentativeService
                 },
                 'definitive' => $definitive,
                 'lapse_label' => $this->momentLabel($currentLapse),
-                'plan' => $this->formatSubjectPlan($plan, $student->id, $sharedObservations[$plan->id] ?? []),
+                'plan' => $this->formatSubjectPlan(
+                    $plan,
+                    $student->id,
+                    $sharedObservations[$plan->id] ?? [],
+                    $publishedLabels[$plan->id] ?? null
+                ),
             ];
         })->values()->all();
     }
 
-    private function formatSubjectPlan(EvaluationPlan $plan, int $studentId, array $observations = []): array
-    {
+    private function formatSubjectPlan(
+        EvaluationPlan $plan,
+        int $studentId,
+        array $observations = [],
+        ?string $publishedAtLabel = null
+    ): array {
         $scores = $this->gradeService->publishedScoresForStudent($plan, $studentId);
         $items = $plan->items->map(function ($item) {
             return [
@@ -185,6 +197,7 @@ class RepresentativeService
             'rasgos_points' => (int) $plan->rasgos_points,
             'rasgos_score' => $rasgosScore,
             'observations' => $observations,
+            'published_at_label' => $publishedAtLabel,
         ];
     }
 
@@ -247,7 +260,11 @@ class RepresentativeService
             ->get()
             ->groupBy('matter_id');
 
-        $subjects = $matters->map(function ($matter) use ($plans, $student) {
+        $publishedLabels = $this->gradeService->publishedAtLabelsForPlans(
+            $plans->flatMap(fn ($group) => $group)->pluck('id')->all()
+        );
+
+        $subjects = $matters->map(function ($matter) use ($plans, $student, $publishedLabels) {
             $plan = $plans->get($matter->id)?->first();
 
             if (! $plan) {
@@ -260,6 +277,7 @@ class RepresentativeService
                     'lapse_label' => null,
                     'plan' => null,
                     'items' => [],
+                    'published_at_label' => null,
                 ];
             }
 
@@ -281,6 +299,7 @@ class RepresentativeService
                 },
                 'definitive' => $definitive !== null ? round($definitive, 2) : null,
                 'lapse_label' => $this->momentLabel($plan->lapse),
+                'published_at_label' => $publishedLabels[$plan->id] ?? null,
                 'plan' => array_merge((new EvaluationPlanService)->formatPlan($plan), [
                     'rasgos_score' => $this->gradeService->publishedRasgosForStudent($plan, $student->id),
                 ]),
@@ -374,7 +393,7 @@ class RepresentativeService
             'amount' => (float) $charge->amount,
             'paid_amount' => (float) $charge->paid_amount,
             'remaining' => $charge->remaining(),
-            'status' => $status instanceof \App\Enums\BalanceStudentStatusEnum ? $status->value : $status,
+            'status' => $status instanceof BalanceStudentStatusEnum ? $status->value : $status,
             'school_lapse_id' => $charge->school_lapse_id,
         ];
     }

@@ -115,13 +115,18 @@
         {#each subjects as subject}
             <div class="bg-white shadow-lg rounded-md p-6">
                 <div class="flex items-start justify-between gap-3 border-b border-gray-100 pb-3">
-                    <div class="flex items-center gap-3">
+                    <div class="flex flex-wrap items-center gap-3">
                         <h4 class="font-bold text-gray-800">{subject.matter_name}</h4>
                         {#if subject.status}
                             <span
                                 class="px-2 py-0.5 rounded text-xs font-bold {statusClasses[subject.status] || ''}"
                             >
                                 {subject.status_label}
+                            </span>
+                        {/if}
+                        {#if subject.published_at_label}
+                            <span class="text-xs text-gray-400">
+                                Publicado: {subject.published_at_label}
                             </span>
                         {/if}
                     </div>

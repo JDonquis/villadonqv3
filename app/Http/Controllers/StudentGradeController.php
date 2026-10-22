@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreGradesRequest;
 use App\Models\EvaluationPlan;
+use App\Models\EvaluationPlanAttendanceSession;
 use App\Models\SchoolLapse;
 use App\Services\AttendanceService;
 use App\Services\EvaluationPlanService;
@@ -18,7 +19,9 @@ use Illuminate\Support\Facades\Log;
 class StudentGradeController extends Controller
 {
     private StudentGradeService $gradeService;
+
     private EvaluationPlanService $planService;
+
     private AttendanceService $attendanceService;
 
     public function __construct()
@@ -127,14 +130,15 @@ class StudentGradeController extends Controller
                 'message' => 'Sesión creada correctamente.',
             ]);
         } catch (Exception $e) {
-            Log::error('Error al crear sesión de asistencia: ' . $e->getMessage());
+            Log::error('Error al crear sesión de asistencia: '.$e->getMessage());
+
             return back()->withErrors(['message' => ErrorTranslator::translate($e)]);
         }
     }
 
     public function deleteAttendanceSession(int $sessionId)
     {
-        $session = \App\Models\EvaluationPlanAttendanceSession::with('plan')
+        $session = EvaluationPlanAttendanceSession::with('plan')
             ->findOrFail($sessionId);
 
         abort_unless(GradeAccess::canManagePlan(auth()->user(), $session->plan), 403);
@@ -144,7 +148,8 @@ class StudentGradeController extends Controller
 
             return response()->json(['message' => 'Sesión eliminada correctamente.']);
         } catch (Exception $e) {
-            Log::error('Error al eliminar sesión de asistencia: ' . $e->getMessage());
+            Log::error('Error al eliminar sesión de asistencia: '.$e->getMessage());
+
             return response()->json(['message' => ErrorTranslator::translate($e)], 500);
         }
     }
@@ -172,7 +177,8 @@ class StudentGradeController extends Controller
                 'message' => "Asistencia guardada correctamente ({$saved} registros).",
             ]);
         } catch (Exception $e) {
-            Log::error('Error al guardar asistencia: ' . $e->getMessage());
+            Log::error('Error al guardar asistencia: '.$e->getMessage());
+
             return back()->withErrors(['message' => ErrorTranslator::translate($e)]);
         }
     }
@@ -217,6 +223,29 @@ class StudentGradeController extends Controller
             return back()->with(['status' => true, 'message' => 'Notas publicadas correctamente.']);
         } catch (Exception $e) {
             Log::error('Error al publicar notas: '.$e->getMessage());
+
+            return back()->withErrors(['message' => ErrorTranslator::translate($e)]);
+        }
+    }
+
+    public function unpublishGrades(Request $request)
+    {
+        $request->validate(['plan_id' => ['required', 'integer', 'exists:evaluation_plans,id']]);
+
+        $plan = EvaluationPlan::findOrFail($request->input('plan_id'));
+
+        if (! GradeAccess::canManagePlan(auth()->user(), $plan)) {
+            return back()->withErrors(['message' => 'No tienes permisos para despublicar este plan.']);
+        }
+
+        try {
+            if (! $this->gradeService->unpublishLatestGrades($plan->id)) {
+                return back()->withErrors(['message' => 'No hay notas publicadas para despublicar.']);
+            }
+
+            return back()->with(['status' => true, 'message' => 'Notas despublicadas correctamente.']);
+        } catch (Exception $e) {
+            Log::error('Error al despublicar notas: '.$e->getMessage());
 
             return back()->withErrors(['message' => ErrorTranslator::translate($e)]);
         }
