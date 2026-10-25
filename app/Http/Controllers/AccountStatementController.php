@@ -73,6 +73,22 @@ class AccountStatementController extends Controller
         return response()->json(['success' => true] + $result);
     }
 
+    public function restoreAnnulmentMonths(Request $request)
+    {
+        $allowedMonths = implode(',', BalanceMaintenanceService::MONTHS);
+
+        $data = $request->validate([
+            'balances' => 'required|array|min:1',
+            'balances.*.balance_id' => 'required|integer|exists:balance_students,id',
+            'balances.*.months' => 'required|array|min:1',
+            'balances.*.months.*' => "required|string|in:{$allowedMonths}",
+        ]);
+
+        $result = (new BalanceMaintenanceService)->restoreMonths($data['balances']);
+
+        return response()->json(['success' => true] + $result);
+    }
+
     public function undoAnnulment($id)
     {
         $result = (new BalanceMaintenanceService)->undo((int) $id);

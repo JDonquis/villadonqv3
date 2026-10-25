@@ -5,7 +5,11 @@ namespace App\Services;
 use App\Enums\BalanceStudentStatusEnum;
 use App\Models\BalanceAnnulment;
 use App\Models\BalanceStudent;
+use App\Models\MainConfig;
 use App\Models\SchoolLapse;
+use App\Support\BalanceMonthStatus;
+use App\Support\PaymentDeadline;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -284,6 +288,127 @@ class BalanceMaintenanceService
         }
     }
 
+    /**
+     * Quita la anulación de uno o varios meses de un balance, restaurando su
+     * deuda original (desde el snapshot de la anulación o, si no existe, desde
+     * el precio mensual vigente).
+     *
+     * @param  array<int, array{balance_id:int, months:array<int,string>}>  $selections
+     */
+    public function restoreMonths(array $selections): array
+    {
+        $normalized = [];
+
+        foreach ($selections as $selection) {
+            $balanceId = (int) ($selection['balance_id'] ?? 0);
+            $months = array_values(array_intersect(
+                array_map('strval', $selection['months'] ?? []),
+                self::MONTHS
+            ));
+
+            if ($balanceId > 0 && $months !== []) {
+                $normalized[$balanceId] = array_values(array_unique(
+                    array_merge($normalized[$balanceId] ?? [], $months)
+                ));
+            }
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $config = MainConfig::select('monthly_payment', 'day_of_monthly_payment', 'grace_period')->first();
+            $basePrice = (float) ($config->monthly_payment ?? 0);
+            $daysOfMonthlyPayment = (int) ($config->day_of_monthly_payment ?? 1);
+            $gracePeriod = (int) ($config->grace_period ?? 0);
+
+            $monthOrder = array_flip(self::MONTHS);
+            $currentMonthName = strtolower(Carbon::now()->englishMonth);
+            $currentMonthIndex = $monthOrder[$currentMonthName] ?? -1;
+            $currentLapse = SchoolLapse::where('status', 1)->first();
+            $currentMonthPastDue = PaymentDeadline::currentMonthPastDue($daysOfMonthlyPayment, $gracePeriod);
+
+            $balancesRestored = 0;
+            $restoredMonths = 0;
+            $total = 0.0;
+
+            foreach ($normalized as $balanceId => $months) {
+                $balance = BalanceStudent::with(['student', 'schoolLapse'])->find($balanceId);
+
+                if (! $balance) {
+                    continue;
+                }
+
+                $student = $balance->student;
+                $effectivePrice = $basePrice;
+
+                if ($student && $student->is_exempt && $student->exemption_percentage) {
+                    $effectivePrice *= 1 - ((float) $student->exemption_percentage / 100);
+                }
+
+                $lapsePosition = BalanceMonthStatus::lapsePosition($balance, $currentLapse);
+                $changed = false;
+
+                foreach ($months as $month) {
+                    $status = $this->statusValue($balance->{$month.'_status'});
+
+                    if (
+                        $status !== BalanceStudentStatusEnum::Annulled->value
+                        && ! $balance->isMonthAnnulled($month)
+                    ) {
+                        continue;
+                    }
+
+                    $snapshot = $this->findMonthSnapshot($balance, $month);
+
+                    $value = ($snapshot && (float) $snapshot['value'] < 0)
+                        ? (float) $snapshot['value']
+                        : -$effectivePrice;
+
+                    $isDue = BalanceMonthStatus::isDue(
+                        $monthOrder[$month] ?? -1,
+                        $currentMonthIndex,
+                        $currentMonthPastDue,
+                        $lapsePosition
+                    );
+
+                    $balance->$month = $value;
+                    $balance->{$month.'_status'} = BalanceMonthStatus::determine(
+                        $value,
+                        $effectivePrice,
+                        $isDue,
+                        false
+                    );
+
+                    $total += abs($value);
+                    $restoredMonths++;
+                    $changed = true;
+                }
+
+                if (! $changed) {
+                    continue;
+                }
+
+                $balance->start_month = $this->firstActiveMonth($balance);
+                $this->recomputeGeneralStatus($balance);
+                $balance->save();
+
+                $balancesRestored++;
+            }
+
+            DB::commit();
+
+            return [
+                'restored_balances' => $balancesRestored,
+                'restored_months' => $restoredMonths,
+                'total_restored' => round($total, 2),
+            ];
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            throw $e;
+        }
+    }
+
     public function history(?int $lapseId = null): array
     {
         return BalanceAnnulment::query()
@@ -308,6 +433,53 @@ class BalanceMaintenanceService
                 'undone' => $a->isUndone(),
             ])
             ->all();
+    }
+
+    /**
+     * Busca el valor original de un mes anulado en el snapshot de la última
+     * anulación aplicada (no deshecha) del lapso.
+     *
+     * @return array{value:mixed,status:mixed}|null
+     */
+    private function findMonthSnapshot(BalanceStudent $balance, string $month): ?array
+    {
+        $annulments = BalanceAnnulment::query()
+            ->whereNull('undone_at')
+            ->orderByDesc('id')
+            ->get(['id', 'snapshot']);
+
+        foreach ($annulments as $annulment) {
+            foreach ($annulment->snapshot ?? [] as $entry) {
+                if ((int) ($entry['balance_id'] ?? 0) !== (int) $balance->id) {
+                    continue;
+                }
+
+                $monthData = $entry['months'][$month] ?? null;
+
+                if (is_array($monthData)) {
+                    return $monthData;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Primer mes del lapso que no está anulado (equivale al mes de inicio de
+     * deuda). Si todos están anulados, no hay restricción.
+     */
+    private function firstActiveMonth(BalanceStudent $balance): ?string
+    {
+        foreach (self::MONTHS as $month) {
+            $status = $this->statusValue($balance->{$month.'_status'});
+
+            if ($status !== BalanceStudentStatusEnum::Annulled->value) {
+                return $month;
+            }
+        }
+
+        return null;
     }
 
     /**

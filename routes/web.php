@@ -121,6 +121,7 @@ Route::get('/dashboard/pagos/libro-ventas', [PaymentController::class, 'libroVen
     Route::post('/dashboard/estados-de-cuenta/marcar-recordatorio', [AccountStatementController::class, 'marcarRecordatorio']);
     Route::post('/dashboard/estados-de-cuenta/anular-meses/preview', [AccountStatementController::class, 'previewAnnulMonths']);
     Route::post('/dashboard/estados-de-cuenta/anular-meses', [AccountStatementController::class, 'annulMonths']);
+    Route::post('/dashboard/estados-de-cuenta/quitar-anulacion', [AccountStatementController::class, 'restoreAnnulmentMonths']);
     Route::post('/dashboard/estados-de-cuenta/anulaciones/{id}/deshacer', [AccountStatementController::class, 'undoAnnulment']);
 
     Route::post('/dashboard/periodo-escolar/iniciar-proximo', [SchoolLapseController::class, 'startNext']);
