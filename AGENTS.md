@@ -13,9 +13,12 @@ yarn run dev              # dev with HMR
 php artisan serve         # http://localhost:8000
 php artisan migrate       # MySQL DB (named `villadonq`, root/no password)
 vendor/bin/phpunit        # or: php artisan test
+php artisan demo:full-system --force   # simula un año completo (personal, estudiantes, planes, notas y PDFs)
 ```
 
 Only smoke `ExampleTest`s exist — don't assume a covered test suite. Run `vendor/bin/phpunit --filter <name>` for a single test.
+
+`demo:full-system` **reinicia la base de datos por defecto** (`migrate:fresh`, pide confirmación salvo `--force`) y crea un año escolar completo y "normal": período que termina hoy (3 momentos), secciones `A` y `B` para cada uno de los 14 cursos, administrativos, profesores, representantes y estudiantes (2 por sección/curso por defecto), planes aprobados y notas publicadas en los 3 momentos, y horarios sin choques de profesor para los 28 cursos-sección. Al final genera boleta/certificado/certificado de notas en `storage/app/demo-documents/`. Todos los usuarios usan contraseña `12345678`. Opciones: `--students=N` (por sección/curso), `--matters=1,2,3` o `--matters=all`, `--admins=N`, `--period-end=Y-m-d`, `--keep-data` (no borra; agrega otro período), `--skip-documents`, `--force`.
 
 ## Architecture
 

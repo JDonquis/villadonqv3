@@ -17,6 +17,7 @@ class SchoolEvent extends Model
         'type',
         'start_date',
         'end_date',
+        'target_user_types',
         'course_id',
         'section_id',
         'created_by',
@@ -27,6 +28,7 @@ class SchoolEvent extends Model
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+        'target_user_types' => 'array',
         'published_at' => 'datetime',
         'status' => 'integer',
     ];

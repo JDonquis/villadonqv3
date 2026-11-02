@@ -68,6 +68,7 @@ export default defineConfig({
                 maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
                 globPatterns: ["**/*.{js,css,html,svg,png,jpg,jpeg,ico}"],
                 navigateFallback: null,
+                importScripts: ["/push-sw.js"],
                 sourcemap: false,
             },
         }),

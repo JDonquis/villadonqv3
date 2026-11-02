@@ -12,7 +12,10 @@ use App\Models\Matter;
 use App\Models\Schedule;
 use App\Models\SchoolLapse;
 use App\Models\Section;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class EvaluationPlanService
 {
@@ -286,6 +289,7 @@ class EvaluationPlanService
 
                 $this->registerCourseMatter($data['course_id'] ?? null, $data['matter_id']);
                 $this->syncItems($plan, $unitsOrItems);
+                $this->notifyAdminsPending($plan);
 
                 if ($createdPlan === null) {
                     $createdPlan = $plan;
@@ -325,6 +329,7 @@ class EvaluationPlanService
 
         $this->registerCourseMatter($data['course_id'] ?? null, $data['matter_id']);
         $this->syncItems($plan, $unitsOrItems);
+        $this->notifyAdminsPending($plan);
 
         return $plan;
     }
@@ -386,6 +391,10 @@ class EvaluationPlanService
             $this->registerCourseMatter($data['course_id'] ?? null, $data['matter_id']);
             $this->syncItems($plan, $unitsOrItems);
 
+            if (! $preserveApproval) {
+                $this->notifyAdminsPending($plan);
+            }
+
             // Create clones for remaining sections
             foreach ($sectionIds as $sectionId) {
                 $new = EvaluationPlan::create([
@@ -404,6 +413,10 @@ class EvaluationPlanService
 
                 $this->registerCourseMatter($data['course_id'] ?? null, $data['matter_id']);
                 $this->syncItems($new, $unitsOrItems);
+
+                if (! $preserveApproval) {
+                    $this->notifyAdminsPending($new);
+                }
             }
 
             return $plan;
@@ -426,6 +439,10 @@ class EvaluationPlanService
 
         $this->registerCourseMatter($data['course_id'] ?? null, $data['matter_id']);
         $this->syncItems($plan, $unitsOrItems);
+
+        if (! $preserveApproval) {
+            $this->notifyAdminsPending($plan);
+        }
 
         return $plan;
     }
@@ -674,6 +691,12 @@ class EvaluationPlanService
             'approved_by' => $adminId,
             'approved_at' => now(),
         ]);
+
+        $this->notifyTeacherPlanStatus(
+            $plan,
+            'Plan aprobado',
+            'Tu plan de evaluación fue aprobado.'
+        );
     }
 
     /**
@@ -721,6 +744,12 @@ class EvaluationPlanService
             'approved_by' => $adminId,
             'approved_at' => now(),
         ]);
+
+        $this->notifyTeacherPlanStatus(
+            $plan,
+            'Plan rechazado',
+            $note ? 'Tu plan de evaluación fue rechazado: '.$note : 'Tu plan de evaluación fue rechazado.'
+        );
     }
 
     /**
@@ -735,6 +764,73 @@ class EvaluationPlanService
             'approved_by' => null,
             'approved_at' => null,
         ]);
+
+        $this->notifyTeacherPlanStatus(
+            $plan,
+            'Plan devuelto a revisión',
+            $note ? 'Tu plan de evaluación fue devuelto a revisión: '.$note : 'Tu plan de evaluación fue devuelto a revisión.'
+        );
+    }
+
+    private function notifyAdminsPending(EvaluationPlan $plan): void
+    {
+        if ($plan->status !== EvaluationPlanStatusEnum::Pending->value) {
+            return;
+        }
+
+        try {
+            $plan->loadMissing(['teacher', 'matter', 'course', 'section']);
+
+            $label = trim(implode(' · ', array_filter([
+                $plan->matter?->name,
+                $plan->course?->name,
+                $plan->section?->name,
+            ])));
+
+            $teacher = trim(($plan->teacher?->name ?? '').' '.($plan->teacher?->last_name ?? ''));
+
+            app(NotificationService::class)->sendToUsers(
+                app(NotificationService::class)->admins('planes-evaluacion'),
+                [
+                    'type' => 'evaluation_plan_pending',
+                    'title' => 'Plan de evaluación pendiente',
+                    'body' => trim(($teacher !== '' ? $teacher.' envió ' : 'Se envió ').'un plan de evaluación'.($label !== '' ? ' ('.$label.')' : '').'.'),
+                    'icon' => 'mdi:clipboard-check-outline',
+                    'severity' => 'warning',
+                    'meta' => ['plan_id' => $plan->id],
+                ],
+                '/dashboard/planes-evaluacion',
+                Auth::id()
+            );
+        } catch (\Throwable $e) {
+            Log::error('Error al notificar plan pendiente '.$plan->id.': '.$e->getMessage());
+        }
+    }
+
+    private function notifyTeacherPlanStatus(EvaluationPlan $plan, string $title, string $body): void
+    {
+        try {
+            $teacher = User::find($plan->user_id);
+
+            if (! $teacher) {
+                return;
+            }
+
+            app(NotificationService::class)->send(
+                $teacher,
+                [
+                    'type' => 'evaluation_plan_status',
+                    'title' => $title,
+                    'body' => $body.' '.($plan->name ? 'Plan: '.$plan->name.'.' : ''),
+                    'icon' => 'mdi:clipboard-text-outline',
+                    'severity' => $title === 'Plan aprobado' ? 'success' : 'warning',
+                    'meta' => ['plan_id' => $plan->id],
+                ],
+                '/dashboard/mis-planes'
+            );
+        } catch (\Throwable $e) {
+            Log::error('Error al notificar estado del plan '.$plan->id.': '.$e->getMessage());
+        }
     }
 
     public function getMatters(): array

@@ -3,6 +3,7 @@
     import LeftNav from "./LeftNav.svelte";
     import Header from "./Header.svelte";
     import Footer from "./Footer.svelte";
+    import Alert from "./Alert.svelte";
     import "iconify-icon";
     import { navStatus } from "../stores/navStatus";
     import { element } from "svelte/internal";
@@ -20,6 +21,7 @@
         class:menuStatus-false={$navStatus.isContracted}
     >
         <Header />
+        <Alert />
         <div
             class=" main_and_footer_container"
             bing:this="main_and_footer_container"

@@ -5,6 +5,7 @@
     export let announcements = [];
     export let events = [];
     export let courses = [];
+    export let sections = [];
 
     let tab = "comunicados";
 
@@ -13,7 +14,10 @@
         title: "",
         body: "",
         audience: "all",
+        target_user_types: [1, 2, 3],
         course_id: "",
+        section_id: "",
+        student_id: "",
         published: true,
     };
 
@@ -24,7 +28,9 @@
         type: "general",
         start_date: "",
         end_date: "",
+        target_user_types: [1, 2, 3],
         course_id: "",
+        section_id: "",
         published: true,
     };
 
@@ -46,7 +52,10 @@
             title: item.title,
             body: item.body,
             audience: item.audience,
+            target_user_types: item.target_user_types ?? [1, 2, 3],
             course_id: item.course_id ?? "",
+            section_id: item.section_id ?? "",
+            student_id: item.student_id ?? "",
             published: item.status === 1,
         });
     }
@@ -78,7 +87,9 @@
             type: item.type,
             start_date: item.start_date ?? "",
             end_date: item.end_date ?? "",
+            target_user_types: item.target_user_types ?? [1, 2, 3],
             course_id: item.course_id ?? "",
+            section_id: item.section_id ?? "",
             published: item.status === 1,
         });
     }
@@ -99,6 +110,36 @@
     function removeEvent(item) {
         if (!confirm(`¿Eliminar la actividad "${item.title}"?`)) return;
         eventForm.delete(`/dashboard/eventos/${item.id}`, { preserveScroll: true });
+    }
+
+    const targetOptions = [
+        { value: 1, label: "Administradores" },
+        { value: 2, label: "Representantes" },
+        { value: 3, label: "Profesores" },
+    ];
+
+    function toggleAnnouncementTarget(type) {
+        const current = $announcementForm.target_user_types ?? [];
+        const next = current.includes(type)
+            ? current.filter((item) => item !== type)
+            : [...current, type];
+        announcementForm.setData("target_user_types", next);
+    }
+
+    function toggleEventTarget(type) {
+        const current = $eventForm.target_user_types ?? [];
+        const next = current.includes(type)
+            ? current.filter((item) => item !== type)
+            : [...current, type];
+        eventForm.setData("target_user_types", next);
+    }
+
+    function targetLabels(types) {
+        const selected = types?.length ? types : [1, 2, 3];
+        return targetOptions
+            .filter((option) => selected.includes(option.value))
+            .map((option) => option.label)
+            .join(", ");
     }
 </script>
 
@@ -130,13 +171,40 @@
             <Input label="Audiencia" type="select" bind:value={$announcementForm.audience}>
                 <option value="all">Todos</option>
                 <option value="course">Un curso</option>
+                <option value="section">Una sección</option>
                 <option value="student">Un estudiante</option>
             </Input>
+            <div class="mt-4">
+                <p class="text-xs md:text-sm font-semibold text-gray-700">Dirigido a</p>
+                <div class="flex flex-wrap gap-2 mt-2">
+                    {#each targetOptions as option}
+                        <label
+                            class={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-semibold cursor-pointer transition-colors ${$announcementForm.target_user_types?.includes(option.value) ? "bg-color1 text-white border-color1" : "bg-white text-gray-600 border-gray-200"}`}
+                        >
+                            <input
+                                type="checkbox"
+                                class="accent-color2"
+                                checked={$announcementForm.target_user_types?.includes(option.value)}
+                                on:change={() => toggleAnnouncementTarget(option.value)}
+                            />
+                            {option.label}
+                        </label>
+                    {/each}
+                </div>
+            </div>
             {#if $announcementForm.audience === "course"}
                 <Input label="Curso" type="select" bind:value={$announcementForm.course_id}>
                     <option value="">Seleccione…</option>
                     {#each courses as course}
                         <option value={course.id}>{course.name}</option>
+                    {/each}
+                </Input>
+            {/if}
+            {#if $announcementForm.audience === "section"}
+                <Input label="Sección" type="select" bind:value={$announcementForm.section_id}>
+                    <option value="">Seleccione…</option>
+                    {#each sections as section}
+                        <option value={section.id}>{section.name}</option>
                     {/each}
                 </Input>
             {/if}
@@ -182,6 +250,7 @@
                                 <p class="text-xs text-gray-500 mt-1 whitespace-pre-line">{item.body}</p>
                                 <p class="text-[11px] text-gray-400 mt-1">
                                     {item.audience === "all" ? "Todos" : item.course ?? item.section ?? "Dirigido"}
+                                    · Para: {targetLabels(item.target_user_types)}
                                     · {item.status === 1 ? "Publicado" : "Borrador"}
                                 </p>
                             </div>
@@ -229,6 +298,30 @@
                     <option value={course.id}>{course.name}</option>
                 {/each}
             </Input>
+            <Input label="Sección (opcional)" type="select" bind:value={$eventForm.section_id}>
+                <option value="">Todas</option>
+                {#each sections as section}
+                    <option value={section.id}>{section.name}</option>
+                {/each}
+            </Input>
+            <div class="mt-4">
+                <p class="text-xs md:text-sm font-semibold text-gray-700">Dirigido a</p>
+                <div class="flex flex-wrap gap-2 mt-2">
+                    {#each targetOptions as option}
+                        <label
+                            class={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-semibold cursor-pointer transition-colors ${$eventForm.target_user_types?.includes(option.value) ? "bg-color1 text-white border-color1" : "bg-white text-gray-600 border-gray-200"}`}
+                        >
+                            <input
+                                type="checkbox"
+                                class="accent-color2"
+                                checked={$eventForm.target_user_types?.includes(option.value)}
+                                on:change={() => toggleEventTarget(option.value)}
+                            />
+                            {option.label}
+                        </label>
+                    {/each}
+                </div>
+            </div>
             <label class="flex items-center gap-2 mt-4 text-sm text-gray-700">
                 <input type="checkbox" bind:checked={$eventForm.published} />
                 Publicar ahora
@@ -263,7 +356,8 @@
                                 <p class="text-xs text-gray-500 mt-1">{item.description}</p>
                                 <p class="text-[11px] text-gray-400 mt-1">
                                     {item.start_date}{item.end_date ? ` → ${item.end_date}` : ""}
-                                    · {item.type} · {item.status === 1 ? "Publicado" : "Borrador"}
+                                    · {item.type} · Para: {targetLabels(item.target_user_types)}
+                                    · {item.status === 1 ? "Publicado" : "Borrador"}
                                 </p>
                             </div>
                             <div class="flex gap-2 shrink-0">

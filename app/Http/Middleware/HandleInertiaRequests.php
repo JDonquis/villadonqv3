@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Representative;
 use App\Models\Student;
+use App\Support\NotificationPresenter;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -49,6 +50,7 @@ class HandleInertiaRequests extends Middleware
         return array_merge(parent::share($request), [
 
             'auth' => [
+                'id' => $user->id ?? null,
                 'name' => $user->name ?? null,
                 'last_name' => $user->last_name ?? null,
                 'is_admin' => $user->is_admin ?? null,
@@ -59,6 +61,19 @@ class HandleInertiaRequests extends Middleware
             ],
             'flash' => [
                 'import' => $request->session()->pull('import_summary'),
+            ],
+            'notification_state' => $user ? [
+                'unread_count' => $user->unreadNotifications()->count(),
+                'items' => $user->notifications()
+                    ->latest()
+                    ->limit(15)
+                    ->get()
+                    ->map(fn ($notification) => NotificationPresenter::make($notification))
+                    ->values()
+                    ->all(),
+            ] : [
+                'unread_count' => 0,
+                'items' => [],
             ],
         ]);
     }

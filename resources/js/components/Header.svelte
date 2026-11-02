@@ -1,6 +1,7 @@
 <script>
     // import { authHandlers } from "../../stores/authStore";
     import { inertia, page, router } from "@inertiajs/svelte";
+    import NotificationBell from "./NotificationBell.svelte";
 
     let pageName = "";
     $: userNav = false;
@@ -17,6 +18,7 @@
         "Dashboard/MisPagos": "Mis Pagos",
         "Dashboard/Inicio": "Inicio",
         "Dashboard/Comunicados": "Comunicados",
+        "Dashboard/Notificaciones": "Notificaciones",
         "Dashboard/Perfil": "Mi Perfil",
         "Dashboard/MiHorario": "Mi Horario",
         "Dashboard/HorarioHijo": "Horario del Estudiante",
@@ -67,7 +69,7 @@
 
 
 <header
-    class="w-full bg-white/95 backdrop-blur-md border-b border-grayBlue/30  z-40 transition-shadow"
+    class="relative w-full bg-white/95 backdrop-blur-md border-b border-grayBlue/30 z-[60] transition-shadow"
 >
     <nav
         class="max-w-[1600px] mx-auto flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8 gap-4"
@@ -103,8 +105,10 @@
             </div>
         </div>
         <!-- ============================================== -->
-        <!-- LADO DERECHO: PERFIL DE USUARIO Y MENÚ DROPDOWN-->
+        <!-- LADO DERECHO: NOTIFICACIONES + PERFIL DE USUARIO -->
         <!-- ============================================== -->
+        <div class="flex items-center gap-2">
+            <NotificationBell />
         <div
             class="relative"
             use:clickOutside={() => {
@@ -244,6 +248,7 @@
                     </a>
                 </div>
             {/if}
+        </div>
         </div>
     </nav>
 </header>

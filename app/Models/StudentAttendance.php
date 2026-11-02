@@ -15,10 +15,12 @@ class StudentAttendance extends Model
         'session_id',
         'student_id',
         'status',
+        'notified_at',
     ];
 
     protected $casts = [
         'status' => 'string',
+        'notified_at' => 'datetime',
     ];
 
     public function session()

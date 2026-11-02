@@ -100,7 +100,7 @@
     console.log(filterClientData);</script>
 
 <div
-    class="fixed top-3 z-50 lg right-20 md:right-64 flex items-center rounded-xl bg-gray-50 border border-gray-200"
+    class="fixed top-3 z-[70] right-40 md:right-96 flex items-center rounded-xl bg-gray-50 border border-gray-200"
 >
     <span class="absolute">
         <svg
@@ -130,7 +130,7 @@
         style={$$props.style}
     />
     {#if filtersOptions && !inlineFilters}
-        <div class="md:right-64 top-3 z-50">
+        <div class="md:right-96 top-3 z-50">
             <button
                 class=" relative flex gap-2 hover:bg-gray-300 -full -l-none p-2 px-3"
                 class:bg-gray-300={isFilterAply}

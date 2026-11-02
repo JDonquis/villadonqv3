@@ -10,6 +10,8 @@ use App\Models\Student;
 use App\Models\StudentCharge;
 use App\Models\StudentChargePayment;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PaymentService
 {
@@ -178,7 +180,7 @@ class PaymentService
                         $sub->where('month', $month);
                     });
                 }
-});
+            });
     }
 
     public function create(array $data, ?array $allowedStudentIds = null): Payment
@@ -249,7 +251,68 @@ class PaymentService
 
         $payment->load('students', 'accountPayment', 'paymentConcept');
 
+        DB::afterCommit(fn () => $this->notifyPaymentRegistered($payment));
+
         return $payment;
+    }
+
+    private function notifyPaymentRegistered(Payment $payment): void
+    {
+        try {
+            $actor = Auth::user();
+
+            if (! $actor || ! in_array((int) $actor->type_user_id, [1, 2], true)) {
+                return;
+            }
+
+            $studentIds = $payment->students->pluck('id')->all();
+
+            if ($studentIds === []) {
+                return;
+            }
+
+            $studentNames = $payment->students
+                ->map(fn (Student $student) => trim($student->name.' '.$student->last_name))
+                ->filter()
+                ->implode(', ');
+
+            $amount = number_format((float) $payment->total_in_dolars, 2, ',', '.');
+            $service = app(NotificationService::class);
+
+            if ((int) $actor->type_user_id === 1) {
+                $service->sendToUsers(
+                    $service->representativesForStudents($studentIds),
+                    [
+                        'type' => 'payment_registered',
+                        'title' => 'Pago registrado',
+                        'body' => 'Se registró un pago de $'.$amount.' para '.$studentNames.'.',
+                        'icon' => 'mdi:cash-check',
+                        'severity' => 'success',
+                        'meta' => ['payment_id' => $payment->id],
+                    ],
+                    '/dashboard/mis-pagos',
+                    (int) $actor->id
+                );
+
+                return;
+            }
+
+            $service->sendToUsers(
+                $service->admins('pagos'),
+                [
+                    'type' => 'payment_registered',
+                    'title' => 'Pago registrado',
+                    'body' => trim($actor->name.' '.$actor->last_name).' registró un pago de $'.$amount.' para '.$studentNames.'.',
+                    'icon' => 'mdi:cash-check',
+                    'severity' => 'success',
+                    'meta' => ['payment_id' => $payment->id],
+                ],
+                '/dashboard/pagos',
+                (int) $actor->id
+            );
+        } catch (\Throwable $e) {
+            Log::error('Error al notificar pago '.$payment->id.': '.$e->getMessage());
+        }
     }
 
     /**
