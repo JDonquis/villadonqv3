@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Student;
 use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -52,7 +53,7 @@ class UpdateStudentRequest extends FormRequest
             'apply_to_past_debts',
             'document_type',
             'second_document_type',
-            'student_document_type'
+            'student_document_type',
         ];
 
         $data = $this->all();
@@ -66,7 +67,7 @@ class UpdateStudentRequest extends FormRequest
     public function rules(): array
     {
         $studentId = request()->route('id');
-        $student = \App\Models\Student::find($studentId);
+        $student = Student::find($studentId);
         $userId = $student ? $student->representative->user_id : null;
 
         return [
@@ -75,7 +76,7 @@ class UpdateStudentRequest extends FormRequest
             'student_last_name' => ['required'],
             'student_date_birth' => ['required'],
             'student_email' => ['nullable'],
-            'student_ci' => ['required', 'unique:students,ci,' . $studentId],
+            'student_ci' => ['required', 'unique:students,ci,'.$studentId],
             'student_phone_number' => ['nullable'],
             'student_sex' => ['nullable'],
             'student_previous_school' => ['nullable'],
@@ -87,11 +88,11 @@ class UpdateStudentRequest extends FormRequest
             'rep_id' => ['nullable'],
             'rep_name' => ['required'],
             'rep_last_name' => ['required'],
-            'rep_ci' => ['required', 'unique:users,ci,' . $userId],
+            'rep_ci' => ['required', \Illuminate\Validation\Rule::unique('users', 'ci')->whereNull('deleted_at')->ignore($userId)],
             'rep_document_type' => ['nullable', 'string'],
             'rep_phone_number' => ['nullable'],
             'rep_phone_number2' => ['nullable'],
-            'rep_email' => ['required', 'email', 'unique:users,email,' . $userId],
+            'rep_email' => ['required', 'email', \Illuminate\Validation\Rule::unique('users', 'email')->whereNull('deleted_at')->ignore($userId)],
             'rep_profession' => ['nullable'],
             'rep_workplace' => ['nullable'],
             'second_rep_name' => ['nullable'],
@@ -109,7 +110,7 @@ class UpdateStudentRequest extends FormRequest
                 'integer',
                 'min:1',
                 'max:100',
-                \Illuminate\Validation\Rule::requiredIf(fn() => (bool) $this->input('is_exempt')),
+                \Illuminate\Validation\Rule::requiredIf(fn () => (bool) $this->input('is_exempt')),
             ],
             'exemption_observations' => ['nullable', 'string'],
             'apply_to_past_debts' => ['nullable', 'boolean'],

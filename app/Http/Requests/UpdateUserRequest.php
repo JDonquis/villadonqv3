@@ -37,11 +37,15 @@ class UpdateUserRequest extends FormRequest
         $userId = $this->route('id');
 
         return [
-            'type_user_id' => ['required', 'integer', 'exists:type_users,id', Rule::in([UserTypeEnum::Administrator->value])], // Permitir solo el tipo de usuario "Administrador"
-            'ci' => 'required|string|max:30|unique:users,ci,' . $userId,
+            'type_user_id' => ['required', 'integer', 'exists:type_users,id', Rule::in([
+                UserTypeEnum::Administrator->value,
+                UserTypeEnum::Representative->value,
+                UserTypeEnum::Teacher->value,
+            ])],
+            'ci' => ['required', 'string', 'max:30', Rule::unique('users', 'ci')->whereNull('deleted_at')->ignore($userId)],
             'name' => 'required|string|max:50',
             'last_name' => 'required|string|max:50',
-            'email' => 'nullable|string|max:100|email',
+            'email' => ['nullable', 'string', 'max:100', 'email', Rule::unique('users', 'email')->whereNull('deleted_at')->ignore($userId)],
             'phone_number' => 'nullable|string|max:30',
             'address' => 'nullable|string|max:100',
             // 'photo' => 'nullable|string|max:100',

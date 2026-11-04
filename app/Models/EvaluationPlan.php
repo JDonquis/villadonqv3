@@ -31,7 +31,7 @@ class EvaluationPlan extends Model
 
     public function teacher()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id')->withTrashed();
     }
 
     public function matter()
@@ -76,7 +76,7 @@ class EvaluationPlan extends Model
 
     public function approver()
     {
-        return $this->belongsTo(User::class, 'approved_by');
+        return $this->belongsTo(User::class, 'approved_by')->withTrashed();
     }
 
     public function gradePublications()

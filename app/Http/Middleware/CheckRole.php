@@ -34,6 +34,12 @@ class CheckRole
             return $next($request);
         }
 
+        // Un representante o profesor con módulos administrativos conserva su
+        // rol original pero también puede entrar a las rutas de administración.
+        if (in_array('administrator', $roles, true) && $user->hasAdminAccess()) {
+            return $next($request);
+        }
+
         abort(403);
     }
 }

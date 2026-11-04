@@ -6,8 +6,10 @@ use App\Enums\UserTypeEnum;
 use App\Http\Resources\UserResource;
 use App\Mail\PasswordSetupMail;
 use App\Models\PasswordSetupToken;
+use App\Models\Representative;
 use App\Models\User;
 use App\Support\ErrorTranslator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
 class UserService
@@ -23,13 +25,19 @@ class UserService
     {
         $query = $this->userModel->query();
 
-        $query->where('type_user_id', UserTypeEnum::Administrator->value);
+        $query->where(function ($q) {
+            $q->where('type_user_id', UserTypeEnum::Administrator->value)
+                ->orWhere('is_admin', true)
+                ->orWhereHas('modules');
+        });
 
         $query->when(isset($filters['search']), function ($q) use ($filters) {
-            $q->where('name', 'like', '%'.$filters['search'].'%')
-                ->orWhere('last_name', 'like', '%'.$filters['search'].'%')
-                ->orWhere('ci', 'like', '%'.$filters['search'].'%')
-                ->orWhere('email', 'like', '%'.$filters['search'].'%');
+            $q->where(function ($searchQuery) use ($filters) {
+                $searchQuery->where('name', 'like', '%'.$filters['search'].'%')
+                    ->orWhere('last_name', 'like', '%'.$filters['search'].'%')
+                    ->orWhere('ci', 'like', '%'.$filters['search'].'%')
+                    ->orWhere('email', 'like', '%'.$filters['search'].'%');
+            });
         });
 
         $users = $query->with('modules')->orderBy('id', 'desc')->get();
@@ -143,6 +151,8 @@ class UserService
 
     public function createUser(array $data): User
     {
+        User::reclaimDeletedIdentity($data['email'] ?? null, $data['ci'] ?? null);
+
         $user = new User;
         $user->fill($data);
         $user->save();
@@ -154,8 +164,34 @@ class UserService
         return $user;
     }
 
+    public function findByIdentity(string $email, string $ci): ?User
+    {
+        return User::where('email', $email)->where('ci', $ci)->first();
+    }
+
+    public function grantAdminAccess(User $user, array $data): User
+    {
+        return DB::transaction(function () use ($user, $data) {
+            $user->fill(collect($data)->except(['type_user_id', 'modules'])->all());
+            $user->is_admin = (bool) ($data['is_admin'] ?? false);
+            $user->save();
+
+            if (array_key_exists('modules', $data)) {
+                $user->modules()->sync($data['modules'] ?? []);
+            }
+
+            return $user->fresh(['modules']);
+        });
+    }
+
     public function updateUser(User $user, array $data): User
     {
+        User::reclaimDeletedIdentity($data['email'] ?? null, $data['ci'] ?? null, $user->id);
+
+        // El rol no se cambia desde Personal: un representante o profesor
+        // conserva su tipo y solo recibe permisos administrativos.
+        $data['type_user_id'] = $user->type_user_id;
+
         $user->fill($data);
         $user->save();
 
@@ -168,7 +204,28 @@ class UserService
 
     public function deleteUser(User $user): void
     {
-        $user->delete();
+        $hasRepresentativeProfile = Representative::where('user_id', $user->id)->exists();
+
+        if ((int) $user->type_user_id !== UserTypeEnum::Administrator->value || $hasRepresentativeProfile) {
+            DB::transaction(function () use ($user, $hasRepresentativeProfile) {
+                $user->modules()->detach();
+                $user->is_admin = false;
+
+                if ((int) $user->type_user_id === UserTypeEnum::Administrator->value && $hasRepresentativeProfile) {
+                    $user->type_user_id = UserTypeEnum::Representative->value;
+                }
+
+                $user->save();
+            });
+
+            return;
+        }
+
+        DB::transaction(function () use ($user) {
+            PasswordSetupToken::where('user_id', $user->id)->delete();
+            $user->tombstoneIdentity();
+            $user->delete();
+        });
     }
 
     public function importUsers(array $rows): array

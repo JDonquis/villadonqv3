@@ -171,6 +171,11 @@ class AuthController extends Controller
         }
 
         $user = $tokenRecord->user;
+
+        if (! $user) {
+            return back()->with('error', 'Token inválido o expirado');
+        }
+
         $user->password = bcrypt($request->password);
         $user->save();
 

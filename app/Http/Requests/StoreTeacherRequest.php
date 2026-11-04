@@ -33,10 +33,10 @@ class StoreTeacherRequest extends FormRequest
     {
         return [
             'type_user_id' => ['required', 'integer', 'exists:type_users,id', Rule::in([UserTypeEnum::Teacher->value])],
-            'ci' => ['required', 'string', 'max:30', 'unique:users,ci'],
+            'ci' => ['required', 'string', 'max:30', Rule::unique('users', 'ci')->whereNull('deleted_at')],
             'name' => ['required', 'string', 'max:50'],
             'last_name' => ['required', 'string', 'max:50'],
-            'email' => ['required', 'string', 'max:100', 'email', 'unique:users,email'],
+            'email' => ['required', 'string', 'max:100', 'email', Rule::unique('users', 'email')->whereNull('deleted_at')],
             'phone_number' => ['nullable', 'string', 'max:30'],
             'address' => ['nullable', 'string', 'max:100'],
             'matters' => ['nullable', 'array'],

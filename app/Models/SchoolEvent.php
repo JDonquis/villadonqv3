@@ -45,7 +45,7 @@ class SchoolEvent extends Model
 
     public function author()
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by')->withTrashed();
     }
 
     public function scopePublished($query)

@@ -132,42 +132,50 @@
 
     $: isTeacher = Number($page.props.auth?.type_user_id) === 3;
     $: isRep = Number($page.props.auth?.type_user_id) === 2;
-    $: isAdmin = Number($page.props.auth?.is_admin) === 1;
+    $: isFullAdmin = Number($page.props.auth?.is_admin) === 1;
     $: hasRepStudents = $page.props.auth?.has_rep_students === true;
     $: allowedModules = $page.props.auth?.modules || [];
+    $: hasAdminAccess =
+        Number($page.props.auth?.type_user_id) === 1 ||
+        isFullAdmin ||
+        allowedModules.length > 0;
 
-    $: homeHref = isTeacher
-        ? "/dashboard/mis-planes"
-        : isRep
-          ? "/dashboard/inicio"
-          : "/dashboard";
+    $: homeHref = hasAdminAccess
+        ? "/dashboard"
+        : isTeacher
+          ? "/dashboard/mis-planes"
+          : isRep
+            ? "/dashboard/inicio"
+            : "/dashboard";
 
     $: navPages = (() => {
-        if (isTeacher) {
-            return teacherNavPages;
-        }
-
-        if (isRep) {
-            return repNavPages;
-        }
-
-        const unrestricted = isAdmin;
-
-        const base = hasRepStudents
-            ? [...adminNavPages, ...repNavPages]
-            : adminNavPages;
-
-        const filtered = base.filter((navPage) => {
+        const adminPages = adminNavPages.filter((navPage) => {
             if (!navPage.slug) {
                 return true;
             }
 
-            return unrestricted || allowedModules.includes(navPage.slug);
+            return isFullAdmin || allowedModules.includes(navPage.slug);
         });
+
+        let base;
+
+        if (isTeacher) {
+            base = hasAdminAccess
+                ? [...adminPages, ...teacherNavPages]
+                : teacherNavPages;
+        } else if (isRep) {
+            base = hasAdminAccess
+                ? [...adminPages, ...repNavPages]
+                : repNavPages;
+        } else {
+            base = hasRepStudents
+                ? [...adminPages, ...repNavPages]
+                : adminPages;
+        }
 
         const seen = new Set();
 
-        return filtered.filter((page) =>
+        return base.filter((page) =>
             seen.has(page.href) ? false : (seen.add(page.href), true),
         );
     })();

@@ -645,6 +645,8 @@ class StudentService
             throw new \Exception('No se encontró el usuario asociado al representante');
         }
 
+        User::reclaimDeletedIdentity($data['rep_email'] ?? null, $data['rep_ci'] ?? null, $user->id);
+
         $user->update([
             'name' => $data['rep_name'],
             'last_name' => $data['rep_last_name'],
@@ -711,6 +713,8 @@ class StudentService
     {
         $email = $data['rep_email'] ?? null;
         $hasValidEmail = $this->hasValidEmail($email);
+
+        User::reclaimDeletedIdentity($email, $data['rep_ci'] ?? null);
 
         $plainPassword = null;
         if ($notify && $hasValidEmail) {

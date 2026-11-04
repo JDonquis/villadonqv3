@@ -42,8 +42,8 @@ class UpdateProfileRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:50'],
             'last_name' => ['required', 'string', 'max:50'],
-            'ci' => ['required', 'string', 'max:30', Rule::unique('users', 'ci')->ignore($userId)],
-            'email' => ['nullable', 'string', 'max:100', 'email', Rule::unique('users', 'email')->ignore($userId)],
+            'ci' => ['required', 'string', 'max:30', Rule::unique('users', 'ci')->whereNull('deleted_at')->ignore($userId)],
+            'email' => ['nullable', 'string', 'max:100', 'email', Rule::unique('users', 'email')->whereNull('deleted_at')->ignore($userId)],
             'phone_number' => ['nullable', 'string', 'max:30'],
             'phone_number2' => ['nullable', 'string', 'max:30'],
             'address' => ['nullable', 'string', 'max:100'],

@@ -2,7 +2,6 @@
 
 namespace App\Support;
 
-use App\Enums\UserTypeEnum;
 use App\Models\EvaluationPlan;
 use App\Models\User;
 
@@ -36,7 +35,7 @@ class GradeAccess
             return true;
         }
 
-        if ((int) $user->type_user_id !== UserTypeEnum::Administrator->value) {
+        if (! $user->hasAdminAccess()) {
             return false;
         }
 
@@ -74,7 +73,7 @@ class GradeAccess
             return false;
         }
 
-        if ((int) $user->type_user_id !== UserTypeEnum::Administrator->value) {
+        if (! $user->hasAdminAccess()) {
             return false;
         }
 
