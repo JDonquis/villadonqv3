@@ -2323,6 +2323,22 @@
                     height="19"></iconify-icon>
                 <span class="text-slate-600 font-semibold">Libro de ventas</span>
             </button>
+            <a
+                href="/dashboard/pagos/verificaciones-bnc"
+                class="border mt-4 hover:shadow-xl hover:bg-gray-100 border-gray-300 rounded-xl flex items-center gap-3 py-2 md:py-3 px-4 md:px-7 bg-white cursor-pointer"
+            >
+                <iconify-icon
+                    icon="mdi:bank-check"
+                    class="text-blue-700"
+                    width="19"
+                    height="19"></iconify-icon>
+                <span class="text-slate-600 font-semibold">Verificación BNC</span>
+                {#if (data?.bnc_pending_count ?? 0) > 0}
+                    <span class="rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                        {data.bnc_pending_count}
+                    </span>
+                {/if}
+            </a>
             <div class="hidden sm:block">
                 <button
                     class="animated-button ml-auto w-fitcontent"
@@ -2507,6 +2523,7 @@
             <th>Método de pago</th>
             <th>Concepto</th>
             <th>Referencia</th>
+            <th>Verificación</th>
             <!-- <th>Representante</th> -->
         </tr>
     </thead>
@@ -2693,6 +2710,19 @@
                             </button>
                         {/if}
                     </div>
+                </td>
+                <td>
+                    {#if row.verification_status === "verified"}
+                        <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">
+                            {row.verification_source === "manual" ? "Manual" : "BNC"}
+                        </span>
+                    {:else if row.verification_status === "rejected"}
+                        <span class="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700">Rechazado</span>
+                    {:else if row.verification_status === "pending"}
+                        <span class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">Pendiente</span>
+                    {:else}
+                        <span class="text-[10px] text-gray-400">Manual</span>
+                    {/if}
                 </td>
             </SelectableRow>
         {/each}

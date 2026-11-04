@@ -1,5 +1,5 @@
 <script>
-    import { inertia, page } from "@inertiajs/svelte";
+    import { inertia, page, router } from "@inertiajs/svelte";
     import BalanceBar from "../../components/BalanceBar.svelte";
     import Table from "../../components/Table.svelte";
     import Modal from "../../components/Modal.svelte";
@@ -16,6 +16,16 @@
     import Search from "../../components/Search.svelte";
 
     let activeTab = "pagar"; // 'pagar' | 'historial'
+    let lastPaymentFlash = null;
+
+    $: paymentFlash = $page?.props?.flash?.payment;
+    $: if (paymentFlash && JSON.stringify(paymentFlash) !== lastPaymentFlash) {
+        lastPaymentFlash = JSON.stringify(paymentFlash);
+        displayAlert({
+            type: paymentFlash.status === "error" ? "error" : paymentFlash.status === "success" ? "success" : "info",
+            message: paymentFlash.message,
+        });
+    }
     export let config = {
         day_of_monthly_payment: 0,
         grace_period: 0,
@@ -549,10 +559,6 @@
                 showFormPay = false;
                 $form.reset();
                 resetConceptSelection();
-                displayAlert({
-                    type: "success",
-                    message: "Pago registrado correctamente",
-                });
             },
             onError: (errors) => {
                 displayAlert({
@@ -662,10 +668,6 @@
             onSuccess: () => {
                 showChargesPay = false;
                 $chargesForm.reset();
-                displayAlert({
-                    type: "success",
-                    message: "Pago de conceptos registrado",
-                });
             },
             onError: (errors) => {
                 displayAlert({
@@ -725,6 +727,19 @@
             (account) => account.id == $form.account_payment_id,
         ) || null;
 
+    $: selectedChargesAccount =
+        data?.accounts?.data?.find(
+            (account) => account.id == $chargesForm.account_payment_id,
+        ) || null;
+
+    function verifyPendingBnc(id) {
+        router.post(
+            `/dashboard/mis-pagos/verificar/${id}`,
+            {},
+            { preserveScroll: true },
+        );
+    }
+
     function getPaymentDetails(account) {
         if (!account) return [];
 
@@ -778,6 +793,40 @@
 <div class="   ">
     {#if data.students.length === 0}
         <p class="text-gray-400 text-sm">No tienes hijos inscritos.</p>
+    {/if}
+
+    {#if (data.pending_verifications ?? []).length > 0}
+        <div class="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+            <p class="font-semibold text-sm mb-2">Pagos pendientes de verificación con el BNC</p>
+            <div class="grid gap-2 md:grid-cols-2">
+                {#each data.pending_verifications as item}
+                    <div class="rounded-lg bg-white p-3 border border-amber-100">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <p class="font-mono font-semibold">Ref: {item.reference || "—"}</p>
+                                <p>{item.account || "Cuenta"} · {item.date}</p>
+                                <p class="text-gray-500">${item.amount} / Bs {item.amount_ves}</p>
+                                {#if item.last_error}
+                                    <p class="text-red-600 mt-1">{item.last_error}</p>
+                                {/if}
+                            </div>
+                            <span class={`rounded-full px-2 py-1 shrink-0 ${item.status === "rejected" || item.status === "expired" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-800"}`}>
+                                {item.status_label}
+                            </span>
+                        </div>
+                        {#if item.status === "pending" || item.status === "error"}
+                            <button
+                                type="button"
+                                on:click={() => verifyPendingBnc(item.id)}
+                                class="mt-2 rounded-md bg-color1 px-2 py-1 text-[11px] font-semibold text-white"
+                            >
+                                Reintentar verificación
+                            </button>
+                        {/if}
+                    </div>
+                {/each}
+            </div>
+        </div>
     {/if}
 
     <nav class="flex items-center mt-3">
@@ -1189,6 +1238,22 @@
                             max={currentDateString}
                         />
 
+                        <Input
+                            type="text"
+                            required={Boolean(selectedPaymentAccount?.bnc_eligible)}
+                            label="Referencia bancaria"
+                            bind:value={$form.reference}
+                            error={$form.errors?.reference}
+                            placeholder="Solo números. Ej. 123456"
+                            classes="font-mono"
+                        />
+
+                        {#if selectedPaymentAccount?.bnc_eligible}
+                            <div class="col-span-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-[11px] leading-snug text-blue-800">
+                                Este pago se verificará automáticamente con el BNC. La referencia y el monto deben coincidir con el movimiento bancario. Si el banco aún no lo reporta, quedará pendiente y se verificará solo.
+                            </div>
+                        {/if}
+
                         {#if concepts.length > 0}
                             <div class="col-span-2 space-y-1">
                                 <p class="text-[11px] text-gray-400 leading-snug">
@@ -1453,6 +1518,22 @@
                                 error={$chargesForm.errors?.date}
                                 max={currentDateString}
                             />
+
+                            <Input
+                                type="text"
+                                required={Boolean(selectedChargesAccount?.bnc_eligible)}
+                                label="Referencia bancaria"
+                                bind:value={$chargesForm.reference}
+                                error={$chargesForm.errors?.reference}
+                                placeholder="Solo números. Ej. 123456"
+                                classes="font-mono"
+                            />
+
+                            {#if selectedChargesAccount?.bnc_eligible}
+                                <div class="md:col-span-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-[11px] leading-snug text-blue-800">
+                                    Este pago de conceptos se verificará automáticamente con el BNC. Si el banco aún no lo reporta, quedará pendiente y se verificará solo.
+                                </div>
+                            {/if}
 
                             <div class="md:col-span-2 space-y-2">
                                 {#each $chargesForm.items as item, index}
