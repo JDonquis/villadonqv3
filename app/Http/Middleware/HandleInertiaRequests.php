@@ -61,6 +61,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'flash' => [
                 'import' => $request->session()->pull('import_summary'),
+                'payment' => $request->session()->pull('payment_flash'),
             ],
             'notification_state' => $user ? [
                 'unread_count' => $user->unreadNotifications()->count(),

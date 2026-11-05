@@ -183,10 +183,9 @@ class PaymentService
             });
     }
 
-    public function create(array $data, ?array $allowedStudentIds = null): Payment
+    public function create(array $data, ?array $allowedStudentIds = null, ?int $userId = null): Payment
     {
-        // Obtener usuario
-        $userId = Auth::id() ?? 1;
+        $userId = $userId ?? Auth::id() ?? 1;
 
         $exchangeRate = isset($data['exchange_rate']) && $data['exchange_rate'] !== ''
             ? (float) $data['exchange_rate']
@@ -460,9 +459,9 @@ class PaymentService
      * Registra un pago de conceptos separados (AME / Plan de inversión) para el representante.
      * Crea un Payment por cada tipo presente en los items, sin tocar el balance del estudiante.
      */
-    public function createForStudentCharges(array $data, ?array $allowedStudentIds = null): array
+    public function createForStudentCharges(array $data, ?array $allowedStudentIds = null, ?int $userId = null): array
     {
-        $userId = Auth::id() ?? 1;
+        $userId = $userId ?? Auth::id() ?? 1;
 
         $items = collect($data['items'])
             ->filter(fn ($item) => in_array($item['type'] ?? null, self::CHARGE_TYPES, true))

@@ -18,6 +18,15 @@ php artisan demo:full-system --force   # simula un año completo (personal, estu
 
 Only smoke `ExampleTest`s exist — don't assume a covered test suite. Run `vendor/bin/phpunit --filter <name>` for a single test.
 
+## Pagos BNC (validación automática)
+
+- La integración vive en `app/Services/Bnc/` (`BncCrypto`, `BncClient`, `BncPaymentVerifier`, `BncPaymentRequestService`) y usa la API ESolutions + webhook NotificationPush.
+- Variables en `.env` (ver `.env.example`): `BNC_ENABLED`, `BNC_BASE_URL`, `BNC_CLIENT_GUID`, `BNC_MASTER_KEY`, `BNC_CLIENT_ID`, `BNC_ACCOUNT_NUMBER`, `BNC_CURRENCY`, `BNC_VERIFICATION_MODE`, `BNC_REQUIRE_REFERENCE`, `BNC_ACCOUNT_IDS` / `BNC_FORCE_ALL_ACCOUNTS`, `BNC_WEBHOOK_AUTH`, `BNC_WEBHOOK_API_KEY` (o `BNC_WEBHOOK_LOGIN`/`BNC_WEBHOOK_PASSWORD` para Bearer).
+- Webhook público: `POST {APP_URL}/api/bnc/notifications` (ping `GET`/`POST` vacío). Responder 200 es obligatorio; el procesamiento se hace después y el cron `bnc:reconcile-payments` reintenta como respaldo. `bnc:refresh-working-key` corre a las 00:05 y `bnc:test` sirve para probar credenciales.
+- Flujo representante: si la cuenta es BNC (banco `BNC`/`Nacional de Crédito`, `BNC_ACCOUNT_IDS` o `BNC_FORCE_ALL_ACCOUNTS`), el pago se guarda como `bnc_payment_requests` pendiente y **no abona saldos** hasta que `Validate`/historial o el webhook lo confirman. La UI muestra los pendientes en MisPagos. Los pagos verificados llevan `verification_status=verified` y fuente `bnc_api`/`bnc_webhook`/`manual`.
+- Panel admin: `/dashboard/pagos/verificaciones-bnc` (pendientes, notificaciones sin conciliar, reintentos, rechazo, verificación manual y prueba de conexión). El botón está en Pagos.
+- Si `BNC_ENABLED=false` o faltan credenciales/datos de cuenta, el flujo cae al registro manual de siempre (no bloquea al representante).
+
 `demo:full-system` **reinicia la base de datos por defecto** (`migrate:fresh`, pide confirmación salvo `--force`) y crea un año escolar completo y "normal": período que termina hoy (3 momentos), secciones `A` y `B` para cada uno de los 14 cursos, administrativos, profesores, representantes y estudiantes (2 por sección/curso por defecto), planes aprobados y notas publicadas en los 3 momentos, y horarios sin choques de profesor para los 28 cursos-sección. Al final genera boleta/certificado/certificado de notas en `storage/app/demo-documents/`. Todos los usuarios usan contraseña `12345678`. Opciones: `--students=N` (por sección/curso), `--matters=1,2,3` o `--matters=all`, `--admins=N`, `--period-end=Y-m-d`, `--keep-data` (no borra; agrega otro período), `--skip-documents`, `--force`.
 
 ## Architecture

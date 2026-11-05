@@ -13,6 +13,8 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         $schedule->command('balance:recalculate-status')->daily();
+        $schedule->command('bnc:refresh-working-key')->dailyAt('00:05');
+        $schedule->command('bnc:reconcile-payments')->everyFifteenMinutes()->withoutOverlapping();
     }
 
     /**
@@ -20,7 +22,7 @@ class Kernel extends ConsoleKernel
      */
     protected function commands(): void
     {
-        $this->load(__DIR__ . '/Commands');
+        $this->load(__DIR__.'/Commands');
 
         require base_path('routes/console.php');
     }

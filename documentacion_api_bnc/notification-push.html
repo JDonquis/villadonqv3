@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BNC NotificationPush V2.0</title>
+  <meta name="description" content="Copia offline de la documentación de las APIs del Banco Nacional de Crédito.">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+  <header class="topbar">
+    <button class="menu-toggle" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="sidebar">
+      <span></span><span></span><span></span>
+    </button>
+    <a class="topbar-brand" href="index.html">
+      <img src="assets/images/bnc-logo.png" alt="BNC">
+      <span>Documentación API</span>
+    </a>
+    <nav class="topbar-nav" aria-label="Documentos">
+      <a href="esolutions-api.html" class="">ESolutions API</a>
+      <a href="notification-push.html" class="active">NotificationPush</a>
+    </nav>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      
+        <div class="search-box">
+          <label for="nav-search" class="sr-only">Buscar en la documentación</label>
+          <input id="nav-search" type="search" placeholder="Buscar endpoint o sección..." autocomplete="off">
+          <span class="search-hint">Filtra la navegación</span>
+        </div>
+      <nav class="side-nav" aria-label="Contenido del documento">
+        <div class="nav-section-label">Documento</div>
+        <a class="nav-link nav-home" href="index.html">
+          <span class="home-icon">←</span> Todas las colecciones
+        </a>
+        
+    <a class="nav-link nav-intro" href="#resumen" data-search="Resumen introducción">Resumen</a>
+    <div class="nav-section-label">Contenido</div>
+    <a class="nav-link nav-toc level-2" href="#doc-evolución-de-la-aplicación-principales-mejoras" data-search="Evolución de la Aplicación: Principales Mejoras">Evolución de la Aplicación: Principales Mejoras</a><a class="nav-link nav-toc level-2" href="#doc-gestión-de-notificaciones-reglas-de-recepción-y-respuesta" data-search="Gestión de Notificaciones: Reglas de Recepción y Respuesta">Gestión de Notificaciones: Reglas de Recepción y Respuesta</a><a class="nav-link nav-toc level-2" href="#doc-clausula-de-disponibilidad-recepción-y-control-del-servicio-de-notificaciones" data-search="Clausula de Disponibilidad, Recepción y Control del Servicio de Notificaciones">Clausula de Disponibilidad, Recepción y Control del Servicio de Notificaciones</a><a class="nav-link nav-toc level-3" href="#doc-1-responsabilidad-del-cliente" data-search="1. Responsabilidad del Cliente">1. Responsabilidad del Cliente</a><a class="nav-link nav-toc level-3" href="#doc-2-confirmación-de-recepción" data-search="2. Confirmación de Recepción">2. Confirmación de Recepción</a><a class="nav-link nav-toc level-3" href="#doc-3-reintentos-y-control-operativo" data-search="3. Reintentos y Control Operativo">3. Reintentos y Control Operativo</a><a class="nav-link nav-toc level-2" href="#doc-excepciones-críticas" data-search="Excepciones Críticas">Excepciones Críticas</a><a class="nav-link nav-toc level-2" href="#doc-obligación-técnica-de-validación" data-search="Obligación Técnica de Validación">Obligación Técnica de Validación</a><a class="nav-link nav-toc level-3" href="#doc-objetivos-de-la-validación" data-search="Objetivos de la Validación:">Objetivos de la Validación:</a><a class="nav-link nav-toc level-2" href="#doc-tipos-de-autenticación" data-search="Tipos de Autenticación">Tipos de Autenticación</a><a class="nav-link nav-toc level-3" href="#doc-1-api-key" data-search="1. API Key">1. API Key</a><a class="nav-link nav-toc level-3" href="#doc-2-json-web-token-jwt" data-search="2. JSON Web Token (JWT)">2. JSON Web Token (JWT)</a><a class="nav-link nav-toc level-4" href="#doc-ruta-de-autenticación" data-search="Ruta de Autenticación">Ruta de Autenticación</a><a class="nav-link nav-toc level-4" href="#doc-ruta-de-notificación" data-search="Ruta de Notificación">Ruta de Notificación</a><a class="nav-link nav-toc level-1" href="#doc-requisito-de-habilitacion-de-ping-en-el-endpoint-de-notificaciones-para-la-certificacion-del-endpoint-proporcionado-por-el-cliente" data-search="Requisito de habilitación de ping en el endpoint de notificaciones para la certificación del endpoint proporcionado por el cliente">Requisito de habilitación de ping en el endpoint de notificaciones para la certificación del endpoint proporcionado por el cliente</a><a class="nav-link nav-toc level-2" href="#doc-1-contexto-del-sistema" data-search="1. Contexto del sistema">1. Contexto del sistema</a><a class="nav-link nav-toc level-2" href="#doc-2-validación-inicial-mediante-ping" data-search="2. Validación inicial mediante ping">2. Validación inicial mediante ping</a><a class="nav-link nav-toc level-2" href="#doc-3-requisito-para-certificación" data-search="3. Requisito para certificación">3. Requisito para certificación</a><a class="nav-link nav-toc level-3" href="#doc-ejemplo-de-objetos-de-notificaciónes" data-search="Ejemplo de Objetos de Notificaciónes">Ejemplo de Objetos de Notificaciónes</a><a class="nav-link nav-toc level-2" href="#doc-proceso-de-certificación-de-notificaciones" data-search="Proceso de Certificación de Notificaciones">Proceso de Certificación de Notificaciones</a><a class="nav-link nav-toc level-3" href="#doc-ambiente-de-desarrollo-development-environment" data-search="Ambiente de Desarrollo (Development Environment)">Ambiente de Desarrollo (Development Environment)</a><a class="nav-link nav-toc level-3" href="#doc-ambiente-de-producción-production-environment" data-search="Ambiente de Producción (Production Environment)">Ambiente de Producción (Production Environment)</a><a class="nav-link nav-toc level-3" href="#doc-requisitos-de-entrega" data-search="Requisitos de Entrega">Requisitos de Entrega</a>
+    
+      </nav>
+      <div class="sidebar-footer">
+        <a href="data/notification-push.collection.json" target="_blank" rel="noopener">Ver JSON de la colección</a>
+        <span>Copia offline · 28 de octubre de 2026</span>
+      </div>
+    </aside>
+
+    <div class="sidebar-overlay" hidden></div>
+
+    <main class="main" id="contenido">
+      
+    <section class="hero" id="resumen" data-spy>
+      <div class="hero-top">
+        <img class="hero-logo square" src="assets/images/notification-logo.png" alt="NotificationPush">
+        <div class="hero-badges">
+          <span class="chip strong">Documento técnico</span>
+          <span class="chip">Notificaciones Push</span>
+          <span class="chip">Snapshot 28 de octubre de 2026</span>
+        </div>
+      </div>
+      <div class="eyebrow">Colección Postman · Documento de integración</div>
+      <h1>BNC NotificationPush V2.0</h1>
+      <p class="hero-lead">
+        Reglas de recepción y respuesta de notificaciones, disponibilidad del servicio,
+        autenticación, validaciones, certificación y requisitos de integración.
+      </p>
+      <div class="hero-actions">
+        <a class="button primary" href="https://documenter.getpostman.com/view/48256705/2sB3QDuCXT" target="_blank" rel="noopener">Documentación original ↗</a>
+        <a class="button" href="data/notification-push.collection.json" target="_blank" rel="noopener">Colección JSON</a>
+        <a class="button" href="data/notification-push.metadata.json" target="_blank" rel="noopener">Metadatos</a>
+      </div>
+    </section>
+
+    <section class="intro">
+      <div class="content-grid">
+        <article class="prose description">
+          <h2 id="doc-evolución-de-la-aplicación-principales-mejoras">Evolución de la Aplicación: Principales Mejoras</h2>
+<p>La nueva versión de nuestra aplicación incorpora <strong>mejoras estratégicas</strong> que elevan la experiencia del usuario y consolidan la arquitectura del sistema:</p>
+<ul>
+<li><p>Se ha <strong>modernizado el sistema de notificaciones</strong>, permitiendo el envio de notificaciones más precisos y oportunos, lo que facilita una interacción eficiente en tiempo real.</p>
+</li>
+<li><p>El proceso de <strong>registro de clientes ha sido optimizado</strong>, adoptando un enfoque dinámico que se ajusta con mayor flexibilidad a los requerimientos específicos y tiempos de integración de cada cliente.</p>
+</li>
+<li><p>Se ha implementado un <strong>esquema de alta disponibilidad</strong>, diseñado para garantizar la continuidad operativa, la tolerancia ante fallos y la escalabilidad del servicio, asegurando así una plataforma robusta, confiable y preparada para entornos exigentes.</p>
+</li>
+</ul>
+<h2 id="doc-gestión-de-notificaciones-reglas-de-recepción-y-respuesta">Gestión de Notificaciones: Reglas de Recepción y Respuesta</h2>
+<p>Durante el proceso de recepción de una notificación, el sistema se encuentra en un <strong>estado transitorio</strong>, diseñado exclusivamente para el manejo seguro y consistente del evento entrante. En esta fase:</p>
+<ul>
+<li><p>No se debe ejecutar lógica adicional.</p>
+</li>
+<li><p>No se deben desencadenar acciones complementarias.</p>
+</li>
+<li><p>No se debe acceder a recursos externos ni modificar el estado de la aplicación.</p>
+</li>
+</ul>
+<p>Intentar realizar operaciones fuera de este contexto puede generar retraso en las colas de notificaciones, <strong>errores inesperados</strong> o <strong>inconsistencias en el flujo de datos</strong>, comprometiendo la estabilidad del sistema.</p>
+<h2 id="doc-clausula-de-disponibilidad-recepción-y-control-del-servicio-de-notificaciones">Clausula de Disponibilidad, Recepción y Control del Servicio de Notificaciones</h2>
+<p>Para garantizar la correcta operación del sistema de notificaciones, el cliente deberá cumplir con los siguientes compromisos técnicos y operativos:</p>
+<h3 id="doc-1-responsabilidad-del-cliente">1. Responsabilidad del Cliente</h3>
+<ul>
+<li><p>La <strong>seguridad, estabilidad y disponibilidad</strong> del servicio a construir es responsabilidad exclusiva del cliente.</p>
+</li>
+<li><p>El servicio debe estar diseñado para <strong>recibir notificaciones de pago</strong> con los datos estructurados y definidos por BNC.</p>
+</li>
+<li><p>El servicio debe estar <strong>disponible las 24 horas del día, los 7 días de la semana</strong>, sin interrupciones, para asegurar la continuidad de la plataforma.</p>
+</li>
+</ul>
+<h3 id="doc-2-confirmación-de-recepción">2. Confirmación de Recepción</h3>
+<ul>
+<li><p>Cada notificación será enviada <strong>reiteradamente</strong> hasta que se obtenga una <strong>respuesta exitosa</strong> por parte del servicio del cliente.</p>
+</li>
+<li><p>El cliente debe <strong>responder de forma inmediata con un código HTTP 200 OK</strong>, confirmando la recepción exitosa del evento.</p>
+</li>
+<li><p>Cualquier lógica interna, validación de datos o procesamiento adicional debe ejecutarse <strong>después</strong> de haber confirmado la recepción.<br>  Bajo ningún concepto estas validaciones deben interferir con la respuesta inicial al sistema.</p>
+</li>
+</ul>
+<h3 id="doc-3-reintentos-y-control-operativo">3. Reintentos y Control Operativo</h3>
+<ul>
+<li><p>En caso de que ocurra un error durante la notificación (por ejemplo, servicio no disponible, respuesta inválida, error de autenticación), el sistema continuará reintentando el envío hasta obtener una respuesta válida.</p>
+</li>
+<li><p><strong>Queda a criterio exclusivo del BNC</strong> evaluar la estabilidad del servicio del cliente. En caso de respuestas reiteradas de error, el banco se reserva el derecho de <strong>desactivar temporal o permanentemente el servicio</strong>, con el fin de proteger la integridad de la plataforma.</p>
+</li>
+</ul>
+<h2 id="doc-excepciones-críticas">Excepciones Críticas</h2>
+<p>En los casos en que la notificación <strong>no pueda ser autenticada correctamente</strong>, el sistema podrá rechazarla en este caso el cliente podrá devolver un string con los posibles errores de autenticación. Esto incluye:</p>
+<ul>
+<li><p>Credenciales inválidas</p>
+</li>
+<li><p>Token expirado</p>
+</li>
+<li><p>Encabezado de autorización ausente o mal formado</p>
+</li>
+</ul>
+<p>En tales situaciones, se devolverá un <strong>código HTTP 401 Unauthorized</strong>, acompañado de un string descriptivo que indique la causa del rechazo.</p>
+<h2 id="doc-obligación-técnica-de-validación">Obligación Técnica de Validación</h2>
+<p>**Una vez recibida la notificación y habiendo respondido con un HTTP 200, es obligatorio que el sistema receptor realice una validación rigurosa de las referencias y campos involucrados antes de ejecutar cualquier lógica interna, como el procesamiento de datos, actualización de registros, invocación de servicios o aplicación de reglas de negocio. Esta validación es indispensable para evitar el procesamiento duplicado de notificaciones, lo cual podría derivar en errores críticos como pagos repetidos a clientes.**<strong>Esto cobra aún más relevancia considerando que, en algunos casos, las notificaciones pueden ser reenviadas, ya sea por reintentos automáticos o condiciones de red, por lo que el sistema receptor debe estar preparado para manejar estos escenarios de forma segura y consistente.</strong></p>
+<h3 id="doc-objetivos-de-la-validación">Objetivos de la Validación:</h3>
+<ul>
+<li><p><strong>Evitar errores</strong> derivados de referencias inexistentes, campos malformados o datos inconsistentes.</p>
+</li>
+<li><p><strong>Prevenir el procesamiento duplicado</strong>, ya sea por notificaciones reenviadas o por operaciones simultáneas, lo cual puede generar pagos repetidos o registros inconsistentes.</p>
+</li>
+<li><p><strong>Validar la forma y los valores de los atributos</strong>, asegurando que cumplan con las reglas definidas y mantengan coherencia entre entidades</p>
+</li>
+</ul>
+<h2 id="doc-tipos-de-autenticación">Tipos de Autenticación</h2>
+<h3 id="doc-1-api-key">1. API Key</h3>
+<p>Este método de autenticación requiere que el cliente proporcione:</p>
+<ul>
+<li><p>Una <strong>URL de Webhook</strong> donde se recibirán las notificaciones.</p>
+</li>
+<li><p>Una clave de autenticación (API Key) que se incluirá en el encabezado de la solicitud con el siguiente formato (clave, valor):</p>
+</li>
+</ul>
+<p>Código</p>
+<pre class="click-to-expand-wrapper is-snippet-wrapper"><code>x-api-key &lt;valor_de_la_clave&gt;
+
+</code></pre><p>El valor de la clave será una cadena de texto proporcionada previamente por el sistema.</p>
+<h3 id="doc-2-json-web-token-jwt">2. JSON Web Token (JWT)</h3>
+<p>Este esquema de autenticación se basa en el uso de tokens y requiere dos rutas por parte del cliente:</p>
+<h4 id="doc-ruta-de-autenticación">Ruta de Autenticación</h4>
+<p>El cliente debe proporcionar una URL de autenticación junto con credenciales de acceso (usuario y contraseña).</p>
+<pre class="click-to-expand-wrapper is-snippet-wrapper"><code class="language-json">{
+    "Login":"example",
+    "Password": "123456"
+}
+
+</code></pre>
+<p>Al realizar una solicitud a esta ruta:</p>
+<ul>
+<li>Si las credenciales son válidas, el sistema responderá con un <strong>token en texto plano</strong>.</li>
+</ul>
+<pre class="click-to-expand-wrapper is-snippet-wrapper"><code>"AJABNABAVÑUBGWEIPQJFPQWFH"
+
+</code></pre><ul>
+<li>Si las credenciales son inválidas, se debe retornar <strong>código HTTP 400</strong> junto con un mensaje descriptivo para efectos de log y resolucion de problemas.</li>
+</ul>
+<h4 id="doc-ruta-de-notificación">Ruta de Notificación</h4>
+<p>Una vez obtenido el token, se utilizará para enviar notificaciones a una segunda URL proporcionada por el cliente. En este caso, la solicitud debe incluir el siguiente encabezado:</p>
+<p>Código</p>
+<pre class="click-to-expand-wrapper is-snippet-wrapper"><code>Authorization: Bearer &lt;token_obtenido&gt;
+
+</code></pre><h1 id="doc-requisito-de-habilitacion-de-ping-en-el-endpoint-de-notificaciones-para-la-certificacion-del-endpoint-proporcionado-por-el-cliente">Requisito de habilitación de <em>ping</em> en el endpoint de notificaciones para la certificación del endpoint proporcionado por el cliente</h1>
+<h2 id="doc-1-contexto-del-sistema">1. Contexto del sistema</h2>
+<p>El sistema de notificaciones P<strong>USH</strong> requiere que cada cliente proporciona un <strong>Webhook</strong> donde serán entregadas las notificaciones.<br>Durante el proceso de registro, la validación de este endpoint se realiza de manera <strong>automática</strong>, sin intervención manual.</p>
+<h2 id="doc-2-validación-inicial-mediante-ping">2. Validación inicial mediante <em>ping</em></h2>
+<ul>
+<li><p>Una vez que el cliente registra su URL, el sistema ejecuta un <strong>ping automático</strong> hacia el endpoint.</p>
+</li>
+<li><p>Este ping confirma que:</p>
+<ul>
+<li><p>El servidor está disponible y accesible desde nuestra infraestructura.</p>
+</li>
+<li><p>La ruta configurada es correcta y responde adecuadamente.</p>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="doc-3-requisito-para-certificación">3. Requisito para certificación</h2>
+<p>Para garantizar la correcta integración y certificación del servicio, es <strong>obligatorio</strong> que el endpoint proporcionado:</p>
+<ul>
+<li><p>Permita recibir y responder al ping inicial.</p>
+</li>
+<li><p>Devuelva un código de estado HTTP válido (ejemplo: <code>200 OK</code>).</p>
+</li>
+<li><p>No bloquee la conexión por firewalls, reglas de seguridad o configuraciones de red, en caso de manejar una lista blanca de IP el cliente debera solicitar la IP y agregarla antes de comenzar las pruebas.</p>
+</li>
+</ul>
+<p><strong>Nota para el cliente:</strong><br>Si su servidor no tiene habilitado el ping, deberá ajustar la configuración de red o seguridad para permitirlo solo mientras se realiza el proceso de certificacón, una vez certificado el cliente puede desabilitar el ping si asi lo desea.</p>
+<h3 id="doc-ejemplo-de-objetos-de-notificaciónes">Ejemplo de Objetos de Notificaciónes</h3>
+<p>json</p>
+<pre class="click-to-expand-wrapper is-snippet-wrapper"><code class="language-json">P2P
+{
+  "PaymentType": "P2P",
+  "OriginBankReference": "string",
+  "DestinyBankReference": "string",
+  "OriginBankCode": "string",
+  "ClientID": "string",
+  "Hour": "string",
+  "CurrencyCode": "string",
+  "Amount": "string",
+  "Date": "string",
+  "CommerceID": "string",
+  "CommercePhone": "string"
+  "ClientPhone": "string",
+  "Concept": "string"
+}
+DEP y TRF
+{
+  "PaymentType": "DEP",
+  "OriginBankReference": "string",
+  "DestinyBankReference": "string",
+  "OriginBankCode": "string",
+  "Hour": "string",
+  "CurrencyCode": "string",
+  "Amount": "string",
+  "Date": "string",
+  "CommerceID": "string",
+  "CommercePhone": "string",
+  "DebtorAccount": "string",
+  "DebtorID": "string",
+  "CreditorAccount": "string"
+}
+
+</code></pre>
+<p><strong>Datos incluidos en la notificacion de Pago.</strong></p>
+<div class="click-to-expand-wrapper is-table-wrapper"><table>
+<thead>
+<tr>
+<th><strong>Dominio</strong></th>
+<th><strong>Campo</strong></th>
+<th><strong>Tipo</strong></th>
+<th><strong>Descripcion</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>General</td>
+<td>PaymentType</td>
+<td>String</td>
+<td>Tipo de pago, puede tomar los siguientes valores:  <br>  <br><strong>P2P</strong>: Pago Móvil  <br><strong>TRF</strong>: Transferencia  <br><strong>DEP</strong>: Deposito</td>
+</tr>
+<tr>
+<td>General</td>
+<td>OriginBankReference</td>
+<td>String</td>
+<td>Numero de referencia, código generado y entregado por el banco ordenante para identificar de forma única el registro en la plataforma.</td>
+</tr>
+<tr>
+<td>General</td>
+<td>DestinyBankReference</td>
+<td>String</td>
+<td>Numero de referencia generado en BNC.</td>
+</tr>
+<tr>
+<td>General</td>
+<td>OriginBankCode</td>
+<td>String</td>
+<td>Código de 4 dígitos que identifica a la entidad financiera ordenante de la transacción.</td>
+</tr>
+<tr>
+<td>General</td>
+<td>TxHour</td>
+<td>String</td>
+<td>Hora militar de la transacción en formato HHMM (2359)</td>
+</tr>
+<tr>
+<td>General</td>
+<td>CurrencyCode</td>
+<td>String</td>
+<td>Contiene la representación de la moneda usada en la transacción (Ej: 0928)</td>
+</tr>
+<tr>
+<td>General</td>
+<td>Amount</td>
+<td>String</td>
+<td>Monto de la transacción en formato 15+2 con separador decimal “.”  <br>(Ej: 999999999999999.99)</td>
+</tr>
+<tr>
+<td>General</td>
+<td>TxDate</td>
+<td>String</td>
+<td>Fecha de la transacción en el formato yyyyMMdd. (Ej: 20230530)</td>
+</tr>
+<tr>
+<td>General</td>
+<td>CommerceID</td>
+<td>String</td>
+<td>Es el RIF del comercio receptor asociado a la transacción.</td>
+</tr>
+<tr>
+<td>P2P</td>
+<td>ClientPhone</td>
+<td>String</td>
+<td>Número de teléfono del ordenante de la transacción, bajo el formato de numero internacional (Ej: 00584141234567)  <br>  <br>En transacciones de tipo TRF y DEP no está disponible.</td>
+</tr>
+<tr>
+<td>P2P</td>
+<td>Concept</td>
+<td>String</td>
+<td>Campo que identifica el motivo o naturaleza de la transacción.</td>
+</tr>
+<tr>
+<td>P2P</td>
+<td>ClientID</td>
+<td>String</td>
+<td>Documento del pagador cuando es BNC a BNC.</td>
+</tr>
+<tr>
+<td>P2P</td>
+<td>CommercePhone</td>
+<td>String</td>
+<td>Número de teléfono del receptor de la transacción, bajo el formato de numero internacional (Ej: 00584141234567)  <br>  <br>En transacciones de tipo TRF y DEP no está disponible.</td>
+</tr>
+<tr>
+<td>TRF-DEP</td>
+<td>DebtorAccount</td>
+<td>String</td>
+<td>Número de cuenta ordenante. Cuentas completes de 20 dígitos.  <br>  <br>En transacciones de tipo P2P no está disponible</td>
+</tr>
+<tr>
+<td>TRF-DEP</td>
+<td>DebtorID</td>
+<td>String</td>
+<td>Numero de cedula/rif del ordenante. (Ej: V012345678/J000152369)  <br>  <br>En transacciones de tipo P2P no está disponible</td>
+</tr>
+<tr>
+<td>TRF-DEP</td>
+<td>CreditorAccount</td>
+<td>String</td>
+<td>Número de cuenta beneficiario. Cuentas completes de 20 dígitos.  <br>  <br>En transacciones de tipo P2P no está disponible</td>
+</tr>
+</tbody>
+</table>
+</div><h2 id="doc-proceso-de-certificación-de-notificaciones">Proceso de Certificación de Notificaciones</h2>
+<p>Para llevar a cabo el proceso de certificación de notificaciones, es <strong>necesario, indispensable y obligatorio</strong> que el cliente disponga de <strong>dos entornos claramente definidos y operativos</strong>, además de entregar las URLs correspondientes para cada uno:</p>
+<h3 id="doc-ambiente-de-desarrollo-development-environment">Ambiente de Desarrollo (Development Environment)</h3>
+<ul>
+<li><p>Debe estar completamente habilitado para la <strong>implementación, prueba y ajuste</strong> de la lógica de notificaciones.</p>
+</li>
+<li><p>Tiene que <strong>simular condiciones reales</strong>, incluyendo la integración con los sistemas emisores y receptores.</p>
+</li>
+<li><p>Su propósito principal es validar el <strong>funcionamiento técnico y funcional</strong> en un entorno controlado, sin afectar procesos en producción.</p>
+</li>
+</ul>
+<p><strong>Importante:</strong> Todas las validaciones, simulaciones y ajustes deben ejecutarse <strong>exclusivamente en este entorno</strong>.<br><strong>Bajo ningún concepto se realizarán pruebas en el entorno de producción.</strong> Esta medida garantiza la seguridad, estabilidad y confiabilidad del sistema en operación, evitando cualquier impacto no deseado sobre usuarios finales o procesos críticos.</p>
+<h3 id="doc-ambiente-de-producción-production-environment">Ambiente de Producción (Production Environment)</h3>
+<ul>
+<li><p>Representa el sistema en operación real, donde se ejecutan los procesos definitivos.</p>
+</li>
+<li><p>Debe estar completamente habilitado, con todos los <strong>componentes de notificación integrados y funcionando</strong> según los parámetros establecidos en la documentación técnica.</p>
+</li>
+<li><p>Su función es recibir las notificaciones finales, ya certificadas, y entregarlas a los usuarios o sistemas destino.</p>
+</li>
+</ul>
+<h3 id="doc-requisitos-de-entrega">Requisitos de Entrega</h3>
+<p>Para iniciar el proceso de certificación, el cliente debe proporcionar:</p>
+<ul>
+<li><p><strong>URL del entorno de desarrollo</strong></p>
+</li>
+<li><p><strong>URL del entorno de producción</strong></p>
+</li>
+</ul>
+<p>La entrega de estas URLs es un <strong>requisito excluyente</strong>. Sin ellas, no será posible avanzar ni completar el proceso de certificación.</p>
+        </article>
+        
+    <nav class="toc-card" aria-label="Contenido del documento">
+      <div class="toc-title">Contenido del documento</div>
+      <a class="toc-link toc-level-2" href="#doc-evolución-de-la-aplicación-principales-mejoras">Evolución de la Aplicación: Principales Mejoras</a>
+<a class="toc-link toc-level-2" href="#doc-gestión-de-notificaciones-reglas-de-recepción-y-respuesta">Gestión de Notificaciones: Reglas de Recepción y Respuesta</a>
+<a class="toc-link toc-level-2" href="#doc-clausula-de-disponibilidad-recepción-y-control-del-servicio-de-notificaciones">Clausula de Disponibilidad, Recepción y Control del Servicio de Notificaciones</a>
+<a class="toc-link toc-level-3" href="#doc-1-responsabilidad-del-cliente">1. Responsabilidad del Cliente</a>
+<a class="toc-link toc-level-3" href="#doc-2-confirmación-de-recepción">2. Confirmación de Recepción</a>
+<a class="toc-link toc-level-3" href="#doc-3-reintentos-y-control-operativo">3. Reintentos y Control Operativo</a>
+<a class="toc-link toc-level-2" href="#doc-excepciones-críticas">Excepciones Críticas</a>
+<a class="toc-link toc-level-2" href="#doc-obligación-técnica-de-validación">Obligación Técnica de Validación</a>
+<a class="toc-link toc-level-3" href="#doc-objetivos-de-la-validación">Objetivos de la Validación:</a>
+<a class="toc-link toc-level-2" href="#doc-tipos-de-autenticación">Tipos de Autenticación</a>
+<a class="toc-link toc-level-3" href="#doc-1-api-key">1. API Key</a>
+<a class="toc-link toc-level-3" href="#doc-2-json-web-token-jwt">2. JSON Web Token (JWT)</a>
+<a class="toc-link toc-level-4" href="#doc-ruta-de-autenticación">Ruta de Autenticación</a>
+<a class="toc-link toc-level-4" href="#doc-ruta-de-notificación">Ruta de Notificación</a>
+<a class="toc-link toc-level-1" href="#doc-requisito-de-habilitacion-de-ping-en-el-endpoint-de-notificaciones-para-la-certificacion-del-endpoint-proporcionado-por-el-cliente">Requisito de habilitación de ping en el endpoint de notificaciones para la certificación del endpoint proporcionado por el cliente</a>
+<a class="toc-link toc-level-2" href="#doc-1-contexto-del-sistema">1. Contexto del sistema</a>
+<a class="toc-link toc-level-2" href="#doc-2-validación-inicial-mediante-ping">2. Validación inicial mediante ping</a>
+<a class="toc-link toc-level-2" href="#doc-3-requisito-para-certificación">3. Requisito para certificación</a>
+<a class="toc-link toc-level-3" href="#doc-ejemplo-de-objetos-de-notificaciónes">Ejemplo de Objetos de Notificaciónes</a>
+<a class="toc-link toc-level-2" href="#doc-proceso-de-certificación-de-notificaciones">Proceso de Certificación de Notificaciones</a>
+<a class="toc-link toc-level-3" href="#doc-ambiente-de-desarrollo-development-environment">Ambiente de Desarrollo (Development Environment)</a>
+<a class="toc-link toc-level-3" href="#doc-ambiente-de-producción-production-environment">Ambiente de Producción (Production Environment)</a>
+<a class="toc-link toc-level-3" href="#doc-requisitos-de-entrega">Requisitos de Entrega</a>
+    </nav>
+      </div>
+    </section>
+    
+      <footer class="page-footer">
+        <p>
+          Copia offline generada el 28 de octubre de 2026. El contenido proviene de la documentación pública
+          de Postman del Banco Nacional de Crédito.
+        </p>
+        <p>Los enlaces a la API y a la documentación original siguen apuntando a sus sitios web.</p>
+      </footer>
+    </main>
+  </div>
+
+  <button class="to-top" type="button" aria-label="Volver arriba" title="Volver arriba">↑</button>
+  <script src="assets/app.js"></script>
+</body>
+</html>

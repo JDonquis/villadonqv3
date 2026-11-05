@@ -14,6 +14,8 @@ class Payment extends Model
 
     protected $appends = ['raw_date', 'created_by_role'];
 
+    protected $hidden = ['verification_response'];
+
     protected $fillable = [
         'user_id',
         'account_payment_id',
@@ -27,6 +29,12 @@ class Payment extends Model
         'observations',
         'deleted_by',
         'reported_date',
+        'verification_status',
+        'verification_source',
+        'verified_at',
+        'verified_by',
+        'verification_reference',
+        'verification_response',
     ];
 
     protected $casts = [
@@ -36,6 +44,8 @@ class Payment extends Model
         'total_in_bs' => 'decimal:2',
         'exchange_rate' => 'decimal:2',
         'status' => 'integer',
+        'verified_at' => 'datetime',
+        'verification_response' => 'array',
     ];
 
     public function user()
@@ -83,6 +93,11 @@ class Payment extends Model
     public function deletedBy()
     {
         return $this->belongsTo(User::class, 'deleted_by')->withTrashed();
+    }
+
+    public function verifiedBy()
+    {
+        return $this->belongsTo(User::class, 'verified_by')->withTrashed();
     }
 
     protected function date(): Attribute

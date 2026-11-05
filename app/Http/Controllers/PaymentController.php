@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePaymentRequest;
+use App\Models\BncPaymentRequest;
 use App\Models\MainConfig;
 use App\Models\Payment;
 use App\Models\PaymentConcept;
@@ -45,6 +46,10 @@ class PaymentController extends Controller
                 'prices' => $prices,
                 'total_income' => $result['total_income'],
                 'concepts' => $concepts,
+                'bnc_pending_count' => BncPaymentRequest::whereIn('status', [
+                    BncPaymentRequest::STATUS_PENDING,
+                    BncPaymentRequest::STATUS_ERROR,
+                ])->count(),
             ],
             'config' => $config,
         ]);

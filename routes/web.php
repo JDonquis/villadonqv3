@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountStatementController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AppController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BncVerificationController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\EvaluationPlanController;
 use App\Http\Controllers\GradeSheetController;
@@ -117,6 +118,13 @@ Route::middleware(['auth', 'role:administrator', 'module.access'])->group(functi
     Route::delete('/dashboard/pagos/{id}', [PaymentController::class, 'destroy']);
     Route::get('/dashboard/pagos/libro-ventas', [PaymentController::class, 'libroVentas']);
     Route::get('/dashboard/pagos/{id}/factura', [PaymentController::class, 'factura']);
+    Route::get('/dashboard/pagos/verificaciones-bnc', [BncVerificationController::class, 'index']);
+    Route::post('/dashboard/pagos/verificaciones-bnc/verificar-todas', [BncVerificationController::class, 'verifyAll']);
+    Route::post('/dashboard/pagos/verificaciones-bnc/procesar-notificaciones', [BncVerificationController::class, 'processNotifications']);
+    Route::post('/dashboard/pagos/verificaciones-bnc/probar-conexion', [BncVerificationController::class, 'testConnection']);
+    Route::post('/dashboard/pagos/verificaciones-bnc/{id}/verificar', [BncVerificationController::class, 'verify']);
+    Route::post('/dashboard/pagos/verificaciones-bnc/{id}/rechazar', [BncVerificationController::class, 'reject']);
+    Route::post('/dashboard/pagos/verificaciones-bnc/{id}/verificar-manual', [BncVerificationController::class, 'verifyManual']);
 
     Route::get('/dashboard/estados-de-cuenta', [AccountStatementController::class, 'index']);
     Route::post('/dashboard/estados-de-cuenta/marcar-recordatorio', [AccountStatementController::class, 'marcarRecordatorio']);
@@ -248,6 +256,7 @@ Route::middleware(['auth', 'role:administrator,representative'])->group(function
     Route::get('/dashboard/mis-pagos', [RepresentativePaymentController::class, 'index']);
     Route::post('/dashboard/mis-pagos', [RepresentativePaymentController::class, 'store']);
     Route::post('/dashboard/mis-pagos/conceptos', [RepresentativePaymentController::class, 'storeCharges']);
+    Route::post('/dashboard/mis-pagos/verificar/{id}', [RepresentativePaymentController::class, 'verifyPending']);
 });
 
 Route::middleware(['auth', 'role:administrator,representative,teacher'])->group(function () {
