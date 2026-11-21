@@ -89,7 +89,6 @@ export async function getDolarRateByDate(targetDate, maxAttempts = 15) {
 
     for (let i = 0; i < holidayLimit; i++) {
         const dateStr = formatLocalDate(cursor);
-        const isFuture = cursor > today;
         const rate = await tryHistorical(dateStr);
 
         if (rate) {
@@ -102,10 +101,8 @@ export async function getDolarRateByDate(targetDate, maxAttempts = 15) {
             };
         }
 
-        // Día futuro (aún sin publicar): dejar de avanzar y usar el endpoint actual.
-        if (isFuture) break;
-
-        // Día hábil pasado sin tasa => feriado: avanzar al siguiente hábil.
+        // No hay tasa para ese día (feriado o aún no publicada): avanzar al
+        // siguiente día hábil y seguir buscando hasta encontrarla.
         cursor.setDate(cursor.getDate() + 1);
 
         while (isWeekend(cursor)) {
