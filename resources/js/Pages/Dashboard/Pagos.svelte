@@ -755,17 +755,28 @@
     async function updateDolarPriceByDate(targetDate) {
         if (!targetDate) return;
         try {
-            const { rate, dateFound } = await getDolarRateByDate(targetDate);
+            const { rate, dateFound, reason } =
+                await getDolarRateByDate(targetDate);
             dolarPrice = rate;
             dateOfDolarPrice = dateFound;
 
             // Recalcular montos con la nueva tasa
             recalculateTotals();
 
-            if (dateOfDolarPrice !== $form.date) {
+            if (reason === "weekend") {
                 displayAlert({
                     type: "info",
-                    message: `No se encontró tasa para la fecha seleccionada. Se tomó la tasa del día ${formatFechaCorta(dateOfDolarPrice)}`,
+                    message: `Fin de semana: se usa la tasa del próximo día hábil (${formatFechaCorta(dateFound)})`,
+                });
+            } else if (reason === "holiday") {
+                displayAlert({
+                    type: "info",
+                    message: `Día feriado: se usa la tasa del próximo día hábil (${formatFechaCorta(dateFound)})`,
+                });
+            } else if (reason === "previous") {
+                displayAlert({
+                    type: "info",
+                    message: `No se encontró tasa para la fecha seleccionada. Se tomó la tasa del día ${formatFechaCorta(dateFound)}`,
                 });
             }
         } catch (error) {
