@@ -31,7 +31,7 @@ class PaymentObserver
 
     private function logHistory(Payment $payment, string $action, ?array $oldData, ?array $newData): void
     {
-        $userId = Auth::id() ?? 1;
+        $userId = Auth::id() ?? $payment->user_id ?? 1;
 
         $payment->load('students');
 

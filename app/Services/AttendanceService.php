@@ -6,8 +6,6 @@ use App\Models\EvaluationPlan;
 use App\Models\EvaluationPlanAttendanceSession;
 use App\Models\Student;
 use App\Models\StudentAttendance;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class AttendanceService
 {
@@ -178,14 +176,14 @@ class AttendanceService
     public function deleteSession(int $sessionId): void
     {
         $session = EvaluationPlanAttendanceSession::findOrFail($sessionId);
-        
+
         // Cascade will delete attendances, but let's be explicit
         StudentAttendance::where('session_id', $sessionId)->delete();
         $session->delete();
     }
 
     /**
-     * @param array $records [{session_id, student_id, status}, ...]
+     * @param  array  $records  [{session_id, student_id, status}, ...]
      */
     public function saveAttendance(int $planId, array $records): int
     {
@@ -196,30 +194,47 @@ class AttendanceService
         $studentIds = Student::where('course_id', function ($q) use ($planId) {
             $q->select('course_id')->from('evaluation_plans')->where('id', $planId);
         })
-        ->where('section_id', function ($q) use ($planId) {
-            $q->select('section_id')->from('evaluation_plans')->where('id', $planId);
-        })
-        ->where('status', '!=', 0)
-        ->pluck('id')
-        ->all();
+            ->where('section_id', function ($q) use ($planId) {
+                $q->select('section_id')->from('evaluation_plans')->where('id', $planId);
+            })
+            ->where('status', '!=', 0)
+            ->pluck('id')
+            ->all();
 
         $saved = 0;
+        $absenceSessions = [];
+
         foreach ($records as $record) {
             $sessionId = (int) ($record['session_id'] ?? 0);
             $studentId = (int) ($record['student_id'] ?? 0);
             $status = $record['status'] ?? 'absent';
 
-            if (!in_array($sessionId, $sessionIds, true)) continue;
-            if (!in_array($studentId, $studentIds, true)) continue;
-            if (!in_array($status, ['absent', 'present', 'excused'], true)) continue;
+            if (! in_array($sessionId, $sessionIds, true)) {
+                continue;
+            }
+            if (! in_array($studentId, $studentIds, true)) {
+                continue;
+            }
+            if (! in_array($status, ['absent', 'present', 'excused'], true)) {
+                continue;
+            }
 
-            StudentAttendance::updateOrCreate(
+            $attendance = StudentAttendance::updateOrCreate(
                 ['session_id' => $sessionId, 'student_id' => $studentId],
                 ['status' => $status]
             );
 
+            if ($status === 'absent' && $attendance->notified_at === null) {
+                $attendance->update(['notified_at' => now()]);
+                $absenceSessions[$studentId][] = $sessionId;
+            } elseif ($status !== 'absent' && $attendance->notified_at !== null) {
+                $attendance->update(['notified_at' => null]);
+            }
+
             $saved++;
         }
+
+        $this->notifyAbsences($absenceSessions);
 
         return $saved;
     }
@@ -235,11 +250,79 @@ class AttendanceService
         $nextIndex = ($currentIndex + 1) % count($statuses);
         $nextStatus = $statuses[$nextIndex];
 
-        StudentAttendance::updateOrCreate(
+        $attendance = StudentAttendance::updateOrCreate(
             ['session_id' => $sessionId, 'student_id' => $studentId],
             ['status' => $nextStatus]
         );
 
+        if ($nextStatus === 'absent' && $attendance->notified_at === null) {
+            $attendance->update(['notified_at' => now()]);
+            $this->notifyAbsences([$studentId => [$sessionId]]);
+        } elseif ($nextStatus !== 'absent' && $attendance->notified_at !== null) {
+            $attendance->update(['notified_at' => null]);
+        }
+
         return $nextStatus;
+    }
+
+    /**
+     * @param  array<int, array<int>>  $sessionsByStudent
+     */
+    private function notifyAbsences(array $sessionsByStudent): void
+    {
+        if ($sessionsByStudent === []) {
+            return;
+        }
+
+        $students = Student::with('representative.user')
+            ->whereIn('id', array_keys($sessionsByStudent))
+            ->get()
+            ->keyBy('id');
+
+        $sessionIds = collect($sessionsByStudent)->flatten()->unique()->values();
+        $sessions = EvaluationPlanAttendanceSession::with('plan.matter')
+            ->whereIn('id', $sessionIds)
+            ->get()
+            ->keyBy('id');
+
+        $service = app(NotificationService::class);
+
+        foreach ($sessionsByStudent as $studentId => $studentSessions) {
+            $student = $students->get((int) $studentId);
+            $representative = $student?->representative?->user;
+
+            if (! $student || ! $representative) {
+                continue;
+            }
+
+            $relatedSessions = collect($studentSessions)
+                ->map(fn ($id) => $sessions->get($id))
+                ->filter();
+
+            $firstSession = $relatedSessions->first();
+            $matter = $firstSession?->plan?->matter?->name ?? 'la materia';
+            $dates = $relatedSessions
+                ->pluck('date')
+                ->filter()
+                ->map(fn ($date) => $date->format('d/m/Y'))
+                ->unique()
+                ->implode(', ');
+
+            $service->send(
+                $representative,
+                [
+                    'type' => 'attendance_absent',
+                    'title' => 'Falta registrada',
+                    'body' => "Se registró una falta de {$student->name} {$student->last_name} en {$matter} el {$dates}.",
+                    'icon' => 'mdi:account-alert-outline',
+                    'severity' => 'warning',
+                    'meta' => [
+                        'student_id' => $student->id,
+                        'session_ids' => $studentSessions,
+                    ],
+                ],
+                '/dashboard/inicio'
+            );
+        }
     }
 }

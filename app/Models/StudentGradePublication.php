@@ -27,7 +27,7 @@ class StudentGradePublication extends Model
 
     public function publisher()
     {
-        return $this->belongsTo(User::class, 'published_by');
+        return $this->belongsTo(User::class, 'published_by')->withTrashed();
     }
 
     public function items()

@@ -15,6 +15,7 @@ class Announcement extends Model
         'title',
         'body',
         'audience',
+        'target_user_types',
         'course_id',
         'section_id',
         'student_id',
@@ -24,6 +25,7 @@ class Announcement extends Model
     ];
 
     protected $casts = [
+        'target_user_types' => 'array',
         'published_at' => 'datetime',
         'status' => 'integer',
     ];
@@ -45,7 +47,7 @@ class Announcement extends Model
 
     public function author()
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by')->withTrashed();
     }
 
     public function scopePublished($query)

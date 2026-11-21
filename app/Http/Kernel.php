@@ -3,6 +3,7 @@
 namespace App\Http;
 
 use App\Http\Middleware\Authenticate;
+use App\Http\Middleware\BncWebhookAuthenticate;
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\EncryptCookies;
 use App\Http\Middleware\EnsureModuleAccess;
@@ -87,6 +88,7 @@ class Kernel extends HttpKernel
         'guest' => RedirectIfAuthenticated::class,
         'password.confirm' => RequirePassword::class,
         'role' => CheckRole::class,
+        'bnc.webhook' => BncWebhookAuthenticate::class,
         'module.access' => EnsureModuleAccess::class,
         'signed' => ValidateSignature::class,
         'throttle' => ThrottleRequests::class,

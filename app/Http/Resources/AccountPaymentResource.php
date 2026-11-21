@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Services\Bnc\BncSupport;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -28,6 +29,7 @@ class AccountPaymentResource extends JsonResource
             'email' => $this->when($this->email !== null, $this->email),
             'comision' => $this->when($this->comision !== null, $this->comision),
             'cash_currency' => $this->when($this->cash_currency !== null, $this->cash_currency),
+            'bnc_eligible' => BncSupport::accountIsEligible($this->resource),
 
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

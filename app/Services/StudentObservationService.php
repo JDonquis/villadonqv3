@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Support\GradeAccess;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 class StudentObservationService
 {
@@ -78,7 +79,7 @@ class StudentObservationService
         bool $shared,
         int $actorId
     ): StudentObservation {
-        return StudentObservation::create([
+        $observation = StudentObservation::create([
             'evaluation_plan_id' => $plan->id,
             'student_id' => $studentId,
             'created_by' => $actorId,
@@ -87,6 +88,12 @@ class StudentObservationService
             'shared_with_representative' => $shared,
             'shared_at' => $shared ? Carbon::now() : null,
         ]);
+
+        if ($shared) {
+            $this->notifySharedObservation($observation);
+        }
+
+        return $observation;
     }
 
     public function update(
@@ -113,7 +120,42 @@ class StudentObservationService
         // Se conserva el autor original: la auditoría no se reescribe al editar.
         $observation->save();
 
+        if ($shared && ! $wasShared) {
+            $this->notifySharedObservation($observation);
+        }
+
         return $observation->refresh();
+    }
+
+    private function notifySharedObservation(StudentObservation $observation): void
+    {
+        try {
+            $observation->loadMissing(['student.representative.user', 'plan.matter']);
+
+            $representative = $observation->student?->representative?->user;
+
+            if (! $representative) {
+                return;
+            }
+
+            $studentName = trim(($observation->student?->name ?? '').' '.($observation->student?->last_name ?? ''));
+            $matter = $observation->plan?->matter?->name;
+
+            app(NotificationService::class)->send(
+                $representative,
+                [
+                    'type' => 'student_observation',
+                    'title' => 'Nueva observación compartida',
+                    'body' => trim(($studentName !== '' ? $studentName : 'Tu representado').' tiene una nueva observación'.($matter ? ' en '.$matter : '').'.'),
+                    'icon' => 'mdi:comment-account-outline',
+                    'severity' => 'info',
+                    'meta' => ['observation_id' => $observation->id, 'student_id' => $observation->student_id],
+                ],
+                '/dashboard/mis-hijos'
+            );
+        } catch (\Throwable $e) {
+            Log::error('Error al notificar observación '.$observation->id.': '.$e->getMessage());
+        }
     }
 
     public function delete(StudentObservation $observation): void
@@ -132,7 +174,7 @@ class StudentObservationService
      * siempre coincide con lo que se ve al abrir el historial.
      *
      * @param  array<int, int>  $studentIds
-     * @return array<int, int>  [student_id => total]
+     * @return array<int, int> [student_id => total]
      */
     public function countsByStudentForPlan(int $planId, array $studentIds): array
     {

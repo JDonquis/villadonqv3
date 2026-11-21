@@ -33,6 +33,6 @@ class StudentPlanRasgo extends Model
      */
     public function gradedBy()
     {
-        return $this->belongsTo(User::class, 'graded_by');
+        return $this->belongsTo(User::class, 'graded_by')->withTrashed();
     }
 }

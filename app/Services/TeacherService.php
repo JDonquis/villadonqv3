@@ -45,6 +45,8 @@ class TeacherService
 
     public function createTeacher(array $data): User
     {
+        User::reclaimDeletedIdentity($data['email'] ?? null, $data['ci'] ?? null);
+
         $user = User::create([
             'type_user_id' => UserTypeEnum::Teacher->value,
             'ci' => $data['ci'],
@@ -65,6 +67,8 @@ class TeacherService
 
     public function updateTeacher(User $teacher, array $data): User
     {
+        User::reclaimDeletedIdentity($data['email'] ?? null, $data['ci'] ?? null, $teacher->id);
+
         $teacher->update([
             'ci' => $data['ci'],
             'name' => $data['name'],
@@ -81,7 +85,7 @@ class TeacherService
 
     public function deleteTeacher(User $teacher): void
     {
-        $teacher->delete();
+        $teacher->forceDelete();
     }
 
     public function importTeachers(array $rows): array

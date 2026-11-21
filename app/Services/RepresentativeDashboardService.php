@@ -30,7 +30,9 @@ class RepresentativeDashboardService
     ];
 
     private RepresentativeService $representativeService;
+
     private StudentGradeService $gradeService;
+
     private AttendanceService $attendanceService;
 
     public function __construct()
@@ -303,6 +305,10 @@ class RepresentativeDashboardService
         $studentIds = $students->pluck('id');
 
         return Announcement::published()
+            ->where(function ($q) {
+                $q->whereNull('target_user_types')
+                    ->orWhereJsonContains('target_user_types', 2);
+            })
             ->where(function ($q) use ($courseIds, $sectionIds, $studentIds) {
                 $q->where('audience', 'all')
                     ->orWhere(fn ($sub) => $sub->where('audience', 'course')->whereIn('course_id', $courseIds))
@@ -325,11 +331,18 @@ class RepresentativeDashboardService
     private function formatEvents($students): array
     {
         $courseIds = $students->pluck('course_id')->filter()->unique()->values();
+        $sectionIds = $students->pluck('section_id')->filter()->unique()->values();
 
         return SchoolEvent::published()
             ->whereDate('start_date', '>=', Carbon::now()->toDateString())
-            ->where(function ($q) use ($courseIds) {
-                $q->whereNull('course_id')->orWhereIn('course_id', $courseIds);
+            ->where(function ($q) {
+                $q->whereNull('target_user_types')
+                    ->orWhereJsonContains('target_user_types', 2);
+            })
+            ->where(function ($q) use ($courseIds, $sectionIds) {
+                $q->where(fn ($all) => $all->whereNull('course_id')->whereNull('section_id'))
+                    ->orWhereIn('course_id', $courseIds)
+                    ->orWhereIn('section_id', $sectionIds);
             })
             ->orderBy('start_date')
             ->limit(10)

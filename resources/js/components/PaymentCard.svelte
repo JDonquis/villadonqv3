@@ -60,6 +60,23 @@
 
     const isDeleted = payment.status === 0;
 
+    const verificationStatus = payment.verification_status || "not_required";
+    const verificationSource = payment.verification_source || "";
+    const verificationBadge = (() => {
+        if (verificationStatus === "verified") {
+            return verificationSource === "manual"
+                ? { label: "Verificado manual", className: "bg-emerald-100 text-emerald-800" }
+                : { label: "Verificado BNC", className: "bg-emerald-100 text-emerald-800" };
+        }
+        if (verificationStatus === "pending") {
+            return { label: "Pendiente BNC", className: "bg-amber-100 text-amber-800" };
+        }
+        if (verificationStatus === "rejected") {
+            return { label: "Rechazado BNC", className: "bg-red-100 text-red-700" };
+        }
+        return null;
+    })();
+
     $: conceptNames = (() => {
         const allocations = Array.isArray(payment?.allocations)
             ? payment.allocations
@@ -145,6 +162,12 @@
                     class={`w-2 h-2 rounded-sm flex-shrink-0 bg-${methodColor} bg-opacity-90`}
                 ></span>
                 <span class="font-medium">{methodName}</span>
+
+                {#if verificationBadge}
+                    <span class={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${verificationBadge.className}`}>
+                        {verificationBadge.label}
+                    </span>
+                {/if}
                 {#if payment.account_payment?.bank}
                     <span class="text-gray-400"
                         >- {payment.account_payment.bank}</span

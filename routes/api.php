@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\BncWebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -16,4 +17,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
+});
+
+Route::prefix('bnc')->group(function () {
+    Route::get('/notifications', [BncWebhookController::class, 'ping']);
+    Route::post('/auth', [BncWebhookController::class, 'auth']);
+    Route::post('/notifications', [BncWebhookController::class, 'notify'])
+        ->middleware('bnc.webhook');
 });

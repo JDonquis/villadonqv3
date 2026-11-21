@@ -61,6 +61,9 @@
     let annulLoading = false;
     let annulPreview = null;
     let annulStudentName = "";
+    let annulStudent = null;
+    let annulMode = "annul";
+    let restoreSelection = [];
     $: annulmentsList = annulments;
     let annulForm = {
         up_to_month: defaultUpToMonth(),
@@ -69,6 +72,38 @@
         section_id: "",
         student_id: null,
     };
+
+    $: annulledMonthOptions = (() => {
+        if (!annulStudent?.balances) return [];
+
+        return annulStudent.balances.flatMap((balance) => {
+            const months = balance.months ?? balance;
+            const lapse = balance.school_lapse;
+            const lapseLabel =
+                lapse?.start && lapse?.end
+                    ? `${lapse.start.slice(0, 4)}-${lapse.end.slice(0, 4)}`
+                    : "";
+
+            return SCHOOL_MONTHS.filter(
+                ([month]) =>
+                    months?.[`${month}_status`] === "annulled" ||
+                    balance?.[`${month}_status`] === "annulled",
+            ).map(([month, label]) => ({
+                key: `${balance.id}:${month}`,
+                balance_id: balance.id,
+                month,
+                label,
+                lapseLabel,
+            }));
+        });
+    })();
+
+    $: lapseLabels = [
+        ...new Set(
+            annulledMonthOptions.map((option) => option.lapseLabel).filter(Boolean),
+        ),
+    ];
+    $: showRestoreLapse = lapseLabels.length > 1;
 
     async function annulRequest(url, body) {
         const response = await fetch(url, {
@@ -90,8 +125,11 @@
         return payload;
     }
 
-    function openAnnulModal(student = null) {
+    function openAnnulModal(student = null, mode = "annul") {
         annulPreview = null;
+        annulMode = student ? mode : "annul";
+        annulStudent = student;
+        restoreSelection = [];
         annulStudentName = student
             ? `${student.name ?? ""} ${student.last_name ?? ""}`.trim()
             : "";
@@ -103,6 +141,25 @@
             student_id: student?.id ?? null,
         };
         showAnnulModal = true;
+    }
+
+    function setAnnulMode(mode) {
+        annulMode = mode;
+        annulPreview = null;
+        restoreSelection = [];
+    }
+
+    function toggleRestoreMonth(key) {
+        restoreSelection = restoreSelection.includes(key)
+            ? restoreSelection.filter((item) => item !== key)
+            : [...restoreSelection, key];
+    }
+
+    function selectAllRestoreMonths() {
+        restoreSelection =
+            restoreSelection.length === annulledMonthOptions.length
+                ? []
+                : annulledMonthOptions.map((option) => option.key);
     }
 
     async function previewAnnul() {
@@ -128,6 +185,42 @@
             displayAlert({
                 type: "success",
                 message: `Anulación aplicada: ${result.affected_count} estudiantes ($${result.total_annulled}).`,
+            });
+            showAnnulModal = false;
+            router.reload();
+        } catch (error) {
+            displayAlert({ type: "error", message: error.message });
+        }
+        annulLoading = false;
+    }
+
+    async function confirmRestore() {
+        if (!restoreSelection.length) return;
+
+        const selected = annulledMonthOptions.filter((option) =>
+            restoreSelection.includes(option.key),
+        );
+
+        const grouped = Object.values(
+            selected.reduce((acc, option) => {
+                acc[option.balance_id] ??= {
+                    balance_id: option.balance_id,
+                    months: [],
+                };
+                acc[option.balance_id].months.push(option.month);
+                return acc;
+            }, {}),
+        );
+
+        annulLoading = true;
+        try {
+            const result = await annulRequest(
+                "/dashboard/estados-de-cuenta/quitar-anulacion",
+                { balances: grouped },
+            );
+            displayAlert({
+                type: "success",
+                message: `Se quitaron ${result.restored_months} mes(es) anulado(s).`,
             });
             showAnnulModal = false;
             router.reload();
@@ -444,118 +537,209 @@ Ingrese a este link para más información y proceder con el pago: ${paymentLink
         <div
             class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-4"
         >
-            <h3 class="text-lg font-bold text-color1">Anular meses pasados</h3>
-            <p class="text-xs text-gray-500 leading-snug">
-                Marca como <b>"No aplica"</b> los meses hasta el seleccionado. Los
-                meses con pagos registrados se omiten.
-            </p>
+            <h3 class="text-lg font-bold text-color1">
+                {annulMode === "restore"
+                    ? "Quitar anulación de meses"
+                    : "Anular meses pasados"}
+            </h3>
+
             {#if annulForm.student_id}
-                <p class="text-xs font-semibold text-color2">
-                    Solo para el estudiante: {annulStudentName}
-                </p>
+                <div class="flex gap-1 rounded-xl bg-slate-100 p-1 text-xs font-semibold">
+                    <button
+                        type="button"
+                        on:click={() => setAnnulMode("annul")}
+                        class="flex-1 rounded-lg px-3 py-1.5 transition {annulMode ===
+                        'annul'
+                            ? 'bg-white text-color1 shadow-sm'
+                            : 'text-gray-500 hover:text-gray-700'}"
+                    >
+                        Anular meses
+                    </button>
+                    <button
+                        type="button"
+                        on:click={() => setAnnulMode("restore")}
+                        class="flex-1 rounded-lg px-3 py-1.5 transition {annulMode ===
+                        'restore'
+                            ? 'bg-white text-color1 shadow-sm'
+                            : 'text-gray-500 hover:text-gray-700'}"
+                    >
+                        Quitar anulación
+                    </button>
+                </div>
             {/if}
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <label class="text-xs font-semibold text-gray-600">
-                    Anular hasta
-                    <select
-                        bind:value={annulForm.up_to_month}
-                        on:change={(e) => {
-                            if (e.target.value === "none") {
-                                annulForm.include_inscription = true;
-                            }
-                        }}
-                        class="mt-1 w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
-                    >
-                        <option value="none">Solo inscripción (sin meses)</option>
-                        {#each SCHOOL_MONTHS as [id, label]}
-                            <option value={id}>{label}</option>
-                        {/each}
-                    </select>
-                </label>
+            {#if annulMode === "restore"}
+                <p class="text-xs text-gray-500 leading-snug">
+                    Selecciona los meses anulados que deseas volver a cobrar. Se
+                    restaurará su deuda original y su estado según la fecha actual.
+                </p>
+                <p class="text-xs font-semibold text-color2">
+                    Estudiante: {annulStudentName}
+                </p>
 
-                <label
-                    class="flex items-center gap-2 text-xs font-semibold text-gray-600 mt-5"
-                >
-                    <input
-                        type="checkbox"
-                        bind:checked={annulForm.include_inscription}
-                        class="rounded border-gray-300"
-                    />
-                    Incluir inscripción
-                </label>
-
-                {#if !annulForm.student_id}
-                    <label class="text-xs font-semibold text-gray-600">
-                        Curso (opcional)
-                        <select
-                            bind:value={annulForm.course_id}
-                            class="mt-1 w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                {#if annulledMonthOptions.length === 0}
+                    <p class="rounded-xl border border-gray-200 bg-slate-50 p-3 text-xs text-gray-500">
+                        Este estudiante no tiene meses anulados.
+                    </p>
+                {:else}
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-500">
+                            {restoreSelection.length} de {annulledMonthOptions.length}
+                            seleccionado(s)
+                        </span>
+                        <button
+                            type="button"
+                            on:click={selectAllRestoreMonths}
+                            class="text-[11px] font-semibold text-color2 hover:text-color3"
                         >
-                            <option value="">Todos</option>
-                            {#each data?.courses || [] as course}
-                                <option value={course.id}>{course.name}</option>
-                            {/each}
-                        </select>
-                    </label>
-
-                    <label class="text-xs font-semibold text-gray-600">
-                        Sección (opcional)
-                        <select
-                            bind:value={annulForm.section_id}
-                            class="mt-1 w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
-                        >
-                            <option value="">Todas</option>
-                            {#each data?.sections || [] as section}
-                                <option value={section.id}>{section.name}</option>
-                            {/each}
-                        </select>
-                    </label>
-                {/if}
-            </div>
-
-            <div class="flex items-center gap-2">
-                <button
-                    type="button"
-                    on:click={previewAnnul}
-                    disabled={annulLoading}
-                    class="px-4 py-2 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-                >
-                    Previsualizar
-                </button>
-            </div>
-
-            {#if annulPreview}
-                <div class="rounded-xl border border-gray-200 bg-slate-50 p-3 text-xs">
-                    <div class="flex flex-wrap gap-4">
-                        <span
-                            >Afectados:
-                            <b>{annulPreview.affected_count}</b></span
-                        >
-                        <span
-                            >Omitidos (con pagos):
-                            <b>{annulPreview.skipped_count}</b></span
-                        >
-                        <span
-                            >Total a anular:
-                            <b>${annulPreview.total_annulled}</b></span
-                        >
+                            {restoreSelection.length === annulledMonthOptions.length
+                                ? "Quitar selección"
+                                : "Seleccionar todos"}
+                        </button>
                     </div>
-                    {#if annulPreview.balances?.length}
-                        <ul class="mt-2 max-h-40 overflow-y-auto space-y-0.5 text-gray-500">
-                            {#each annulPreview.balances.slice(0, 50) as b}
-                                <li>
-                                    {b.student} — {b.months.join(", ")}{b.inscription
-                                        ? " + inscripción"
-                                        : ""}
-                                </li>
+
+                    <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                        {#each annulledMonthOptions as option}
+                            <label
+                                class="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 px-2.5 py-2 text-xs font-semibold text-gray-600 transition hover:bg-slate-50 {restoreSelection.includes(
+                                    option.key,
+                                )
+                                    ? 'border-color2 bg-color2/10 text-color2'
+                                    : ''}"
+                            >
+                                <input
+                                    type="checkbox"
+                                    class="rounded border-gray-300"
+                                    checked={restoreSelection.includes(
+                                        option.key,
+                                    )}
+                                    on:change={() => toggleRestoreMonth(option.key)}
+                                />
+                                <span>
+                                    {option.label}
+                                    {#if showRestoreLapse && option.lapseLabel}
+                                        <span class="font-normal text-gray-400"
+                                            >· {option.lapseLabel}</span
+                                        >
+                                    {/if}
+                                </span>
+                            </label>
+                        {/each}
+                    </div>
+                {/if}
+            {:else}
+                <p class="text-xs text-gray-500 leading-snug">
+                    Marca como <b>"No aplica"</b> los meses hasta el seleccionado.
+                    Los meses con pagos registrados se omiten.
+                </p>
+                {#if annulForm.student_id}
+                    <p class="text-xs font-semibold text-color2">
+                        Solo para el estudiante: {annulStudentName}
+                    </p>
+                {/if}
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label class="text-xs font-semibold text-gray-600">
+                        Anular hasta
+                        <select
+                            bind:value={annulForm.up_to_month}
+                            on:change={(e) => {
+                                if (e.target.value === "none") {
+                                    annulForm.include_inscription = true;
+                                }
+                            }}
+                            class="mt-1 w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                        >
+                            <option value="none">Solo inscripción (sin meses)</option>
+                            {#each SCHOOL_MONTHS as [id, label]}
+                                <option value={id}>{label}</option>
                             {/each}
-                            {#if annulPreview.balances.length > 50}
-                                <li>… y {annulPreview.balances.length - 50} más</li>
-                            {/if}
-                        </ul>
+                        </select>
+                    </label>
+
+                    <label
+                        class="flex items-center gap-2 text-xs font-semibold text-gray-600 mt-5"
+                    >
+                        <input
+                            type="checkbox"
+                            bind:checked={annulForm.include_inscription}
+                            class="rounded border-gray-300"
+                        />
+                        Incluir inscripción
+                    </label>
+
+                    {#if !annulForm.student_id}
+                        <label class="text-xs font-semibold text-gray-600">
+                            Curso (opcional)
+                            <select
+                                bind:value={annulForm.course_id}
+                                class="mt-1 w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                            >
+                                <option value="">Todos</option>
+                                {#each data?.courses || [] as course}
+                                    <option value={course.id}>{course.name}</option>
+                                {/each}
+                            </select>
+                        </label>
+
+                        <label class="text-xs font-semibold text-gray-600">
+                            Sección (opcional)
+                            <select
+                                bind:value={annulForm.section_id}
+                                class="mt-1 w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                            >
+                                <option value="">Todas</option>
+                                {#each data?.sections || [] as section}
+                                    <option value={section.id}>{section.name}</option>
+                                {/each}
+                            </select>
+                        </label>
                     {/if}
                 </div>
+
+                <div class="flex items-center gap-2">
+                    <button
+                        type="button"
+                        on:click={previewAnnul}
+                        disabled={annulLoading}
+                        class="px-4 py-2 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                    >
+                        Previsualizar
+                    </button>
+                </div>
+
+                {#if annulPreview}
+                    <div class="rounded-xl border border-gray-200 bg-slate-50 p-3 text-xs">
+                        <div class="flex flex-wrap gap-4">
+                            <span
+                                >Afectados:
+                                <b>{annulPreview.affected_count}</b></span
+                            >
+                            <span
+                                >Omitidos (con pagos):
+                                <b>{annulPreview.skipped_count}</b></span
+                            >
+                            <span
+                                >Total a anular:
+                                <b>${annulPreview.total_annulled}</b></span
+                            >
+                        </div>
+                        {#if annulPreview.balances?.length}
+                            <ul class="mt-2 max-h-40 overflow-y-auto space-y-0.5 text-gray-500">
+                                {#each annulPreview.balances.slice(0, 50) as b}
+                                    <li>
+                                        {b.student} — {b.months.join(", ")}{b.inscription
+                                            ? " + inscripción"
+                                            : ""}
+                                    </li>
+                                {/each}
+                                {#if annulPreview.balances.length > 50}
+                                    <li>… y {annulPreview.balances.length - 50} más</li>
+                                {/if}
+                            </ul>
+                        {/if}
+                    </div>
+                {/if}
             {/if}
 
             <div class="flex justify-end gap-2 pt-2">
@@ -566,14 +750,25 @@ Ingrese a este link para más información y proceder con el pago: ${paymentLink
                 >
                     Cancelar
                 </button>
-                <button
-                    type="button"
-                    on:click={confirmAnnul}
-                    disabled={annulLoading || !annulPreview || annulPreview.affected_count === 0}
-                    class="px-5 py-2 rounded-lg bg-red text-white text-xs font-bold hover:opacity-90 disabled:opacity-50"
-                >
-                    Anular meses
-                </button>
+                {#if annulMode === "restore"}
+                    <button
+                        type="button"
+                        on:click={confirmRestore}
+                        disabled={annulLoading || restoreSelection.length === 0}
+                        class="px-5 py-2 rounded-lg bg-color2 text-white text-xs font-bold hover:opacity-90 disabled:opacity-50"
+                    >
+                        Quitar anulación
+                    </button>
+                {:else}
+                    <button
+                        type="button"
+                        on:click={confirmAnnul}
+                        disabled={annulLoading || !annulPreview || annulPreview.affected_count === 0}
+                        class="px-5 py-2 rounded-lg bg-red text-white text-xs font-bold hover:opacity-90 disabled:opacity-50"
+                    >
+                        Anular meses
+                    </button>
+                {/if}
             </div>
         </div>
     </div>
@@ -873,7 +1068,7 @@ Ingrese a este link para más información y proceder con el pago: ${paymentLink
                             {#if $page.props.auth.is_admin}
                                 <button
                                     type="button"
-                                    title="Anular meses / inscripción de este estudiante"
+                                    title="Anular o quitar la anulación de meses de este estudiante"
                                     on:click|stopPropagation={() =>
                                         openAnnulModal(student)}
                                     class="absolute -top-2 right-0 z-20 inline-flex items-center gap-1 rounded-full border border-gray-300 bg-white px-2 py-0.5 text-[10px] font-semibold text-gray-600 shadow-sm hover:bg-red/10 hover:text-red"
@@ -908,7 +1103,7 @@ Ingrese a este link para más información y proceder con el pago: ${paymentLink
                         {#if $page.props.auth.is_admin}
                             <button
                                 type="button"
-                                title="Anular meses / inscripción de este estudiante"
+                                title="Anular o quitar la anulación de meses de este estudiante"
                                 on:click|stopPropagation={() =>
                                     openAnnulModal(student)}
                                 class="absolute -top-2 right-0 z-20 inline-flex items-center gap-1 rounded-full border border-gray-300 bg-white px-2 py-0.5 text-[10px] font-semibold text-gray-600 shadow-sm opacity-0 group-hover/balance:opacity-100 hover:bg-red/10 hover:text-red transition-opacity"

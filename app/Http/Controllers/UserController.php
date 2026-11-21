@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Models\FailedImport;
 use App\Models\Module;
 use App\Services\ExcelTemplateService;
 use App\Services\LoginService;
@@ -13,7 +14,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use App\Models\FailedImport;
+
 class UserController extends Controller
 {
     private LoginService $loginService;
@@ -73,20 +74,31 @@ class UserController extends Controller
     public function store(StoreUserRequest $request)
     {
         try {
-            $transport = Mail::mailer()->getSymfonyTransport();
-            if (method_exists($transport, 'start')) {
-                $transport->start();
-            }
-        } catch (Exception $e) {
-            Log::error('Error de configuración/credenciales de correo: '.$e->getMessage());
-
-            return back()->withInput()->withErrors([
-                'message' => 'No se pudo conectar con el servidor de correo. Verifique las credenciales SMTP.',
-            ]);
-        }
-
-        try {
             $data = $request->validated();
+
+            $existingUser = $this->userService->findByIdentity($data['email'], $data['ci']);
+
+            if ($existingUser) {
+                $this->userService->grantAdminAccess($existingUser, $data);
+
+                return to_route('personal.index')->with([
+                    'status' => true,
+                    'message' => 'El usuario ya existía. Se le agregaron los permisos administrativos seleccionados.',
+                ]);
+            }
+
+            try {
+                $transport = Mail::mailer()->getSymfonyTransport();
+                if (method_exists($transport, 'start')) {
+                    $transport->start();
+                }
+            } catch (Exception $e) {
+                Log::error('Error de configuración/credenciales de correo: '.$e->getMessage());
+
+                return back()->withInput()->withErrors([
+                    'message' => 'No se pudo conectar con el servidor de correo. Verifique las credenciales SMTP.',
+                ]);
+            }
 
             $randomPassword = bin2hex(random_bytes(8));
             $data['password'] = bcrypt($randomPassword);

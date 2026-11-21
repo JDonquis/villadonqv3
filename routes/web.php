@@ -3,13 +3,15 @@
 use App\Http\Controllers\AccountStatementController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AppController;
-use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BncVerificationController;
+use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\EvaluationPlanController;
 use App\Http\Controllers\GradeSheetController;
 use App\Http\Controllers\MainConfigController;
 use App\Http\Controllers\MatterController;
 use App\Http\Controllers\MyScheduleController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentConceptController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
@@ -114,13 +116,21 @@ Route::middleware(['auth', 'role:administrator', 'module.access'])->group(functi
     Route::delete('/dashboard/pagos/conceptos/{id}', [PaymentConceptController::class, 'destroy']);
     Route::put('/dashboard/pagos/{id}', [PaymentController::class, 'update']);
     Route::delete('/dashboard/pagos/{id}', [PaymentController::class, 'destroy']);
-Route::get('/dashboard/pagos/libro-ventas', [PaymentController::class, 'libroVentas']);
+    Route::get('/dashboard/pagos/libro-ventas', [PaymentController::class, 'libroVentas']);
     Route::get('/dashboard/pagos/{id}/factura', [PaymentController::class, 'factura']);
+    Route::get('/dashboard/pagos/verificaciones-bnc', [BncVerificationController::class, 'index']);
+    Route::post('/dashboard/pagos/verificaciones-bnc/verificar-todas', [BncVerificationController::class, 'verifyAll']);
+    Route::post('/dashboard/pagos/verificaciones-bnc/procesar-notificaciones', [BncVerificationController::class, 'processNotifications']);
+    Route::post('/dashboard/pagos/verificaciones-bnc/probar-conexion', [BncVerificationController::class, 'testConnection']);
+    Route::post('/dashboard/pagos/verificaciones-bnc/{id}/verificar', [BncVerificationController::class, 'verify']);
+    Route::post('/dashboard/pagos/verificaciones-bnc/{id}/rechazar', [BncVerificationController::class, 'reject']);
+    Route::post('/dashboard/pagos/verificaciones-bnc/{id}/verificar-manual', [BncVerificationController::class, 'verifyManual']);
 
     Route::get('/dashboard/estados-de-cuenta', [AccountStatementController::class, 'index']);
     Route::post('/dashboard/estados-de-cuenta/marcar-recordatorio', [AccountStatementController::class, 'marcarRecordatorio']);
     Route::post('/dashboard/estados-de-cuenta/anular-meses/preview', [AccountStatementController::class, 'previewAnnulMonths']);
     Route::post('/dashboard/estados-de-cuenta/anular-meses', [AccountStatementController::class, 'annulMonths']);
+    Route::post('/dashboard/estados-de-cuenta/quitar-anulacion', [AccountStatementController::class, 'restoreAnnulmentMonths']);
     Route::post('/dashboard/estados-de-cuenta/anulaciones/{id}/deshacer', [AccountStatementController::class, 'undoAnnulment']);
 
     Route::post('/dashboard/periodo-escolar/iniciar-proximo', [SchoolLapseController::class, 'startNext']);
@@ -246,6 +256,7 @@ Route::middleware(['auth', 'role:administrator,representative'])->group(function
     Route::get('/dashboard/mis-pagos', [RepresentativePaymentController::class, 'index']);
     Route::post('/dashboard/mis-pagos', [RepresentativePaymentController::class, 'store']);
     Route::post('/dashboard/mis-pagos/conceptos', [RepresentativePaymentController::class, 'storeCharges']);
+    Route::post('/dashboard/mis-pagos/verificar/{id}', [RepresentativePaymentController::class, 'verifyPending']);
 });
 
 Route::middleware(['auth', 'role:administrator,representative,teacher'])->group(function () {
@@ -256,4 +267,15 @@ Route::middleware(['auth', 'role:administrator,representative,teacher'])->group(
     Route::get('/dashboard/perfil', [ProfileController::class, 'index']);
     Route::post('/dashboard/perfil', [ProfileController::class, 'update']);
     Route::post('/dashboard/perfil/cambiar-contrasena', [ProfileController::class, 'changePassword']);
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard/notificaciones', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/dashboard/notificaciones/leer-todas', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+    Route::post('/dashboard/notificaciones/{id}/leer', [NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::delete('/dashboard/notificaciones', [NotificationController::class, 'destroyAll'])->name('notifications.destroy-all');
+    Route::delete('/dashboard/notificaciones/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+
+    Route::post('/dashboard/push/subscribe', [NotificationController::class, 'storePushSubscription'])->name('push.subscribe');
+    Route::delete('/dashboard/push/subscribe', [NotificationController::class, 'destroyPushSubscription'])->name('push.unsubscribe');
 });

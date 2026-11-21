@@ -12,6 +12,7 @@ use App\Models\StudentPlanRasgo;
 use App\Support\EducationLevel;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class StudentGradeService
 {
@@ -245,7 +246,7 @@ class StudentGradeService
 
     public function publishGrades(int $planId, int $actorId): StudentGradePublication
     {
-        return DB::transaction(function () use ($planId, $actorId) {
+        $publication = DB::transaction(function () use ($planId, $actorId) {
             $plan = EvaluationPlan::with('items')
                 ->where('id', $planId)
                 ->lockForUpdate()
@@ -286,6 +287,20 @@ class StudentGradeService
 
             return $publication;
         });
+
+        $plan = EvaluationPlan::with(['matter', 'course', 'section'])->find($planId);
+
+        if ($plan) {
+            $this->notifyRepresentativesAboutPlan(
+                $plan,
+                'Notas publicadas',
+                $this->planLabel($plan).' ya tiene notas publicadas.',
+                'grades_published',
+                'success'
+            );
+        }
+
+        return $publication;
     }
 
     /**
@@ -320,7 +335,9 @@ class StudentGradeService
      */
     public function unpublishLatestGrades(int $planId): bool
     {
-        return DB::transaction(function () use ($planId) {
+        $plan = EvaluationPlan::with(['matter', 'course', 'section'])->find($planId);
+
+        $unpublished = DB::transaction(function () use ($planId) {
             $publication = StudentGradePublication::where('evaluation_plan_id', $planId)
                 ->latest('version')
                 ->lockForUpdate()
@@ -334,6 +351,59 @@ class StudentGradeService
 
             return true;
         });
+
+        if ($unpublished && $plan) {
+            $this->notifyRepresentativesAboutPlan(
+                $plan,
+                'Notas despublicadas',
+                $this->planLabel($plan).' ya no muestra notas publicadas.',
+                'grades_unpublished',
+                'warning'
+            );
+        }
+
+        return $unpublished;
+    }
+
+    private function planLabel(EvaluationPlan $plan): string
+    {
+        return trim(implode(' · ', array_filter([
+            $plan->matter?->name,
+            $plan->course?->name,
+            $plan->section?->name,
+        ]))) ?: ($plan->name ?: 'El plan de evaluación');
+    }
+
+    private function notifyRepresentativesAboutPlan(
+        EvaluationPlan $plan,
+        string $title,
+        string $body,
+        string $type,
+        string $severity
+    ): void {
+        try {
+            $studentIds = Student::where('course_id', $plan->course_id)
+                ->where('section_id', $plan->section_id)
+                ->where('status', '!=', 0)
+                ->pluck('id')
+                ->all();
+
+            app(NotificationService::class)->sendToUsers(
+                app(NotificationService::class)->representativesForStudents($studentIds),
+                [
+                    'type' => $type,
+                    'title' => $title,
+                    'body' => $body,
+                    'icon' => 'mdi:school-outline',
+                    'severity' => $severity,
+                    'meta' => ['plan_id' => $plan->id],
+                ],
+                '/dashboard/mis-hijos',
+                auth()->id()
+            );
+        } catch (\Throwable $e) {
+            Log::error('Error al notificar notas del plan '.$plan->id.': '.$e->getMessage());
+        }
     }
 
     public function publishedScoresForStudent(EvaluationPlan $plan, int $studentId): array
